@@ -11,8 +11,12 @@ import pandas as pd
 
 from core.classifier import TransactionClassifier
 from core.kontenplan import KontenplanManager, load_konto_defaults, save_konto_defaults
+from core.sidebar import render_sidebar
 
-st.header("⚙️ Kontenplan & Training")
+render_sidebar()
+
+st.markdown("## ⚙️ Kontenplan & Training")
+st.caption("Kontenplan bearbeiten, Modell trainieren, Standard-Zuordnungen verwalten")
 
 clf: TransactionClassifier = st.session_state.classifier
 kp: KontenplanManager = st.session_state.kp_mgr
@@ -124,7 +128,7 @@ kp_df = pd.DataFrame([{"Konto": k, "Bezeichnung": v} for k, v in sorted(kp_data.
 
 edited_kp = st.data_editor(
     kp_df,
-    use_container_width=True, hide_index=True, num_rows="dynamic",
+    width="stretch", hide_index=True, num_rows="dynamic",
     height=min(len(kp_df) * 38 + 40, 600),
     column_config={
         "Konto": st.column_config.TextColumn("Konto-Nr.", width="small"),
@@ -166,7 +170,7 @@ if defaults:
 
     edited_defaults = st.data_editor(
         defaults_df,
-        use_container_width=True, hide_index=True, num_rows="dynamic",
+        width="stretch", hide_index=True, num_rows="dynamic",
         height=min(len(defaults_df) * 38 + 40, 600),
         column_config={
             "KontoSoll": st.column_config.TextColumn("KontoSoll", width="small"),

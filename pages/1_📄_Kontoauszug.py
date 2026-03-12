@@ -12,9 +12,14 @@ from core.pdf_parser import extract_transactions_from_pdf
 from core.classifier import TransactionClassifier, ClassificationResult
 from core.kontenplan import KontenplanManager
 from core.export import fmt_swiss, df_to_styled_excel, df_to_banana_tsv, df_to_csv
+from core.email_sender import is_email_configured, send_bookkeeping_email
+from core.database import DatabaseManager
+from core.sidebar import render_sidebar
 
-st.header("📄 Kontoauszug → Buchhaltung")
-st.caption("UBS Kontoauszug PDF hochladen → Bearbeiten → Als Excel herunterladen")
+render_sidebar()
+
+st.markdown("## 📄 Kontoauszug")
+st.caption("UBS Kontoauszug PDF hochladen → Bearbeiten → Export")
 
 clf: TransactionClassifier = st.session_state.classifier
 kp: KontenplanManager = st.session_state.kp_mgr
@@ -102,7 +107,7 @@ if uploaded_file:
                 lambda x: fmt_swiss(x) if x != "" and x is not None and not (isinstance(x, float) and pd.isna(x)) else ""
             )
 
-        st.dataframe(display_df, use_container_width=True, hide_index=True,
+        st.dataframe(display_df, width="stretch", hide_index=True,
                       height=min(len(df) * 38 + 40, 800))
 
         total_betrag = sum(
@@ -128,7 +133,7 @@ if uploaded_file:
 
         edited_df = st.data_editor(
             df,
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
             num_rows="dynamic",
             height=min(len(df) * 38 + 40, 800),
@@ -187,6 +192,15 @@ if uploaded_file:
                         st.info("Genug Korrekturen gesammelt — Modell kann unter 'Kontenplan & Training' neu trainiert werden.")
                 else:
                     st.success("Änderungen gespeichert!")
+
+                # Save to DB if configured
+                _db = DatabaseManager()
+                if _db.is_configured():
+                    if _db.save_buchungen(edited_df, source="kontoauszug"):
+                        st.info("Buchungen in Datenbank gespeichert.")
+                    else:
+                        st.warning("Datenbank-Speicherung fehlgeschlagen.")
+
                 st.rerun()
 
         with col_recalc:
@@ -208,13 +222,13 @@ if uploaded_file:
                 st.success("MwSt neu berechnet!")
                 st.rerun()
 
-    # ── Downloads ────────────────────────────────────────────────────────────
+    # ── Downloads & Email ────────────────────────────────────────────────────
     st.markdown("---")
-    st.markdown("### ⬇️ Download")
+    st.markdown("### ⬇️ Download & Versand")
 
     base_name = uploaded_file.name.replace(".pdf", "").replace(".PDF", "")
 
-    c1, c2, c3 = st.columns(3)
+    c1, c2, c3, c4 = st.columns(4)
 
     with c1:
         st.download_button(
@@ -222,6 +236,7 @@ if uploaded_file:
             data=df_to_banana_tsv(st.session_state.df).encode("utf-8"),
             file_name=f"banana_import_{base_name}.txt",
             mime="text/plain", type="primary", key="pdf_banana",
+            width="stretch",
         )
     with c2:
         st.download_button(
@@ -229,15 +244,62 @@ if uploaded_file:
             data=df_to_styled_excel(st.session_state.df),
             file_name=f"buchhaltung_{base_name}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.document",
-            key="pdf_excel",
+            key="pdf_excel", width="stretch",
         )
     with c3:
         st.download_button(
             "📥 CSV (.csv)",
             data=df_to_csv(st.session_state.df),
             file_name=f"buchhaltung_{base_name}.csv",
-            mime="text/csv", key="pdf_csv",
+            mime="text/csv", key="pdf_csv", width="stretch",
         )
+    with c4:
+        pdf_email_btn = st.button("📧 Per E-Mail senden", key="pdf_email_btn", width="stretch")
+
+    # ── Email send form ─────────────────────────────────────────────────────
+    if pdf_email_btn or st.session_state.get("_show_email_pdf", False):
+        st.session_state["_show_email_pdf"] = True
+        with st.container(border=True):
+            st.markdown("#### 📧 E-Mail versenden")
+            if not is_email_configured():
+                st.error("E-Mail nicht konfiguriert. Bitte `.env` Datei mit SMTP-Daten erstellen.")
+            else:
+                email_to = st.text_input(
+                    "Empfänger E-Mail",
+                    value=st.session_state.get("_last_email_to", ""),
+                    placeholder="empfaenger@example.ch",
+                    key="pdf_email_to",
+                )
+                email_subject = st.text_input(
+                    "Betreff (optional)",
+                    value="",
+                    placeholder=f"RDS Buchhaltung — {base_name}",
+                    key="pdf_email_subject",
+                )
+                ec1, ec2 = st.columns(2)
+                with ec1:
+                    if st.button("✅ Jetzt senden", type="primary", key="pdf_send_email"):
+                        if not email_to or "@" not in email_to:
+                            st.error("Bitte gültige E-Mail-Adresse eingeben.")
+                        else:
+                            with st.spinner("E-Mail wird gesendet..."):
+                                ok, msg = send_bookkeeping_email(
+                                    df=st.session_state.df,
+                                    to_email=email_to.strip(),
+                                    subject=email_subject.strip() or None,
+                                    base_filename=base_name,
+                                )
+                            if ok:
+                                st.success(f"✅ {msg}")
+                                st.session_state["_last_email_to"] = email_to.strip()
+                                st.session_state["_show_email_pdf"] = False
+                            else:
+                                st.error(f"❌ {msg}")
+                with ec2:
+                    if st.button("Abbrechen", key="pdf_cancel_email"):
+                        st.session_state["_show_email_pdf"] = False
+                        st.rerun()
+                st.caption("Sendet Banana TXT + CSV als Anhang.")
 
     with st.expander("ℹ️ Banana Import-Anleitung"):
         st.markdown(

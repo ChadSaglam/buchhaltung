@@ -8,8 +8,11 @@ import json
 from datetime import datetime
 
 from core.classifier import TransactionClassifier
+from core.sidebar import render_sidebar
 
-st.header("📊 Lernverlauf")
+render_sidebar()
+
+st.markdown("## 📊 Lernverlauf")
 st.caption("Korrekturen, Gedächtnis und Modell-Statistiken")
 
 clf: TransactionClassifier = st.session_state.classifier
@@ -57,7 +60,7 @@ if MEMORY_PATH.exists():
             })
         mem_df = pd.DataFrame(mem_rows)
 
-        st.dataframe(mem_df, use_container_width=True, hide_index=True,
+        st.dataframe(mem_df, width="stretch", hide_index=True,
                       height=min(len(mem_df) * 38 + 40, 400))
 
         st.metric("Gespeicherte Zuordnungen", len(memory))
@@ -94,7 +97,7 @@ if corrections:
         })
     corr_df = pd.DataFrame(corr_rows)
 
-    st.dataframe(corr_df, use_container_width=True, hide_index=True,
+    st.dataframe(corr_df, width="stretch", hide_index=True,
                   height=min(len(corr_df) * 38 + 40, 500))
 
     st.metric("Total Korrekturen", len(corrections))

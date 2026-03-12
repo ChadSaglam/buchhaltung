@@ -282,6 +282,29 @@ class TransactionClassifier:
 
     # ── Learning ─────────────────────────────────────────────────────────────
 
+    def save_to_memory(
+        self,
+        beschreibung: str,
+        kt_soll: str,
+        kt_haben: str,
+        mwst_code: str = "",
+        mwst_pct: str = "",
+    ):
+        """
+        Always save a mapping to memory — called when user confirms a booking.
+        This ensures the system learns even when the AI/ML got it right.
+        """
+        if not beschreibung.strip():
+            return
+        key = _make_memory_key(beschreibung)
+        self._memory[key] = {
+            "kt_soll": kt_soll,
+            "kt_haben": kt_haben,
+            "mwst_code": mwst_code,
+            "mwst_pct": mwst_pct,
+        }
+        self._save_memory()
+
     def log_correction(
         self,
         beschreibung: str,
@@ -295,16 +318,7 @@ class TransactionClassifier:
         Log a user correction and update the memory cache.
         Called when the user changes an account assignment in the editor.
         """
-        # Only log if something actually changed
-        if (
-            original.kt_soll == corrected_soll
-            and original.kt_haben == corrected_haben
-            and original.mwst_code == corrected_mwst_code
-            and original.mwst_pct == corrected_mwst_pct
-        ):
-            return
-
-        # Update in-memory exact-match cache
+        # Always save to memory (even if nothing changed)
         key = _make_memory_key(beschreibung)
         self._memory[key] = {
             "kt_soll": corrected_soll,
@@ -313,6 +327,15 @@ class TransactionClassifier:
             "mwst_pct": corrected_mwst_pct,
         }
         self._save_memory()
+
+        # Only log as correction if something actually changed
+        if (
+            original.kt_soll == corrected_soll
+            and original.kt_haben == corrected_haben
+            and original.mwst_code == corrected_mwst_code
+            and original.mwst_pct == corrected_mwst_pct
+        ):
+            return
 
         # Append to corrections log
         entry = {
@@ -519,12 +542,20 @@ class TransactionClassifier:
                 pickle.dump(pipeline, f)
             self._model = pipeline
 
+        # Store sklearn version for compatibility checking
+        try:
+            import sklearn
+            sklearn_ver = sklearn.__version__
+        except Exception:
+            sklearn_ver = "unknown"
+
         info = {
             "total_samples": len(df),
             "classes": int(y.nunique()),
             "cv_accuracy": cv_acc,
             "train_accuracy": train_acc,
             "trained_at": datetime.now().isoformat(),
+            "sklearn_version": sklearn_ver,
         }
         with open(MODEL_INFO_PATH, "w") as f:
             json.dump(info, f, indent=2)

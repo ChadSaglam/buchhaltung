@@ -3,7 +3,6 @@
   "classes": 37,
   "cv_accuracy": 0.8700787401574803,
   "train_accuracy": 0.9593175853018373,
-  "source_files": [
-    "Doppelte-Buchhaltung-mit-MWST-USt-2024.Buchungen.xls"
-  ]
+  "trained_at": "2026-03-12T17:02:15.292467",
+  "sklearn_version": "1.8.0"
 }
