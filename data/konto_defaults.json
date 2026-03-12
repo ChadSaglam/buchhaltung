@@ -1,0 +1,187 @@
+{
+  "1020": {
+    "KontoHaben": "3000",
+    "MwStCode": "V81",
+    "MwStUStProz": "-8.10"
+  },
+  "1100": {
+    "KontoHaben": "1020",
+    "MwStCode": "I26",
+    "MwStUStProz": "2.60"
+  },
+  "1120": {
+    "KontoHaben": "1020",
+    "MwStCode": "",
+    "MwStUStProz": ""
+  },
+  "1510": {
+    "KontoHaben": "1020",
+    "MwStCode": "",
+    "MwStUStProz": ""
+  },
+  "2205": {
+    "KontoHaben": "1020",
+    "MwStCode": "",
+    "MwStUStProz": ""
+  },
+  "3900": {
+    "KontoHaben": "1020",
+    "MwStCode": "",
+    "MwStUStProz": ""
+  },
+  "4000": {
+    "KontoHaben": "1020",
+    "MwStCode": "M81",
+    "MwStUStProz": "8.10"
+  },
+  "5000": {
+    "KontoHaben": "1020",
+    "MwStCode": "",
+    "MwStUStProz": ""
+  },
+  "5700": {
+    "KontoHaben": "1020",
+    "MwStCode": "",
+    "MwStUStProz": ""
+  },
+  "5720": {
+    "KontoHaben": "1020",
+    "MwStCode": "",
+    "MwStUStProz": ""
+  },
+  "5730": {
+    "KontoHaben": "1020",
+    "MwStCode": "",
+    "MwStUStProz": ""
+  },
+  "5820": {
+    "KontoHaben": "1020",
+    "MwStCode": "",
+    "MwStUStProz": ""
+  },
+  "5880": {
+    "KontoHaben": "1020",
+    "MwStCode": "",
+    "MwStUStProz": ""
+  },
+  "6000": {
+    "KontoHaben": "1020",
+    "MwStCode": "",
+    "MwStUStProz": ""
+  },
+  "6006": {
+    "KontoHaben": "1020",
+    "MwStCode": "I81",
+    "MwStUStProz": "8.10"
+  },
+  "6102": {
+    "KontoHaben": "1020",
+    "MwStCode": "",
+    "MwStUStProz": ""
+  },
+  "6200": {
+    "KontoHaben": "1020",
+    "MwStCode": "I81",
+    "MwStUStProz": "8.10"
+  },
+  "6210": {
+    "KontoHaben": "1020",
+    "MwStCode": "I81",
+    "MwStUStProz": "8.10"
+  },
+  "6220": {
+    "KontoHaben": "1020",
+    "MwStCode": "",
+    "MwStUStProz": ""
+  },
+  "6230": {
+    "KontoHaben": "1020",
+    "MwStCode": "",
+    "MwStUStProz": ""
+  },
+  "6260": {
+    "KontoHaben": "1020",
+    "MwStCode": "",
+    "MwStUStProz": ""
+  },
+  "6300": {
+    "KontoHaben": "1020",
+    "MwStCode": "",
+    "MwStUStProz": ""
+  },
+  "6400": {
+    "KontoHaben": "1020",
+    "MwStCode": "",
+    "MwStUStProz": ""
+  },
+  "6460": {
+    "KontoHaben": "1020",
+    "MwStCode": "",
+    "MwStUStProz": ""
+  },
+  "6500": {
+    "KontoHaben": "1020",
+    "MwStCode": "I81",
+    "MwStUStProz": "8.10"
+  },
+  "6503": {
+    "KontoHaben": "1020",
+    "MwStCode": "",
+    "MwStUStProz": ""
+  },
+  "6510": {
+    "KontoHaben": "1020",
+    "MwStCode": "I81",
+    "MwStUStProz": "8.10"
+  },
+  "6513": {
+    "KontoHaben": "1020",
+    "MwStCode": "",
+    "MwStUStProz": ""
+  },
+  "6530": {
+    "KontoHaben": "1020",
+    "MwStCode": "",
+    "MwStUStProz": ""
+  },
+  "6570": {
+    "KontoHaben": "1020",
+    "MwStCode": "",
+    "MwStUStProz": ""
+  },
+  "6600": {
+    "KontoHaben": "1020",
+    "MwStCode": "I81",
+    "MwStUStProz": "8.10"
+  },
+  "6661": {
+    "KontoHaben": "1020",
+    "MwStCode": "",
+    "MwStUStProz": ""
+  },
+  "6700": {
+    "KontoHaben": "1020",
+    "MwStCode": "",
+    "MwStUStProz": ""
+  },
+  "6840": {
+    "KontoHaben": "1020",
+    "MwStCode": "",
+    "MwStUStProz": ""
+  },
+  "6922": {
+    "KontoHaben": "1020",
+    "MwStCode": "I81",
+    "MwStUStProz": "8.10"
+  },
+  "8100": {
+    "KontoHaben": "6220",
+    "MwStCode": "",
+    "MwStUStProz": ""
+  },
+  "8900": {
+    "KontoHaben": "1020",
+    "MwStCode": "",
+    "MwStUStProz": ""
+  }
+}

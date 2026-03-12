@@ -1,0 +1,9 @@
+{
+  "total_samples": 762,
+  "classes": 37,
+  "cv_accuracy": 0.8700787401574803,
+  "train_accuracy": 0.9593175853018373,
+  "source_files": [
+    "Doppelte-Buchhaltung-mit-MWST-USt-2024.Buchungen.xls"
+  ]
+}
