@@ -287,7 +287,7 @@ if curl -sf http://localhost:8000/api/health > /dev/null 2>&1; then
   # Auth
   RESP=$(curl -sf -X POST http://localhost:8000/login \
     -H "Content-Type: application/json" \
-    -d "{\"email\":\"${TEST_EMAIL:-saglam.chad@chadev.ch}\",\"password\":\"${TEST_PASS:-Sahra/2015}\"}" 2>/dev/null || echo "")
+    -d "{\"email\":\"${TEST_EMAIL:-${ADMIN_EMAIL:-admin@localhost}}\",\"password\":\"${TEST_PASS:-${ADMIN_PASS:-changeme}}\"}" 2>/dev/null || echo "")
 
   if echo "$RESP" | python3 -c "import sys,json; json.load(sys.stdin)['access_token']" 2>/dev/null; then
     pass "Authentication works"

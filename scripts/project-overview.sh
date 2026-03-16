@@ -196,7 +196,7 @@ echo -e "${BOLD}ML Classifier${RESET}"
 if curl -sf http://localhost:8000/api/health > /dev/null 2>&1; then
   TOKEN=$(curl -sf -X POST http://localhost:8000/login \
     -H "Content-Type: application/json" \
-    -d "{\"email\":\"${ADMIN_EMAIL:-saglam.chad@chadev.ch}\",\"password\":\"${ADMIN_PASS:-Sahra/2015}\"}" 2>/dev/null \
+    -d "{\"email\":\"${ADMIN_EMAIL:-${ADMIN_EMAIL:-admin@localhost}}\",\"password\":\"${ADMIN_PASS:-${ADMIN_PASS:-changeme}}\"}" 2>/dev/null \
     | python3 -c "import sys,json; print(json.load(sys.stdin).get('access_token',''))" 2>/dev/null || echo "")
 
   if [ -n "$TOKEN" ]; then
