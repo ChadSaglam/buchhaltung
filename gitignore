@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+backend/venv/
+__pycache__/
+*.pyc
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Database
+*.db
+*.sqlite3
+
+# ML models
+backend/ml_models/
+backend/data/memory_*.json
+backend/data/corrections_*.json
+
+# Build
+.next/
+out/
+dist/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Docker
+docker-compose.override.yml
+
+# Logs
+*.log

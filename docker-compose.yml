@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - api
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://chadev:chadev@db:5432/chadev_buchhaltung
+      - DATABASE_URL_SYNC=postgresql://chadev:chadev@db:5432/chadev_buchhaltung
+      - SECRET_KEY=${SECRET_KEY}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - FROM_EMAIL=${FROM_EMAIL}
+      - OLLAMA_URL=http://ollama:11434
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - model_data:/app/data
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: chadev
+      POSTGRES_PASSWORD: chadev
+      POSTGRES_DB: chadev_buchhaltung
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chadev -d chadev_buchhaltung"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  ollama:
+    image: ollama/ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+
+volumes:
+  pgdata:
+  ollama_models:
+  model_data:
