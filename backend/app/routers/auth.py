@@ -13,7 +13,6 @@ from app.services.tenant_setup import seed_tenant
 
 router = APIRouter()
 
-
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     existing = await db.execute(select(User).where(User.email == body.email))
@@ -37,7 +36,6 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     token = create_access_token({"sub": str(user.id), "tenant_id": tenant.id})
     return TokenResponse(access_token=token)
 
-
 @router.post("/login", response_model=TokenResponse)
 async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.email == body.email))
@@ -46,7 +44,6 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     token = create_access_token({"sub": str(user.id), "tenant_id": user.tenant_id})
     return TokenResponse(access_token=token)
-
 
 @router.get("/me", response_model=UserResponse)
 async def me(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):

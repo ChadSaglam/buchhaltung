@@ -29,23 +29,21 @@ export { api };
 // Default export (used by Phase 1 pages)
 export default api;
 
-
 // ── Auth ─────────────────────────────────────────
 export async function register(email: string, password: string, tenantName: string, displayName: string) {
-  const res = await api.post('/register', { email, password, tenant_name: tenantName, display_name: displayName });
+  const res = await api.post('/api/auth/register', { email, password, tenant_name: tenantName, display_name: displayName });
   return res.data;
 }
 
 export async function login(email: string, password: string) {
-  const res = await api.post('/login', { email, password });
+  const res = await api.post('/api/auth/login', { email, password });
   return res.data;
 }
 
 export async function getMe() {
-  const res = await api.get('/me');
+  const res = await api.get('/api/auth/me');
   return res.data;
 }
-
 
 // ── Classifier ───────────────────────────────────
 export async function classify(beschreibung: string, betrag: number, isCredit: boolean) {
@@ -72,7 +70,6 @@ export async function getClassifierInfo() {
   return res.data;
 }
 
-
 // ── Bookings ─────────────────────────────────────
 export async function getBookings(source?: string, limit = 500) {
   const params: Record<string, string | number> = { limit };
@@ -90,7 +87,6 @@ export async function getBookingStats() {
   const res = await api.get('/api/bookings/stats');
   return res.data;
 }
-
 
 // ── Kontenplan ───────────────────────────────────
 export async function getKontenplan() {

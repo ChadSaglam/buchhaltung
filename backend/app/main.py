@@ -13,7 +13,6 @@ async def lifespan(application: FastAPI):
         await conn.run_sync(Base.metadata.create_all)
     yield
 
-
 application = FastAPI(title="RDS Buchhaltung API", version="2.0.0", lifespan=lifespan)
 
 application.add_middleware(
@@ -27,7 +26,7 @@ application.add_middleware(
 from app.routers import auth, classify, bookings, kontenplan as kontenplan_router
 from app.routers import export, scanner, pdf, classify_extra, stats, import_data
 
-application.include_router(auth.router)
+application.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 application.include_router(classify.router)
 application.include_router(classify_extra.router)
 application.include_router(bookings.router)
@@ -38,10 +37,8 @@ application.include_router(pdf.router)
 application.include_router(stats.router)
 application.include_router(import_data.router)
 
-
 @application.get("/api/health")
 async def health():
     return {"status": "ok"}
-
 
 app = application
