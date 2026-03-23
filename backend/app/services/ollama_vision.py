@@ -53,6 +53,12 @@ INVOICE_SCHEMA = {
 _status_cache: dict = {"data": None, "ts": 0}
 _CACHE_TTL = 60
 
+KNOWN_VISION_FAMILIES = [
+    "gemma3", "llava", "llava-llama3", "llava-phi3", "bakllava",
+    "moondream", "minicpm-v", "llava-v1.6", "kimi-k2.5",
+    "cogvlm2", "internvl2",
+]
+
 def check_ollama_status() -> dict:
     now = time.time()
     if _status_cache["data"] and (now - _status_cache["ts"]) < _CACHE_TTL:
@@ -61,6 +67,12 @@ def check_ollama_status() -> dict:
     _status_cache["data"] = result
     _status_cache["ts"] = now
     return result
+
+def _is_known_vision(name: str) -> bool:
+    """Fast check against known vision model families."""
+    base = name.split(":")[0].lower()
+    return any(base.startswith(family) for family in KNOWN_VISION_FAMILIES)
+
 
 def _check_ollama_status_impl() -> dict:
     try:
@@ -71,21 +83,36 @@ def _check_ollama_status_impl() -> dict:
         if not models:
             return {"ok": False, "error": "Keine Modelle installiert."}
 
+        model_names = [m["name"] for m in models]
+
         def check_vision(name: str) -> str | None:
+            # Fast path: known vision families
+            if _is_known_vision(name):
+                return name
+            # Slow path: ask Ollama for capabilities
             try:
-                r = requests.post(f"{OLLAMA_URL}/api/show", json={"name": name}, timeout=10)
+                r = requests.post(
+                    f"{OLLAMA_URL}/api/show", json={"name": name}, timeout=10
+                )
                 if r.status_code == 200:
-                    caps = r.json().get("capabilities", [])
+                    data = r.json()
+                    caps = data.get("capabilities", [])
                     if any("vision" in c.lower() for c in caps):
+                        return name
+                    # Some models expose it in model_info
+                    model_info = data.get("model_info", {})
+                    if any("vision" in str(v).lower() for v in model_info.values()):
                         return name
             except Exception:
                 pass
             return None
 
-        model_names = [m["name"] for m in models]
         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
             results = pool.map(check_vision, model_names)
         vision_names = [n for n in results if n]
+
+        # Sort: local vision first, then cloud vision
+        vision_names.sort(key=lambda n: (1 if _is_cloud_model(n) else 0))
 
         return {
             "ok": True,
@@ -93,6 +120,7 @@ def _check_ollama_status_impl() -> dict:
             "vision_models": vision_names,
             "best_vision": vision_names[0] if vision_names else None,
         }
+
     except requests.ConnectionError:
         return {"ok": False, "error": "Ollama nicht erreichbar. `ollama serve` starten."}
     except Exception as e:
@@ -156,7 +184,7 @@ def extract_invoice(image_bytes: bytes, model: str) -> dict | None:
     img_b64 = base64.b64encode(image_bytes).decode("utf-8")
     is_cloud = _is_cloud_model(model)
     formats = ["plain"] if is_cloud else ["schema", "plain"]
-    timeout = 30 if is_cloud else 60
+    timeout = 60 if is_cloud else 120
 
     for use_format in formats:
         payload: dict = {
@@ -210,14 +238,13 @@ def extract_invoice(image_bytes: bytes, model: str) -> dict | None:
 
     return None
 
-
 def extract_invoice_with_pipeline(
     image_bytes: bytes, vision_model_names: list[str],
 ) -> tuple[dict | None, dict]:
     pipeline_info: dict = {"pipeline": "buchhaltung", "steps": []}
 
-    # Force kimi cloud, fallback to gemma3:4b offline only
-    PREFERRED = ["kimi-k2.5:cloud", "gemma3:4b"]
+    # Prefer local gemma3:12b (fast, reliable), then cloud, then smaller
+    PREFERRED = ["gemma3:12b", "gemma3:4b", "kimi-k2.5:cloud"]
     ranked = [m for m in PREFERRED if m in vision_model_names]
 
     if not ranked:
