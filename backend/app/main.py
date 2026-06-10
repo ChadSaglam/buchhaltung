@@ -16,7 +16,7 @@ async def lifespan(application: FastAPI):
         await conn.run_sync(Base.metadata.create_all)
     yield
 
-application = FastAPI(title="RDS Buchhaltung API", version="2.0.0", lifespan=lifespan)
+application = FastAPI(title="Buchhaltung API", version="2.0.0", lifespan=lifespan)
 
 application.add_middleware(
     CORSMiddleware,

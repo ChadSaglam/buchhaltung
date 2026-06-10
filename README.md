@@ -1,4 +1,4 @@
-# 📒 RDS Buchhaltung
+# 📒 Buchhaltung
 
 Self-learning Swiss bookkeeping SaaS powered by AI vision and machine learning.
 
@@ -9,7 +9,7 @@ Self-learning Swiss bookkeeping SaaS powered by AI vision and machine learning.
 
 ## Overview
 
-RDS Buchhaltung automates Swiss SME bookkeeping by combining AI-powered document scanning with a self-learning classification engine. Upload a receipt photo or bank statement PDF — the system extracts all data, classifies it to the correct accounts, and exports Banana-compatible bookings.
+Buchhaltung automates Swiss SME bookkeeping by combining AI-powered document scanning with a self-learning classification engine. Upload a receipt photo or bank statement PDF — the system extracts all data, classifies it to the correct accounts, and exports Banana-compatible bookings.
 
 ### Key Features
 

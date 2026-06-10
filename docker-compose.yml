@@ -19,8 +19,8 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://chadev:chadev@db:5432/chadev_buchhaltung
-      - DATABASE_URL_SYNC=postgresql://chadev:chadev@db:5432/chadev_buchhaltung
+      - DATABASE_URL=postgresql://chadev:Chadev%2F2202@localhost:5432/buchhaltung
+      - DATABASE_URL_SYNC=postgresql://chadev:Chadev%2F2202@db:5432/buchhaltung
       - SECRET_KEY=${SECRET_KEY}
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_PORT=${SMTP_PORT}

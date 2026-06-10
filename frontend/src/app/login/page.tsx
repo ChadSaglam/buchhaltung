@@ -39,7 +39,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <h1 className="text-xl font-bold">📗 RDS Buchhaltung</h1>
+          <h1 className="text-xl font-bold">📗 Buchhaltung</h1>
           <p className="text-sm text-gray-500">Anmelden</p>
         </CardHeader>
         <CardContent>
