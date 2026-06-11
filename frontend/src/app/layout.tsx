@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
-  title: 'RDS Buchhaltung',
+  title: 'Buchhaltung',
   description: 'Self-learning Swiss bookkeeping SaaS',
 };
 

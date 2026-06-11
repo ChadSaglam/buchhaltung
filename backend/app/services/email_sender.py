@@ -143,7 +143,7 @@ def _build_html_body(df: pd.DataFrame, today: str, timestamp: str) -> str:
         <tr>
           <td style="background:#f8fafc;padding:20px 40px;border-top:1px solid #e2e8f0;">
             <p style="margin:0;font-size:12px;color:#94a3b8;text-align:center;">
-              Automatisch gesendet von <strong style="color:#64748b;">RDS Buchhaltung</strong> · {today}
+              Automatisch gesendet von <strong style="color:#64748b;">Buchhaltung</strong> · {today}
             </p>
           </td>
         </tr>
@@ -187,7 +187,7 @@ def send_bookkeeping_email(
         f"Buchhaltung Export — {today}\n"
         f"Buchungen: {nrows}\n\n"
         f"Siehe Anhänge für Details.\n\n"
-        f"— RDS Buchhaltung"
+        f"— Buchhaltung"
     )
     alt_part.attach(MIMEText(plain_text, "plain", "utf-8"))
     alt_part.attach(MIMEText(html_content, "html", "utf-8"))
