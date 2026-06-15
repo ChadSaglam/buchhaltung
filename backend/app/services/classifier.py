@@ -8,25 +8,28 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold, cross_val_score
-from sklearn.pipeline import Pipeline, FeatureUnion
-from sqlalchemy import select, func
+from sklearn.pipeline import FeatureUnion, Pipeline
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.memory import Memory
-from app.models.correction import Correction
-from app.models.training_data import TrainingRow
 from app.models.classifier_model import ClassifierModel
+from app.models.correction import Correction
 from app.models.kontenplan import KontoDefault
+from app.models.memory import Memory
+from app.models.training_data import TrainingRow
 
 CONFIDENCE_THRESHOLD = 0.45
 AUTO_RETRAIN_THRESHOLD = 20
+RULE_CONFIDENCE = 0.72
+DEFAULT_RULE_CONFIDENCE = 0.35
 
-# ── Text preprocessing (unchanged from original) ──────────────
 
 def preprocess(text: str) -> str:
-    text = text.lower().strip()
+    text = (text or "").lower().strip()
     text = re.sub(
-        r"(januar|februar|märz|april|mai|juni|juli|august|september|oktober|november|dezember)", "", text
+        r"(januar|februar|märz|april|mai|juni|juli|august|september|oktober|november|dezember)",
+        "",
+        text,
     )
     text = re.sub(r"(jan|feb|mr|apr|jun|jul|aug|sep|okt|nov|dez)", "", text)
     text = re.sub(r"[\d]", "", text)
@@ -51,7 +54,6 @@ def calc_mwst(betrag: float, mwst_pct: str) -> float | str:
         return ""
 
 
-# ── Classification rules (unchanged from original) ────────────
 CLASSIFICATION_RULES: list[tuple[list[str], str, str, str, str]] = [
     (["iso-trade", "iso-center", "isolier", "material", "baumate", "spenglerei", "werkzeug", "schrauben", "befestigung"], "4000", "1020", "M81", "8.10"),
     (["handelsware", "einkauf waren", "grosshandel"], "4200", "1020", "M81", "8.10"),
@@ -96,8 +98,6 @@ class ClassificationResult:
 
 
 class TenantClassifier:
-    """Async, tenant-scoped classifier backed by PostgreSQL."""
-
     def __init__(self, tenant_id: int, db: AsyncSession):
         self.tenant_id = tenant_id
         self.db = db
@@ -122,7 +122,11 @@ class TenantClassifier:
             select(KontoDefault).where(KontoDefault.tenant_id == self.tenant_id)
         )
         self._konto_defaults = {
-            r.konto_soll: {"KontoHaben": r.konto_haben, "MwStCode": r.mwst_code, "MwStUStProz": r.mwst_pct}
+            r.konto_soll: {
+                "KontoHaben": r.konto_haben,
+                "MwStCode": r.mwst_code,
+                "MwStUStProz": r.mwst_pct,
+            }
             for r in result.scalars().all()
         }
         return self._konto_defaults
@@ -131,11 +135,15 @@ class TenantClassifier:
         if is_credit:
             pct = 8.10
             return ClassificationResult(
-                kt_soll="1020", kt_haben="3000", mwst_code="V81", mwst_pct="-8.10",
-                mwst_amount=round(-betrag * pct / (100 + pct), 2), confidence=1.0, source="Regeln",
+                kt_soll="1020",
+                kt_haben="3000",
+                mwst_code="V81",
+                mwst_pct="-8.10",
+                mwst_amount=round(-betrag * pct / (100 + pct), 2),
+                confidence=1.0,
+                source="Regeln",
             )
 
-        # Layer 1: Memory
         key = make_memory_key(beschreibung)
         result = await self.db.execute(
             select(Memory).where(Memory.tenant_id == self.tenant_id, Memory.lookup_key == key)
@@ -143,11 +151,15 @@ class TenantClassifier:
         mem = result.scalar_one_or_none()
         if mem:
             return ClassificationResult(
-                kt_soll=mem.kt_soll, kt_haben=mem.kt_haben, mwst_code=mem.mwst_code, mwst_pct=mem.mwst_pct,
-                mwst_amount=calc_mwst(betrag, mem.mwst_pct), confidence=1.0, source="Gedächtnis",
+                kt_soll=mem.kt_soll,
+                kt_haben=mem.kt_haben,
+                mwst_code=mem.mwst_code,
+                mwst_pct=mem.mwst_pct,
+                mwst_amount=calc_mwst(betrag, mem.mwst_pct),
+                confidence=1.0,
+                source="Gedächtnis",
             )
 
-        # Layer 2: ML
         model = await self._load_model()
         if model is not None:
             clean = preprocess(beschreibung)
@@ -160,27 +172,50 @@ class TenantClassifier:
                 mwst_code = defaults.get("MwStCode", "")
                 mwst_pct = defaults.get("MwStUStProz", "")
                 return ClassificationResult(
-                    kt_soll=predicted_soll, kt_haben=kt_haben, mwst_code=mwst_code, mwst_pct=mwst_pct,
-                    mwst_amount=calc_mwst(betrag, mwst_pct), confidence=confidence, source="ML",
+                    kt_soll=predicted_soll,
+                    kt_haben=kt_haben,
+                    mwst_code=mwst_code,
+                    mwst_pct=mwst_pct,
+                    mwst_amount=calc_mwst(betrag, mwst_pct),
+                    confidence=confidence,
+                    source="ML",
                 )
 
-        # Layer 3: Rules
         return self._classify_rules(beschreibung, betrag)
 
     def _classify_rules(self, beschreibung: str, betrag: float) -> ClassificationResult:
-        desc_lower = beschreibung.lower()
+        desc_lower = (beschreibung or "").lower()
         for keywords, account, gegen, code, pct in CLASSIFICATION_RULES:
-            if any(kw in desc_lower for kw in keywords):
+            matched = [kw for kw in keywords if kw in desc_lower]
+            if matched:
+                confidence = min(0.95, RULE_CONFIDENCE + (len(matched) - 1) * 0.08)
                 return ClassificationResult(
-                    kt_soll=account, kt_haben=gegen, mwst_code=code, mwst_pct=pct,
-                    mwst_amount=calc_mwst(betrag, pct), confidence=0.0, source="Regeln",
+                    kt_soll=account,
+                    kt_haben=gegen,
+                    mwst_code=code,
+                    mwst_pct=pct,
+                    mwst_amount=calc_mwst(betrag, pct),
+                    confidence=confidence,
+                    source="Regeln",
                 )
         return ClassificationResult(
-            kt_soll="6500", kt_haben="1020", mwst_code="", mwst_pct="",
-            mwst_amount="", confidence=0.0, source="Regeln",
+            kt_soll="6500",
+            kt_haben="1020",
+            mwst_code="",
+            mwst_pct="",
+            mwst_amount="",
+            confidence=DEFAULT_RULE_CONFIDENCE,
+            source="Regeln",
         )
 
-    async def save_to_memory(self, beschreibung: str, kt_soll: str, kt_haben: str, mwst_code: str = "", mwst_pct: str = ""):
+    async def save_to_memory(
+        self,
+        beschreibung: str,
+        kt_soll: str,
+        kt_haben: str,
+        mwst_code: str = "",
+        mwst_pct: str = "",
+    ):
         if not beschreibung.strip():
             return
         key = make_memory_key(beschreibung)
@@ -194,25 +229,53 @@ class TenantClassifier:
             existing.mwst_code = mwst_code
             existing.mwst_pct = mwst_pct
         else:
-            self.db.add(Memory(
-                tenant_id=self.tenant_id, lookup_key=key,
-                kt_soll=kt_soll, kt_haben=kt_haben, mwst_code=mwst_code, mwst_pct=mwst_pct,
-            ))
+            self.db.add(
+                Memory(
+                    tenant_id=self.tenant_id,
+                    lookup_key=key,
+                    kt_soll=kt_soll,
+                    kt_haben=kt_haben,
+                    mwst_code=mwst_code,
+                    mwst_pct=mwst_pct,
+                )
+            )
 
-    async def log_correction(self, beschreibung: str, original: ClassificationResult,
-                            corrected_soll: str, corrected_haben: str,
-                            corrected_mwst_code: str = "", corrected_mwst_pct: str = ""):
-        await self.save_to_memory(beschreibung, corrected_soll, corrected_haben, corrected_mwst_code, corrected_mwst_pct)
-        if (original.kt_soll == corrected_soll and original.kt_haben == corrected_haben
-                and original.mwst_code == corrected_mwst_code and original.mwst_pct == corrected_mwst_pct):
+    async def log_correction(
+        self,
+        beschreibung: str,
+        original: ClassificationResult,
+        corrected_soll: str,
+        corrected_haben: str,
+        corrected_mwst_code: str = "",
+        corrected_mwst_pct: str = "",
+    ):
+        await self.save_to_memory(
+            beschreibung,
+            corrected_soll,
+            corrected_haben,
+            corrected_mwst_code,
+            corrected_mwst_pct,
+        )
+        if (
+            original.kt_soll == corrected_soll
+            and original.kt_haben == corrected_haben
+            and original.mwst_code == corrected_mwst_code
+            and original.mwst_pct == corrected_mwst_pct
+        ):
             return
-        self.db.add(Correction(
-            tenant_id=self.tenant_id, beschreibung=beschreibung,
-            original_soll=original.kt_soll, original_haben=original.kt_haben,
-            corrected_soll=corrected_soll, corrected_haben=corrected_haben,
-            corrected_mwst_code=corrected_mwst_code, corrected_mwst_pct=corrected_mwst_pct,
-        ))
-        # ── NEW: Auto-retrain every N corrections ──
+
+        self.db.add(
+            Correction(
+                tenant_id=self.tenant_id,
+                beschreibung=beschreibung,
+                original_soll=original.kt_soll,
+                original_haben=original.kt_haben,
+                corrected_soll=corrected_soll,
+                corrected_haben=corrected_haben,
+                corrected_mwst_code=corrected_mwst_code,
+                corrected_mwst_pct=corrected_mwst_pct,
+            )
+        )
         count = await self.correction_count()
         if count > 0 and count % AUTO_RETRAIN_THRESHOLD == 0:
             await self.train_from_db()
@@ -237,20 +300,20 @@ class TenantClassifier:
         if not row:
             return None
         return {
-            "total_samples": row.total_samples, "classes": row.num_classes,
-            "cv_accuracy": row.cv_accuracy, "train_accuracy": row.train_accuracy,
-            "sklearn_version": row.sklearn_version, "updated_at": str(row.updated_at),
+            "total_samples": row.total_samples,
+            "classes": row.num_classes,
+            "cv_accuracy": row.cv_accuracy,
+            "train_accuracy": row.train_accuracy,
+            "sklearn_version": row.sklearn_version,
+            "updated_at": str(row.updated_at),
         }
 
     async def train_from_db(self) -> dict:
-        """Train model from all training data + corrections for this tenant."""
-        # Gather training rows
         result = await self.db.execute(
             select(TrainingRow).where(TrainingRow.tenant_id == self.tenant_id)
         )
         training_rows = result.scalars().all()
 
-        # Gather corrections
         result = await self.db.execute(
             select(Correction).where(Correction.tenant_id == self.tenant_id)
         )
@@ -277,24 +340,45 @@ class TenantClassifier:
         X = df["text_clean"]
         y = df["KontoSoll"]
 
+        pipeline = Pipeline(
+            [
+                (
+                    "features",
+                    FeatureUnion(
+                        [
+                            (
+                                "tfidf_char",
+                                TfidfVectorizer(
+                                    analyzer="char_wb",
+                                    ngram_range=(2, 5),
+                                    max_features=6000,
+                                    sublinear_tf=True,
+                                ),
+                            ),
+                            (
+                                "tfidf_word",
+                                TfidfVectorizer(
+                                    analyzer="word",
+                                    ngram_range=(1, 2),
+                                    max_features=4000,
+                                    sublinear_tf=True,
+                                ),
+                            ),
+                        ]
+                    ),
+                ),
+                (
+                    "clf",
+                    LogisticRegression(
+                        max_iter=1000,
+                        C=5.0,
+                        class_weight="balanced",
+                        solver="lbfgs",
+                    ),
+                ),
+            ]
+        )
 
-        pipeline = Pipeline([
-            ("features", FeatureUnion([
-                ("tfidf_char", TfidfVectorizer(
-                    analyzer="char_wb", ngram_range=(2, 5),
-                    max_features=6000, sublinear_tf=True,
-                )),
-                ("tfidf_word", TfidfVectorizer(
-                    analyzer="word", ngram_range=(1, 2),
-                    max_features=4000, sublinear_tf=True,
-                )),
-            ])),
-            ("clf", LogisticRegression(
-                max_iter=1000, C=5.0,
-                class_weight="balanced", solver="lbfgs",
-            )),
-        ])
-       
         min_count = y.value_counts().min()
         n_folds = min(5, max(2, min_count))
         cv_acc = None
@@ -311,6 +395,7 @@ class TenantClassifier:
         self._model = pipeline
 
         import sklearn
+
         model_blob = pickle.dumps(pipeline)
 
         result = await self.db.execute(
@@ -325,14 +410,21 @@ class TenantClassifier:
             existing.train_accuracy = train_acc
             existing.sklearn_version = sklearn.__version__
         else:
-            self.db.add(ClassifierModel(
-                tenant_id=self.tenant_id, model_blob=model_blob,
-                total_samples=len(df), num_classes=int(y.nunique()),
-                cv_accuracy=cv_acc, train_accuracy=train_acc,
-                sklearn_version=sklearn.__version__,
-            ))
+            self.db.add(
+                ClassifierModel(
+                    tenant_id=self.tenant_id,
+                    model_blob=model_blob,
+                    total_samples=len(df),
+                    num_classes=int(y.nunique()),
+                    cv_accuracy=cv_acc,
+                    train_accuracy=train_acc,
+                    sklearn_version=sklearn.__version__,
+                )
+            )
 
         return {
-            "total_samples": len(df), "classes": int(y.nunique()),
-            "cv_accuracy": cv_acc, "train_accuracy": train_acc,
+            "total_samples": len(df),
+            "classes": int(y.nunique()),
+            "cv_accuracy": cv_acc,
+            "train_accuracy": train_acc,
         }

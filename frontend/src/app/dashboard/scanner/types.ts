@@ -1,9 +1,50 @@
+export interface ScannerModelInfo {
+  name: string;
+  provider?: "ocr" | "vision" | "text" | string;
+  kind?: "local" | "cloud" | string;
+  available?: boolean;
+  working?: boolean;
+  status_label?: string;
+}
+
+export interface ScannerPipelineInfo {
+  step: number;
+  type: string;
+  name?: string;
+  kind?: string;
+  models?: string[];
+  available?: boolean;
+  status_label?: string;
+}
+
+export interface ScannerAttempt {
+  provider: string;
+  name: string;
+  kind: string;
+  status: "active" | "done" | "failed" | "pending";
+  index?: number;
+  available?: boolean;
+}
+
+export interface ScannerEventStep {
+  icon: string;
+  label: string;
+  status: "active" | "done" | "failed" | "pending";
+  model?: string;
+  provider?: string;
+  source?: string;
+  confidence?: number;
+}
+
 export interface OllamaStatus {
   ok: boolean;
   error?: string;
-  models?: { name: string }[];
+  models?: ScannerModelInfo[];
   vision_models?: string[];
   best_vision?: string | null;
+  scanner_mode?: string;
+  pipeline?: ScannerPipelineInfo[];
+  custom_ocr_available?: boolean;
 }
 
 export interface ExtractedInvoice {
@@ -21,6 +62,14 @@ export interface ExtractedInvoice {
   mwst_amount?: number;
   classification_confidence?: number;
   classification_source?: string;
+  classification_input?: string;
+  vision_model?: string;
+  ocr_provider?: string;
+  ocr_worked?: boolean;
+  custom_ocr_available?: boolean;
+  scanner_steps?: ScannerEventStep[];
+  scanner_attempts?: ScannerAttempt[];
+  scanner_providers?: { type: string; name: string; kind: string }[];
 }
 
 export interface ClassificationResult {

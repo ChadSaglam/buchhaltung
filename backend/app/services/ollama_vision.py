@@ -157,6 +157,85 @@ def _validate_and_fix(data: dict) -> dict:
 
     return data
 
+def parse_invoice_text(text: str) -> dict | None:
+    """Parse raw OCR text into the invoice dict shape (no LLM, works without Ollama)."""
+    if not text or not text.strip():
+        return None
+
+    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+    if not lines:
+        return None
+
+    date = ""
+    for d, mo, y in re.findall(r"\b(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{2,4})\b", text):
+        day, month, year = int(d), int(mo), len(y) == 2 and int(f"20{y}") or int(y)
+        if 1 <= day <= 31 and 1 <= month <= 12 and 2000 <= year <= 2100:
+            date = f"{day:02d}.{month:02d}.{year}"
+            break
+
+    invoice_number = ""
+    inv_match = re.search(
+        r"(?:Bon|Beleg|Rechnung(?:s)?[- ]?Nr\.?|Trx[- ]?Id|Quittung)[^\dA-Za-z]*([A-Za-z0-9\-]+)",
+        text,
+        re.IGNORECASE,
+    )
+    if inv_match:
+        invoice_number = inv_match.group(1)
+
+    def _to_float(raw: str) -> float:
+        raw = raw.replace("'", "").replace(" ", "").replace(",", ".")
+        try:
+            return float(raw)
+        except ValueError:
+            return 0.0
+
+    amount_re = r"(\d[\d'’ ]*[.,]\d{2})"
+    total_amount = 0.0
+    for keyword in ("total", "summe", "betrag", "zu zahlen", "gesamt"):
+        for ln in lines:
+            if keyword in ln.lower():
+                m = re.findall(amount_re, ln)
+                if m:
+                    total_amount = _to_float(m[-1])
+                    break
+        if total_amount:
+            break
+
+    if not total_amount:
+        all_amounts = [_to_float(m) for m in re.findall(amount_re, text)]
+        if all_amounts:
+            total_amount = max(all_amounts)
+
+    vat_rate = 0.0
+    vat_match = re.search(r"(\d{1,2}[.,]\d)\s*%", text)
+    if vat_match:
+        vat_rate = _to_float(vat_match.group(1))
+
+    vendor = ""
+    for ln in lines:
+        if re.fullmatch(r"[\d\W]+", ln):
+            continue
+        if re.search(r"\d{2}[.\-/]\d{2}", ln):
+            continue
+        vendor = ln[:80]
+        break
+
+    if not vendor and total_amount == 0:
+        return None
+
+    data = {
+        "vendor": vendor,
+        "date": date,
+        "invoice_number": invoice_number,
+        "total_amount": total_amount,
+        "net_amount": 0,
+        "vat_amount": 0,
+        "vat_rate": vat_rate,
+        "description": " ".join(lines[:3])[:200],
+        "line_items": [],
+    }
+    return _validate_and_fix(data)
+
 def _parse_json_response(content: str) -> dict | None:
     if not content or not content.strip():
         return None

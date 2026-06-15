@@ -9,6 +9,9 @@ export interface PipelineStep {
   label: string;
   status: "active" | "done" | "failed" | "pending";
   model?: string;
+  provider?: string;
+  source?: string;
+  confidence?: number;
 }
 
 interface ProcessingOverlayProps {
@@ -25,7 +28,7 @@ function StepIcon({ status }: { status: PipelineStep["status"] }) {
     case "failed":
       return <XCircle className="h-4 w-4 text-red-500" />;
     case "active":
-      return <Loader2 className="h-4 w-4 text-brand-600 animate-spin" />;
+      return <Loader2 className="h-4 w-4 animate-spin text-brand-600" />;
     default:
       return <Circle className="h-4 w-4 text-muted-foreground/30" />;
   }
@@ -34,7 +37,7 @@ function StepIcon({ status }: { status: PipelineStep["status"] }) {
 export function ProcessingOverlay({ steps, fileName, elapsed, isCloud }: ProcessingOverlayProps) {
   const doneCount = steps.filter((s) => s.status === "done").length;
   const progress = steps.length > 0 ? Math.min((doneCount / Math.max(steps.length, 3)) * 100, 95) : 5;
-  const activeStep = steps.findLast((s) => s.status === "active");
+  const activeStep = [...steps].reverse().find((s) => s.status === "active");
 
   return (
     <motion.div
@@ -42,9 +45,8 @@ export function ProcessingOverlay({ steps, fileName, elapsed, isCloud }: Process
       animate={{ opacity: 1, y: 0 }}
       className="rounded-2xl border border-brand-200 bg-gradient-to-br from-brand-50 to-white p-6 sm:p-8"
     >
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-5">
-        <Loader2 className="h-6 w-6 text-brand-600 animate-spin" />
+      <div className="mb-5 flex items-center gap-3">
+        <Loader2 className="h-6 w-6 animate-spin text-brand-600" />
         <div>
           <p className="text-base font-semibold text-foreground">
             {activeStep ? `${activeStep.icon} ${activeStep.label}` : "Verarbeitung läuft..."}
@@ -53,11 +55,10 @@ export function ProcessingOverlay({ steps, fileName, elapsed, isCloud }: Process
         </div>
       </div>
 
-      {/* Progress bar */}
       <div className="mb-5">
-        <div className="h-2 rounded-full bg-brand-100 overflow-hidden">
+        <div className="overflow-hidden rounded-full bg-brand-100">
           <motion.div
-            className="h-full rounded-full bg-brand-600"
+            className="h-2 rounded-full bg-brand-600"
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.4 }}
           />
@@ -68,34 +69,45 @@ export function ProcessingOverlay({ steps, fileName, elapsed, isCloud }: Process
         </div>
       </div>
 
-      {/* Pipeline steps */}
       <div className="space-y-1">
         <AnimatePresence mode="popLayout">
           {steps.map((step, i) => (
             <motion.div
-              key={`${i}-${step.label}`}
+              key={`${i}-${step.label}-${step.model ?? ""}`}
               initial={{ opacity: 0, x: -8, height: 0 }}
               animate={{ opacity: 1, x: 0, height: "auto" }}
               transition={{ duration: 0.2 }}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm",
+                "rounded-lg px-3 py-2 text-sm",
                 step.status === "active" && "bg-brand-50",
-                step.status === "failed" && "bg-red-50/50",
+                step.status === "failed" && "bg-red-50/50"
               )}
             >
-              <StepIcon status={step.status} />
-              <span className="text-sm">{step.icon}</span>
-              <span className={cn(
-                "flex-1",
-                step.status === "done" && "text-emerald-700",
-                step.status === "failed" && "text-red-600",
-                step.status === "active" && "text-brand-700 font-medium",
-                step.status === "pending" && "text-muted-foreground",
-              )}>
-                {step.label}
-              </span>
-              {step.model && (
-                <span className="text-[11px] text-muted-foreground font-mono">{step.model}</span>
+              <div className="flex items-center gap-3">
+                <StepIcon status={step.status} />
+                <span className="text-sm">{step.icon}</span>
+                <span
+                  className={cn(
+                    "flex-1",
+                    step.status === "done" && "text-emerald-700",
+                    step.status === "failed" && "text-red-600",
+                    step.status === "active" && "font-medium text-brand-700",
+                    step.status === "pending" && "text-muted-foreground"
+                  )}
+                >
+                  {step.label}
+                </span>
+                {step.model && (
+                  <span className="font-mono text-[11px] text-muted-foreground">{step.model}</span>
+                )}
+              </div>
+
+              {(step.provider || step.source || typeof step.confidence === "number") && (
+                <div className="mt-1 pl-10 text-[11px] text-muted-foreground">
+                  {[step.provider, step.source, typeof step.confidence === "number" ? `${Math.round(step.confidence * 100)}%` : null]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </div>
               )}
             </motion.div>
           ))}
