@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import os
 import shutil
 import subprocess
@@ -19,10 +20,10 @@ class TesseractOcrProvider(BaseOcrProvider):
         self.language = language
 
     def is_available(self) -> bool:
-        binary = self.command.split(" ", 1)[0]   # "tesseract"
+        binary = self.command.split(" ", 1)[0]
         return shutil.which(binary) is not None
 
-    def extract(self, scanner_file: ScannerFile) -> ProviderExtractionResult:
+    async def extract_async(self, scanner_file: ScannerFile) -> ProviderExtractionResult:
         attempts = [
             ScannerAttempt(
                 provider="ocr",
@@ -70,14 +71,39 @@ class TesseractOcrProvider(BaseOcrProvider):
             tmp_path = tmp.name
 
         try:
-            command = self.command.split() + [tmp_path, "stdout", "-l", self.language]
-            completed = subprocess.run(
-                command,
-                capture_output=True,
-                text=True,
-                check=False,
-                timeout=120,
-            )
+            cmd = self.command.split() + [tmp_path, "stdout", "-l", self.language]
+
+            def _run() -> subprocess.CompletedProcess:
+                return subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                    timeout=120,
+                )
+
+            try:
+                completed = await asyncio.get_event_loop().run_in_executor(None, _run)
+            except subprocess.TimeoutExpired:
+                attempts[0].status = "failed"
+                steps.append(
+                    ScannerEventStep(
+                        icon="⏱️",
+                        label="Eigene OCR Timeout, Vision-Fallback startet",
+                        status="failed",
+                        provider="ocr",
+                        model=self.name,
+                    )
+                )
+                return ProviderExtractionResult(
+                    data=None,
+                    steps=steps,
+                    attempts=attempts,
+                    providers=providers,
+                    ocr_provider=self.name,
+                    ocr_worked=False,
+                    error="OCR Timeout.",
+                )
 
             if completed.returncode != 0:
                 attempts[0].status = "failed"
@@ -141,25 +167,9 @@ class TesseractOcrProvider(BaseOcrProvider):
                 ocr_provider=self.name,
                 ocr_worked=True,
             )
-        except subprocess.TimeoutExpired:
-            attempts[0].status = "failed"
-            steps.append(
-                ScannerEventStep(
-                    icon="⏱️",
-                    label="Eigene OCR Timeout, Vision-Fallback startet",
-                    status="failed",
-                    provider="ocr",
-                    model=self.name,
-                )
-            )
-            return ProviderExtractionResult(
-                data=None,
-                steps=steps,
-                attempts=attempts,
-                providers=providers,
-                ocr_provider=self.name,
-                ocr_worked=False,
-                error="OCR Timeout.",
-            )
         finally:
             Path(tmp_path).unlink(missing_ok=True)
+
+    def extract(self, scanner_file: ScannerFile) -> ProviderExtractionResult:
+        """Sync shim — callers should prefer extract_async()."""
+        return asyncio.get_event_loop().run_until_complete(self.extract_async(scanner_file))

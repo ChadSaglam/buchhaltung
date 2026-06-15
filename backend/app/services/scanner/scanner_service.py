@@ -36,7 +36,7 @@ class ScannerService:
         custom_available = self.registry.custom_ocr_available()
         config = await self.get_or_create_config_model()
 
-        best_vision = config.default_ollama_model or vision.get_best_model()
+        best_vision = config.default_ollama_model or await vision.get_best_model_async()
         if custom_available and not config.default_ollama_model:
             best_vision = CUSTOM_MODEL_NAME
 

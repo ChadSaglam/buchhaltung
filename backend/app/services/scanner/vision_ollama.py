@@ -1,56 +1,82 @@
 from __future__ import annotations
 
+import asyncio
+import concurrent.futures
 from typing import Any
 
 from app.schemas.scanner import ScannerAttempt, ScannerEventStep, ScannerModelInfo, ScannerPipelineInfo
-from app.services.ollama_vision import _is_cloud_model, check_ollama_status, extract_invoice
+from app.services.ollama_vision import (
+    _is_cloud_model,
+    check_ollama_status_async,
+    extract_invoice_async,
+)
 from app.services.scanner.base import BaseVisionProvider, ProviderExtractionResult, ScannerFile
-
 
 CUSTOM_OCR_NAME = "custom-ocr"
 
+def _run_sync(coro):
+    """Run a coroutine safely from sync code, even if a loop is already running."""
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+    if loop and loop.is_running():
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            return pool.submit(lambda: asyncio.run(coro)).result()
+    return asyncio.run(coro)
 
 class OllamaVisionProvider(BaseVisionProvider):
     name = "ollama"
     kind = "local"
 
-    def is_available(self) -> bool:
-        status = check_ollama_status()
+    async def is_available_async(self) -> bool:
+        status = await check_ollama_status_async()
         return bool(status.get("ok"))
 
-    def get_status_models(self) -> list[dict[str, Any]]:
-        status = check_ollama_status()
+    def is_available(self) -> bool:
+        return _run_sync(self.is_available_async())
+
+    async def get_status_models_async(self) -> list[dict[str, Any]]:
+        status = await check_ollama_status_async()
         if not status.get("ok"):
             return []
-
         vision_names = set(status.get("vision_models", []))
-        models: list[dict[str, Any]] = []
-        for model_name in status.get("models", []):
-            models.append(
-                ScannerModelInfo(
-                    name=model_name,
-                    provider="vision" if model_name in vision_names else "text",
-                    kind="cloud" if _is_cloud_model(model_name) else "local",
-                    available=True,
-                    working=True,
-                    status_label="bereit",
-                ).model_dump()
-            )
-        return models
+        return [
+            ScannerModelInfo(
+                name=model_name,
+                provider="vision" if model_name in vision_names else "text",
+                kind="cloud" if _is_cloud_model(model_name) else "local",
+                available=True,
+                working=True,
+                status_label="bereit",
+            ).model_dump()
+            for model_name in status.get("models", [])
+        ]
 
-    def get_vision_model_names(self) -> list[str]:
-        status = check_ollama_status()
+    def get_status_models(self) -> list[dict[str, Any]]:
+        return _run_sync(self.get_status_models_async())
+
+    async def get_vision_model_names_async(self) -> list[str]:
+        status = await check_ollama_status_async()
         if not status.get("ok"):
             return []
         return list(status.get("vision_models", []))
 
-    def get_best_model(self) -> str | None:
-        status = check_ollama_status()
+    def get_vision_model_names(self) -> list[str]:
+        return _run_sync(self.get_vision_model_names_async())
+
+    async def get_best_model_async(self) -> str | None:
+        status = await check_ollama_status_async()
         if not status.get("ok"):
             return None
         return status.get("best_vision")
 
-    def get_pipeline(self) -> list[ScannerPipelineInfo]:
+    def get_best_model(self) -> str | None:
+        return _run_sync(self.get_best_model_async())
+
+    async def get_pipeline_async(self) -> list[ScannerPipelineInfo]:
+        vision_models = await self.get_vision_model_names_async()
+        available = await self.is_available_async()
         return [
             ScannerPipelineInfo(
                 step=1,
@@ -63,20 +89,23 @@ class OllamaVisionProvider(BaseVisionProvider):
             ScannerPipelineInfo(
                 step=2,
                 type="vision-fallback",
-                models=self.get_vision_model_names()[:3],
-                available=self.is_available(),
-                status_label="bereit" if self.is_available() else "nicht erreichbar",
+                models=vision_models[:3],
+                available=available,
+                status_label="bereit" if available else "nicht erreichbar",
             ),
             ScannerPipelineInfo(step=3, type="classification"),
         ]
 
-    def extract(
+    def get_pipeline(self) -> list[ScannerPipelineInfo]:
+        return _run_sync(self.get_pipeline_async())
+
+    async def extract_async(
         self,
         scanner_file: ScannerFile,
         selected_model: str = "",
         preferred_models: list[str] | None = None,
     ) -> ProviderExtractionResult:
-        vision_models = self.get_vision_model_names()
+        vision_models = await self.get_vision_model_names_async()
         ranked = self._resolve_ranked_models(selected_model, preferred_models or [], vision_models)
         steps: list[ScannerEventStep] = []
         attempts: list[ScannerAttempt] = []
@@ -122,7 +151,7 @@ class OllamaVisionProvider(BaseVisionProvider):
                 )
             )
 
-            data = extract_invoice(scanner_file.content, model_name)
+            data = await extract_invoice_async(scanner_file.content, model_name)
             if data:
                 attempts[-1].status = "done"
                 providers.append({"type": "vision", "name": model_name, "kind": model_kind})
@@ -165,6 +194,14 @@ class OllamaVisionProvider(BaseVisionProvider):
             ocr_worked=False,
             error="Keine Rechnung erkannt.",
         )
+
+    def extract(
+        self,
+        scanner_file: ScannerFile,
+        selected_model: str = "",
+        preferred_models: list[str] | None = None,
+    ) -> ProviderExtractionResult:
+        return _run_sync(self.extract_async(scanner_file, selected_model, preferred_models))
 
     def _resolve_ranked_models(
         self,
