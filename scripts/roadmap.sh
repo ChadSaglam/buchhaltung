@@ -82,7 +82,7 @@ check "audit log model" \
 check "structured /api/health/detail endpoint" \
   "grep -rq 'health/detail\|health_detail' $ROUTERS/"
 check "per-tenant usage metering model" \
-  "ls $MODELS/usage.py $MODELS/usage_event.py 2>/dev/null"
+  "test -f $MODELS/usage.py || test -f $MODELS/usage_event.py"
 check "request rate limiting (slowapi/limiter)" \
   "grep -rqi 'slowapi\|RateLimit\|limiter' $BACKEND/ --include='*.py'"
 check "structured JSON logging configured" \
