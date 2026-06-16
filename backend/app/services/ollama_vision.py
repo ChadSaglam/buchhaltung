@@ -64,7 +64,7 @@ KNOWN_VISION_FAMILIES = [
 _VISION_STATUS_CACHE: dict[tuple[str, str], dict[str, Any]] = {}
 
 def _get_ollama_url() -> str:
-    return settings.OLLAMA_URL.rstrip("/")
+    return settings.OLLAMA_BASE_URL.rstrip("/")
 
 def _cache_key(tenant_id: str | None, base_url: str) -> tuple[str, str]:
     return (str(tenant_id or "_global"), base_url)

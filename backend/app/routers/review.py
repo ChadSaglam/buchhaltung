@@ -1,4 +1,3 @@
-"""Review-queue endpoints — tenant-scoped."""
 from __future__ import annotations
 
 from typing import Any
@@ -10,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.deps import get_current_user, get_db
 from app.models.user import User
 from app.services.review_queue import ReviewQueueService
+from app.services.audit_log import AuditLogService
 
 router = APIRouter(prefix="/api/review", tags=["review"])
 
@@ -65,6 +65,15 @@ async def approve_item(
     )
     if not item:
         raise HTTPException(status_code=404, detail="Eintrag nicht gefunden oder bereits bearbeitet.")
+
+    await AuditLogService(user.tenant_id, db).record(
+        action="review.approve",
+        actor_user_id=user.id,
+        target_type="review_queue_item",
+        target_id=item_id,
+        detail={"resolved_soll": item.resolved_soll, "resolved_haben": item.resolved_haben},
+    )
+
     await db.commit()
     return {"status": "approved"}
 
@@ -79,5 +88,13 @@ async def reject_item(
     item = await service.reject(item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Eintrag nicht gefunden oder bereits bearbeitet.")
+
+    await AuditLogService(user.tenant_id, db).record(
+        action="review.reject",
+        actor_user_id=user.id,
+        target_type="review_queue_item",
+        target_id=item_id,
+    )
+
     await db.commit()
     return {"status": "rejected"}

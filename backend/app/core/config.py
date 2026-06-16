@@ -15,8 +15,11 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     FROM_EMAIL: str = ""
 
-    OLLAMA_URL: str = "http://localhost:11434"
+    OLLAMA_BASE_URL: str = "http://localhost:11434"
     FRONTEND_URL: str = "http://localhost:3000"
+    
+    SENTRY_DSN: str | None = None
+    ENVIRONMENT: str = "development"
 
     class Config:
         env_file = ".env"

@@ -9,6 +9,8 @@ from app.models.tenant import Tenant
 from app.models.user import User
 from app.models.review_queue import ReviewQueueItem  # noqa: F401
 from app.models.accuracy_history import AccuracyHistory  # noqa: F401
+from app.models.audit_log import AuditLog  # noqa: F401
+from app.models.usage_event import UsageEvent  # noqa: F401
 
 __all__ = [
     "Base",
@@ -22,4 +24,6 @@ __all__ = [
     "User",
     "ReviewQueueItem",
     "AccuracyHistory",
+    "AuditLog",
+    "UsageEvent",
 ]

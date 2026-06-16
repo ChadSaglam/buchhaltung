@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, FileText, ScanLine, BookOpen,
-  Brain, GraduationCap, Settings, ListChecks
+  Brain, GraduationCap, Settings, ListChecks, ScrollText
 } from "lucide-react";
 import { type LucideIcon } from "lucide-react";
 
@@ -21,6 +21,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Lernverlauf", href: "/dashboard/lernverlauf", icon: GraduationCap, section: "AI & Training" },
   { label: "Überprüfung", href: "/dashboard/review", icon: ListChecks, section: "AI & Training" },
   { label: "Einstellungen", href: "/dashboard/settings", icon: Settings, section: "System" },
+  { label: "Audit-Protokoll", href: "/dashboard/audit", icon: ScrollText, section: "System" },
 ];
 
 export function getNavSections() {
