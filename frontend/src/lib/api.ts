@@ -178,3 +178,43 @@ export async function parsePdf(file: File) {
   const res = await api.post('/api/pdf/parse', form);
   return res.data;
 }
+
+export async function getScannerConfig() {
+  const res = await api.get('/api/scanner/config');
+  return res.data;
+}
+
+export async function updateScannerConfig(data: {
+  review_confidence_threshold?: number;
+  pdf_ocr_enabled?: boolean;
+  invoice_matching_enabled?: boolean;
+  auto_classification_enabled?: boolean;
+  ollama_base_url?: string;
+  default_ollama_model?: string;
+}) {
+  const res = await api.patch('/api/scanner/config', data);
+  return res.data;
+}
+
+export async function getReviewQueue() {
+  const res = await api.get('/api/review/');
+  return res.data;
+}
+
+export async function approveReviewItem(
+  id: number,
+  data?: {
+    corrected_soll?: string;
+    corrected_haben?: string;
+    corrected_mwst_code?: string;
+    corrected_mwst_pct?: string;
+  }
+) {
+  const res = await api.post(`/api/review/${id}/approve`, data ?? {});
+  return res.data;
+}
+
+export async function rejectReviewItem(id: number) {
+  const res = await api.post(`/api/review/${id}/reject`);
+  return res.data;
+}

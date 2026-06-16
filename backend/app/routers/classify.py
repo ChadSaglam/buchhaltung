@@ -19,15 +19,14 @@ from app.models.kontenplan import Konto, KontoDefault
 from app.models.memory import Memory
 from app.models.user import User
 from app.services.classifier import ClassificationResult, TenantClassifier, preprocess
+from app.services.review_queue import ReviewQueueService
 
 router = APIRouter(prefix="/api/classify", tags=["classify"])
-
 
 class ClassifyRequest(BaseModel):
     beschreibung: str
     betrag: float = 0
     is_credit: bool = False
-
 
 class CorrectRequest(BaseModel):
     beschreibung: str
@@ -38,11 +37,9 @@ class CorrectRequest(BaseModel):
     corrected_mwst_code: str = ""
     corrected_mwst_pct: str = ""
 
-
 class PredictRequest(BaseModel):
     beschreibung: str
     betrag: float = 100
-
 
 async def _konto_name_map(db: AsyncSession, tenant_id: int) -> dict[str, str]:
     result = await db.execute(select(Konto).where(Konto.tenant_id == tenant_id))
@@ -71,7 +68,6 @@ async def _get_konto_default_rows(db: AsyncSession, tenant_id: int) -> list[Kont
     result = await db.execute(select(KontoDefault).where(KontoDefault.tenant_id == tenant_id))
     return list(result.scalars().all())
 
-
 @router.post("/predict")
 async def predict(
     body: PredictRequest,
@@ -80,6 +76,12 @@ async def predict(
 ) -> dict[str, Any]:
     clf = TenantClassifier(user.tenant_id, db)
     result = await clf.classify(body.beschreibung, False, body.betrag)
+
+    review_service = ReviewQueueService(user.tenant_id, db)
+    review_item = await review_service.enqueue_if_low_confidence(
+        body.beschreibung, body.betrag, result
+    )
+    await db.commit()
 
     konto_names = await _konto_name_map(db, user.tenant_id)
     top_predictions: list[dict[str, Any]] = []
@@ -112,10 +114,10 @@ async def predict(
         "mwst_code": result.mwst_code,
         "mwst_pct": result.mwst_pct,
         "confidence": result.confidence,
+        "needs_review": review_item is not None,
+        "review_id": review_item.id if review_item else None,
         "top_predictions": top_predictions,
     }
-
-
 @router.delete("/{action}")
 async def delete_action(
     action: Literal["memory", "corrections", "model"],
@@ -350,6 +352,13 @@ async def classify_transaction(
 ) -> dict[str, Any]:
     clf = TenantClassifier(user.tenant_id, db)
     result = await clf.classify(body.beschreibung, body.is_credit, body.betrag)
+
+    review_service = ReviewQueueService(user.tenant_id, db)
+    review_item = await review_service.enqueue_if_low_confidence(
+        body.beschreibung, body.betrag, result
+    )
+    await db.commit()
+
     return {
         "kt_soll": result.kt_soll,
         "kt_haben": result.kt_haben,
@@ -358,8 +367,9 @@ async def classify_transaction(
         "mwst_amount": result.mwst_amount,
         "confidence": result.confidence,
         "source": result.source,
+        "needs_review": review_item is not None,
+        "review_id": review_item.id if review_item else None,
     }
-
 
 @router.post("/correct")
 async def log_correction(

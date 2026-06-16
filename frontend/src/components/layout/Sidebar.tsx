@@ -91,7 +91,7 @@ export function Sidebar() {
               </div>
               <div className="leading-tight">
                 <p className="text-sm font-semibold text-foreground">Buchhaltung</p>
-                <p className="text-[11px] text-muted-foreground">v2.0</p>
+                <p className="text-[11px] text-muted-foreground">V4.0</p>
               </div>
             </motion.div>
           )}

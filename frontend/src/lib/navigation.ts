@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, FileText, ScanLine, BookOpen,
-  Brain, GraduationCap, Settings, LogOut
+  Brain, GraduationCap, Settings, ListChecks
 } from "lucide-react";
 import { type LucideIcon } from "lucide-react";
 
@@ -19,6 +19,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Kontenplan", href: "/dashboard/kontenplan", icon: BookOpen, section: "AI & Training" },
   { label: "Modell", href: "/dashboard/modell", icon: Brain, section: "AI & Training" },
   { label: "Lernverlauf", href: "/dashboard/lernverlauf", icon: GraduationCap, section: "AI & Training" },
+  { label: "Überprüfung", href: "/dashboard/review", icon: ListChecks, section: "AI & Training" },
   { label: "Einstellungen", href: "/dashboard/settings", icon: Settings, section: "System" },
 ];
 

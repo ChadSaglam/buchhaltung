@@ -17,6 +17,7 @@ from app.models.correction import Correction
 from app.models.kontenplan import KontoDefault
 from app.models.memory import Memory
 from app.models.training_data import TrainingRow
+from app.models.accuracy_history import AccuracyHistory
 
 CONFIDENCE_THRESHOLD = 0.45
 AUTO_RETRAIN_THRESHOLD = 20
@@ -278,7 +279,12 @@ class TenantClassifier:
         )
         count = await self.correction_count()
         if count > 0 and count % AUTO_RETRAIN_THRESHOLD == 0:
-            await self.train_from_db()
+            from app.services.training_worker import get_training_worker
+
+            try:
+                await get_training_worker().enqueue_training(self.tenant_id)
+            except RuntimeError:
+                await self.train_from_db()
 
     async def correction_count(self) -> int:
         result = await self.db.execute(
@@ -421,6 +427,17 @@ class TenantClassifier:
                     sklearn_version=sklearn.__version__,
                 )
             )
+
+        self.db.add(
+            AccuracyHistory(
+                tenant_id=self.tenant_id,
+                cv_accuracy=cv_acc,
+                train_accuracy=train_acc,
+                total_samples=len(df),
+                num_classes=int(y.nunique()),
+                sklearn_version=sklearn.__version__,
+            )
+        )
 
         return {
             "total_samples": len(df),

@@ -14,7 +14,7 @@ export function MobileNav() {
     { href: "/dashboard", icon: "📊", label: "Home" },
     { href: "/dashboard/kontoauszug", icon: "📄", label: "Konto" },
     { href: "/dashboard/scanner", icon: "📸", label: "Scan" },
-    { href: "/dashboard/kontenplan", icon: "⚙️", label: "Plan" },
+    { href: "/dashboard/review", icon: "✅", label: "Prüfen" },
     { href: "/dashboard/modell", icon: "🧠", label: "Modell" },
   ];
 

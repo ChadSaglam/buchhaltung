@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, UniqueConstraint, func
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
@@ -26,6 +26,8 @@ class ScannerConfig(Base):
     pdf_ocr_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     invoice_matching_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     auto_classification_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    review_confidence_threshold: Mapped[float] = mapped_column(Float, default=0.80, nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(

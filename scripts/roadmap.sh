@@ -67,9 +67,9 @@ check "model artifact keyed by tenant_id column" \
 check "explicit model version/revision column" \
   "grep -Eq 'version|revision' $MODELS/classifier_model.py"
 check "background training worker module" \
-  "ls $SERVICES/jobs.py $SERVICES/tasks.py $BACKEND/worker.py 2>/dev/null"
+  "test -f $SERVICES/training_worker.py || test -f $SERVICES/jobs.py || test -f $SERVICES/tasks.py || test -f $BACKEND/worker.py"
 check "accuracy history table/model" \
-  "ls $MODELS/accuracy_history.py $MODELS/model_history.py 2>/dev/null"
+  "test -f $MODELS/accuracy_history.py || test -f $MODELS/model_history.py"
 check "corrections retraining hook" \
   "grep -qi 'correction' $SERVICES/classifier.py"
 check "confidence-threshold review queue model" \

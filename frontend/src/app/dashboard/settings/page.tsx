@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { Save, User, Building2, Bell, Palette, Shield, Loader2, Check } from "lucide-react";
-import { api, getMe } from "@/lib/api";
+import { Save, User, Building2, Bell, Palette, Shield, SlidersHorizontal, Loader2, Check } from "lucide-react";
+import { getMe, getScannerConfig, updateScannerConfig } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 interface UserInfo {
@@ -15,7 +15,7 @@ interface UserInfo {
   tenant_name: string;
 }
 
-type TabId = "profile" | "company" | "notifications" | "appearance" | "security";
+type TabId = "profile" | "company" | "notifications" | "appearance" | "security" | "review";
 
 interface Tab {
   id: TabId;
@@ -26,6 +26,7 @@ interface Tab {
 const TABS: Tab[] = [
   { id: "profile", label: "Profil", icon: User },
   { id: "company", label: "Unternehmen", icon: Building2 },
+  { id: "review", label: "Überprüfung", icon: SlidersHorizontal },
   { id: "notifications", label: "Benachrichtigungen", icon: Bell },
   { id: "appearance", label: "Darstellung", icon: Palette },
   { id: "security", label: "Sicherheit", icon: Shield },
@@ -102,18 +103,32 @@ export default function SettingsPage() {
   const [exportNotifs, setExportNotifs] = useState(true);
   const [theme, setTheme] = useState<"light" | "dark" | "system">("system");
 
+  const [threshold, setThreshold] = useState(0.8);
+  const [configLoaded, setConfigLoaded] = useState(false);
+
   useEffect(() => {
     getMe().then((u) => {
       setUser(u);
       setDisplayName(u.display_name);
       setCompanyName(u.tenant_name);
     }).catch(() => {});
+
+    getScannerConfig().then((c) => {
+      if (typeof c.review_confidence_threshold === "number") {
+        setThreshold(c.review_confidence_threshold);
+      }
+      setConfigLoaded(true);
+    }).catch(() => setConfigLoaded(true));
   }, []);
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      await new Promise((r) => setTimeout(r, 600));
+      if (activeTab === "review" && configLoaded) {
+        await updateScannerConfig({ review_confidence_threshold: threshold });
+      } else {
+        await new Promise((r) => setTimeout(r, 600));
+      }
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } finally {
@@ -146,7 +161,6 @@ export default function SettingsPage() {
       </div>
 
       <div className="flex flex-col md:flex-row gap-6">
-        {/* Tab navigation */}
         <nav className="flex md:flex-col gap-1 md:w-56 shrink-0">
           {TABS.map((tab) => (
             <button
@@ -165,7 +179,6 @@ export default function SettingsPage() {
           ))}
         </nav>
 
-        {/* Tab content */}
         <motion.div
           key={activeTab}
           initial={{ opacity: 0, x: 8 }}
@@ -204,6 +217,33 @@ export default function SettingsPage() {
             </div>
           )}
 
+          {activeTab === "review" && (
+            <div>
+              <h2 className="text-base font-semibold text-foreground mb-1">Überprüfung</h2>
+              <p className="text-sm text-muted-foreground mb-6">Schwelle für die Überprüfungs-Warteschlange festlegen</p>
+              <SettingsField
+                label="Konfidenz-Schwelle"
+                description="Vorhersagen unter diesem Wert landen in der Überprüfungs-Warteschlange"
+              >
+                <div className="flex items-center gap-4">
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={threshold}
+                    onChange={(e) => setThreshold(parseFloat(e.target.value))}
+                    className="flex-1 accent-brand-600"
+                    aria-label="Konfidenz-Schwelle"
+                  />
+                  <span className="w-16 text-right font-mono text-sm text-foreground">
+                    {Math.round(threshold * 100)}%
+                  </span>
+                </div>
+              </SettingsField>
+            </div>
+          )}
+
           {activeTab === "notifications" && (
             <div>
               <h2 className="text-base font-semibold text-foreground mb-1">Benachrichtigungen</h2>
@@ -223,18 +263,18 @@ export default function SettingsPage() {
               <p className="text-sm text-muted-foreground mb-6">Theme und Anzeige anpassen</p>
               <SettingsField label="Theme" description="Hell, Dunkel oder System">
                 <div className="flex gap-2">
-                  {(["light", "dark", "system"] as const).map((t) => (
+                  {(["light", "dark", "system"] as const).map((tOpt) => (
                     <button
-                      key={t}
-                      onClick={() => setTheme(t)}
+                      key={tOpt}
+                      onClick={() => setTheme(tOpt)}
                       className={cn(
                         "rounded-lg border px-4 py-2 text-sm font-medium transition-all capitalize",
-                        theme === t
+                        theme === tOpt
                           ? "border-brand-600 bg-brand-50 text-brand-700"
                           : "border-border text-muted-foreground hover:border-brand-200"
                       )}
                     >
-                      {t === "light" ? "Hell" : t === "dark" ? "Dunkel" : "System"}
+                      {tOpt === "light" ? "Hell" : tOpt === "dark" ? "Dunkel" : "System"}
                     </button>
                   ))}
                 </div>
