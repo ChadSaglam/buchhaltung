@@ -4,9 +4,8 @@ import io
 import json
 import zipfile
 from typing import Any, Literal
-from app.core.rate_limit import limiter
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, Request
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel
 from sqlalchemy import delete, func, select

@@ -3,14 +3,15 @@ from __future__ import annotations
 
 import io
 import re
+
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-from sqlalchemy import select, delete
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user, get_db
-from app.models.user import User
-from app.models.training_data import TrainingRow
 from app.models.memory import Memory
+from app.models.training_data import TrainingRow
+from app.models.user import User
 from app.services.classifier import TenantClassifier, make_memory_key
 
 router = APIRouter(prefix="/api/import", tags=["import"])
@@ -30,11 +31,6 @@ def parse_banana_xls(file_bytes: bytes, filename: str) -> list[dict]:
             raw = raw[1:]
 
         # Parse with namespace awareness instead of stripping
-        namespaces = {
-            'ss': 'urn:schemas-microsoft-com:spreadsheet',
-            'o': 'urn:schemas-microsoft-com:office:office',
-            'x': 'urn:schemas-microsoft-com:office:excel',
-        }
         root = ET.fromstring(raw)
 
         # Find the Worksheet/Table
@@ -101,7 +97,7 @@ def parse_banana_xls(file_bytes: bytes, filename: str) -> list[dict]:
             try:
                 df = pd.read_excel(io.BytesIO(file_bytes), engine="xlrd")
             except Exception as e:
-                raise HTTPException(400, f"Unbekanntes Dateiformat: {str(e)}")
+                raise HTTPException(400, f"Unbekanntes Dateiformat: {e}") from e
 
     # Normalize column names
     col_map = {}
@@ -173,7 +169,7 @@ async def import_banana_file(
     user: User = Depends(get_current_user),
 ):
     """Import a Banana Buchhaltung XLS export as training data.
-    
+
     - replace: if True, delete existing training data first
     - also_memory: if True, also populate memory table for exact matches
     - auto_train: if True, retrain model after import
@@ -247,7 +243,6 @@ async def import_banana_text(
     user: User = Depends(get_current_user),
 ):
     """Import from raw paste text (the paste-6.txt tab-separated format)."""
-    import pandas as pd
 
     raw_text = body.get("text", "")
     if not raw_text.strip():
@@ -255,19 +250,13 @@ async def import_banana_text(
 
     lines = raw_text.strip().split("\n")
     # Parse tab-separated Banana format
-    rows = []
     for line in lines:
         parts = line.split("\t")
         if len(parts) < 10:
             continue
         # Find Description and AccountDebit columns by position
         # Banana format: Section, Date, ..., Description, Notes, AccountDebit, ..., AccountCredit, ..., Amount, ...
-        beschreibung = ""
         kt_soll = ""
-        kt_haben = ""
-        betrag = ""
-        mwst_code = ""
-        mwst_pct = ""
 
         for i, p in enumerate(parts):
             p_clean = p.strip()
@@ -278,7 +267,7 @@ async def import_banana_text(
                     # Next 4-digit is kt_haben
                     for j in range(i + 2, min(i + 4, len(parts))):
                         if re.match(r"^\d{4}$", parts[j].strip()):
-                            kt_haben = parts[j].strip()
+                            parts[j].strip()
                             break
 
         # This is complex — better to use the structured parse

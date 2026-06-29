@@ -1,5 +1,6 @@
 """SQLAlchemy model for bookings."""
-from sqlalchemy import Column, Integer, String, Float, ForeignKey
+from sqlalchemy import Column, Float, ForeignKey, Integer, String
+
 from app.models.base import Base
 
 

@@ -83,7 +83,8 @@ class TesseractOcrProvider(BaseOcrProvider):
                 )
 
             try:
-                completed = await asyncio.get_event_loop().run_in_executor(None, _run)
+                loop = asyncio.get_running_loop()
+                completed = await loop.run_in_executor(None, _run)
             except subprocess.TimeoutExpired:
                 attempts[0].status = "failed"
                 steps.append(
@@ -171,5 +172,7 @@ class TesseractOcrProvider(BaseOcrProvider):
             Path(tmp_path).unlink(missing_ok=True)
 
     def extract(self, scanner_file: ScannerFile) -> ProviderExtractionResult:
-        """Sync shim — callers should prefer extract_async()."""
-        return asyncio.get_event_loop().run_until_complete(self.extract_async(scanner_file))
+        """Sync shim — do not call from within a running event loop."""
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            return pool.submit(lambda: asyncio.run(self.extract_async(scanner_file))).result()

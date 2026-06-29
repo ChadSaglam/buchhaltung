@@ -1,5 +1,6 @@
 """Tenant onboarding — seed default Kontenplan and konto_defaults."""
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.models.kontenplan import Konto, KontoDefault
 
 FALLBACK_KONTENPLAN: dict[str, str] = {

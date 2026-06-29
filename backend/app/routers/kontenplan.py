@@ -7,8 +7,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user, get_db
-from app.models.user import User
 from app.models.kontenplan import Konto, KontoDefault
+from app.models.user import User
 
 router = APIRouter(prefix="/api/kontenplan", tags=["kontenplan"])
 

@@ -1,15 +1,14 @@
 """Booking CRUD endpoints with stats."""
 from __future__ import annotations
 
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user, get_db
-from app.models.user import User
 from app.models.booking import Booking
+from app.models.user import User
 
 router = APIRouter(prefix="/api/bookings", tags=["bookings"])
 
@@ -62,7 +61,7 @@ async def list_bookings(
 
 @router.post("/")
 async def create_bookings(
-    body: BookingCreate | List[BookingCreate],
+    body: BookingCreate | list[BookingCreate],
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):

@@ -1,5 +1,6 @@
 """Parse raw Banana Buchhaltung tab-separated export."""
 from __future__ import annotations
+
 import re
 
 
@@ -7,10 +8,14 @@ def parse_banana_text(raw: str) -> list[dict]:
     """Parse the paste-6.txt style Banana export into structured rows."""
     rows = []
     lines = raw.strip().split("\n")
-    
+
     # Skip header lines (contain 'Section', 'Date', etc.)
-    data_lines = [l for l in lines if not l.startswith("Section") and not l.startswith("Sektion")]
-    
+    data_lines = [
+        line_text
+        for line_text in lines
+        if not line_text.startswith("Section") and not line_text.startswith("Sektion")
+    ]
+
     for line in data_lines:
         parts = [p.strip() for p in line.split("\t")]
         if len(parts) < 15:
@@ -24,7 +29,6 @@ def parse_banana_text(raw: str) -> list[dict]:
         kt_haben = ""
         mwst_code = ""
         mwst_pct = ""
-        betrag = ""
 
         # Find 4-digit account codes and description
         account_indices = []
@@ -37,7 +41,7 @@ def parse_banana_text(raw: str) -> list[dict]:
             kt_haben_idx = account_indices[1]
             kt_soll = parts[kt_soll_idx]
             kt_haben = parts[kt_haben_idx]
-            
+
             # Description is typically 2 positions before first account
             desc_idx = kt_soll_idx - 2
             if 0 <= desc_idx < len(parts) and len(parts[desc_idx]) > 2:

@@ -1,7 +1,7 @@
 """Confidence-threshold review queue service — tenant-scoped."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -116,7 +116,7 @@ class ReviewQueueService:
         item.resolved_haben = final_haben
         item.resolved_mwst_code = final_mwst_code
         item.resolved_mwst_pct = final_mwst_pct
-        item.resolved_at = datetime.now(timezone.utc)
+        item.resolved_at = datetime.now(UTC)
         return item
 
     async def reject(self, item_id: int) -> ReviewQueueItem | None:
@@ -124,5 +124,5 @@ class ReviewQueueService:
         if not item or item.status != "pending":
             return None
         item.status = "rejected"
-        item.resolved_at = datetime.now(timezone.utc)
+        item.resolved_at = datetime.now(UTC)
         return item

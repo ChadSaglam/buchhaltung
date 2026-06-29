@@ -1,12 +1,13 @@
 """Test all vision models with 60s timeout."""
 import json
-import sys
 import os
-import time
 import signal
+import sys
+import time
 
 sys.path.insert(0, os.path.dirname(__file__))
 from app.services.ollama_vision import check_ollama_status, extract_invoice
+
 
 class TimeoutError(Exception):
     pass
@@ -29,16 +30,16 @@ results = []
 for model in vision_models:
     print(f"{'='*60}")
     print(f"Testing: {model} (max {TIMEOUT}s)")
-    
+
     signal.signal(signal.SIGALRM, timeout_handler)
     signal.alarm(TIMEOUT)
-    
+
     start = time.time()
     try:
         result = extract_invoice(image_bytes, model)
         elapsed = time.time() - start
         signal.alarm(0)
-        
+
         if result:
             print(f"✅ SUCCESS in {elapsed:.1f}s")
             print(json.dumps(result, indent=2, ensure_ascii=False))

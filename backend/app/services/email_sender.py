@@ -1,13 +1,15 @@
 """Email sender — professional HTML emails with Banana TXT, CSV & Excel attachments."""
 from __future__ import annotations
+
 import os
 import smtplib
 import ssl
+from datetime import datetime
+from email import encoders
+from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from email.mime.base import MIMEBase
-from email import encoders
-from datetime import datetime
+
 import pandas as pd
 
 from app.services.export import df_to_banana_tsv, df_to_csv, df_to_styled_excel, fmt_swiss

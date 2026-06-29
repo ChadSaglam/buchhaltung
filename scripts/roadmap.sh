@@ -108,7 +108,7 @@ check "tenant-isolation tests" \
 check "scanner pipeline tests" \
   "ls backend/tests/test_scanner*.py 2>/dev/null"
 check "CI workflow present" \
-  "ls .github/workflows/*.yml .gitlab-ci.yml 2>/dev/null"
+  "ls .github/workflows/*.yml 2>/dev/null || ls .gitlab-ci.yml 2>/dev/null"
 check "pre-commit / lint config (ruff)" \
   "ls .pre-commit-config.yaml 2>/dev/null || grep -rqi 'ruff' pyproject.toml 2>/dev/null"
 check "frontend e2e tests (Playwright)" \

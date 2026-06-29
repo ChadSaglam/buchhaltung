@@ -1,5 +1,6 @@
 """Ollama vision integration for invoice/receipt scanning."""
 from __future__ import annotations
+
 import asyncio
 import base64
 import json
@@ -106,7 +107,7 @@ def check_ollama_status(tenant_id: str | None = None) -> dict:
         return loop.run_until_complete(_check_ollama_status_impl(_get_ollama_url()))
     except Exception as e:
         return {"ok": False, "error": str(e)}
-    
+
 def _is_known_vision(name: str) -> bool:
     base = name.split(":")[0].lower()
     return any(base.startswith(family) for family in KNOWN_VISION_FAMILIES)

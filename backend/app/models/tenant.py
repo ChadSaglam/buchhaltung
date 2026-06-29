@@ -16,7 +16,7 @@ class Tenant(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     users: Mapped[list["User"]] = relationship(back_populates="tenant")  # noqa: F821
-    scanner_config: Mapped["ScannerConfig | None"] = relationship(
+    scanner_config: Mapped["ScannerConfig | None"] = relationship(  # noqa: F821
         back_populates="tenant",
         uselist=False,
         cascade="all, delete-orphan",

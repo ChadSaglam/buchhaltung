@@ -31,6 +31,11 @@ load_env .env
 ADMIN_EMAIL="${ADMIN_EMAIL:-}"
 ADMIN_PASS="${ADMIN_PASS:-}"
 
+# ── Backlog engine ──────────────────────────────────────
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/lib/todo.sh
+source "$SCRIPT_DIR/lib/todo.sh"
+
 # Derive DB connection parts from DATABASE_URL when not set explicitly
 parse_db() {
   local url="${DATABASE_URL:-}"
@@ -347,6 +352,17 @@ if [ -f .gitignore ]; then
     fi
   done
 fi
+echo ""
 
+# ── Backlog & TODO sync ─────────────────────────────────
+_roadmap_out="$("$SCRIPT_DIR/roadmap.sh" 2>/dev/null || true)"
+ROADMAP_SUMMARY="$(printf '%s\n' "$_roadmap_out" | sed -n 's/^ROADMAP_DATA //p')"
+ROADMAP_VERSION="$(printf '%s\n' "$_roadmap_out" | sed -n 's/^ROADMAP_VERSION //p')"
+export ROADMAP_SUMMARY ROADMAP_VERSION
+
+print_backlog_section
+sync_backlog_files
+sync_frontend_version
+echo "  ${DIM}↻ regenerated ${TODO_FILE} + ${AI_CONTEXT_FILE} (version ${ROADMAP_VERSION:-?})${RESET}"
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

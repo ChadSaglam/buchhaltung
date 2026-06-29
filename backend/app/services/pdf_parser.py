@@ -1,8 +1,10 @@
 """UBS Kontoauszug PDF parser — extracts transactions using pdfplumber."""
 from __future__ import annotations
+
 import re
 from collections import defaultdict
 from typing import BinaryIO
+
 import pdfplumber
 
 

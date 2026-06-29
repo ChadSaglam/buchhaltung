@@ -4,7 +4,12 @@ import asyncio
 import concurrent.futures
 from typing import Any
 
-from app.schemas.scanner import ScannerAttempt, ScannerEventStep, ScannerModelInfo, ScannerPipelineInfo
+from app.schemas.scanner import (
+    ScannerAttempt,
+    ScannerEventStep,
+    ScannerModelInfo,
+    ScannerPipelineInfo,
+)
 from app.services.ollama_vision import (
     _is_cloud_model,
     check_ollama_status_async,

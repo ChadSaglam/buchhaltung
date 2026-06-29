@@ -2,20 +2,20 @@
 import asyncio
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-from app.core.config import settings
-from app.models.base import Base
-import app.models.tenant  # noqa: F401
-import app.models.user  # noqa: F401
-import app.models.kontenplan  # noqa: F401
 import app.models.booking  # noqa: F401
 import app.models.classifier_model  # noqa: F401
-import app.models.memory  # noqa: F401
 import app.models.correction  # noqa: F401
+import app.models.kontenplan  # noqa: F401
+import app.models.memory  # noqa: F401
+import app.models.tenant  # noqa: F401
 import app.models.training_data  # noqa: F401
+import app.models.user  # noqa: F401
+from alembic import context
+from app.core.config import settings
+from app.models.base import Base
 
 config = context.config
 if config.config_file_name is not None:

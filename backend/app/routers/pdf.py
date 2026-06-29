@@ -1,7 +1,9 @@
 """PDF upload & parse endpoint."""
 from __future__ import annotations
+
 import io
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
 from app.core.deps import get_current_user
 from app.models.user import User
@@ -25,7 +27,8 @@ async def parse_pdf(
     try:
         transactions = extract_transactions_from_pdf(io.BytesIO(content))
     except Exception as e:
-        raise HTTPException(422, f"PDF konnte nicht gelesen werden: {e}")
+        raise HTTPException(422, f"PDF konnte nicht gelesen werden: {e}") from e
+
 
     if not transactions:
         raise HTTPException(422, "Keine Transaktionen gefunden.")

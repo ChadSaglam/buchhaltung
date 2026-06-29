@@ -8,8 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user, get_db
 from app.models.user import User
-from app.services.review_queue import ReviewQueueService
 from app.services.audit_log import AuditLogService
+from app.services.review_queue import ReviewQueueService
 
 router = APIRouter(prefix="/api/review", tags=["review"])
 

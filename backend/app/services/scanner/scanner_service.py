@@ -20,7 +20,6 @@ from app.services.ollama_vision import parse_invoice_text
 from app.services.scanner.base import ScannerFile
 from app.services.scanner.registry import ScannerProviderRegistry
 
-
 MAX_FILE_SIZE = 20 * 1024 * 1024
 CUSTOM_MODEL_NAME = "custom-ocr"
 
@@ -137,7 +136,7 @@ class ScannerService:
         effective_model = (model or config.default_ollama_model or "").strip()
 
         if self._use_custom_first(effective_model):
-            ocr_result = ocr.extract(scanner_file)
+            ocr_result = await ocr.extract_async(scanner_file)
             steps.extend(item.model_dump() for item in ocr_result.steps)
             attempts.extend(item.model_dump() for item in ocr_result.attempts)
             providers.extend(ocr_result.providers)

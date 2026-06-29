@@ -4,6 +4,7 @@ from fastapi import Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
+
 def _tenant_or_ip(request: Request) -> str:
     """Key by authenticated tenant when available, else client IP."""
     tenant_id = getattr(request.state, "tenant_id", None)

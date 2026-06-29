@@ -12,12 +12,12 @@ from sklearn.pipeline import FeatureUnion, Pipeline
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.accuracy_history import AccuracyHistory
 from app.models.classifier_model import ClassifierModel
 from app.models.correction import Correction
 from app.models.kontenplan import KontoDefault
 from app.models.memory import Memory
 from app.models.training_data import TrainingRow
-from app.models.accuracy_history import AccuracyHistory
 
 CONFIDENCE_THRESHOLD = 0.45
 AUTO_RETRAIN_THRESHOLD = 20

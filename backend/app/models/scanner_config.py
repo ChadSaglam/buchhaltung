@@ -37,4 +37,4 @@ class ScannerConfig(Base):
         nullable=False,
     )
 
-    tenant: Mapped["Tenant"] = relationship(back_populates="scanner_config")
+    tenant: Mapped[Tenant] = relationship(back_populates="scanner_config")  # noqa: F821

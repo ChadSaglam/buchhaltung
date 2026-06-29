@@ -1,14 +1,15 @@
 """Batch classify, corrections list, memory list endpoints."""
 from __future__ import annotations
+
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user, get_db
-from app.models.user import User
 from app.models.correction import Correction
 from app.models.memory import Memory
+from app.models.user import User
 from app.services.classifier import TenantClassifier
 
 router = APIRouter(prefix="/api/classify", tags=["classify"])

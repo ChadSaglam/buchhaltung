@@ -13,7 +13,6 @@ from app.schemas.scanner import (
 )
 from app.services.scanner.scanner_service import ScannerService
 
-
 router = APIRouter(prefix="/api/scanner", tags=["scanner"])
 
 
