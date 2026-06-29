@@ -134,7 +134,7 @@ phase V9 "${CYAN}V9 — Scale & deployment${RESET}"
 check "backend Dockerfile installs tesseract" \
   "grep -qi 'tesseract' backend/Dockerfile 2>/dev/null"
 check "docker-compose for full stack" \
-  "ls docker-compose.yml compose.yaml 2>/dev/null"
+  "ls docker-compose.yml 2>/dev/null || ls compose.yaml 2>/dev/null"
 check "Redis / cache layer configured" \
   "grep -rqi 'redis' $BACKEND/ --include='*.py' 2>/dev/null"
 check "object storage for model artifacts (S3/minio)" \

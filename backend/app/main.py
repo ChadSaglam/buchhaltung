@@ -14,6 +14,7 @@ from app.core.rate_limit import limiter
 from app.core.sentry import configure_sentry
 from app.models.base import Base
 from app.services.training_worker import get_training_worker, init_training_worker
+from app.services.scheduler import get_scheduler
 
 load_dotenv()
 configure_logging()
@@ -24,7 +25,9 @@ async def lifespan(application: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     init_training_worker(async_session)
+    get_scheduler().start_all()
     yield
+    get_scheduler().stop_all()
     await get_training_worker().shutdown()
 
 application = FastAPI(title="Buchhaltung API", version="2.0.0", lifespan=lifespan)
