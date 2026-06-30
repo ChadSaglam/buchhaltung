@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Sidebar, MobileSidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { MobileNav } from "@/components/layout/MobileNav";
+import { CommandPalette } from "@/components/layout/CommandPalette";
 import { cn } from "@/lib/utils";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -53,6 +54,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <MobileNav />
+      <CommandPalette />
     </div>
   );
 }

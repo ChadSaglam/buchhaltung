@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { Save, User, Building2, Bell, Palette, Shield, SlidersHorizontal, Check, Settings } from "lucide-react";
+import { Save, User, Building2, Bell, Palette, Shield, SlidersHorizontal, Check, Settings, Sun, Moon, Monitor } from "lucide-react";
 import { getMe, getScannerConfig, updateScannerConfig } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page_header";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { Card } from "@/components/ui/Card";
+import { useThemeStore, ACCENTS, type Theme, type Accent } from "@/lib/theme-store";
 
 interface UserInfo {
   id: number;
@@ -26,6 +26,12 @@ interface Tab {
   label: string;
   icon: React.ElementType;
 }
+
+const THEME_OPTIONS: { id: Theme; label: string; icon: React.ElementType }[] = [
+  { id: "light", label: "Hell", icon: Sun },
+  { id: "dark", label: "Dunkel", icon: Moon },
+  { id: "system", label: "System", icon: Monitor },
+];
 
 const TABS: Tab[] = [
   { id: "profile", label: "Profil", icon: User },
@@ -105,7 +111,7 @@ export default function SettingsPage() {
   const [companyName, setCompanyName] = useState("");
   const [emailNotifs, setEmailNotifs] = useState(true);
   const [exportNotifs, setExportNotifs] = useState(true);
-  const [theme, setTheme] = useState<"light" | "dark" | "system">("system");
+  const { theme, accent, setTheme, setAccent } = useThemeStore();
 
   const [threshold, setThreshold] = useState(0.8);
   const [configLoaded, setConfigLoaded] = useState(false);
@@ -257,23 +263,58 @@ export default function SettingsPage() {
           {activeTab === "appearance" && (
             <div>
               <h2 className="text-base font-semibold text-foreground mb-1">Darstellung</h2>
-              <p className="text-sm text-muted-foreground mb-6">Theme und Anzeige anpassen</p>
-              <SettingsField label="Theme" description="Hell, Dunkel oder System">
-                <div className="flex gap-2">
-                  {(["light", "dark", "system"] as const).map((tOpt) => (
-                    <button
-                      key={tOpt}
-                      onClick={() => setTheme(tOpt)}
-                      className={cn(
-                        "rounded-lg border px-4 py-2 text-sm font-medium transition-all capitalize",
-                        theme === tOpt
-                          ? "border-brand-600 bg-brand-500/12 text-brand-600 dark:text-brand-300 dark:border-brand-300"
-                          : "border-border text-muted-foreground hover:border-brand-400/50 hover:text-foreground"
-                      )}
-                    >
-                      {tOpt === "light" ? "Hell" : tOpt === "dark" ? "Dunkel" : "System"}
-                    </button>
-                  ))}
+              <p className="text-sm text-muted-foreground mb-6">Theme und Akzentfarbe anpassen — Änderungen werden sofort übernommen</p>
+              <SettingsField label="Theme" description="Hell, Dunkel oder automatisch nach System">
+                <div className="grid grid-cols-3 gap-3">
+                  {THEME_OPTIONS.map((opt) => {
+                    const active = theme === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        onClick={() => setTheme(opt.id)}
+                        aria-pressed={active}
+                        className={cn(
+                          "group relative flex flex-col items-center gap-2 rounded-xl border-2 p-3 transition-all",
+                          active
+                            ? "border-primary bg-brand-500/8"
+                            : "border-border hover:border-border-strong"
+                        )}
+                      >
+                        <span className={cn("flex h-9 w-9 items-center justify-center rounded-lg", active ? "bg-brand-500/15 text-brand-600 dark:text-brand-300" : "bg-muted text-muted-foreground")}>
+                          <opt.icon className="h-[18px] w-[18px]" />
+                        </span>
+                        <span className={cn("text-xs font-medium", active ? "text-foreground" : "text-muted-foreground")}>{opt.label}</span>
+                        {active && (
+                          <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                            <Check className="h-2.5 w-2.5" />
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </SettingsField>
+              <SettingsField label="Akzentfarbe" description="Bestimmt Buttons, Links und Hervorhebungen">
+                <div className="flex flex-wrap gap-3">
+                  {(Object.keys(ACCENTS) as Accent[]).map((key) => {
+                    const a = ACCENTS[key];
+                    const active = accent === key;
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => setAccent(key)}
+                        aria-label={a.label}
+                        title={a.label}
+                        className={cn(
+                          "relative flex h-10 w-10 items-center justify-center rounded-full transition-transform hover:scale-105",
+                          active && "ring-2 ring-offset-2 ring-offset-card"
+                        )}
+                        style={{ backgroundColor: a.swatch, ...(active ? { boxShadow: `0 0 0 2px ${a.swatch}` } : {}) }}
+                      >
+                        {active && <Check className="h-4 w-4 text-white" />}
+                      </button>
+                    );
+                  })}
                 </div>
               </SettingsField>
             </div>
