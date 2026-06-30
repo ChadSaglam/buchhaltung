@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-import asyncio
 import os
 from collections.abc import AsyncIterator
 
-import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.pool import NullPool
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
+from sqlalchemy.pool import NullPool, StaticPool
 
 os.environ.setdefault("ENV", "test")
 
@@ -18,26 +20,31 @@ from app.models.base import Base  # noqa: E402
 
 TEST_DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql+asyncpg://test:test@127.0.0.1:5432/buchhaltung_test",
+    "postgresql+asyncpg://chadev:chadev@127.0.0.1:5432/buchhaltung_test",
 )
 
-
-@pytest.fixture(scope="session")
-def event_loop():
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
+_IS_SQLITE = TEST_DATABASE_URL.startswith("sqlite")
 
 
-@pytest_asyncio.fixture(scope="session")
+def _create_test_engine():
+    if _IS_SQLITE:
+        return create_async_engine(
+            TEST_DATABASE_URL,
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
+        )
+    return create_async_engine(TEST_DATABASE_URL, poolclass=NullPool)
+
+
+@pytest_asyncio.fixture
 async def engine():
-    engine = create_async_engine(TEST_DATABASE_URL, poolclass=NullPool)
-    async with engine.begin() as conn:
+    eng = _create_test_engine()
+    async with eng.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    yield engine
-    async with engine.begin() as conn:
+    yield eng
+    async with eng.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
-    await engine.dispose()
+    await eng.dispose()
 
 
 @pytest_asyncio.fixture

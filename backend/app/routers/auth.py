@@ -13,6 +13,7 @@ from app.services.tenant_setup import seed_tenant
 
 router = APIRouter()
 
+
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     existing = await db.execute(select(User).where(User.email == body.email))
@@ -24,7 +25,8 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     await db.flush()
 
     user = User(
-        tenant_id=tenant.id, email=body.email,
+        tenant_id=tenant.id,
+        email=body.email,
         password_hash=hash_password(body.password),
         display_name=body.display_name or body.email.split("@")[0],
     )
@@ -33,8 +35,11 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
 
     await seed_tenant(db, tenant.id)
 
+    await db.commit()
+
     token = create_access_token({"sub": str(user.id), "tenant_id": tenant.id})
     return TokenResponse(access_token=token)
+
 
 @router.post("/login", response_model=TokenResponse)
 async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
@@ -45,11 +50,16 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
     token = create_access_token({"sub": str(user.id), "tenant_id": user.tenant_id})
     return TokenResponse(access_token=token)
 
+
 @router.get("/me", response_model=UserResponse)
 async def me(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Tenant).where(Tenant.id == user.tenant_id))
     tenant = result.scalar_one()
     return UserResponse(
-        id=user.id, email=user.email, display_name=user.display_name,
-        role=user.role, tenant_id=user.tenant_id, tenant_name=tenant.name,
+        id=user.id,
+        email=user.email,
+        display_name=user.display_name,
+        role=user.role,
+        tenant_id=user.tenant_id,
+        tenant_name=tenant.name,
     )

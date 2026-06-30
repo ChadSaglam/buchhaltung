@@ -1,7 +1,8 @@
 [tool.ruff]
 line-length = 120
 target-version = "py313"
-exclude = ["venv", "alembic/versions", "__pycache__"]
+src = ["backend"]
+exclude = ["backend/venv", "backend/alembic/versions", "__pycache__"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "ASYNC"]
@@ -15,8 +16,4 @@ known-first-party = ["app"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-testpaths = ["tests"]
-
-[tool.ruff]
-src = ["backend"]
-exclude = ["backend/venv", "backend/alembic/versions", "__pycache__"]
+testpaths = ["backend/tests"]

@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 ScannerStatusLiteral = Literal["active", "done", "failed", "pending"]
 
@@ -68,14 +68,17 @@ class ExtractedLineItem(BaseModel):
     amount: float
 
 
+_REQUIRED_STR_FIELDS = {"vendor", "date", "invoice_number", "description"}
+
+
 class ExtractedInvoice(BaseModel):
     vendor: str = ""
     date: str = ""
     invoice_number: str = ""
-    total_amount: float = 0.0
-    net_amount: float = 0.0
-    vat_amount: float = 0.0
-    vat_rate: float = 0.0
+    total_amount: float | None = 0.0
+    net_amount: float | None = 0.0
+    vat_amount: float | None = 0.0
+    vat_rate: float | None = 0.0
     description: str = ""
     line_items: list[ExtractedLineItem] = Field(default_factory=list)
     kt_soll: str | None = None
@@ -93,6 +96,34 @@ class ExtractedInvoice(BaseModel):
     scanner_steps: list[ScannerEventStep] = Field(default_factory=list)
     scanner_attempts: list[ScannerAttempt] = Field(default_factory=list)
     scanner_providers: list[ScannerProviderInfo] = Field(default_factory=list)
+
+    @field_validator(
+        "total_amount",
+        "net_amount",
+        "vat_amount",
+        "vat_rate",
+        "mwst_amount",
+        "classification_confidence",
+        mode="before",
+    )
+    @classmethod
+    def _blank_number_to_none(cls, v):
+        if isinstance(v, str) and v.strip() == "":
+            return None
+        return v
+
+    @field_validator(
+        "vendor",
+        "date",
+        "invoice_number",
+        "description",
+        mode="before",
+    )
+    @classmethod
+    def _none_str_to_empty(cls, v):
+        if v is None:
+            return ""
+        return v
 
 
 class ScannerExtractResponse(BaseModel):

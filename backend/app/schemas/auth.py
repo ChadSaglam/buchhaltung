@@ -1,5 +1,7 @@
-"""Auth request/response schemas."""
+from __future__ import annotations
+
 from pydantic import BaseModel, EmailStr
+from pydantic.config import ConfigDict
 
 
 class RegisterRequest(BaseModel):
@@ -20,12 +22,11 @@ class TokenResponse(BaseModel):
 
 
 class UserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     email: str
     display_name: str
     role: str
     tenant_id: int
     tenant_name: str
-
-    class Config:
-        from_attributes = True
