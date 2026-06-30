@@ -1,24 +1,25 @@
 import type { ReactNode } from "react";
+import { Inbox, type LucideIcon } from "lucide-react";
 
 interface Props {
-  icon?: string;
+  icon?: LucideIcon;
   title: string;
   description?: string;
   action?: ReactNode;
 }
 
-export function EmptyState({ icon = "📭", title, description, action }: Props) {
+export function EmptyState({ icon: Icon = Inbox, title, description, action }: Props) {
   return (
     <div
       role="status"
       aria-label={title}
-      className="flex flex-col items-center justify-center py-16 text-center"
+      className="flex flex-col items-center justify-center px-6 py-16 text-center"
     >
-      <span className="text-5xl" aria-hidden="true">{icon}</span>
-      <h3 className="mt-4 text-base font-semibold text-gray-900">{title}</h3>
-      {description && (
-        <p className="mt-2 text-sm text-gray-500">{description}</p>
-      )}
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
+        <Icon className="h-7 w-7" aria-hidden="true" />
+      </div>
+      <h3 className="mt-4 text-base font-semibold text-foreground">{title}</h3>
+      {description && <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">{description}</p>}
       {action && <div className="mt-6">{action}</div>}
     </div>
   );

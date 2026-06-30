@@ -29,7 +29,7 @@ export function DropZone({ onFilesAccepted, disabled, compact }: DropZoneProps) 
         {...getRootProps()}
         className={cn(
           "flex items-center gap-3 rounded-lg border-2 border-dashed px-4 py-3 cursor-pointer transition-all",
-          isDragActive ? "border-brand-500 bg-brand-50" : "border-border hover:border-brand-300 hover:bg-accent"
+          isDragActive ? "border-brand-500 bg-brand-500/8" : "border-border hover:border-brand-400 hover:bg-accent"
         )}
       >
         <input {...getInputProps()} />
@@ -45,14 +45,14 @@ export function DropZone({ onFilesAccepted, disabled, compact }: DropZoneProps) 
       className={cn(
         "group relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-12 transition-all cursor-pointer",
         isDragActive
-          ? "border-brand-500 bg-brand-50/50 scale-[1.01]"
-          : "border-border hover:border-brand-300 hover:bg-accent/50",
+          ? "border-brand-500 bg-brand-500/8 scale-[1.01]"
+          : "border-border hover:border-brand-400 hover:bg-accent/50",
         disabled && "opacity-50 cursor-not-allowed"
       )}
     >
       <input {...getInputProps()} />
-      <div className="rounded-2xl bg-brand-50 p-4 mb-4 group-hover:bg-brand-100 transition-colors">
-        <Camera className="h-8 w-8 text-brand-600" />
+      <div className="rounded-2xl bg-brand-500/12 p-4 mb-4 group-hover:bg-brand-500/20 transition-colors">
+        <Camera className="h-8 w-8 text-brand-600 dark:text-brand-300" />
       </div>
       <p className="text-base font-semibold text-foreground">
         {isDragActive ? "Dateien hier ablegen" : "Rechnung / Quittung hochladen"}

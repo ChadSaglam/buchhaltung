@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { CheckCircle2, Mail, Download, X, ExternalLink, Undo2 } from "lucide-react";
+import { CheckCircle2, Mail, Download, X, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type FeedbackType = "export" | "email";
@@ -62,12 +62,12 @@ export function ActionFeedback({ data, onDismiss, onUndo }: ActionFeedbackProps)
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 20, scale: 0.95 }}
           transition={{ type: "spring", stiffness: 400, damping: 30 }}
-          className="fixed bottom-6 right-6 z-50 w-[380px] overflow-hidden rounded-xl border border-emerald-200 bg-white shadow-2xl shadow-emerald-500/10"
+          className="fixed bottom-6 right-6 z-50 w-[380px] overflow-hidden rounded-xl border border-success/30 bg-card shadow-2xl shadow-success/10"
         >
           {/* Auto-dismiss progress */}
-          <div className="h-1 bg-emerald-100">
+          <div className="h-1 bg-success/15">
             <motion.div
-              className="h-full bg-emerald-500"
+              className="h-full bg-success"
               initial={{ width: "100%" }}
               animate={{ width: `${progress}%` }}
               transition={{ duration: 0.05 }}
@@ -77,13 +77,13 @@ export function ActionFeedback({ data, onDismiss, onUndo }: ActionFeedbackProps)
           <div className="p-4">
             <div className="flex items-start gap-3">
               {/* Success icon */}
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-success/12">
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ type: "spring", delay: 0.1 }}
                 >
-                  <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                  <CheckCircle2 className="h-5 w-5 text-success" />
                 </motion.div>
               </div>
 
@@ -94,6 +94,7 @@ export function ActionFeedback({ data, onDismiss, onUndo }: ActionFeedbackProps)
                   <button
                     onClick={onDismiss}
                     className="rounded-md p-1 text-muted-foreground hover:bg-accent transition-colors"
+                    aria-label="Schließen"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -109,9 +110,9 @@ export function ActionFeedback({ data, onDismiss, onUndo }: ActionFeedbackProps)
                     </span>
                   </div>
                   <div className="rounded-md bg-accent px-2.5 py-1">
-                    <span className="text-xs font-medium text-foreground">{data.totalAmount}</span>
+                    <span className="text-xs font-medium text-foreground tabular-nums">{data.totalAmount}</span>
                   </div>
-                  <span className="text-[11px] text-muted-foreground">{data.timestamp}</span>
+                  <span className="text-[11px] text-muted-foreground tabular-nums">{data.timestamp}</span>
                 </div>
               </div>
             </div>
@@ -121,7 +122,7 @@ export function ActionFeedback({ data, onDismiss, onUndo }: ActionFeedbackProps)
               <div className="mt-3 flex items-center gap-2 pl-[52px]">
                 <button
                   onClick={onDismiss}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100 transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-success/12 px-3 py-1.5 text-xs font-medium text-success hover:bg-success/20 transition-colors"
                 >
                   <ExternalLink className="h-3 w-3" /> OK
                 </button>

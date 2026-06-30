@@ -1,8 +1,8 @@
 import {
   LayoutDashboard, FileText, ScanLine, BookOpen,
-  Brain, GraduationCap, Settings, ListChecks, ScrollText
+  Brain, GraduationCap, Settings, ListChecks, ScrollText,
+  type LucideIcon,
 } from "lucide-react";
-import { type LucideIcon } from "lucide-react";
 
 export interface NavItem {
   label: string;
@@ -32,4 +32,11 @@ export function getNavSections() {
     sections.get(key)!.push(item);
   }
   return sections;
+}
+
+/** Resolve the active nav item for a pathname (longest matching href wins). */
+export function getActiveNavItem(pathname: string): NavItem | undefined {
+  return [...NAV_ITEMS]
+    .sort((a, b) => b.href.length - a.href.length)
+    .find((item) => pathname === item.href || pathname.startsWith(item.href + "/"));
 }

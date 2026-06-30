@@ -2,9 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { Save, User, Building2, Bell, Palette, Shield, SlidersHorizontal, Loader2, Check } from "lucide-react";
+import { Save, User, Building2, Bell, Palette, Shield, SlidersHorizontal, Check, Settings } from "lucide-react";
 import { getMe, getScannerConfig, updateScannerConfig } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/page_header";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { Card } from "@/components/ui/Card";
 
 interface UserInfo {
   id: number;
@@ -60,7 +64,7 @@ function SettingsInput({ value, onChange, type = "text", placeholder }: {
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+      className="w-full rounded-lg border border-input bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
     />
   );
 }
@@ -137,28 +141,23 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Einstellungen</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Konto- und Anwendungseinstellungen verwalten</p>
-        </div>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className={cn(
-            "inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-all",
-            saved
-              ? "bg-emerald-600 hover:bg-emerald-700"
-              : "bg-brand-600 hover:bg-brand-700 shadow-md shadow-brand-600/25"
-          )}
-        >
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" />
-           : saved ? <Check className="h-4 w-4" />
-           : <Save className="h-4 w-4" />}
-          {saved ? "Gespeichert" : "Speichern"}
-        </button>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        icon={Settings}
+        title="Einstellungen"
+        subtitle="Konto- und Anwendungseinstellungen verwalten"
+        action={
+          <Button
+            variant={saved ? "success" : "primary"}
+            onClick={handleSave}
+            disabled={saving}
+            loading={saving}
+            icon={saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
+          >
+            {saved ? "Gespeichert" : "Speichern"}
+          </Button>
+        }
+      />
 
       <div className="flex flex-col md:flex-row gap-6">
         <nav className="flex md:flex-col gap-1 md:w-56 shrink-0">
@@ -169,7 +168,7 @@ export default function SettingsPage() {
               className={cn(
                 "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-all text-left",
                 activeTab === tab.id
-                  ? "bg-brand-50 text-brand-700"
+                  ? "bg-brand-500/12 text-brand-600 dark:text-brand-300"
                   : "text-muted-foreground hover:bg-accent hover:text-foreground"
               )}
             >
@@ -197,9 +196,7 @@ export default function SettingsPage() {
                 <p className="text-sm text-muted-foreground py-2">{user?.email ?? "–"}</p>
               </SettingsField>
               <SettingsField label="Rolle">
-                <span className="inline-flex items-center rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700 capitalize">
-                  {user?.role ?? "–"}
-                </span>
+                <Badge tone="brand" className="capitalize">{user?.role ?? "–"}</Badge>
               </SettingsField>
             </div>
           )}
@@ -236,7 +233,7 @@ export default function SettingsPage() {
                     className="flex-1 accent-brand-600"
                     aria-label="Konfidenz-Schwelle"
                   />
-                  <span className="w-16 text-right font-mono text-sm text-foreground">
+                  <span className="w-16 text-right font-mono text-sm text-foreground tabular-nums">
                     {Math.round(threshold * 100)}%
                   </span>
                 </div>
@@ -270,8 +267,8 @@ export default function SettingsPage() {
                       className={cn(
                         "rounded-lg border px-4 py-2 text-sm font-medium transition-all capitalize",
                         theme === tOpt
-                          ? "border-brand-600 bg-brand-50 text-brand-700"
-                          : "border-border text-muted-foreground hover:border-brand-200"
+                          ? "border-brand-600 bg-brand-500/12 text-brand-600 dark:text-brand-300 dark:border-brand-300"
+                          : "border-border text-muted-foreground hover:border-brand-400/50 hover:text-foreground"
                       )}
                     >
                       {tOpt === "light" ? "Hell" : tOpt === "dark" ? "Dunkel" : "System"}

@@ -14,6 +14,7 @@ import { InvoiceCard } from "./components/InvoiceCard";
 import { BuchungTable } from "./components/BuchungTable";
 import { ManualEntry } from "./components/ManualEntry";
 import type { PipelineStep } from "./components/ProcessingOverlay";
+import { PageHeader } from "@/components/ui/page_header";
 
 function normalizeInvoicePayload(payload: unknown): ExtractedInvoice | null {
   if (!payload || typeof payload !== "object") return null;
@@ -182,15 +183,11 @@ export default function ScannerPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <div className="flex items-center gap-2">
-          <ScanLine className="h-6 w-6 text-brand-600" />
-          <h1 className="text-2xl font-bold text-foreground">Rechnung Scanner</h1>
-        </div>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Rechnung hochladen → AI erkennt Details → automatische Kontierung
-        </p>
-      </div>
+      <PageHeader
+        icon={ScanLine}
+        title="Rechnung Scanner"
+        subtitle="Rechnung hochladen → AI erkennt Details → automatische Kontierung"
+      />
 
       <StatusBar
         status={status}
@@ -221,7 +218,7 @@ export default function ScannerPage() {
 
       {invoices.length > 0 && (
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-foreground">Erkannte Rechnungen</h2>
+          <h2 className="text-base font-semibold text-foreground">Erkannte Rechnungen</h2>
           {invoices.map((inv, i) => (
             <InvoiceCard
               key={i}

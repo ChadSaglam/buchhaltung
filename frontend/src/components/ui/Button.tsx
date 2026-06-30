@@ -1,55 +1,68 @@
-// components/ui/Button.tsx
 "use client";
 import { motion, type HTMLMotionProps } from "motion/react";
+import { Loader2 } from "lucide-react";
 import { forwardRef } from "react";
+import { cn } from "@/lib/utils";
 
-type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
-type ButtonSize = "sm" | "md" | "lg";
+type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "outline" | "success";
+type ButtonSize = "xs" | "sm" | "md" | "lg" | "icon";
 
 interface ButtonProps extends Omit<HTMLMotionProps<"button">, "children"> {
   variant?: ButtonVariant;
   size?: ButtonSize;
   loading?: boolean;
   icon?: React.ReactNode;
+  iconRight?: React.ReactNode;
   children?: React.ReactNode;
 }
 
 const variants: Record<ButtonVariant, string> = {
-  primary: "bg-brand-600 hover:bg-brand-700 text-white shadow-sm",
-  secondary: "bg-white/5 hover:bg-white/10 text-foreground border border-border",
-  ghost: "bg-transparent hover:bg-white/5 text-muted-foreground",
-  danger: "bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20",
+  primary:
+    "bg-primary text-primary-foreground shadow-sm hover:brightness-110 active:brightness-95",
+  secondary:
+    "bg-muted text-foreground border border-border hover:bg-accent",
+  outline:
+    "bg-transparent text-foreground border border-border-strong hover:bg-accent",
+  ghost:
+    "bg-transparent text-muted-foreground hover:bg-accent hover:text-foreground",
+  danger:
+    "bg-destructive/10 text-destructive border border-destructive/25 hover:bg-destructive/20",
+  success:
+    "bg-success/10 text-success border border-success/25 hover:bg-success/20",
 };
 
 const sizes: Record<ButtonSize, string> = {
-  sm: "px-3 py-1.5 text-xs rounded-md",
-  md: "px-4 py-2.5 text-sm rounded-lg",
-  lg: "px-6 py-3 text-base rounded-lg",
+  xs: "h-7 px-2.5 text-xs rounded-md gap-1.5",
+  sm: "h-8 px-3 text-xs rounded-lg gap-1.5",
+  md: "h-10 px-4 text-sm rounded-lg gap-2",
+  lg: "h-12 px-6 text-base rounded-xl gap-2",
+  icon: "h-9 w-9 rounded-lg",
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ variant = "primary", size = "md", loading, icon, children, disabled, className = "", ...props }, ref) => {
+  (
+    { variant = "primary", size = "md", loading, icon, iconRight, children, disabled, className, ...props },
+    ref
+  ) => {
     return (
       <motion.button
         ref={ref}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        className={`
-          inline-flex items-center justify-center gap-2 font-medium
-          transition-colors duration-150 select-none
-          disabled:opacity-50 disabled:pointer-events-none
-          ${variants[variant]} ${sizes[size]} ${className}
-        `}
+        whileTap={{ scale: 0.97 }}
+        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+        className={cn(
+          "inline-flex items-center justify-center font-medium select-none",
+          "transition-[filter,background-color,border-color,color] duration-150",
+          "disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+          variants[variant],
+          sizes[size],
+          className
+        )}
         disabled={disabled || loading}
         {...props}
       >
-        {loading ? (
-          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
-        ) : icon}
+        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : icon}
         {children}
+        {!loading && iconRight}
       </motion.button>
     );
   }

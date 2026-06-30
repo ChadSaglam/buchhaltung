@@ -6,6 +6,7 @@ import { Download, Mail, Trash2, Send, Loader2, FileText, AlertTriangle } from "
 import toast from "react-hot-toast";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/Button";
 import type { BuchungRow } from "../types";
 import { formatCHF } from "../helpers";
 import { ActionFeedback, type ActionFeedbackData } from "@/components/shared/ActionFeedback";
@@ -105,12 +106,13 @@ export function BuchungTable({ rows, onRemove, onClear }: BuchungTableProps) {
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25 }}
         className="rounded-xl border border-border bg-card overflow-hidden"
       >
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4">
           <div className="flex items-center gap-3">
-            <FileText className="h-5 w-5 text-brand-600" />
+            <FileText className="h-5 w-5 text-brand-600 dark:text-brand-300" />
             <div>
               <p className="text-sm font-semibold text-foreground">{rows.length} Buchungen</p>
               <p className="text-xs text-muted-foreground">Total: {formatCHF(totalAmount)}</p>
@@ -118,41 +120,35 @@ export function BuchungTable({ rows, onRemove, onClear }: BuchungTableProps) {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {(["banana", "csv", "excel"] as const).map((fmt) => (
-              <button
+              <Button
                 key={fmt}
+                variant="outline"
+                size="xs"
                 onClick={() => handleExport(fmt)}
                 disabled={!!exporting}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors disabled:opacity-50"
+                loading={exporting === fmt}
+                icon={<Download className="h-3.5 w-3.5" />}
               >
-                {exporting === fmt ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Download className="h-3.5 w-3.5" />
-                )}
                 {fmt.toUpperCase()}
-              </button>
+              </Button>
             ))}
-            <button
+            <Button
+              variant={showEmail ? "secondary" : "outline"}
+              size="xs"
               onClick={() => setShowEmail(!showEmail)}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
-                showEmail
-                  ? "border-brand-300 bg-brand-50 text-brand-700"
-                  : "border-border text-muted-foreground hover:bg-accent"
-              )}
+              icon={<Mail className="h-3.5 w-3.5" />}
             >
-              <Mail className="h-3.5 w-3.5" /> E-Mail
-            </button>
+              E-Mail
+            </Button>
 
-            {/* Clear with confirmation */}
             <button
               onClick={handleClear}
               onBlur={() => setTimeout(() => setShowClearConfirm(false), 200)}
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
+                "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors",
                 showClearConfirm
-                  ? "border-red-400 bg-red-50 text-red-700 animate-pulse"
-                  : "border-red-200 text-red-600 hover:bg-red-50"
+                  ? "border-destructive/40 bg-destructive/10 text-destructive animate-pulse"
+                  : "border-destructive/25 text-destructive hover:bg-destructive/10"
               )}
             >
               {showClearConfirm ? (
@@ -183,21 +179,19 @@ export function BuchungTable({ rows, onRemove, onClear }: BuchungTableProps) {
               onChange={(e) => setEmailTo(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleEmail()}
               placeholder="empfaenger@firma.ch"
-              className="flex-1 rounded-lg border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              className="flex-1 rounded-lg border border-input bg-background px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               autoFocus
             />
-            <button
+            <Button
+              variant="primary"
+              size="sm"
               onClick={handleEmail}
               disabled={!emailTo || sendingEmail}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50 transition-colors"
+              loading={sendingEmail}
+              icon={<Send className="h-3.5 w-3.5" />}
             >
-              {sendingEmail ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Send className="h-3.5 w-3.5" />
-              )}
               {sendingEmail ? "Wird gesendet..." : "Senden"}
-            </button>
+            </Button>
           </motion.div>
         )}
 
@@ -216,18 +210,19 @@ export function BuchungTable({ rows, onRemove, onClear }: BuchungTableProps) {
             <tbody>
               {rows.map((row) => (
                 <tr key={row.nr} className="border-b border-border last:border-0 hover:bg-accent/30 transition-colors">
-                  <td className="px-4 py-2.5 font-mono text-muted-foreground">{row.nr}</td>
-                  <td className="px-4 py-2.5">{row.datum}</td>
-                  <td className="px-4 py-2.5 max-w-[200px] truncate">{row.beschreibung}</td>
-                  <td className="px-4 py-2.5 font-mono">{row.kt_soll}</td>
-                  <td className="px-4 py-2.5 font-mono">{row.kt_haben}</td>
-                  <td className="px-4 py-2.5 font-mono font-medium">{formatCHF(row.betrag)}</td>
-                  <td className="px-4 py-2.5">{row.mwstcode}</td>
-                  <td className="px-4 py-2.5">{row.mwstpct}</td>
+                  <td className="px-4 py-2.5 font-mono text-muted-foreground tabular-nums">{row.nr}</td>
+                  <td className="px-4 py-2.5 text-foreground tabular-nums">{row.datum}</td>
+                  <td className="px-4 py-2.5 max-w-[200px] truncate text-foreground">{row.beschreibung}</td>
+                  <td className="px-4 py-2.5 font-mono text-foreground">{row.kt_soll}</td>
+                  <td className="px-4 py-2.5 font-mono text-foreground">{row.kt_haben}</td>
+                  <td className="px-4 py-2.5 font-mono font-medium text-foreground tabular-nums">{formatCHF(row.betrag)}</td>
+                  <td className="px-4 py-2.5 text-muted-foreground">{row.mwstcode}</td>
+                  <td className="px-4 py-2.5 text-muted-foreground tabular-nums">{row.mwstpct}</td>
                   <td className="px-4 py-2.5">
                     <button
                       onClick={() => onRemove(row.nr)}
-                      className="rounded p-1 text-muted-foreground hover:text-red-600 hover:bg-red-50 transition-colors"
+                      className="rounded p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      aria-label="Buchung entfernen"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -239,7 +234,7 @@ export function BuchungTable({ rows, onRemove, onClear }: BuchungTableProps) {
             <tfoot>
               <tr className="bg-muted/30">
                 <td colSpan={5} className="px-4 py-2.5 text-sm font-semibold text-foreground">Total</td>
-                <td className="px-4 py-2.5 font-mono font-bold text-foreground">{formatCHF(totalAmount)}</td>
+                <td className="px-4 py-2.5 font-mono font-bold text-foreground tabular-nums">{formatCHF(totalAmount)}</td>
                 <td colSpan={3} />
               </tr>
             </tfoot>

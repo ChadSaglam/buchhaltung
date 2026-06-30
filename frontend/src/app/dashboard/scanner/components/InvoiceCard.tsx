@@ -17,6 +17,8 @@ import {
   XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
 import { MWST_CODE_OPTIONS, MWST_PCT_OPTIONS, type ExtractedInvoice } from "../types";
 import { sourceIcon, formatCHF } from "../helpers";
 
@@ -90,14 +92,16 @@ export function InvoiceCard({ invoice, index, onUpdate, onAddToBookings, added }
     setDraft((prev) => ({ ...prev, [key]: value }));
   };
 
+  const confidenceTone = confidence >= 0.8 ? "success" : confidence >= 0.5 ? "warning" : "danger";
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.08 }}
+      transition={{ delay: index * 0.08, duration: 0.25 }}
       className={cn(
-        "overflow-hidden rounded-xl border bg-card transition-shadow hover:shadow-lg hover:shadow-black/5",
-        added ? "border-emerald-200" : "border-border"
+        "overflow-hidden rounded-xl border bg-card transition-shadow hover:shadow-md",
+        added ? "border-success/40" : "border-border"
       )}
     >
 
@@ -136,18 +140,18 @@ export function InvoiceCard({ invoice, index, onUpdate, onAddToBookings, added }
                       <div className="flex items-center gap-2 text-sm">
                         {safeInvoice.ocr_worked ? (
                           <>
-                            <CheckCircle className="h-4 w-4 text-emerald-600" />
-                            <span className="text-emerald-700">Erfolgreich verwendet</span>
+                            <CheckCircle className="h-4 w-4 text-success" />
+                            <span className="text-success">Erfolgreich verwendet</span>
                           </>
                         ) : safeInvoice.custom_ocr_available ? (
                           <>
-                            <XCircle className="h-4 w-4 text-amber-600" />
-                            <span className="text-amber-700">Verfügbar, aber in diesem Lauf nicht erfolgreich</span>
+                            <XCircle className="h-4 w-4 text-warning" />
+                            <span className="text-warning">Verfügbar, aber in diesem Lauf nicht erfolgreich</span>
                           </>
                         ) : (
                           <>
-                            <XCircle className="h-4 w-4 text-red-600" />
-                            <span className="text-red-700">Nicht implementiert</span>
+                            <XCircle className="h-4 w-4 text-destructive" />
+                            <span className="text-destructive">Nicht implementiert</span>
                           </>
                         )}
                       </div>
@@ -203,9 +207,9 @@ export function InvoiceCard({ invoice, index, onUpdate, onAddToBookings, added }
                             <span
                               className={cn(
                                 "text-xs",
-                                attempt.status === "done" && "text-emerald-700",
-                                attempt.status === "failed" && "text-red-600",
-                                attempt.status === "active" && "text-brand-700",
+                                attempt.status === "done" && "text-success",
+                                attempt.status === "failed" && "text-destructive",
+                                attempt.status === "active" && "text-brand-600 dark:text-brand-300",
                                 attempt.status === "pending" && "text-muted-foreground"
                               )}
                             >
@@ -229,7 +233,7 @@ export function InvoiceCard({ invoice, index, onUpdate, onAddToBookings, added }
           <div
             className={cn(
               "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm font-bold",
-              added ? "bg-emerald-100 text-emerald-700" : "bg-brand-50 text-brand-700"
+              added ? "bg-success/12 text-success" : "bg-brand-500/12 text-brand-600 dark:text-brand-300"
             )}
           >
             {added ? <CheckCircle className="h-4 w-4" /> : index + 1}
@@ -243,18 +247,9 @@ export function InvoiceCard({ invoice, index, onUpdate, onAddToBookings, added }
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
-          <span
-            className={cn(
-              "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium",
-              confidence >= 0.8
-                ? "bg-emerald-100 text-emerald-700"
-                : confidence >= 0.5
-                  ? "bg-amber-100 text-amber-700"
-                  : "bg-red-100 text-red-700"
-            )}
-          >
+          <Badge tone={confidenceTone}>
             {sourceIcon(classSource)} {(confidence * 100).toFixed(0)}%
-          </span>
+          </Badge>
           {expanded ? (
             <ChevronUp className="h-4 w-4 text-muted-foreground" />
           ) : (
@@ -269,7 +264,7 @@ export function InvoiceCard({ invoice, index, onUpdate, onAddToBookings, added }
             <Field label="Lieferant">
               {editing ? (
                 <input
-                  className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
+                  className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm text-foreground"
                   value={draft.vendor}
                   onChange={(e) => updateDraft("vendor", e.target.value)}
                 />
@@ -282,7 +277,7 @@ export function InvoiceCard({ invoice, index, onUpdate, onAddToBookings, added }
               {editing ? (
                 <input
                   type="date"
-                  className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
+                  className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm text-foreground"
                   value={draft.date}
                   onChange={(e) => updateDraft("date", e.target.value)}
                 />
@@ -296,19 +291,19 @@ export function InvoiceCard({ invoice, index, onUpdate, onAddToBookings, added }
                 <input
                   type="number"
                   step="0.01"
-                  className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
+                  className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm text-foreground"
                   value={draft.total_amount}
                   onChange={(e) => updateDraft("total_amount", parseFloat(e.target.value || "0"))}
                 />
               ) : (
-                <p className="text-sm font-semibold text-foreground">{formatCHF(safeInvoice.total_amount)}</p>
+                <p className="text-sm font-semibold text-foreground tabular-nums">{formatCHF(safeInvoice.total_amount)}</p>
               )}
             </Field>
 
             <Field label="Rechnung Nr.">
               {editing ? (
                 <input
-                  className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
+                  className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm text-foreground"
                   value={draft.invoice_number}
                   onChange={(e) => updateDraft("invoice_number", e.target.value)}
                 />
@@ -321,7 +316,7 @@ export function InvoiceCard({ invoice, index, onUpdate, onAddToBookings, added }
           <Field label="Beschreibung">
             {editing ? (
               <input
-                className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
+                className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm text-foreground"
                 value={draft.description}
                 onChange={(e) => updateDraft("description", e.target.value)}
               />
@@ -338,7 +333,7 @@ export function InvoiceCard({ invoice, index, onUpdate, onAddToBookings, added }
               <Field label="Kto Soll">
                 {editing ? (
                   <input
-                    className="w-full rounded-md border border-input bg-background px-2 py-1 font-mono text-sm"
+                    className="w-full rounded-md border border-input bg-background px-2 py-1 font-mono text-sm text-foreground"
                     value={draft.kt_soll ?? ""}
                     onChange={(e) => updateDraft("kt_soll", e.target.value)}
                   />
@@ -350,7 +345,7 @@ export function InvoiceCard({ invoice, index, onUpdate, onAddToBookings, added }
               <Field label="Kto Haben">
                 {editing ? (
                   <input
-                    className="w-full rounded-md border border-input bg-background px-2 py-1 font-mono text-sm"
+                    className="w-full rounded-md border border-input bg-background px-2 py-1 font-mono text-sm text-foreground"
                     value={draft.kt_haben ?? ""}
                     onChange={(e) => updateDraft("kt_haben", e.target.value)}
                   />
@@ -362,7 +357,7 @@ export function InvoiceCard({ invoice, index, onUpdate, onAddToBookings, added }
               <Field label="MwSt-Code">
                 {editing ? (
                   <select
-                    className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
+                    className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm text-foreground"
                     value={draft.mwst_code ?? ""}
                     onChange={(e) => updateDraft("mwst_code", e.target.value)}
                   >
@@ -380,7 +375,7 @@ export function InvoiceCard({ invoice, index, onUpdate, onAddToBookings, added }
               <Field label="MwSt-%">
                 {editing ? (
                   <select
-                    className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
+                    className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm text-foreground"
                     value={draft.mwst_pct ?? ""}
                     onChange={(e) => updateDraft("mwst_pct", e.target.value)}
                   >
@@ -407,7 +402,7 @@ export function InvoiceCard({ invoice, index, onUpdate, onAddToBookings, added }
                     className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-1.5 text-sm"
                   >
                     <span className="text-foreground">{li.item}</span>
-                    <span className="font-mono text-muted-foreground">{formatCHF(li.amount)}</span>
+                    <span className="font-mono text-muted-foreground tabular-nums">{formatCHF(li.amount)}</span>
                   </div>
                 ))}
               </div>
@@ -417,40 +412,42 @@ export function InvoiceCard({ invoice, index, onUpdate, onAddToBookings, added }
           <div className="flex items-center gap-2 pt-2">
             {editing ? (
               <>
-                <button
+                <Button
+                  variant="primary"
+                  size="sm"
                   onClick={handleSaveEdit}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700"
+                  icon={<Save className="h-3.5 w-3.5" />}
                 >
-                  <Save className="h-3.5 w-3.5" /> Übernehmen
-                </button>
-                <button
+                  Übernehmen
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={handleCancelEdit}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent"
+                  icon={<RotateCcw className="h-3.5 w-3.5" />}
                 >
-                  <RotateCcw className="h-3.5 w-3.5" /> Abbrechen
-                </button>
+                  Abbrechen
+                </Button>
               </>
             ) : (
               <>
-                <button
+                <Button
+                  variant={added ? "success" : "primary"}
+                  size="sm"
                   onClick={onAddToBookings}
                   disabled={added}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                    added
-                      ? "cursor-default bg-emerald-100 text-emerald-700"
-                      : "bg-brand-600 text-white hover:bg-brand-700"
-                  )}
+                  icon={added ? <CheckCircle className="h-3.5 w-3.5" /> : <FileText className="h-3.5 w-3.5" />}
                 >
-                  {added ? <CheckCircle className="h-3.5 w-3.5" /> : <FileText className="h-3.5 w-3.5" />}
                   {added ? "Hinzugefügt" : "Zur Buchung"}
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => setEditing(true)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent"
+                  icon={<Edit3 className="h-3.5 w-3.5" />}
                 >
-                  <Edit3 className="h-3.5 w-3.5" /> Bearbeiten
-                </button>
+                  Bearbeiten
+                </Button>
               </>
             )}
           </div>

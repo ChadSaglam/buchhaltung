@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Brain, Plus, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/Button";
 import type { BuchungRow, MWST_CODE_OPTIONS, MWST_PCT_OPTIONS } from "../types";
 import { calcMwst } from "../helpers";
 
@@ -64,7 +64,7 @@ export function ManualEntry({ onAddRow, nextNr }: ManualEntryProps) {
   return (
     <div className="rounded-xl border border-border bg-card p-5 space-y-4">
       <div className="flex items-center gap-2">
-        <Brain className="h-5 w-5 text-brand-600" />
+        <Brain className="h-5 w-5 text-brand-600 dark:text-brand-300" />
         <p className="text-sm font-semibold text-foreground">Manuelle Klassifizierung</p>
       </div>
 
@@ -73,7 +73,7 @@ export function ManualEntry({ onAddRow, nextNr }: ManualEntryProps) {
           value={beschreibung}
           onChange={(e) => { setBeschreibung(e.target.value); setResult(null); }}
           placeholder="Beschreibung eingeben..."
-          className="rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           onKeyDown={(e) => e.key === "Enter" && handleClassify()}
         />
         <input
@@ -82,33 +82,36 @@ export function ManualEntry({ onAddRow, nextNr }: ManualEntryProps) {
           value={betrag}
           onChange={(e) => setBetrag(e.target.value)}
           placeholder="Betrag"
-          className="rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         />
-        <button
+        <Button
+          variant="primary"
           onClick={handleClassify}
           disabled={classifying || !beschreibung.trim()}
-          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50 transition-colors"
+          loading={classifying}
+          icon={<Brain className="h-4 w-4" />}
         >
-          {classifying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}
           Klassifizieren
-        </button>
+        </Button>
       </div>
 
       {result && (
         <div className="flex items-center justify-between rounded-lg bg-accent/50 px-4 py-3">
           <div className="flex items-center gap-4 text-sm">
-            <span className="font-mono"><strong>Soll:</strong> {result.kt_soll}</span>
-            <span className="font-mono"><strong>Haben:</strong> {result.kt_haben}</span>
-            <span><strong>MwSt:</strong> {result.mwst_code} {result.mwst_pct}%</span>
+            <span className="font-mono text-foreground"><strong>Soll:</strong> {result.kt_soll}</span>
+            <span className="font-mono text-foreground"><strong>Haben:</strong> {result.kt_haben}</span>
+            <span className="text-foreground"><strong>MwSt:</strong> {result.mwst_code} {result.mwst_pct}%</span>
             <span className="text-muted-foreground">({(result.confidence * 100).toFixed(0)}% · {result.source})</span>
           </div>
-          <button
+          <Button
+            variant="success"
+            size="sm"
             onClick={handleAdd}
             disabled={!betrag}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+            icon={<Plus className="h-3.5 w-3.5" />}
           >
-            <Plus className="h-3.5 w-3.5" /> Hinzufügen
-          </button>
+            Hinzufügen
+          </Button>
         </div>
       )}
     </div>

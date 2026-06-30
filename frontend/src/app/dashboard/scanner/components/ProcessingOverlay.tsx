@@ -24,11 +24,11 @@ interface ProcessingOverlayProps {
 function StepIcon({ status }: { status: PipelineStep["status"] }) {
   switch (status) {
     case "done":
-      return <CheckCircle2 className="h-4 w-4 text-emerald-600" />;
+      return <CheckCircle2 className="h-4 w-4 text-success" />;
     case "failed":
-      return <XCircle className="h-4 w-4 text-red-500" />;
+      return <XCircle className="h-4 w-4 text-destructive" />;
     case "active":
-      return <Loader2 className="h-4 w-4 animate-spin text-brand-600" />;
+      return <Loader2 className="h-4 w-4 animate-spin text-brand-600 dark:text-brand-300" />;
     default:
       return <Circle className="h-4 w-4 text-muted-foreground/30" />;
   }
@@ -43,10 +43,11 @@ export function ProcessingOverlay({ steps, fileName, elapsed, isCloud }: Process
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl border border-brand-200 bg-gradient-to-br from-brand-50 to-white p-6 sm:p-8"
+      transition={{ duration: 0.25 }}
+      className="rounded-2xl border border-brand-500/25 bg-brand-500/6 p-6 sm:p-8"
     >
       <div className="mb-5 flex items-center gap-3">
-        <Loader2 className="h-6 w-6 animate-spin text-brand-600" />
+        <Loader2 className="h-6 w-6 animate-spin text-brand-600 dark:text-brand-300" />
         <div>
           <p className="text-base font-semibold text-foreground">
             {activeStep ? `${activeStep.icon} ${activeStep.label}` : "Verarbeitung läuft..."}
@@ -56,15 +57,15 @@ export function ProcessingOverlay({ steps, fileName, elapsed, isCloud }: Process
       </div>
 
       <div className="mb-5">
-        <div className="overflow-hidden rounded-full bg-brand-100">
+        <div className="overflow-hidden rounded-full bg-brand-500/15">
           <motion.div
-            className="h-2 rounded-full bg-brand-600"
+            className="h-2 rounded-full bg-brand-600 dark:bg-brand-400"
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.4 }}
           />
         </div>
         <div className="mt-1.5 flex justify-between text-[11px] text-muted-foreground">
-          <span>{elapsed}s</span>
+          <span className="tabular-nums">{elapsed}s</span>
           <span>{isCloud ? "Cloud-Modell" : "Lokales Modell"}</span>
         </div>
       </div>
@@ -79,8 +80,8 @@ export function ProcessingOverlay({ steps, fileName, elapsed, isCloud }: Process
               transition={{ duration: 0.2 }}
               className={cn(
                 "rounded-lg px-3 py-2 text-sm",
-                step.status === "active" && "bg-brand-50",
-                step.status === "failed" && "bg-red-50/50"
+                step.status === "active" && "bg-brand-500/12",
+                step.status === "failed" && "bg-destructive/8"
               )}
             >
               <div className="flex items-center gap-3">
@@ -89,9 +90,9 @@ export function ProcessingOverlay({ steps, fileName, elapsed, isCloud }: Process
                 <span
                   className={cn(
                     "flex-1",
-                    step.status === "done" && "text-emerald-700",
-                    step.status === "failed" && "text-red-600",
-                    step.status === "active" && "font-medium text-brand-700",
+                    step.status === "done" && "text-success",
+                    step.status === "failed" && "text-destructive",
+                    step.status === "active" && "font-medium text-brand-600 dark:text-brand-300",
                     step.status === "pending" && "text-muted-foreground"
                   )}
                 >

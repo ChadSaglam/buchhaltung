@@ -30,11 +30,11 @@ interface CheckItem {
 
 function buildChecklist(s: SystemStatus): CheckItem[] {
   return [
-    { label: "Ollama", ok: s.ollama, detail: s.ollama ? "Verbunden" : "Offline", icon: Server, color: "text-blue-600", href: undefined },
-    { label: "Vision AI", ok: s.vision, detail: s.visionModel || "Kein Modell", icon: Eye, color: "text-violet-600", href: "/dashboard/scanner" },
-    { label: "ML-Modell", ok: s.mlModel, detail: s.mlModel ? `${Math.round(s.mlAccuracy * 100)}%` : "Nicht trainiert", icon: Bot, color: "text-brand-600", href: "/dashboard/modell" },
-    { label: "Gedächtnis", ok: s.memoryCount > 0, detail: `${s.memoryCount} Einträge`, icon: Brain, color: "text-emerald-600", href: "/dashboard/modell" },
-    { label: "Buchungen", ok: s.bookingCount > 0, detail: `${s.bookingCount} gespeichert`, icon: BookOpen, color: "text-rose-600", href: "/dashboard/kontoauszug" },
+    { label: "Ollama", ok: s.ollama, detail: s.ollama ? "Verbunden" : "Offline", icon: Server, color: "text-info", href: undefined },
+    { label: "Vision AI", ok: s.vision, detail: s.visionModel || "Kein Modell", icon: Eye, color: "text-brand-600 dark:text-brand-300", href: "/dashboard/scanner" },
+    { label: "ML-Modell", ok: s.mlModel, detail: s.mlModel ? `${Math.round(s.mlAccuracy * 100)}%` : "Nicht trainiert", icon: Bot, color: "text-brand-600 dark:text-brand-300", href: "/dashboard/modell" },
+    { label: "Gedächtnis", ok: s.memoryCount > 0, detail: `${s.memoryCount} Einträge`, icon: Brain, color: "text-success", href: "/dashboard/modell" },
+    { label: "Buchungen", ok: s.bookingCount > 0, detail: `${s.bookingCount} gespeichert`, icon: BookOpen, color: "text-warning", href: "/dashboard/kontoauszug" },
   ];
 }
 
@@ -95,6 +95,7 @@ export function SystemChecklist() {
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
       className="rounded-xl border border-border bg-card overflow-hidden"
     >
       {/* Header */}
@@ -109,7 +110,7 @@ export function SystemChecklist() {
           onClick={() => fetchStatus(true)}
           disabled={refreshing}
           className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-          title="Aktualisieren"
+          aria-label="Aktualisieren"
         >
           <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
         </button>
@@ -119,7 +120,7 @@ export function SystemChecklist() {
       <div className="px-4 pb-3">
         <div className="h-1.5 rounded-full bg-muted overflow-hidden">
           <motion.div
-            className={cn("h-full rounded-full", allGood ? "bg-emerald-500" : "bg-amber-500")}
+            className={cn("h-full rounded-full", allGood ? "bg-success" : "bg-warning")}
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.6, ease: "easeOut" }}
@@ -136,7 +137,7 @@ export function SystemChecklist() {
               key={check.label}
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.06 }}
+              transition={{ delay: i * 0.06, duration: 0.22 }}
             >
               <Wrapper
                 {...(check.href ? { href: check.href } : {})}
@@ -147,19 +148,19 @@ export function SystemChecklist() {
               >
                 <div className={cn(
                   "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
-                  check.ok ? "bg-emerald-50" : "bg-red-50"
+                  check.ok ? "bg-success/12" : "bg-destructive/10"
                 )}>
                   {check.ok ? (
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                    <CheckCircle2 className="h-4 w-4 text-success" />
                   ) : (
-                    <XCircle className="h-4 w-4 text-red-500" />
+                    <XCircle className="h-4 w-4 text-destructive" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground">{check.label}</p>
                   <p className={cn(
                     "text-xs truncate",
-                    check.ok ? "text-emerald-600" : "text-red-500"
+                    check.ok ? "text-success" : "text-destructive"
                   )}>
                     {check.detail}
                   </p>

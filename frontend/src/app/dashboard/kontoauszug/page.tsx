@@ -1,7 +1,12 @@
 'use client';
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { FileText, Upload, Loader2, Save, RefreshCw, Download } from 'lucide-react';
 import { api } from '@/lib/api';
 import { PageHeader } from '@/components/ui/page_header';
+import { Button } from '@/components/ui/Button';
+import { Card, CardContent } from '@/components/ui/Card';
+import { EmptyState } from '@/components/shared/EmptyState';
 
 interface TxRow { Nr: number; Datum: string; Beschreibung: string; KtSoll: string; KtHaben: string; 'Betrag CHF': number; 'MwStUSt-Code': string; 'MwSt-%': string; 'Gebuchte MwStUSt CHF': number; }
 
@@ -73,77 +78,117 @@ export default function KontoauszugPage() {
 
   return (
     <div className="p-4 md:p-8 max-w-7xl">
-      <PageHeader icon="📄" title="Kontoauszug" subtitle="UBS Kontoauszug PDF hochladen → Bearbeiten → Export" />
+      <PageHeader
+        icon={FileText}
+        title="Kontoauszug"
+        subtitle="UBS Kontoauszug PDF hochladen → Bearbeiten → Export"
+      />
 
-      {rows.length === 0 && !parsing && (
-        <div
-          onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) processFile(f); }}
-          onClick={() => document.getElementById('pdf-input')?.click()}
-          className={`border-2 border-dashed rounded-2xl p-8 md:p-16 text-center cursor-pointer transition-all bg-white ${
-            dragOver ? 'border-brand-500 bg-brand-50' : 'border-gray-300 hover:border-gray-400'
-          }`}
-        >
-          <div className="text-5xl mb-4">📄</div>
-          <p className="text-gray-700 font-medium text-lg">PDF hier ablegen oder klicken</p>
-          <p className="text-gray-400 text-sm mt-2">UBS Kontoauszug (.pdf)</p>
-          <input id="pdf-input" type="file" accept=".pdf" onChange={e => e.target.files?.[0] && processFile(e.target.files[0])} className="hidden" />
-        </div>
-      )}
+      <AnimatePresence mode="wait">
+        {rows.length === 0 && !parsing && (
+          <motion.div
+            key="dropzone"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) processFile(f); }}
+            onClick={() => document.getElementById('pdf-input')?.click()}
+            className={`border-2 border-dashed rounded-2xl p-8 md:p-16 text-center cursor-pointer transition-all ${
+              dragOver ? 'border-brand-500 bg-brand-500/8' : 'border-border hover:border-brand-400 hover:bg-accent/50'
+            }`}
+          >
+            <div className="flex justify-center mb-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-500/12 text-brand-600 dark:text-brand-300">
+                <Upload className="h-8 w-8" />
+              </div>
+            </div>
+            <p className="text-foreground font-semibold text-base">PDF hier ablegen oder klicken</p>
+            <p className="text-muted-foreground text-sm mt-2">UBS Kontoauszug (.pdf)</p>
+            <input id="pdf-input" type="file" accept=".pdf" onChange={e => e.target.files?.[0] && processFile(e.target.files[0])} className="hidden" />
+          </motion.div>
+        )}
 
-      {(parsing || classifying) && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-16 text-center">
-          <div className="animate-spin text-4xl mb-4">🔄</div>
-          <p className="text-gray-500">{classifying ? 'Transaktionen werden klassifiziert...' : 'PDF wird verarbeitet...'}</p>
-        </div>
-      )}
+        {(parsing || classifying) && (
+          <motion.div
+            key="processing"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+          >
+            <Card>
+              <CardContent className="flex flex-col items-center py-16">
+                <Loader2 className="h-10 w-10 animate-spin text-brand-600 dark:text-brand-300 mb-4" />
+                <p className="text-muted-foreground">
+                  {classifying ? 'Transaktionen werden klassifiziert...' : 'PDF wird verarbeitet...'}
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
-      {rows.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-sm text-gray-500">{rows.length} Transaktionen</span>
-            <div className="flex-1" />
-            <button onClick={() => handleExport('banana')} className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 shadow-sm">🍌 Banana TXT</button>
-            <button onClick={() => handleExport('excel')} className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 shadow-sm">📊 Excel</button>
-            <button onClick={() => handleExport('csv')} className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 shadow-sm">📋 CSV</button>
-          </div>
+        {rows.length > 0 && (
+          <motion.div
+            key="results"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+            className="space-y-4"
+          >
+            <div className="flex flex-wrap gap-2 items-center">
+              <span className="text-sm text-muted-foreground">{rows.length} Transaktionen</span>
+              <div className="flex-1" />
+              <Button variant="outline" size="sm" icon={<Download className="h-3.5 w-3.5" />} onClick={() => handleExport('banana')}>Banana TXT</Button>
+              <Button variant="outline" size="sm" icon={<Download className="h-3.5 w-3.5" />} onClick={() => handleExport('excel')}>Excel</Button>
+              <Button variant="outline" size="sm" icon={<Download className="h-3.5 w-3.5" />} onClick={() => handleExport('csv')}>CSV</Button>
+            </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-x-auto">
-            <table className="w-full text-sm min-w-[800px]">
-              <thead><tr className="bg-gray-50 border-b border-gray-200 text-left">
-                {COLS.map(h => <th key={h} className="px-3 py-3 font-medium text-gray-500 whitespace-nowrap">{h}</th>)}
-              </tr></thead>
-              <tbody>
-                {rows.map((r, i) => (
-                  <tr key={i} className="border-b border-gray-100 hover:bg-gray-50/50">
-                    <td className="px-3 py-2 text-gray-400 w-12">{r.Nr}</td>
-                    <td className="px-3 py-2"><input value={r.Datum} onChange={e => updateRow(i, 'Datum', e.target.value)} className="w-24 bg-transparent focus:outline-none focus:ring-1 focus:ring-brand-500/30 rounded px-1 py-0.5" /></td>
-                    <td className="px-3 py-2"><input value={r.Beschreibung} onChange={e => updateRow(i, 'Beschreibung', e.target.value)} className="w-full bg-transparent focus:outline-none focus:ring-1 focus:ring-brand-500/30 rounded px-1 py-0.5 min-w-[200px]" /></td>
-                    <td className="px-3 py-2"><input value={r.KtSoll} onChange={e => updateRow(i, 'KtSoll', e.target.value)} className="w-16 bg-transparent font-mono text-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-500/30 rounded px-1 py-0.5" /></td>
-                    <td className="px-3 py-2"><input value={r.KtHaben} onChange={e => updateRow(i, 'KtHaben', e.target.value)} className="w-16 bg-transparent font-mono text-green-600 focus:outline-none focus:ring-1 focus:ring-brand-500/30 rounded px-1 py-0.5" /></td>
-                    <td className="px-3 py-2 font-mono text-right">{(r['Betrag CHF'] || 0).toFixed(2)}</td>
-                    <td className="px-3 py-2"><input value={r['MwStUSt-Code']} onChange={e => updateRow(i, 'MwStUSt-Code', e.target.value)} className="w-12 bg-transparent focus:outline-none focus:ring-1 focus:ring-brand-500/30 rounded px-1 py-0.5" /></td>
-                    <td className="px-3 py-2 text-gray-500">{r['MwSt-%']}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+            <Card>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[800px]">
+                  <thead>
+                    <tr className="bg-muted border-b border-border text-left">
+                      {COLS.map(h => <th key={h} className="px-3 py-3 font-medium text-muted-foreground whitespace-nowrap">{h}</th>)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((r, i) => (
+                      <tr key={i} className="border-b border-border last:border-0 hover:bg-accent transition-colors">
+                        <td className="px-3 py-2 text-muted-foreground w-12 tabular-nums">{r.Nr}</td>
+                        <td className="px-3 py-2"><input value={r.Datum} onChange={e => updateRow(i, 'Datum', e.target.value)} className="w-24 bg-transparent focus:outline-none focus:ring-1 focus:ring-ring/30 rounded px-1 py-0.5 text-foreground" /></td>
+                        <td className="px-3 py-2"><input value={r.Beschreibung} onChange={e => updateRow(i, 'Beschreibung', e.target.value)} className="w-full bg-transparent focus:outline-none focus:ring-1 focus:ring-ring/30 rounded px-1 py-0.5 min-w-[200px] text-foreground" /></td>
+                        <td className="px-3 py-2"><input value={r.KtSoll} onChange={e => updateRow(i, 'KtSoll', e.target.value)} className="w-16 bg-transparent font-mono text-brand-600 dark:text-brand-300 focus:outline-none focus:ring-1 focus:ring-ring/30 rounded px-1 py-0.5" /></td>
+                        <td className="px-3 py-2"><input value={r.KtHaben} onChange={e => updateRow(i, 'KtHaben', e.target.value)} className="w-16 bg-transparent font-mono text-success focus:outline-none focus:ring-1 focus:ring-ring/30 rounded px-1 py-0.5" /></td>
+                        <td className="px-3 py-2 font-mono text-right tabular-nums text-foreground">{(r['Betrag CHF'] || 0).toFixed(2)}</td>
+                        <td className="px-3 py-2"><input value={r['MwStUSt-Code']} onChange={e => updateRow(i, 'MwStUSt-Code', e.target.value)} className="w-12 bg-transparent focus:outline-none focus:ring-1 focus:ring-ring/30 rounded px-1 py-0.5 text-foreground" /></td>
+                        <td className="px-3 py-2 text-muted-foreground tabular-nums">{r['MwSt-%']}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
 
-          <div className="flex gap-3">
-            <button onClick={handleSave} disabled={saving || saved}
-              className={`px-6 py-2.5 rounded-lg font-medium text-white text-sm transition-colors shadow-sm ${
-                saved ? 'bg-green-600' : 'bg-brand-600 hover:bg-brand-700'
-              } disabled:opacity-50`}>
-              {saved ? '✅ Gespeichert!' : saving ? 'Speichert...' : '💾 Buchungen speichern'}
-            </button>
-            <button onClick={() => { setRows([]); setSaved(false); }} className="px-4 py-2.5 text-sm text-gray-500 hover:text-gray-700">
-              ↺ Neue Datei
-            </button>
-          </div>
-        </div>
-      )}
+            <div className="flex gap-3">
+              <Button
+                variant={saved ? 'success' : 'primary'}
+                onClick={handleSave}
+                disabled={saving || saved}
+                loading={saving}
+                icon={<Save className="h-4 w-4" />}
+              >
+                {saved ? 'Gespeichert!' : 'Buchungen speichern'}
+              </Button>
+              <Button variant="ghost" icon={<RefreshCw className="h-4 w-4" />} onClick={() => { setRows([]); setSaved(false); }}>
+                Neue Datei
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

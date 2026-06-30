@@ -2,9 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "motion/react";
-import { CheckCircle2, XCircle, Loader2, Inbox } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, ListChecks } from "lucide-react";
 import { getReviewQueue, approveReviewItem, rejectReviewItem } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/page_header";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { EmptyState } from "@/components/shared/EmptyState";
 
 interface ReviewItem {
   id: number;
@@ -64,41 +67,42 @@ export default function ReviewPage() {
   };
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Überprüfungs-Warteschlange</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Buchungen mit Konfidenz unter {Math.round(threshold * 100)}% prüfen und bestätigen
-          </p>
-        </div>
-        <span className="inline-flex items-center rounded-full bg-brand-50 px-3 py-1 text-sm font-medium text-brand-700">
-          {items.length} offen
-        </span>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        icon={ListChecks}
+        title="Überprüfungs-Warteschlange"
+        subtitle={`Buchungen mit Konfidenz unter ${Math.round(threshold * 100)}% prüfen und bestätigen`}
+        action={
+          <Badge tone={items.length > 0 ? "warning" : "success"} dot>
+            {items.length} offen
+          </Badge>
+        }
+      />
 
       {loading ? (
         <div className="flex items-center justify-center py-20 text-muted-foreground">
           <Loader2 className="h-5 w-5 animate-spin mr-2" /> Laden...
         </div>
       ) : items.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-          <Inbox className="h-10 w-10 mb-3 opacity-50" />
-          <p className="text-sm">Keine Einträge zur Überprüfung</p>
-        </div>
+        <EmptyState
+          icon={ListChecks}
+          title="Keine Einträge zur Überprüfung"
+          description="Alle Buchungen haben eine ausreichende Konfidenz."
+        />
       ) : (
         <div className="space-y-3">
-          {items.map((item) => (
+          {items.map((item, idx) => (
             <motion.div
               key={item.id}
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.22, delay: Math.min(idx * 0.05, 0.3) }}
               className="flex flex-col sm:flex-row sm:items-center gap-4 rounded-xl border border-border bg-card p-4"
             >
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{item.beschreibung}</p>
                 <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                  <span>Betrag: {item.betrag.toFixed(2)}</span>
+                  <span className="tabular-nums">Betrag: {item.betrag.toFixed(2)}</span>
                   <span className="font-mono">
                     {item.predicted_soll} / {item.predicted_haben}
                     {item.predicted_mwst_code ? ` · ${item.predicted_mwst_code}` : ""}
@@ -107,34 +111,32 @@ export default function ReviewPage() {
                 </div>
               </div>
 
-              <span
-                className={cn(
-                  "shrink-0 rounded-full px-2.5 py-1 text-xs font-medium",
-                  item.confidence < 0.5
-                    ? "bg-red-50 text-red-700"
-                    : "bg-amber-50 text-amber-700"
-                )}
+              <Badge
+                tone={item.confidence < 0.5 ? "danger" : "warning"}
               >
                 {Math.round(item.confidence * 100)}%
-              </span>
+              </Badge>
 
               <div className="flex shrink-0 gap-2">
-                <button
+                <Button
+                  variant="success"
+                  size="sm"
                   onClick={() => handleApprove(item.id)}
                   disabled={busyId === item.id}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+                  loading={busyId === item.id}
+                  icon={<CheckCircle2 className="h-4 w-4" />}
                 >
-                  {busyId === item.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
                   Bestätigen
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => handleReject(item.id)}
                   disabled={busyId === item.id}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50"
+                  icon={<XCircle className="h-4 w-4" />}
                 >
-                  <XCircle className="h-4 w-4" />
                   Verwerfen
-                </button>
+                </Button>
               </div>
             </motion.div>
           ))}

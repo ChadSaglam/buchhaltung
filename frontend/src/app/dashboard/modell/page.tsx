@@ -30,10 +30,14 @@ import {
   XCircle,
   ArrowRight,
   Sparkles,
-  HardDrive,
   Clock,
   TrendingUp,
 } from "lucide-react";
+import { PageHeader } from "@/components/ui/page_header";
+import { Button } from "@/components/ui/Button";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { cn } from "@/lib/utils";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 interface ModelInfo {
@@ -97,10 +101,22 @@ interface TrainingData {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function accuracyColor(acc: number) {
-  if (acc >= 0.85) return { text: "text-emerald-600", bg: "bg-emerald-500", ring: "ring-emerald-200" };
-  if (acc >= 0.6) return { text: "text-amber-600", bg: "bg-amber-500", ring: "ring-amber-200" };
-  return { text: "text-red-600", bg: "bg-red-500", ring: "ring-red-200" };
+function accuracyTone(acc: number): "success" | "warning" | "danger" {
+  if (acc >= 0.85) return "success";
+  if (acc >= 0.6) return "warning";
+  return "danger";
+}
+
+function accuracyBarClass(acc: number) {
+  if (acc >= 0.85) return "bg-success";
+  if (acc >= 0.6) return "bg-warning";
+  return "bg-destructive";
+}
+
+function accuracyTextClass(acc: number) {
+  if (acc >= 0.85) return "text-success";
+  if (acc >= 0.6) return "text-warning";
+  return "text-destructive";
 }
 
 function formatDate(iso: string) {
@@ -118,29 +134,34 @@ function StatCard({
   label,
   value,
   sub,
-  accent = "text-gray-900",
+  valueClass = "text-foreground",
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
   sub: string;
-  accent?: string;
+  valueClass?: string;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+    <div className="relative overflow-hidden rounded-xl border border-border bg-card p-5 shadow-sm transition-shadow hover:shadow-md">
       <div className="flex items-center gap-2 mb-3">
         {icon}
-        <span className="text-[11px] font-semibold tracking-wider text-gray-400 uppercase">{label}</span>
+        <span className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">{label}</span>
       </div>
-      <div className={`text-3xl font-extrabold tabular-nums ${accent}`}>{value}</div>
-      <div className="text-xs text-gray-400 mt-1">{sub}</div>
+      <div className={cn("text-2xl font-extrabold tabular-nums", valueClass)}>{value}</div>
+      <div className="text-xs text-muted-foreground mt-1">{sub}</div>
     </div>
   );
 }
 
-function PipelineStep({ num, label, desc, colorClass }: { num: number; label: string; desc: string; colorClass: string }) {
+function PipelineStep({ num, label, desc, tone }: { num: number; label: string; desc: string; tone: "success" | "brand" | "warning" }) {
+  const styles = {
+    success: "bg-success/10 text-success",
+    brand: "bg-brand-500/12 text-brand-600 dark:text-brand-300",
+    warning: "bg-warning/12 text-warning",
+  }[tone];
   return (
-    <div className={`flex-1 rounded-xl px-4 py-3 ${colorClass}`}>
+    <div className={cn("flex-1 rounded-xl px-4 py-3", styles)}>
       <div className="text-[11px] font-bold opacity-60">Stufe {num}</div>
       <div className="font-semibold text-sm mt-0.5">{label}</div>
       <div className="text-xs opacity-70 mt-0.5">{desc}</div>
@@ -151,7 +172,7 @@ function PipelineStep({ num, label, desc, colorClass }: { num: number; label: st
 function SystemStatusBadge({ hasModel, hasVision }: { hasModel: boolean; hasVision: boolean }) {
   if (hasModel && hasVision) {
     return (
-      <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-medium">
+      <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-success/10 border border-success/25 text-success text-sm font-medium">
         <CheckCircle className="w-4 h-4" />
         Buchhaltung Modell vollständig — Vision + ML aktiv
       </div>
@@ -159,14 +180,14 @@ function SystemStatusBadge({ hasModel, hasVision }: { hasModel: boolean; hasVisi
   }
   if (hasModel || hasVision) {
     return (
-      <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-sm font-medium">
+      <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-warning/10 border border-warning/25 text-warning text-sm font-medium">
         <AlertTriangle className="w-4 h-4" />
         Teilweise aktiv — {hasModel ? "ML bereit, Vision fehlt" : "Vision bereit, ML fehlt"}
       </div>
     );
   }
   return (
-    <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-medium">
+    <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-destructive/10 border border-destructive/25 text-destructive text-sm font-medium">
       <XCircle className="w-4 h-4" />
       Nicht konfiguriert — Modell trainieren & Vision installieren
     </div>
@@ -351,7 +372,6 @@ export default function ModellPage() {
   });
 
   const acc = info?.model_accuracy ?? 0;
-  const accColors = accuracyColor(acc);
   const filteredMemory = memoryEntries.filter(e =>
     !memoryFilter || (e.lookup_key ?? "").toLowerCase().includes(memoryFilter.toLowerCase())
   );
@@ -359,8 +379,8 @@ export default function ModellPage() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-80 gap-3">
-        <Loader2 className="w-10 h-10 animate-spin text-purple-500" />
-        <span className="text-sm text-gray-400">Modell wird geladen…</span>
+        <Loader2 className="w-10 h-10 animate-spin text-brand-600 dark:text-brand-300" />
+        <span className="text-sm text-muted-foreground">Modell wird geladen…</span>
       </div>
     );
   }
@@ -368,37 +388,32 @@ export default function ModellPage() {
   return (
     <div className="space-y-8 max-w-5xl mx-auto pb-12">
       {/* ── Header ────────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-purple-100">
-              <Brain className="w-6 h-6 text-purple-600" />
-            </div>
-            Modell Manager
-          </h1>
-          <p className="text-gray-500 mt-1.5 text-sm">
-            Buchhaltung ML-Modell verwalten, trainieren & inspizieren
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => handleDownload("bundle")}
-            disabled={!info?.has_model && (info?.memory_count ?? 0) === 0}
-            className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-40 transition-all"
-          >
-            <Download className="w-4 h-4" />
-            Exportieren
-          </button>
-          <button
-            onClick={handleTrain}
-            disabled={training || (info?.total_samples ?? 0) < 5}
-            className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-50 transition-all shadow-sm shadow-purple-200"
-          >
-            {training ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-            {training ? "Trainiert…" : "Modell trainieren"}
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        icon={Brain}
+        title="Modell Manager"
+        subtitle="Buchhaltung ML-Modell verwalten, trainieren & inspizieren"
+        action={
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => handleDownload("bundle")}
+              disabled={!info?.has_model && (info?.memory_count ?? 0) === 0}
+              icon={<Download className="w-4 h-4" />}
+            >
+              Exportieren
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleTrain}
+              disabled={training || (info?.total_samples ?? 0) < 5}
+              loading={training}
+              icon={<Sparkles className="w-4 h-4" />}
+            >
+              {training ? "Trainiert…" : "Modell trainieren"}
+            </Button>
+          </div>
+        }
+      />
 
       {/* ── System Status ─────────────────────────────────────────────── */}
       <SystemStatusBadge hasModel={info?.has_model ?? false} hasVision={vision.available} />
@@ -406,75 +421,75 @@ export default function ModellPage() {
       {/* ── Stat Cards ────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard
-          icon={<Cpu className="w-5 h-5 text-purple-500" />}
+          icon={<Cpu className="w-5 h-5 text-brand-600 dark:text-brand-300" />}
           label="Genauigkeit"
           value={info?.has_model ? `${(acc * 100).toFixed(1)}%` : "—"}
           sub={info?.has_model ? "Cross-Validation" : "Nicht trainiert"}
-          accent={info?.has_model ? accColors.text : "text-gray-300"}
+          valueClass={info?.has_model ? accuracyTextClass(acc) : "text-muted-foreground"}
         />
         <StatCard
-          icon={<Database className="w-5 h-5 text-blue-500" />}
+          icon={<Database className="w-5 h-5 text-info" />}
           label="Samples"
           value={String(info?.total_samples ?? 0)}
           sub={`${info?.classes ?? 0} Kontenklassen`}
         />
         <StatCard
-          icon={<Brain className="w-5 h-5 text-emerald-500" />}
+          icon={<Brain className="w-5 h-5 text-success" />}
           label="Gedächtnis"
           value={String(info?.memory_count ?? 0)}
           sub="Exakte Treffer"
         />
         <StatCard
-          icon={<TrendingUp className="w-5 h-5 text-orange-500" />}
+          icon={<TrendingUp className="w-5 h-5 text-warning" />}
           label="Korrekturen"
           value={String(info?.correction_count ?? 0)}
           sub="Verfügbar"
         />
         <StatCard
-          icon={<Eye className="w-5 h-5 text-indigo-500" />}
+          icon={<Eye className="w-5 h-5 text-brand-600 dark:text-brand-300" />}
           label="Vision"
           value={vision.available ? (vision.is_cloud ? "Cloud" : "Lokal") : "—"}
           sub={vision.model_name ?? "Nicht verbunden"}
-          accent={vision.available ? "text-indigo-600" : "text-gray-300"}
+          valueClass={vision.available ? "text-brand-600 dark:text-brand-300" : "text-muted-foreground"}
         />
       </div>
 
       {/* ── Accuracy Bar ──────────────────────────────────────────────── */}
       {info?.has_model && (
-        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-          <div className="flex justify-between items-center mb-3">
-            <div>
-              <span className="text-sm font-semibold text-gray-700">Modell-Genauigkeit</span>
-              {info.train_accuracy > 0 && acc > 0 && info.train_accuracy - acc > 0.15 && (
-                <span className="ml-3 text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">
-                  ⚠ Overfit-Warnung
-                </span>
-              )}
+        <Card>
+          <CardContent className="pt-5">
+            <div className="flex justify-between items-center mb-3">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-semibold text-foreground">Modell-Genauigkeit</span>
+                {info.train_accuracy > 0 && acc > 0 && info.train_accuracy - acc > 0.15 && (
+                  <Badge tone="warning" dot>Overfit-Warnung</Badge>
+                )}
+              </div>
+              <span className={cn("text-xl font-extrabold tabular-nums", accuracyTextClass(acc))}>
+                {(acc * 100).toFixed(1)}%
+              </span>
             </div>
-            <span className={`text-2xl font-extrabold tabular-nums ${accColors.text}`}>
-              {(acc * 100).toFixed(1)}%
-            </span>
-          </div>
-          <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-1000 ease-out ${accColors.bg}`}
-              style={{ width: `${Math.min(acc * 100, 100)}%` }}
-            />
-          </div>
-          <div className="flex justify-between mt-3 text-xs text-gray-400">
-            <span>{info.total_samples} Buchungen · {info.classes} Klassen</span>
-            <span className="flex items-center gap-1">
-              <Clock className="w-3 h-3" />
-              {formatDate(info.trained_at)}
-            </span>
-          </div>
-        </div>
+            <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+              <div
+                className={cn("h-full rounded-full transition-all duration-1000 ease-out", accuracyBarClass(acc))}
+                style={{ width: `${Math.min(acc * 100, 100)}%` }}
+              />
+            </div>
+            <div className="flex justify-between mt-3 text-xs text-muted-foreground">
+              <span className="tabular-nums">{info.total_samples} Buchungen · {info.classes} Klassen</span>
+              <span className="flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                {formatDate(info.trained_at)}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* ── Inspect Tabs ──────────────────────────────────────────────── */}
       {info?.has_model && (
-        <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
-          <div className="flex border-b border-gray-100">
+        <Card>
+          <div className="flex border-b border-border">
             {[
               { key: "test", icon: TestTube, label: "Testen" },
               { key: "top", icon: BarChart3, label: "Top-Konten" },
@@ -484,11 +499,12 @@ export default function ModellPage() {
               <button
                 key={key}
                 onClick={() => setActiveTab(key as typeof activeTab)}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-medium transition-all ${
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-medium transition-all",
                   activeTab === key
-                    ? "text-purple-600 border-b-2 border-purple-500 bg-purple-50/50"
-                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                }`}
+                    ? "text-brand-600 dark:text-brand-300 border-b-2 border-brand-600 dark:border-brand-300 bg-brand-500/6"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                )}
               >
                 <Icon className="w-4 h-4" />
                 {label}
@@ -496,11 +512,11 @@ export default function ModellPage() {
             ))}
           </div>
 
-          <div className="p-6">
+          <CardContent className="pt-5">
             {/* Test Tab */}
             {activeTab === "test" && (
               <div className="space-y-5">
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   Geben Sie eine Beschreibung ein und sehen Sie, wie das Modell klassifiziert.
                 </p>
                 <div className="flex gap-3">
@@ -510,64 +526,62 @@ export default function ModellPage() {
                     onChange={(e) => setTestInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleTest()}
                     placeholder="z.B. Migros Zürich Lebensmittel"
-                    className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-400 transition-all"
+                    className="flex-1 px-4 py-2.5 border border-input rounded-xl text-sm text-foreground bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/20 focus:border-ring transition-all"
                   />
-                  <button
+                  <Button
+                    variant="primary"
                     onClick={handleTest}
                     disabled={testLoading || !testInput.trim()}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-purple-600 text-white text-sm font-medium rounded-xl hover:bg-purple-700 disabled:opacity-50 transition-all"
+                    loading={testLoading}
+                    icon={<Search className="w-4 h-4" />}
                   >
-                    {testLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
                     Testen
-                  </button>
+                  </Button>
                 </div>
 
                 {testResult && (
-                  <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="space-y-4 animate-fade-in">
                     <div className="grid grid-cols-3 gap-4">
-                      <div className="rounded-xl bg-gray-50 p-4">
-                        <div className="text-[11px] font-semibold text-gray-400 uppercase mb-1">Quelle</div>
-                        <div className="text-lg font-bold">
-                          {testResult.source === "Gedächtnis" ? "🧠" : testResult.source === "ML" ? "🤖" : "📋"}{" "}
-                          {testResult.source}
-                        </div>
+                      <div className="rounded-xl bg-muted p-4">
+                        <div className="text-[11px] font-semibold text-muted-foreground uppercase mb-1">Quelle</div>
+                        <div className="text-base font-bold text-foreground">{testResult.source}</div>
                       </div>
-                      <div className="rounded-xl bg-gray-50 p-4">
-                        <div className="text-[11px] font-semibold text-gray-400 uppercase mb-1">KtSoll</div>
-                        <div className="text-lg font-bold">{testResult.kt_soll}</div>
-                        <div className="text-xs text-gray-500">{testResult.kt_soll_name}</div>
+                      <div className="rounded-xl bg-muted p-4">
+                        <div className="text-[11px] font-semibold text-muted-foreground uppercase mb-1">KtSoll</div>
+                        <div className="text-base font-bold text-foreground">{testResult.kt_soll}</div>
+                        <div className="text-xs text-muted-foreground">{testResult.kt_soll_name}</div>
                       </div>
-                      <div className="rounded-xl bg-gray-50 p-4">
-                        <div className="text-[11px] font-semibold text-gray-400 uppercase mb-1">Konfidenz</div>
-                        <div className={`text-lg font-bold ${accuracyColor(testResult.confidence).text}`}>
+                      <div className="rounded-xl bg-muted p-4">
+                        <div className="text-[11px] font-semibold text-muted-foreground uppercase mb-1">Konfidenz</div>
+                        <div className={cn("text-base font-bold tabular-nums", accuracyTextClass(testResult.confidence))}>
                           {(testResult.confidence * 100).toFixed(0)}%
                         </div>
                       </div>
                     </div>
-                    <div className="flex gap-6 text-sm text-gray-600">
-                      <span><strong>KtHaben:</strong> {testResult.kt_haben} ({testResult.kt_haben_name})</span>
+                    <div className="flex gap-6 text-sm text-muted-foreground">
+                      <span><strong className="text-foreground">KtHaben:</strong> {testResult.kt_haben} ({testResult.kt_haben_name})</span>
                       {testResult.mwst_code && (
-                        <span><strong>MwSt:</strong> {testResult.mwst_code} / {testResult.mwst_pct}%</span>
+                        <span><strong className="text-foreground">MwSt:</strong> {testResult.mwst_code} / {testResult.mwst_pct}%</span>
                       )}
                     </div>
 
                     {testResult.top_predictions && testResult.top_predictions.length > 0 && (
                       <div>
-                        <h4 className="text-xs font-semibold text-gray-400 uppercase mb-3">Top 5 ML-Vorhersagen</h4>
+                        <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-3">Top 5 ML-Vorhersagen</h4>
                         <div className="space-y-2">
                           {testResult.top_predictions.map((pred) => (
                             <div key={pred.klass} className="flex items-center gap-3">
-                              <code className="text-xs bg-gray-100 px-2 py-0.5 rounded font-mono w-14 text-center">
+                              <code className="text-xs bg-muted px-2 py-0.5 rounded font-mono w-14 text-center text-foreground">
                                 {pred.klass}
                               </code>
-                              <span className="text-sm text-gray-600 w-40 truncate">{pred.name}</span>
-                              <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
+                              <span className="text-sm text-muted-foreground w-40 truncate">{pred.name}</span>
+                              <div className="flex-1 bg-muted rounded-full h-2 overflow-hidden">
                                 <div
-                                  className="h-full bg-purple-500 rounded-full transition-all"
+                                  className="h-full bg-brand-500 rounded-full transition-all"
                                   style={{ width: `${pred.probability * 100}%` }}
                                 />
                               </div>
-                              <span className="text-xs font-semibold tabular-nums w-12 text-right">
+                              <span className="text-xs font-semibold tabular-nums w-12 text-right text-foreground">
                                 {(pred.probability * 100).toFixed(0)}%
                               </span>
                             </div>
@@ -583,30 +597,30 @@ export default function ModellPage() {
             {/* Top Classes Tab */}
             {activeTab === "top" && (
               <div>
-                <p className="text-sm text-gray-500 mb-4">Häufigste Kontoklassen im Trainingsset</p>
+                <p className="text-sm text-muted-foreground mb-4">Häufigste Kontoklassen im Trainingsset</p>
                 {topClasses.length > 0 ? (
-                  <div className="overflow-hidden rounded-xl border border-gray-100">
+                  <div className="overflow-hidden rounded-xl border border-border">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="bg-gray-50 text-left">
-                          <th className="px-4 py-2.5 font-semibold text-gray-600">KontoSoll</th>
-                          <th className="px-4 py-2.5 font-semibold text-gray-600">Bezeichnung</th>
-                          <th className="px-4 py-2.5 font-semibold text-gray-600 text-right">Anzahl</th>
-                          <th className="px-4 py-2.5 font-semibold text-gray-600 w-40">Verteilung</th>
+                        <tr className="bg-muted text-left">
+                          <th className="px-4 py-2.5 font-semibold text-muted-foreground">KontoSoll</th>
+                          <th className="px-4 py-2.5 font-semibold text-muted-foreground">Bezeichnung</th>
+                          <th className="px-4 py-2.5 font-semibold text-muted-foreground text-right">Anzahl</th>
+                          <th className="px-4 py-2.5 font-semibold text-muted-foreground w-40">Verteilung</th>
                         </tr>
                       </thead>
                       <tbody>
                         {topClasses.map((cls, i) => {
                           const maxCount = topClasses[0]?.anzahl ?? 1;
                           return (
-                            <tr key={cls.konto_soll} className={i % 2 === 0 ? "" : "bg-gray-50/50"}>
-                              <td className="px-4 py-2.5 font-mono font-medium">{cls.konto_soll}</td>
-                              <td className="px-4 py-2.5 text-gray-600">{cls.bezeichnung}</td>
-                              <td className="px-4 py-2.5 text-right tabular-nums font-medium">{cls.anzahl}</td>
+                            <tr key={cls.konto_soll} className="border-t border-border hover:bg-accent transition-colors">
+                              <td className="px-4 py-2.5 font-mono font-medium text-foreground">{cls.konto_soll}</td>
+                              <td className="px-4 py-2.5 text-muted-foreground">{cls.bezeichnung}</td>
+                              <td className="px-4 py-2.5 text-right tabular-nums font-medium text-foreground">{cls.anzahl}</td>
                               <td className="px-4 py-2.5">
-                                <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                                <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
                                   <div
-                                    className="h-full bg-blue-500 rounded-full"
+                                    className="h-full bg-brand-500 rounded-full"
                                     style={{ width: `${(cls.anzahl / maxCount) * 100}%` }}
                                   />
                                 </div>
@@ -618,9 +632,9 @@ export default function ModellPage() {
                     </table>
                   </div>
                 ) : (
-                  <div className="text-center py-12 text-gray-400">
-                    <Database className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                    Keine Trainingsdaten vorhanden
+                  <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                    <Database className="w-8 h-8 mb-2 opacity-40" />
+                    <p className="text-sm">Keine Trainingsdaten vorhanden</p>
                   </div>
                 )}
               </div>
@@ -631,46 +645,46 @@ export default function ModellPage() {
               <div>
                 <div className="flex items-center gap-3 mb-4">
                   <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <input
                       type="text"
                       value={memoryFilter}
                       onChange={(e) => setMemoryFilter(e.target.value)}
                       placeholder="Gedächtnis durchsuchen…"
-                      className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-200 transition-all"
+                      className="w-full pl-9 pr-4 py-2 border border-input rounded-xl text-sm text-foreground bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/20 transition-all"
                     />
                   </div>
-                  <span className="text-xs text-gray-400 whitespace-nowrap">
+                  <span className="text-xs text-muted-foreground whitespace-nowrap tabular-nums">
                     {filteredMemory.length} / {memoryEntries.length} Einträge
                   </span>
                 </div>
                 {filteredMemory.length > 0 ? (
-                  <div className="overflow-hidden rounded-xl border border-gray-100 max-h-96 overflow-y-auto">
+                  <div className="overflow-hidden rounded-xl border border-border max-h-96 overflow-y-auto">
                     <table className="w-full text-sm">
-                      <thead className="sticky top-0 bg-white">
-                        <tr className="bg-gray-50 text-left">
-                          <th className="px-4 py-2.5 font-semibold text-gray-600">Beschreibung</th>
-                          <th className="px-4 py-2.5 font-semibold text-gray-600">KtSoll</th>
-                          <th className="px-4 py-2.5 font-semibold text-gray-600">KtHaben</th>
-                          <th className="px-4 py-2.5 font-semibold text-gray-600">MwSt</th>
+                      <thead className="sticky top-0 bg-card">
+                        <tr className="bg-muted text-left border-b border-border">
+                          <th className="px-4 py-2.5 font-semibold text-muted-foreground">Beschreibung</th>
+                          <th className="px-4 py-2.5 font-semibold text-muted-foreground">KtSoll</th>
+                          <th className="px-4 py-2.5 font-semibold text-muted-foreground">KtHaben</th>
+                          <th className="px-4 py-2.5 font-semibold text-muted-foreground">MwSt</th>
                         </tr>
                       </thead>
                       <tbody>
                         {filteredMemory.map((entry, i) => (
-                          <tr key={entry.lookup_key} className={i % 2 === 0 ? "" : "bg-gray-50/50"}>
-                            <td className="px-4 py-2 text-gray-700 max-w-xs truncate">{entry.lookup_key}</td>
-                            <td className="px-4 py-2 font-mono">{entry.kt_soll}</td>
-                            <td className="px-4 py-2 font-mono">{entry.kt_haben}</td>
-                            <td className="px-4 py-2 text-gray-500">{entry.mwst_code || "—"}</td>
+                          <tr key={entry.lookup_key} className="border-t border-border hover:bg-accent transition-colors">
+                            <td className="px-4 py-2 text-foreground max-w-xs truncate">{entry.lookup_key}</td>
+                            <td className="px-4 py-2 font-mono text-foreground">{entry.kt_soll}</td>
+                            <td className="px-4 py-2 font-mono text-foreground">{entry.kt_haben}</td>
+                            <td className="px-4 py-2 text-muted-foreground">{entry.mwst_code || "—"}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
                 ) : (
-                  <div className="text-center py-12 text-gray-400">
-                    <Brain className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                    {memoryEntries.length === 0 ? "Gedächtnis ist leer" : "Keine Treffer"}
+                  <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                    <Brain className="w-8 h-8 mb-2 opacity-40" />
+                    <p className="text-sm">{memoryEntries.length === 0 ? "Gedächtnis ist leer" : "Keine Treffer"}</p>
                   </div>
                 )}
               </div>
@@ -681,208 +695,226 @@ export default function ModellPage() {
               <div className="space-y-4">
                 {(info?.correction_count ?? 0) > 0 ? (
                   <>
-                    <div className="flex items-center gap-3 p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-700">
+                    <div className="flex items-center gap-3 p-4 rounded-xl bg-info/10 border border-info/25 text-info">
                       <Info className="w-5 h-5 shrink-0" />
                       <span className="text-sm">
                         <strong>{info?.correction_count} Korrekturen</strong> seit letztem Training verfügbar.
                         Neu trainieren verbessert die Genauigkeit.
                       </span>
                     </div>
-                    <button
+                    <Button
+                      variant="primary"
                       onClick={handleTrain}
                       disabled={training}
-                      className="flex items-center gap-2 px-5 py-2.5 bg-purple-600 text-white text-sm font-medium rounded-xl hover:bg-purple-700 disabled:opacity-50 transition-all"
+                      loading={training}
+                      icon={<RotateCcw className="w-4 h-4" />}
                     >
-                      {training ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
                       Jetzt neu trainieren
-                    </button>
+                    </Button>
                   </>
                 ) : (
-                  <div className="flex items-center gap-3 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700">
+                  <div className="flex items-center gap-3 p-4 rounded-xl bg-success/10 border border-success/25 text-success">
                     <CheckCircle className="w-5 h-5 shrink-0" />
                     <span className="text-sm">Modell ist aktuell — keine neuen Korrekturen vorhanden.</span>
                   </div>
                 )}
-                <p className="text-xs text-gray-400 pt-2">
-                  💡 Je mehr Rechnungen Sie scannen und bestätigen, desto besser wird das Modell.
+                <p className="text-xs text-muted-foreground pt-2">
+                  Je mehr Rechnungen Sie scannen und bestätigen, desto besser wird das Modell.
                 </p>
               </div>
             )}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* ── Import Section ────────────────────────────────────────────── */}
-      <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold flex items-center gap-2 mb-1">
-          <FileSpreadsheet className="w-5 h-5 text-green-600" />
-          Banana Import
-        </h2>
-        <p className="text-sm text-gray-500 mb-5">
-          Laden Sie Ihre <strong>Doppelte Buchhaltung mit MWST</strong> Datei hoch — Buchungen werden importiert und das Modell automatisch trainiert.
-        </p>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <FileSpreadsheet className="w-5 h-5 text-success" />
+            <CardTitle>Banana Import</CardTitle>
+          </div>
+          <CardDescription>
+            Laden Sie Ihre <strong>Doppelte Buchhaltung mit MWST</strong> Datei hoch — Buchungen werden importiert und das Modell automatisch trainiert.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <label className="flex items-center gap-2 text-sm cursor-pointer mb-4">
+            <input
+              type="checkbox"
+              checked={replaceData}
+              onChange={(e) => setReplaceData(e.target.checked)}
+              className="rounded border-input text-brand-600 focus:ring-brand-500/20"
+            />
+            <Trash2 className="w-3.5 h-3.5 text-destructive" />
+            <span className="text-foreground">Bestehende Trainingsdaten ersetzen</span>
+          </label>
 
-        <label className="flex items-center gap-2 text-sm cursor-pointer mb-4">
-          <input
-            type="checkbox"
-            checked={replaceData}
-            onChange={(e) => setReplaceData(e.target.checked)}
-            className="rounded border-gray-300 text-purple-600 focus:ring-purple-200"
-          />
-          <Trash2 className="w-3.5 h-3.5 text-red-400" />
-          Bestehende Trainingsdaten ersetzen
-        </label>
+          <div
+            {...getRootProps()}
+            className={cn(
+              "border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all",
+              isDragActive
+                ? "border-success/60 bg-success/8"
+                : importing
+                ? "border-border bg-muted/30"
+                : "border-border hover:border-brand-400 hover:bg-brand-500/6"
+            )}
+          >
+            <input {...getInputProps()} />
+            {importing ? (
+              <div className="flex flex-col items-center gap-2">
+                <Loader2 className="w-10 h-10 animate-spin text-brand-600 dark:text-brand-300" />
+                <p className="text-brand-600 dark:text-brand-300 font-medium">Importiert & trainiert…</p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-2">
+                <Upload className="w-10 h-10 text-muted-foreground/40" />
+                <p className="text-foreground font-medium">XLS / XLSX / CSV hierher ziehen oder klicken</p>
+                <p className="text-xs text-muted-foreground">Banana Format: Buchungen mit Beschreibung, KtSoll, KtHaben, MwSt</p>
+              </div>
+            )}
+          </div>
 
-        <div
-          {...getRootProps()}
-          className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all ${
-            isDragActive
-              ? "border-green-400 bg-green-50/80"
-              : importing
-              ? "border-gray-200 bg-gray-50"
-              : "border-gray-200 hover:border-purple-300 hover:bg-purple-50/30"
-          }`}
-        >
-          <input {...getInputProps()} />
-          {importing ? (
-            <div className="flex flex-col items-center gap-2">
-              <Loader2 className="w-10 h-10 animate-spin text-purple-500" />
-              <p className="text-purple-600 font-medium">Importiert & trainiert…</p>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-2">
-              <Upload className="w-10 h-10 text-gray-300" />
-              <p className="text-gray-600 font-medium">XLS / XLSX / CSV hierher ziehen oder klicken</p>
-              <p className="text-xs text-gray-400">Banana Format: Buchungen mit Beschreibung, KtSoll, KtHaben, MwSt</p>
+          {importResult && (
+            <div className="mt-4 p-4 rounded-xl bg-success/10 border border-success/25">
+              <h3 className="font-medium text-success flex items-center gap-2 text-sm">
+                <CheckCircle className="w-4 h-4" /> Import erfolgreich
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
+                <div className="text-center">
+                  <div className="text-xl font-bold text-success tabular-nums">{importResult.imported}</div>
+                  <div className="text-xs text-muted-foreground">Buchungen</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xl font-bold text-success tabular-nums">{importResult.memory_entries}</div>
+                  <div className="text-xs text-muted-foreground">Gedächtnis</div>
+                </div>
+                {importResult.training && (
+                  <>
+                    <div className="text-center">
+                      <div className="text-xl font-bold text-success tabular-nums">
+                        {((importResult.training.cv_accuracy ?? 0) * 100).toFixed(1)}%
+                      </div>
+                      <div className="text-xs text-muted-foreground">Genauigkeit</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-xl font-bold text-success tabular-nums">{importResult.training.classes}</div>
+                      <div className="text-xs text-muted-foreground">Klassen</div>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           )}
-        </div>
-
-        {importResult && (
-          <div className="mt-4 p-4 rounded-xl bg-emerald-50 border border-emerald-200">
-            <h3 className="font-medium text-emerald-800 flex items-center gap-2 text-sm">
-              <CheckCircle className="w-4 h-4" /> Import erfolgreich
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
-              <div className="text-center">
-                <div className="text-xl font-bold text-emerald-700">{importResult.imported}</div>
-                <div className="text-xs text-emerald-600">Buchungen</div>
-              </div>
-              <div className="text-center">
-                <div className="text-xl font-bold text-emerald-700">{importResult.memory_entries}</div>
-                <div className="text-xs text-emerald-600">Gedächtnis</div>
-              </div>
-              {importResult.training && (
-                <>
-                  <div className="text-center">
-                    <div className="text-xl font-bold text-emerald-700">
-                      {((importResult.training.cv_accuracy ?? 0) * 100).toFixed(1)}%
-                    </div>
-                    <div className="text-xs text-emerald-600">Genauigkeit</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-xl font-bold text-emerald-700">{importResult.training.classes}</div>
-                    <div className="text-xs text-emerald-600">Klassen</div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
+        </CardContent>
+      </Card>
 
       {/* ── Download & Upload ─────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-          <h3 className="font-semibold flex items-center gap-2 mb-3">
-            <Download className="w-4 h-4 text-blue-500" />
-            Modell exportieren
-          </h3>
-          <p className="text-xs text-gray-500 mb-4">Sicherung inkl. ML-Modell, Gedächtnis, Kontenplan & Korrekturen</p>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => handleDownload("bundle")}
-              disabled={!info?.has_model && (info?.memory_count ?? 0) === 0}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-40 transition-all"
-            >
-              <Package className="w-4 h-4" />
-              Komplettpaket .zip
-            </button>
-            <button
-              onClick={() => handleDownload("model")}
-              disabled={!info?.has_model}
-              className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-40 transition-all"
-            >
-              Nur ML .pkl
-            </button>
-            <button
-              onClick={() => handleDownload("memory")}
-              disabled={(info?.memory_count ?? 0) === 0}
-              className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-40 transition-all"
-            >
-              Nur Gedächtnis .json
-            </button>
-          </div>
-        </div>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Download className="w-4 h-4 text-info" />
+              <CardTitle>Modell exportieren</CardTitle>
+            </div>
+            <CardDescription>Sicherung inkl. ML-Modell, Gedächtnis, Kontenplan & Korrekturen</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => handleDownload("bundle")}
+                disabled={!info?.has_model && (info?.memory_count ?? 0) === 0}
+                icon={<Package className="w-4 h-4" />}
+              >
+                Komplettpaket .zip
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleDownload("model")}
+                disabled={!info?.has_model}
+              >
+                Nur ML .pkl
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleDownload("memory")}
+                disabled={(info?.memory_count ?? 0) === 0}
+              >
+                Nur Gedächtnis .json
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-          <h3 className="font-semibold flex items-center gap-2 mb-3">
-            <Upload className="w-4 h-4 text-green-500" />
-            Modell importieren
-          </h3>
-          <p className="text-xs text-gray-500 mb-4">Ein zuvor gesichertes Modell-Paket wiederherstellen</p>
-          <div
-            {...getRestoreProps()}
-            className="border-2 border-dashed rounded-xl p-6 text-center cursor-pointer hover:border-purple-300 hover:bg-purple-50/30 transition-all"
-          >
-            <input {...getRestoreInputProps()} />
-            <Upload className="w-6 h-6 text-gray-300 mx-auto mb-1" />
-            <p className="text-xs text-gray-500">.zip / .pkl / .json hierher ziehen</p>
-          </div>
-        </div>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Upload className="w-4 h-4 text-success" />
+              <CardTitle>Modell importieren</CardTitle>
+            </div>
+            <CardDescription>Ein zuvor gesichertes Modell-Paket wiederherstellen</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div
+              {...getRestoreProps()}
+              className="border-2 border-dashed rounded-xl p-6 text-center cursor-pointer hover:border-brand-400 hover:bg-brand-500/6 transition-all"
+            >
+              <input {...getRestoreInputProps()} />
+              <Upload className="w-6 h-6 text-muted-foreground/40 mx-auto mb-1" />
+              <p className="text-xs text-muted-foreground">.zip / .pkl / .json hierher ziehen</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* ── Pipeline ──────────────────────────────────────────────────── */}
-      <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-        <button
-          onClick={() => setShowHowItWorks(!showHowItWorks)}
-          className="w-full flex items-center justify-between"
-        >
-          <h3 className="font-semibold flex items-center gap-2">
-            <Zap className="w-4 h-4 text-amber-500" />
-            Klassifizierungs-Pipeline
-          </h3>
-          {showHowItWorks ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
-        </button>
+      <Card>
+        <CardContent className="pt-5">
+          <button
+            onClick={() => setShowHowItWorks(!showHowItWorks)}
+            className="w-full flex items-center justify-between"
+          >
+            <h3 className="font-semibold text-foreground flex items-center gap-2">
+              <Zap className="w-4 h-4 text-warning" />
+              Klassifizierungs-Pipeline
+            </h3>
+            {showHowItWorks ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+          </button>
 
-        <div className="flex items-center gap-2 mt-4">
-          <PipelineStep num={1} label="Gedächtnis" desc="Exakte Treffer" colorClass="bg-emerald-50 text-emerald-700" />
-          <ArrowRight className="w-4 h-4 text-gray-300 shrink-0" />
-          <PipelineStep num={2} label="ML-Modell" desc="TF-IDF + LogReg" colorClass="bg-purple-50 text-purple-700" />
-          <ArrowRight className="w-4 h-4 text-gray-300 shrink-0" />
-          <PipelineStep num={3} label="Regeln" desc="Keyword-Fallback" colorClass="bg-orange-50 text-orange-700" />
-        </div>
-
-        {showHowItWorks && (
-          <div className="mt-5 p-4 rounded-xl bg-gray-50 text-sm text-gray-600 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
-            <p><strong>So lernt das System:</strong></p>
-            <ol className="list-decimal list-inside space-y-1 text-gray-500">
-              <li>Sie scannen eine Rechnung → Vision liest Lieferant, Datum, Betrag</li>
-              <li>ML klassifiziert → schlägt Konten vor</li>
-              <li>Sie bestätigen oder korrigieren</li>
-              <li>System speichert im Gedächtnis → beim nächsten Mal sofort korrekt</li>
-            </ol>
+          <div className="flex items-center gap-2 mt-4">
+            <PipelineStep num={1} label="Gedächtnis" desc="Exakte Treffer" tone="success" />
+            <ArrowRight className="w-4 h-4 text-muted-foreground/40 shrink-0" />
+            <PipelineStep num={2} label="ML-Modell" desc="TF-IDF + LogReg" tone="brand" />
+            <ArrowRight className="w-4 h-4 text-muted-foreground/40 shrink-0" />
+            <PipelineStep num={3} label="Regeln" desc="Keyword-Fallback" tone="warning" />
           </div>
-        )}
-      </div>
+
+          {showHowItWorks && (
+            <div className="mt-5 p-4 rounded-xl bg-muted text-sm text-foreground space-y-2 animate-fade-in">
+              <p><strong>So lernt das System:</strong></p>
+              <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                <li>Sie scannen eine Rechnung → Vision liest Lieferant, Datum, Betrag</li>
+                <li>ML klassifiziert → schlägt Konten vor</li>
+                <li>Sie bestätigen oder korrigieren</li>
+                <li>System speichert im Gedächtnis → beim nächsten Mal sofort korrekt</li>
+              </ol>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* ── Danger Zone ───────────────────────────────────────────────── */}
-      <div className="rounded-2xl border border-red-100 bg-white p-6 shadow-sm">
-        <h3 className="font-semibold text-red-600 flex items-center gap-2 mb-1">
+      <div className="rounded-xl border border-destructive/25 bg-card p-6 shadow-sm">
+        <h3 className="font-semibold text-destructive flex items-center gap-2 mb-1">
           <Shield className="w-4 h-4" />
           Gefahrenzone
         </h3>
-        <p className="text-xs text-gray-400 mb-4">Diese Aktionen können nicht rückgängig gemacht werden — sichern Sie zuerst Ihr Modell.</p>
+        <p className="text-xs text-muted-foreground mb-4">Diese Aktionen können nicht rückgängig gemacht werden — sichern Sie zuerst Ihr Modell.</p>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
@@ -893,28 +925,33 @@ export default function ModellPage() {
             <div key={key}>
               {dangerConfirm === key ? (
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => handleDangerAction(key as any)}
-                    className="flex-1 flex items-center justify-center gap-1 px-3 py-2.5 text-sm font-medium bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all"
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => handleDangerAction(key as "memory" | "corrections" | "model")}
                   >
                     Bestätigen
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => setDangerConfirm(null)}
-                    className="px-3 py-2.5 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 transition-all"
                   >
                     Abbrechen
-                  </button>
+                  </Button>
                 </div>
               ) : (
-                <button
+                <Button
+                  variant="danger"
+                  size="sm"
+                  className="w-full"
                   onClick={() => setDangerConfirm(key)}
                   disabled={!count}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-medium border border-red-200 text-red-600 rounded-xl hover:bg-red-50 disabled:opacity-30 transition-all"
+                  icon={<Icon className="w-4 h-4" />}
                 >
-                  <Icon className="w-4 h-4" />
                   {label}
-                </button>
+                </Button>
               )}
             </div>
           ))}
