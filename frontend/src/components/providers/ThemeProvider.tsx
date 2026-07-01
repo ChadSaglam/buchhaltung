@@ -28,6 +28,11 @@ const THEME_INIT_SCRIPT = `
       s.setProperty('--color-brand-500', a[4]); s.setProperty('--color-brand-600', a[5]);
       s.setProperty('--color-brand-700', a[6]);
     }
+    // No-flash sidebar state: mark <html> so the desktop rail renders at the
+    // correct width on first paint (avoids expanded → collapsed flash).
+    if (localStorage.getItem('sidebar-collapsed') === 'true') {
+      document.documentElement.classList.add('sidebar-collapsed');
+    }
   } catch (e) {}
 })();
 `;

@@ -218,3 +218,53 @@ export async function rejectReviewItem(id: number) {
   const res = await api.post(`/api/review/${id}/reject`);
   return res.data;
 }
+
+// ---------------------------------------------------------------------------
+// Shared booking type used by AI features (assistant, NL search, summary)
+// ---------------------------------------------------------------------------
+export interface Booking {
+  id: number;
+  datum: string;
+  beschreibung: string;
+  betrag: number;
+  kt_soll: string;
+  kt_haben: string;
+  mwst_code: string;
+  mwst_pct: string;
+  mwst_amount: number;
+  beleg?: string;
+  rechnung?: string;
+  source: string;
+}
+
+// ---------------------------------------------------------------------------
+// AI assistant + summary (Next.js route handlers → Ollama, graceful fallback)
+// ---------------------------------------------------------------------------
+export interface AiChatMessage {
+  role: "system" | "user" | "assistant";
+  content: string;
+}
+
+export async function aiChat(
+  messages: AiChatMessage[],
+  context?: unknown,
+): Promise<{ content?: string; fallback?: boolean; message?: string }> {
+  const res = await fetch("/api/ai/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messages, context }),
+  });
+  return res.json();
+}
+
+export async function aiSummary(
+  stats: unknown,
+  anomalies: unknown,
+): Promise<{ content?: string; fallback?: boolean }> {
+  const res = await fetch("/api/ai/summary", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ stats, anomalies }),
+  });
+  return res.json();
+}

@@ -58,7 +58,7 @@ export default function KontenplanPage() {
   );
 
   return (
-    <div className="p-8 max-w-5xl">
+    <div>
       <PageHeader icon={BookOpen} title="Kontenplan & Training" subtitle="Kontenplan bearbeiten, Modell trainieren" />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

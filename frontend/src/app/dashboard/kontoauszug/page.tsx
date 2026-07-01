@@ -1,14 +1,28 @@
 'use client';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { FileText, Upload, Loader2, Save, RefreshCw, Download } from 'lucide-react';
+import { FileText, Upload, Loader2, Save, RefreshCw, Download, Sparkles, Check } from 'lucide-react';
 import { api } from '@/lib/api';
 import { PageHeader } from '@/components/ui/page_header';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/shared/EmptyState';
 
-interface TxRow { Nr: number; Datum: string; Beschreibung: string; KtSoll: string; KtHaben: string; 'Betrag CHF': number; 'MwStUSt-Code': string; 'MwSt-%': string; 'Gebuchte MwStUSt CHF': number; }
+interface TxRow {
+  Nr: number; Datum: string; Beschreibung: string; KtSoll: string; KtHaben: string;
+  'Betrag CHF': number; 'MwStUSt-Code': string; 'MwSt-%': string; 'Gebuchte MwStUSt CHF': number;
+  confidence?: number; source?: string; suggSoll?: string; suggHaben?: string; accepted?: boolean;
+}
+
+/** Map an AI confidence score to a badge tone + label. */
+function confidenceTone(c?: number): { tone: 'success' | 'warning' | 'danger' | 'neutral'; label: string } {
+  if (c == null) return { tone: 'neutral', label: '—' };
+  const pct = Math.round(c * 100);
+  if (c >= 0.8) return { tone: 'success', label: `${pct}%` };
+  if (c >= 0.5) return { tone: 'warning', label: `${pct}%` };
+  return { tone: 'danger', label: `${pct}%` };
+}
 
 export default function KontoauszugPage() {
   const [parsing, setParsing] = useState(false);
@@ -39,6 +53,11 @@ export default function KontoauszugPage() {
         'MwStUSt-Code': (r.mwst_code as string) || '',
         'MwSt-%': (r.mwst_pct as string) || '',
         'Gebuchte MwStUSt CHF': Number(r.mwst_amount) || 0,
+        confidence: typeof r.confidence === 'number' ? (r.confidence as number) : undefined,
+        source: (r.source as string) || undefined,
+        suggSoll: (r.kt_soll as string) || '',
+        suggHaben: (r.kt_haben as string) || '',
+        accepted: false,
       })));
     } catch (e: unknown) {
       alert((e as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Fehler beim Verarbeiten');
@@ -74,10 +93,18 @@ export default function KontoauszugPage() {
 
   const updateRow = (idx: number, field: string, value: string | number) => setRows(prev => prev.map((r, i) => i === idx ? { ...r, [field]: value } : r));
 
-  const COLS = ['Nr', 'Datum', 'Beschreibung', 'KtSoll', 'KtHaben', 'Betrag CHF', 'MwStUSt-Code', 'MwSt-%'];
+  const acceptSuggestion = (idx: number) => setRows(prev => prev.map((r, i) =>
+    i === idx ? { ...r, KtSoll: r.suggSoll ?? r.KtSoll, KtHaben: r.suggHaben ?? r.KtHaben, accepted: true } : r
+  ));
+  const acceptAll = () => setRows(prev => prev.map((r) => ({
+    ...r, KtSoll: r.suggSoll ?? r.KtSoll, KtHaben: r.suggHaben ?? r.KtHaben, accepted: true,
+  })));
+  const lowConfidenceCount = rows.filter(r => (r.confidence ?? 1) < 0.8).length;
+
+  const COLS = ['Nr', 'Datum', 'Beschreibung', 'KtSoll', 'KtHaben', 'Betrag CHF', 'MwSt', 'AI', ''];
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl">
+    <div>
       <PageHeader
         icon={FileText}
         title="Kontoauszug"
@@ -140,6 +167,10 @@ export default function KontoauszugPage() {
           >
             <div className="flex flex-wrap gap-2 items-center">
               <span className="text-sm text-muted-foreground">{rows.length} Transaktionen</span>
+              {lowConfidenceCount > 0 && <Badge tone="warning">{lowConfidenceCount} unsicher</Badge>}
+              <Button variant="secondary" size="sm" icon={<Sparkles className="h-3.5 w-3.5" />} onClick={acceptAll}>
+                Alle AI-Vorschläge übernehmen
+              </Button>
               <div className="flex-1" />
               <Button variant="outline" size="sm" icon={<Download className="h-3.5 w-3.5" />} onClick={() => handleExport('banana')}>Banana TXT</Button>
               <Button variant="outline" size="sm" icon={<Download className="h-3.5 w-3.5" />} onClick={() => handleExport('excel')}>Excel</Button>
@@ -163,8 +194,30 @@ export default function KontoauszugPage() {
                         <td className="px-3 py-2"><input value={r.KtSoll} onChange={e => updateRow(i, 'KtSoll', e.target.value)} className="w-16 bg-transparent font-mono text-brand-600 dark:text-brand-300 focus:outline-none focus:ring-1 focus:ring-ring/30 rounded px-1 py-0.5" /></td>
                         <td className="px-3 py-2"><input value={r.KtHaben} onChange={e => updateRow(i, 'KtHaben', e.target.value)} className="w-16 bg-transparent font-mono text-success focus:outline-none focus:ring-1 focus:ring-ring/30 rounded px-1 py-0.5" /></td>
                         <td className="px-3 py-2 font-mono text-right tabular-nums text-foreground">{(r['Betrag CHF'] || 0).toFixed(2)}</td>
-                        <td className="px-3 py-2"><input value={r['MwStUSt-Code']} onChange={e => updateRow(i, 'MwStUSt-Code', e.target.value)} className="w-12 bg-transparent focus:outline-none focus:ring-1 focus:ring-ring/30 rounded px-1 py-0.5 text-foreground" /></td>
-                        <td className="px-3 py-2 text-muted-foreground tabular-nums">{r['MwSt-%']}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">
+                          <input value={r['MwStUSt-Code']} onChange={e => updateRow(i, 'MwStUSt-Code', e.target.value)} className="w-12 bg-transparent focus:outline-none focus:ring-1 focus:ring-ring/30 rounded px-1 py-0.5 text-foreground" />
+                          {r['MwSt-%'] && <span className="ml-1 text-xs text-muted-foreground tabular-nums">{r['MwSt-%']}</span>}
+                        </td>
+                        <td className="px-3 py-2">
+                          {(() => { const t = confidenceTone(r.confidence); return (
+                            <span title={r.source ? `Quelle: ${r.source}` : undefined} className="inline-flex">
+                              <Badge tone={t.tone}>{t.label}</Badge>
+                            </span>
+                          ); })()}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap">
+                          {r.accepted ? (
+                            <span className="inline-flex items-center gap-1 text-xs font-medium text-success"><Check className="h-3.5 w-3.5" /> Übernommen</span>
+                          ) : (
+                            <button
+                              onClick={() => acceptSuggestion(i)}
+                              className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:border-border-strong hover:text-foreground"
+                              title="AI-Vorschlag für diese Zeile übernehmen"
+                            >
+                              <Sparkles className="h-3.5 w-3.5" /> Übernehmen
+                            </button>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

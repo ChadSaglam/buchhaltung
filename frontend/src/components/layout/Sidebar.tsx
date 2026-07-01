@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import { ChevronsLeft } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { getNavSections, type NavItem } from "@/lib/navigation";
 import { Logo } from "@/components/ui/Logo";
 import { cn } from "@/lib/utils";
@@ -70,9 +70,11 @@ export function SidebarContent({ collapsed, onToggle, onNavigate, showCollapse =
           <button
             onClick={onToggle}
             aria-label="Seitenleiste einklappen"
-            className="ml-auto flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            aria-expanded={true}
+            title="Seitenleiste einklappen"
+            className="ml-auto flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <ChevronsLeft className="h-4 w-4" />
+            <PanelLeftClose className="h-[18px] w-[18px]" />
           </button>
         )}
       </div>
@@ -95,15 +97,27 @@ export function SidebarContent({ collapsed, onToggle, onNavigate, showCollapse =
         ))}
       </nav>
 
-      {/* Collapsed expand control */}
-      {showCollapse && collapsed && (
+      {/* Collapse control at the foot — expands when collapsed, collapses when open. */}
+      {showCollapse && (
         <div className="border-t border-border p-3">
           <button
             onClick={onToggle}
-            aria-label="Seitenleiste ausklappen"
-            className="flex w-full items-center justify-center rounded-lg py-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            aria-label={collapsed ? "Seitenleiste ausklappen" : "Seitenleiste einklappen"}
+            aria-expanded={!collapsed}
+            title={collapsed ? "Seitenleiste ausklappen" : "Seitenleiste einklappen"}
+            className={cn(
+              "flex items-center gap-2 rounded-lg py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              collapsed ? "w-full justify-center px-0" : "w-full px-3"
+            )}
           >
-            <ChevronsLeft className="h-4 w-4 rotate-180" />
+            {collapsed ? (
+              <PanelLeftOpen className="h-[18px] w-[18px] shrink-0" />
+            ) : (
+              <>
+                <PanelLeftClose className="h-[18px] w-[18px] shrink-0" />
+                <span>Einklappen</span>
+              </>
+            )}
           </button>
         </div>
       )}
@@ -115,8 +129,9 @@ export function SidebarContent({ collapsed, onToggle, onNavigate, showCollapse =
 export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   return (
     <aside
+      data-sidebar-aside
       className={cn(
-        "fixed inset-y-0 left-0 z-40 hidden border-r border-border transition-[width] duration-300 ease-out md:block",
+        "fixed inset-y-0 left-0 z-40 hidden border-r border-border bg-surface transition-[width] duration-300 ease-out md:block",
         collapsed ? "w-[var(--sidebar-collapsed-width)]" : "w-[var(--sidebar-width)]"
       )}
     >

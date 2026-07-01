@@ -56,13 +56,13 @@ export default function LernverlaufPage() {
   const filteredCorrections = corrections.filter(c => !search || c.beschreibung.toLowerCase().includes(search.toLowerCase()));
 
   if (loading) return (
-    <div className="p-8 flex items-center gap-3 text-muted-foreground">
+    <div className="flex items-center gap-3 text-muted-foreground">
       <Loader2 className="h-5 w-5 animate-spin" /> Laden...
     </div>
   );
 
   return (
-    <div className="p-8 max-w-6xl">
+    <div>
       <PageHeader icon={GraduationCap} title="Lernverlauf" subtitle="Korrekturen, Gedächtnis und Modell-Statistiken" />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

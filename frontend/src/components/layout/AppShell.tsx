@@ -6,22 +6,21 @@ import { Sidebar, MobileSidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { CommandPalette } from "@/components/layout/CommandPalette";
+import { ShortcutsModal } from "@/components/layout/ShortcutsModal";
+import { AssistantPanel } from "@/components/layout/AssistantPanel";
+import { useSidebarStore } from "@/lib/sidebar-store";
 import { cn } from "@/lib/utils";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const { collapsed, toggle, hydrate } = useSidebarStore();
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
 
+  // Hydrate persisted collapse state, then clear the no-flash marker.
   useEffect(() => {
-    if (localStorage.getItem("sidebar-collapsed") === "true") setCollapsed(true);
-  }, []);
-
-  const toggle = () =>
-    setCollapsed((prev) => {
-      localStorage.setItem("sidebar-collapsed", String(!prev));
-      return !prev;
-    });
+    hydrate();
+    document.documentElement.classList.remove("sidebar-collapsed");
+  }, [hydrate]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -29,12 +28,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <MobileSidebar open={mobileOpen} onClose={() => setMobileOpen(false)} />
 
       <div
+        data-sidebar-main
         className={cn(
           "flex min-h-screen flex-col transition-[margin] duration-300 ease-out",
           collapsed ? "md:ml-[var(--sidebar-collapsed-width)]" : "md:ml-[var(--sidebar-width)]"
         )}
       >
-        <Topbar onMenuClick={() => setMobileOpen(true)} />
+        <Topbar onMenuClick={() => setMobileOpen(true)} onToggleSidebar={toggle} sidebarCollapsed={collapsed} />
 
         <main className="flex-1 px-4 pb-24 pt-6 md:pb-8 lg:px-8">
           <div className="mx-auto w-full max-w-7xl">
@@ -55,6 +55,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <MobileNav />
       <CommandPalette />
+      <ShortcutsModal />
+      <AssistantPanel />
     </div>
   );
 }

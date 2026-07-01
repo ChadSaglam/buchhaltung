@@ -168,6 +168,18 @@
   }
 }
 
+/* No-flash sidebar width: before React hydrates, honor the marker set on
+   <html> by the init script so the desktop rail paints at the right width.
+   Cleared by AppShell once the store hydrates. */
+@media (min-width: 768px) {
+  html.sidebar-collapsed [data-sidebar-aside] {
+    width: var(--sidebar-collapsed-width);
+  }
+  html.sidebar-collapsed [data-sidebar-main] {
+    margin-left: var(--sidebar-collapsed-width);
+  }
+}
+
 @layer utilities {
   .glass {
     background: var(--glass-bg);

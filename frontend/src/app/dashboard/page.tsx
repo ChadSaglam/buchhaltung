@@ -9,6 +9,7 @@ import {
 import { MetricCard } from "@/components/ui/metric_card";
 import { MetricCardSkeleton } from "@/components/shared/LoadingSkeleton";
 import { SystemChecklist } from "@/components/shared/SystemChecklist";
+import { GettingStarted } from "@/components/shared/GettingStarted";
 import { useApi } from "@/hooks/useApi";
 import { cn } from "@/lib/utils";
 
@@ -57,6 +58,8 @@ export default function DashboardPage() {
           Selbstlernende Schweizer Buchhaltung — Übersicht
         </p>
       </div>
+
+      <GettingStarted />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
         {/* Left: Metrics + Actions */}

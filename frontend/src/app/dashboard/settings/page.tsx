@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { Save, User, Building2, Bell, Palette, Shield, SlidersHorizontal, Check, Settings, Sun, Moon, Monitor } from "lucide-react";
+import { Save, User, Building2, Bell, Palette, Shield, SlidersHorizontal, Check, Settings, Sun, Moon, Monitor, Languages } from "lucide-react";
 import { getMe, getScannerConfig, updateScannerConfig } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page_header";
@@ -315,6 +315,18 @@ export default function SettingsPage() {
                       </button>
                     );
                   })}
+                </div>
+              </SettingsField>
+              <SettingsField label="Sprache" description="Sprache der Benutzeroberfläche">
+                <div className="flex flex-wrap items-center gap-3" aria-disabled="true">
+                  <div className="inline-flex cursor-not-allowed items-center gap-2 rounded-lg border border-border bg-muted px-3 py-2 opacity-70">
+                    <Languages className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium text-foreground">Deutsch</span>
+                  </div>
+                  <Badge tone="info">Bald verfügbar</Badge>
+                  <p className="basis-full text-xs text-muted-foreground">
+                    Englisch und Französisch folgen in einer späteren Version. Die Umschaltung ist vorübergehend deaktiviert.
+                  </p>
                 </div>
               </SettingsField>
             </div>

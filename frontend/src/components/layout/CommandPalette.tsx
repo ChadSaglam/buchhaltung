@@ -4,10 +4,11 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Search, CornerDownLeft, ArrowUp, ArrowDown, Sun, Moon, Monitor,
-  LogOut, Palette, type LucideIcon,
+  LogOut, Palette, Bot, Keyboard, type LucideIcon,
 } from "lucide-react";
-import { NAV_ITEMS } from "@/lib/navigation";
+import { ALL_NAV_ITEMS } from "@/lib/navigation";
 import { useCommandStore } from "@/lib/command-store";
+import { useUiStore } from "@/lib/ui-store";
 import { useThemeStore, ACCENTS, type Accent } from "@/lib/theme-store";
 import { useAuthStore } from "@/lib/auth-store";
 import { cn } from "@/lib/utils";
@@ -61,7 +62,7 @@ export function CommandPalette() {
   };
 
   const commands = useMemo<Command[]>(() => {
-    const nav: Command[] = NAV_ITEMS.map((item) => ({
+    const nav: Command[] = ALL_NAV_ITEMS.map((item) => ({
       id: `nav-${item.href}`,
       label: item.label,
       hint: "Seite öffnen",
@@ -87,7 +88,24 @@ export function CommandPalette() {
       run: () => { setAccent(key); close(); },
     }));
 
+    const ui = useUiStore.getState();
     const actions: Command[] = [
+      {
+        id: "action-assistant",
+        label: "AI-Assistent öffnen",
+        group: "Aktionen",
+        icon: Bot,
+        keywords: "ai assistent chat frage hilfe",
+        run: () => { ui.setAssistantOpen(true); close(); },
+      },
+      {
+        id: "action-shortcuts",
+        label: "Tastaturkürzel anzeigen",
+        group: "Aktionen",
+        icon: Keyboard,
+        keywords: "shortcuts tastatur hilfe keyboard",
+        run: () => { ui.setShortcutsOpen(true); close(); },
+      },
       {
         id: "action-logout",
         label: "Abmelden",
