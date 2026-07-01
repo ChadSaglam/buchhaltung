@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 const api = axios.create({ baseURL: API_URL });
 
@@ -238,33 +238,87 @@ export interface Booking {
 }
 
 // ---------------------------------------------------------------------------
-// AI assistant + summary (Next.js route handlers → Ollama, graceful fallback)
+// AI assistant + summary (backend /api/ai → tenant Ollama, grounded on data)
 // ---------------------------------------------------------------------------
 export interface AiChatMessage {
   role: "system" | "user" | "assistant";
   content: string;
 }
 
-export async function aiChat(
-  messages: AiChatMessage[],
-  context?: unknown,
-): Promise<{ content?: string; fallback?: boolean; message?: string }> {
-  const res = await fetch("/api/ai/chat", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages, context }),
-  });
-  return res.json();
+export interface AiStatus {
+  ok: boolean;
+  model: string;
+  base_url: string;
+  available_models: string[];
 }
 
-export async function aiSummary(
-  stats: unknown,
-  anomalies: unknown,
-): Promise<{ content?: string; fallback?: boolean }> {
-  const res = await fetch("/api/ai/summary", {
+export async function aiStatus(): Promise<AiStatus> {
+  const res = await api.get("/api/ai/status");
+  return res.data;
+}
+
+/**
+ * Stream a chat answer from the backend (Server-Sent Events).
+ *
+ * Calls `onToken` for each delta, `onStart` once with the resolved model, and
+ * resolves when the stream ends. Rejects with a typed error object on failure
+ * so the UI can show a precise reason (offline / timeout / http) plus retry.
+ */
+export interface AiStreamHandlers {
+  onStart?: (model: string) => void;
+  onToken: (token: string) => void;
+  signal?: AbortSignal;
+}
+
+export async function aiChatStream(
+  messages: AiChatMessage[],
+  handlers: AiStreamHandlers,
+): Promise<void> {
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const res = await fetch(`${API_URL}/api/ai/chat`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ stats, anomalies }),
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ messages }),
+    signal: handlers.signal,
   });
-  return res.json();
+
+  if (!res.ok || !res.body) {
+    throw { error: "http", status: res.status } as const;
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const frames = buffer.split("\n\n");
+    buffer = frames.pop() ?? "";
+    for (const frame of frames) {
+      const line = frame.trim();
+      if (!line.startsWith("data:")) continue;
+      const payload = line.slice(5).trim();
+      if (!payload) continue;
+      let obj: Record<string, unknown>;
+      try {
+        obj = JSON.parse(payload);
+      } catch {
+        continue;
+      }
+      if (obj.error) throw obj;
+      if (obj.start && typeof obj.model === "string") handlers.onStart?.(obj.model);
+      if (typeof obj.token === "string") handlers.onToken(obj.token);
+      if (obj.done) return;
+    }
+  }
+}
+
+export async function aiSummary(): Promise<{ content?: string; error?: string; model?: string }> {
+  const res = await api.post("/api/ai/summary");
+  return res.data;
 }

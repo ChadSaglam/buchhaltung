@@ -77,13 +77,8 @@ export default function InsightsPage() {
     setSummarizing(true);
     setSummary(null);
     try {
-      const res = await aiSummary({ months: months.slice(0, 6) }, anomalies.slice(0, 8).map((a) => ({
-        datum: a.booking.datum,
-        beschreibung: a.booking.beschreibung,
-        betrag: a.booking.betrag,
-        reason: a.reason,
-      })));
-      if (res.fallback || !res.content) {
+      const res = await aiSummary();
+      if (res.error || !res.content) {
         setSummaryFallback(true);
       } else {
         setSummary(res.content);

@@ -56,10 +56,10 @@ export const useNotificationsStore = create<NotifState>((set, get) => ({
     const items: AppNotification[] = [];
     const now = Date.now();
 
-    const [review, info, scanner, stats] = await Promise.all([
+    const [review, info, aiStatus, stats] = await Promise.all([
       api.get("/api/review/").then((r) => r.data).catch(() => []),
       api.get("/api/classify/info").then((r) => r.data).catch(() => null),
-      api.get("/api/scanner/vision-status").then((r) => r.data).catch(() => null),
+      api.get("/api/ai/status").then((r) => r.data).catch(() => null),
       api.get("/api/bookings/stats").then((r) => r.data).catch(() => null),
     ]);
 
@@ -99,7 +99,7 @@ export const useNotificationsStore = create<NotifState>((set, get) => ({
       });
     }
 
-    if (scanner && scanner.ok === false) {
+    if (aiStatus && aiStatus.ok === false) {
       items.push({
         id: "ollama-offline",
         kind: "system",

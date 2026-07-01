@@ -45,6 +45,7 @@ application.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handle
 application.add_middleware(SlowAPIMiddleware)
 
 from app.routers import (  # noqa: E402
+    ai,
     audit,
     auth,
     bookings,
@@ -75,6 +76,7 @@ application.include_router(import_data.router)
 application.include_router(review.router)
 application.include_router(audit.router)
 application.include_router(health.router)
+application.include_router(ai.router)
 
 @application.get("/api/health")
 async def health():
