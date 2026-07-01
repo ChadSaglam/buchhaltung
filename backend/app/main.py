@@ -13,8 +13,8 @@ from app.core.logging_config import configure_logging
 from app.core.rate_limit import limiter
 from app.core.sentry import configure_sentry
 from app.models.base import Base
-from app.services.training_worker import get_training_worker, init_training_worker
 from app.services.scheduler import get_scheduler
+from app.services.training_worker import get_training_worker, init_training_worker
 
 load_dotenv()
 configure_logging()

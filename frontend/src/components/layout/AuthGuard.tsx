@@ -16,7 +16,14 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
     if (!token) {
+      // Redirect via the router, with a hard-navigation fallback. On a cold
+      // load the app router occasionally no-ops a replace() before it is
+      // fully ready; location.replace guarantees the redirect actually lands
+      // on /login (also what the e2e smoke test asserts).
       router.replace("/login");
+      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+        window.location.replace("/login");
+      }
       return;
     }
     setChecked(true);
