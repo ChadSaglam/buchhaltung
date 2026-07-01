@@ -36,38 +36,64 @@ SYSTEM_PROMPT = (
 
 
 async def resolve_ollama(tenant_id: int, db: AsyncSession) -> tuple[str, str]:
-    """Return (base_url, model) for this tenant, with robust fallbacks."""
+    """Return (base_url, model) for this tenant, with robust fallbacks.
+
+    The assistant is text-only, so we must NOT reuse the scanner's vision model.
+    Priority: explicit OLLAMA_CHAT_MODEL env → the tenant's scanner model IF it
+    looks like a chat model → auto-detected chat model from Ollama's installed
+    list (vision models excluded).
+    """
     base_url = settings.OLLAMA_BASE_URL
-    model: str | None = None
+    scanner_model: str | None = None
     try:
         cfg = await ScannerConfigService(tenant_id, db).get_or_create()
         if cfg.ollama_base_url:
             base_url = cfg.ollama_base_url
-        model = cfg.default_ollama_model
+        scanner_model = cfg.default_ollama_model
     except Exception as exc:  # pragma: no cover - defensive
         logger.warning("[AI] could not load ScannerConfig: %s", exc)
 
     base_url = (base_url or "http://localhost:11434").rstrip("/")
 
-    if not model:
-        # Ask Ollama which models exist and prefer a non-vision text model.
-        try:
-            async with httpx.AsyncClient(timeout=10) as client:
-                resp = await client.get(f"{base_url}/api/tags")
-                if resp.status_code == 200:
-                    names = [m.get("name", "") for m in resp.json().get("models", [])]
-                    names = [n for n in names if n]
-                    if names:
-                        # Prefer common instruct/text models if present.
-                        preferred = next(
-                            (n for n in names if any(k in n.lower() for k in ("llama", "qwen", "mistral", "gemma", "phi"))),
-                            names[0],
-                        )
-                        model = preferred
-        except Exception as exc:
-            logger.warning("[AI] /api/tags lookup failed: %s", exc)
+    # 1) Explicit override wins.
+    if settings.OLLAMA_CHAT_MODEL:
+        return base_url, settings.OLLAMA_CHAT_MODEL
 
-    return base_url, (model or "llama3.1")
+    # Fetch installed models once (used for validation + auto-detect).
+    installed: list[str] = []
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(f"{base_url}/api/tags")
+            if resp.status_code == 200:
+                installed = [m.get("name", "") for m in resp.json().get("models", []) if m.get("name")]
+    except Exception as exc:
+        logger.warning("[AI] /api/tags lookup failed: %s", exc)
+
+    # 2) Use the scanner model only if it is NOT a vision model.
+    if scanner_model and not _is_vision_model(scanner_model):
+        return base_url, scanner_model
+
+    # 3) Auto-detect a chat model from installed models (exclude vision).
+    chat_candidates = [n for n in installed if not _is_vision_model(n) and not _is_embed_model(n)]
+    if chat_candidates:
+        preferred = next(
+            (n for n in chat_candidates if any(k in n.lower() for k in ("llama", "qwen", "mistral", "gemma", "phi"))),
+            chat_candidates[0],
+        )
+        return base_url, preferred
+
+    # 4) Last resort: whatever the scanner had, else a common default.
+    return base_url, (scanner_model or "llama3.1")
+
+
+def _is_vision_model(name: str) -> bool:
+    n = name.lower()
+    return any(k in n for k in ("vision", "llava", "minicpm-v", "bakllava", "moondream", "-v:", "vl"))
+
+
+def _is_embed_model(name: str) -> bool:
+    n = name.lower()
+    return any(k in n for k in ("embed", "nomic", "bge", "minilm"))
 
 
 async def build_context(tenant_id: int, db: AsyncSession) -> dict[str, Any]:
@@ -191,27 +217,52 @@ async def stream_chat(
         "messages": _build_messages(messages, context),
         "options": {"temperature": 0.2},
     }
+    emitted_any = False
     try:
-        async with httpx.AsyncClient(timeout=httpx.Timeout(120.0, connect=8.0)) as client:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(300.0, connect=8.0)) as client:
             async with client.stream("POST", f"{base_url}/api/chat", json=payload) as resp:
                 if resp.status_code != 200:
-                    body = (await resp.aread()).decode("utf-8", "ignore")[:200]
+                    body = (await resp.aread()).decode("utf-8", "ignore")[:300]
                     yield _sse({"error": f"Ollama HTTP {resp.status_code}", "detail": body, "model": model})
                     return
                 yield _sse({"start": True, "model": model})
-                async for line in resp.aiter_lines():
-                    if not line.strip():
-                        continue
-                    try:
-                        chunk = json.loads(line)
-                    except json.JSONDecodeError:
-                        continue
-                    token = chunk.get("message", {}).get("content", "")
-                    if token:
-                        yield _sse({"token": token})
-                    if chunk.get("done"):
-                        yield _sse({"done": True})
-                        return
+                # Ollama streams newline-delimited JSON. Parse from a byte buffer
+                # (more reliable than aiter_lines inside a StreamingResponse).
+                buf = ""
+                async for raw in resp.aiter_bytes():
+                    buf += raw.decode("utf-8", "ignore")
+                    while "\n" in buf:
+                        line, buf = buf.split("\n", 1)
+                        line = line.strip()
+                        if not line:
+                            continue
+                        try:
+                            chunk = json.loads(line)
+                        except json.JSONDecodeError:
+                            continue
+                        # Ollama may report an error object mid-stream.
+                        if chunk.get("error"):
+                            yield _sse({"error": "ollama", "detail": str(chunk["error"])[:300], "model": model})
+                            return
+                        token = chunk.get("message", {}).get("content", "")
+                        if token:
+                            emitted_any = True
+                            yield _sse({"token": token})
+                        if chunk.get("done"):
+                            if not emitted_any:
+                                yield _sse({
+                                    "error": "empty",
+                                    "detail": "Modell lieferte keine Tokens (evtl. ein Vision-/Embedding-Modell).",
+                                    "model": model,
+                                })
+                            else:
+                                yield _sse({"done": True})
+                            return
+                # Stream ended without an explicit done flag.
+                if emitted_any:
+                    yield _sse({"done": True})
+                else:
+                    yield _sse({"error": "empty", "detail": "Leere Antwort vom Modell.", "model": model})
     except httpx.ConnectError as exc:
         yield _sse({"error": "connect", "detail": f"{base_url}: {exc}", "model": model})
     except httpx.TimeoutException:

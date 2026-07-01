@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     FROM_EMAIL: str = ""
 
     OLLAMA_BASE_URL: str = "http://localhost:11434"
+    # Preferred text/chat model for the AI assistant. Leave empty to auto-detect
+    # a suitable chat model from Ollama's installed models (vision models are
+    # excluded, since the assistant is text-only).
+    OLLAMA_CHAT_MODEL: str = ""
     FRONTEND_URL: str = "http://localhost:3000"
 
     SENTRY_DSN: str | None = None

@@ -23,13 +23,18 @@ const SUGGESTIONS = [
 ];
 
 function errorMessage(err: unknown): string {
-  const e = err as { error?: string; status?: number };
+  const e = err as { error?: string; status?: number; detail?: string; model?: string };
+  const model = e?.model ? ` (Modell: ${e.model})` : "";
   if (e?.error === "connect")
     return "Ollama ist nicht erreichbar. Läuft `ollama serve` und stimmt die Basis-URL in den Scanner-Einstellungen?";
   if (e?.error === "timeout")
     return "Zeitüberschreitung — das Modell hat zu lange gebraucht. Versuche eine kürzere Frage oder ein kleineres Modell.";
   if (e?.error === "empty")
-    return "Das Modell hat keine Antwort geliefert. Ist ein Text-Modell in den Scanner-Einstellungen gewählt?";
+    return `Das Modell hat keine Antwort geliefert${model}. Möglicherweise ist ein Vision-/Embedding-Modell gewählt. Setze OLLAMA_CHAT_MODEL oder wähle ein Chat-Modell (z. B. llama3.1).`;
+  if (e?.error === "ollama")
+    return `Ollama-Fehler${model}: ${e.detail || "unbekannt"}. Ist das Modell installiert (\`ollama pull ...\`)?`;
+  if (typeof e?.error === "string" && e.error.startsWith("Ollama HTTP"))
+    return `${e.error}${model}. ${e.detail || ""}`.trim();
   if (typeof e?.status === "number")
     return `Serverfehler (HTTP ${e.status}). Bitte später erneut versuchen.`;
   return "Unerwarteter Fehler. Bitte später erneut versuchen.";
