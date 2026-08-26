@@ -1,4 +1,5 @@
 """Extended stats endpoint for Lernverlauf charts."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
@@ -30,9 +31,7 @@ async def learning_stats(
         .order_by(func.count().desc())
         .limit(15)
     )
-    memory_distribution = [
-        {"account": row[0], "count": row[1]} for row in mem_by_account.all()
-    ]
+    memory_distribution = [{"account": row[0], "count": row[1]} for row in mem_by_account.all()]
 
     # Corrections by corrected_soll (what accounts get corrected to)
     corr_by_account = await db.execute(
@@ -42,33 +41,26 @@ async def learning_stats(
         .order_by(func.count().desc())
         .limit(15)
     )
-    correction_distribution = [
-        {"account": row[0], "count": row[1]} for row in corr_by_account.all()
-    ]
+    correction_distribution = [{"account": row[0], "count": row[1]} for row in corr_by_account.all()]
 
     # Bookings by source
     bookings_by_source = await db.execute(
-        select(Booking.source, func.count())
-        .where(Booking.tenant_id == tid)
-        .group_by(Booking.source)
+        select(Booking.source, func.count()).where(Booking.tenant_id == tid).group_by(Booking.source)
     )
-    source_distribution = [
-        {"source": row[0] or "unbekannt", "count": row[1]}
-        for row in bookings_by_source.all()
-    ]
+    source_distribution = [{"source": row[0] or "unbekannt", "count": row[1]} for row in bookings_by_source.all()]
 
     # Totals
-    mem_count = (await db.execute(
-        select(func.count()).select_from(Memory).where(Memory.tenant_id == tid)
-    )).scalar() or 0
+    mem_count = (
+        await db.execute(select(func.count()).select_from(Memory).where(Memory.tenant_id == tid))
+    ).scalar() or 0
 
-    corr_count = (await db.execute(
-        select(func.count()).select_from(Correction).where(Correction.tenant_id == tid)
-    )).scalar() or 0
+    corr_count = (
+        await db.execute(select(func.count()).select_from(Correction).where(Correction.tenant_id == tid))
+    ).scalar() or 0
 
-    booking_count = (await db.execute(
-        select(func.count()).select_from(Booking).where(Booking.tenant_id == tid)
-    )).scalar() or 0
+    booking_count = (
+        await db.execute(select(func.count()).select_from(Booking).where(Booking.tenant_id == tid))
+    ).scalar() or 0
 
     return {
         "memory_count": mem_count,

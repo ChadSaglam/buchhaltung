@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import toast from "react-hot-toast";
 import { api } from "@/lib/api";
@@ -23,7 +23,6 @@ import {
   ChevronDown,
   ChevronUp,
   TestTube,
-  BookOpen,
   RotateCcw,
   Package,
   Info,
@@ -100,12 +99,6 @@ interface TrainingData {
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-function accuracyTone(acc: number): "success" | "warning" | "danger" {
-  if (acc >= 0.85) return "success";
-  if (acc >= 0.6) return "warning";
-  return "danger";
-}
 
 function accuracyBarClass(acc: number) {
   if (acc >= 0.85) return "bg-success";
@@ -610,7 +603,7 @@ export default function ModellPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {topClasses.map((cls, i) => {
+                        {topClasses.map((cls) => {
                           const maxCount = topClasses[0]?.anzahl ?? 1;
                           return (
                             <tr key={cls.konto_soll} className="border-t border-border hover:bg-accent transition-colors">
@@ -670,7 +663,7 @@ export default function ModellPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredMemory.map((entry, i) => (
+                        {filteredMemory.map((entry) => (
                           <tr key={entry.lookup_key} className="border-t border-border hover:bg-accent transition-colors">
                             <td className="px-4 py-2 text-foreground max-w-xs truncate">{entry.lookup_key}</td>
                             <td className="px-4 py-2 font-mono text-foreground">{entry.kt_soll}</td>

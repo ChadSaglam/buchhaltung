@@ -2,6 +2,7 @@
 "use client";
 import useSWR from "swr";
 import { useState, useEffect } from "react";
+import { toAppError } from "@/lib/errors";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -13,16 +14,35 @@ function getToken(): string | null {
 async function fetcher(url: string) {
   const token = getToken();
   if (!token) throw new Error("No token");
-  const res = await fetch(`${BASE_URL}${url}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}${url}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  } catch (cause) {
+    throw toAppError({ code: "ERR_NETWORK", message: String(cause) });
+  }
+
   if (res.status === 401) {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    window.location.href = "/login";
-    throw new Error("Unauthorized");
+    const next = encodeURIComponent(window.location.pathname + window.location.search);
+    window.location.href = `/login?next=${next}`;
+    throw toAppError({ response: { status: 401 } });
   }
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    throw toAppError({
+      response: {
+        status: res.status,
+        data,
+        headers: { "x-request-id": res.headers.get("X-Request-ID") ?? "" },
+      },
+    });
+  }
+
   return res.json();
 }
 

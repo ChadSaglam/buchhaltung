@@ -9,6 +9,7 @@ from slowapi.middleware import SlowAPIMiddleware
 
 from app.core.config import settings
 from app.core.database import async_session, engine
+from app.core.errors import RequestContextMiddleware, install_error_handlers
 from app.core.logging_config import configure_logging
 from app.core.rate_limit import limiter
 from app.core.sentry import configure_sentry
@@ -17,34 +18,51 @@ from app.services.scheduler import get_scheduler
 from app.services.training_worker import get_training_worker, init_training_worker
 
 load_dotenv()
-configure_logging()
+configure_logging(settings.LOG_LEVEL)
 configure_sentry(settings.SENTRY_DSN, settings.ENVIRONMENT)
+
 
 @asynccontextmanager
 async def lifespan(application: FastAPI):
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    if settings.AUTO_CREATE_TABLES:
+        # Dev/test convenience only — in production Alembic owns the schema.
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
     init_training_worker(async_session)
     get_scheduler().start_all()
     yield
     get_scheduler().stop_all()
     await get_training_worker().shutdown()
 
-application = FastAPI(title="Buchhaltung API", version="2.0.0", lifespan=lifespan)
+
+application = FastAPI(
+    title="Buchhaltung API",
+    version=settings.APP_VERSION,
+    lifespan=lifespan,
+    # Hide interactive docs in production; the OpenAPI schema stays available
+    # for the type-generation pipeline in non-prod environments.
+    docs_url=None if settings.is_production else "/docs",
+    redoc_url=None if settings.is_production else "/redoc",
+    openapi_url=None if settings.is_production else "/openapi.json",
+)
 
 application.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Request-ID"],
 )
+
+application.add_middleware(RequestContextMiddleware)
+install_error_handlers(application)
 
 application.state.limiter = limiter
 application.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 application.add_middleware(SlowAPIMiddleware)
 
-from app.routers import (  # noqa: E402
+from app.routers import (
     ai,
     audit,
     auth,
@@ -60,7 +78,7 @@ from app.routers import (  # noqa: E402
     scanner_config,
     stats,
 )
-from app.routers import kontenplan as kontenplan_router  # noqa: E402
+from app.routers import kontenplan as kontenplan_router
 
 application.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 application.include_router(classify.router)
@@ -78,8 +96,5 @@ application.include_router(audit.router)
 application.include_router(health.router)
 application.include_router(ai.router)
 
-@application.get("/api/health")
-async def health():
-    return {"status": "ok"}
 
 app = application

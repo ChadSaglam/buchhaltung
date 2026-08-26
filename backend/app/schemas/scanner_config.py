@@ -1,4 +1,5 @@
 """Scanner-config schemas — tenant-scoped read/update."""
+
 from pydantic import BaseModel, Field
 
 

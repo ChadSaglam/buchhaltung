@@ -1,4 +1,5 @@
 """Per-tenant classifier accuracy history — one row per training run."""
+
 from __future__ import annotations
 
 from datetime import datetime

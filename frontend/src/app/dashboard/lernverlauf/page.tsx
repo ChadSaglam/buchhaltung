@@ -5,7 +5,7 @@ import { GraduationCap, Search, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { PageHeader } from '@/components/ui/page_header';
 import { MetricCard } from '@/components/ui/metric_card';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Card, CardContent } from '@/components/ui/Card';
 import { EmptyState } from '@/components/shared/EmptyState';
 
 interface MemoryEntry { lookup_key: string; kt_soll: string; kt_haben: string; mwst_code: string; mwst_pct: string; }

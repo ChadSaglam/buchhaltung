@@ -7,7 +7,6 @@ import { PageHeader } from '@/components/ui/page_header';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { EmptyState } from '@/components/shared/EmptyState';
 
 interface TxRow {
   Nr: number; Datum: string; Beschreibung: string; KtSoll: string; KtHaben: string;

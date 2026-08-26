@@ -1,4 +1,5 @@
 """Booking CRUD endpoints with stats."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
@@ -98,15 +99,11 @@ async def booking_stats(
     )
     total_count = total_result.scalar() or 0
 
-    sum_result = await db.execute(
-        select(func.sum(Booking.betrag)).where(Booking.tenant_id == user.tenant_id)
-    )
+    sum_result = await db.execute(select(func.sum(Booking.betrag)).where(Booking.tenant_id == user.tenant_id))
     total_amount = sum_result.scalar() or 0
 
     source_result = await db.execute(
-        select(Booking.source, func.count())
-        .where(Booking.tenant_id == user.tenant_id)
-        .group_by(Booking.source)
+        select(Booking.source, func.count()).where(Booking.tenant_id == user.tenant_id).group_by(Booking.source)
     )
     by_source = {row[0] or "unknown": row[1] for row in source_result.all()}
 

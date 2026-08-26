@@ -1,4 +1,5 @@
 """PDF upload & parse endpoint."""
+
 from __future__ import annotations
 
 import io
@@ -28,7 +29,6 @@ async def parse_pdf(
         transactions = extract_transactions_from_pdf(io.BytesIO(content))
     except Exception as e:
         raise HTTPException(422, f"PDF konnte nicht gelesen werden: {e}") from e
-
 
     if not transactions:
         raise HTTPException(422, "Keine Transaktionen gefunden.")

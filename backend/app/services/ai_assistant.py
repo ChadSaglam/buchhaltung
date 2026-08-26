@@ -5,6 +5,7 @@ bookkeeping questions grounded in the tenant's real data. Model + base URL are
 resolved from ScannerConfig with a safe fallback to global settings and, if
 needed, the first text-capable model reported by ``/api/tags``.
 """
+
 from __future__ import annotations
 
 import json
@@ -99,23 +100,14 @@ def _is_embed_model(name: str) -> bool:
 async def build_context(tenant_id: int, db: AsyncSession) -> dict[str, Any]:
     """Assemble a compact, token-bounded context from the tenant's data."""
     # Stats
-    total_count = await db.scalar(
-        select(func.count()).select_from(Booking).where(Booking.tenant_id == tenant_id)
-    )
+    total_count = await db.scalar(select(func.count()).select_from(Booking).where(Booking.tenant_id == tenant_id))
     total_amount = await db.scalar(
         select(func.coalesce(func.sum(Booking.betrag), 0.0)).where(Booking.tenant_id == tenant_id)
     )
 
     # Recent bookings (bounded)
     rows = (
-        (
-            await db.execute(
-                select(Booking)
-                .where(Booking.tenant_id == tenant_id)
-                .order_by(Booking.id.desc())
-                .limit(60)
-            )
-        )
+        (await db.execute(select(Booking).where(Booking.tenant_id == tenant_id).order_by(Booking.id.desc()).limit(60)))
         .scalars()
         .all()
     )
@@ -133,14 +125,7 @@ async def build_context(tenant_id: int, db: AsyncSession) -> dict[str, Any]:
 
     # Monthly aggregation (from the recent slice + a wider sum query)
     monthly: dict[str, dict[str, float]] = {}
-    all_rows = (
-        (
-            await db.execute(
-                select(Booking.datum, Booking.betrag).where(Booking.tenant_id == tenant_id)
-            )
-        )
-        .all()
-    )
+    all_rows = (await db.execute(select(Booking.datum, Booking.betrag).where(Booking.tenant_id == tenant_id))).all()
     for datum, betrag in all_rows:
         key = _month_key(datum)
         if not key:
@@ -153,20 +138,11 @@ async def build_context(tenant_id: int, db: AsyncSession) -> dict[str, Any]:
             m["ausgaben"] += abs(amt)
         m["anzahl"] += 1
     monthly_list = [
-        {"monat": k, **{kk: round(vv, 2) for kk, vv in v.items()}}
-        for k, v in sorted(monthly.items(), reverse=True)
+        {"monat": k, **{kk: round(vv, 2) for kk, vv in v.items()}} for k, v in sorted(monthly.items(), reverse=True)
     ][:6]
 
     # Account plan (Kontenplan) — helps VAT/account questions
-    konten = (
-        (
-            await db.execute(
-                select(Konto).where(Konto.tenant_id == tenant_id).limit(200)
-            )
-        )
-        .scalars()
-        .all()
-    )
+    konten = (await db.execute(select(Konto).where(Konto.tenant_id == tenant_id).limit(200))).scalars().all()
     kontenplan = [{"konto": k.konto_nr, "bezeichnung": k.beschreibung} for k in konten]
 
     return {
@@ -201,9 +177,7 @@ def _build_messages(messages: list[dict], context: dict) -> list[dict]:
     ]
 
 
-async def stream_chat(
-    tenant_id: int, db: AsyncSession, messages: list[dict]
-) -> AsyncGenerator[str]:
+async def stream_chat(tenant_id: int, db: AsyncSession, messages: list[dict]) -> AsyncGenerator[str]:
     """Yield SSE-formatted tokens from Ollama's streaming chat API.
 
     Emits ``data: {json}\\n\\n`` frames. On failure, emits a single error frame
@@ -219,50 +193,54 @@ async def stream_chat(
     }
     emitted_any = False
     try:
-        async with httpx.AsyncClient(timeout=httpx.Timeout(300.0, connect=8.0)) as client:
-            async with client.stream("POST", f"{base_url}/api/chat", json=payload) as resp:
-                if resp.status_code != 200:
-                    body = (await resp.aread()).decode("utf-8", "ignore")[:300]
-                    yield _sse({"error": f"Ollama HTTP {resp.status_code}", "detail": body, "model": model})
-                    return
-                yield _sse({"start": True, "model": model})
-                # Ollama streams newline-delimited JSON. Parse from a byte buffer
-                # (more reliable than aiter_lines inside a StreamingResponse).
-                buf = ""
-                async for raw in resp.aiter_bytes():
-                    buf += raw.decode("utf-8", "ignore")
-                    while "\n" in buf:
-                        line, buf = buf.split("\n", 1)
-                        line = line.strip()
-                        if not line:
-                            continue
-                        try:
-                            chunk = json.loads(line)
-                        except json.JSONDecodeError:
-                            continue
-                        # Ollama may report an error object mid-stream.
-                        if chunk.get("error"):
-                            yield _sse({"error": "ollama", "detail": str(chunk["error"])[:300], "model": model})
-                            return
-                        token = chunk.get("message", {}).get("content", "")
-                        if token:
-                            emitted_any = True
-                            yield _sse({"token": token})
-                        if chunk.get("done"):
-                            if not emitted_any:
-                                yield _sse({
+        async with (
+            httpx.AsyncClient(timeout=httpx.Timeout(300.0, connect=8.0)) as client,
+            client.stream("POST", f"{base_url}/api/chat", json=payload) as resp,
+        ):
+            if resp.status_code != 200:
+                body = (await resp.aread()).decode("utf-8", "ignore")[:300]
+                yield _sse({"error": f"Ollama HTTP {resp.status_code}", "detail": body, "model": model})
+                return
+            yield _sse({"start": True, "model": model})
+            # Ollama streams newline-delimited JSON. Parse from a byte buffer
+            # (more reliable than aiter_lines inside a StreamingResponse).
+            buf = ""
+            async for raw in resp.aiter_bytes():
+                buf += raw.decode("utf-8", "ignore")
+                while "\n" in buf:
+                    line, buf = buf.split("\n", 1)
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        chunk = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    # Ollama may report an error object mid-stream.
+                    if chunk.get("error"):
+                        yield _sse({"error": "ollama", "detail": str(chunk["error"])[:300], "model": model})
+                        return
+                    token = chunk.get("message", {}).get("content", "")
+                    if token:
+                        emitted_any = True
+                        yield _sse({"token": token})
+                    if chunk.get("done"):
+                        if not emitted_any:
+                            yield _sse(
+                                {
                                     "error": "empty",
                                     "detail": "Modell lieferte keine Tokens (evtl. ein Vision-/Embedding-Modell).",
                                     "model": model,
-                                })
-                            else:
-                                yield _sse({"done": True})
-                            return
-                # Stream ended without an explicit done flag.
-                if emitted_any:
-                    yield _sse({"done": True})
-                else:
-                    yield _sse({"error": "empty", "detail": "Leere Antwort vom Modell.", "model": model})
+                                }
+                            )
+                        else:
+                            yield _sse({"done": True})
+                        return
+            # Stream ended without an explicit done flag.
+            if emitted_any:
+                yield _sse({"done": True})
+            else:
+                yield _sse({"error": "empty", "detail": "Leere Antwort vom Modell.", "model": model})
     except httpx.ConnectError as exc:
         yield _sse({"error": "connect", "detail": f"{base_url}: {exc}", "model": model})
     except httpx.TimeoutException:
@@ -279,8 +257,7 @@ async def summarize(tenant_id: int, db: AsyncSession) -> dict:
     prompt = (
         "Fasse die folgende Monatsauswertung einer Schweizer Buchhaltung in 3–5 kurzen "
         "Sätzen auf Deutsch zusammen. Hebe auffällige Ausreisser hervor, bleibe sachlich, "
-        "erfinde keine Zahlen.\n\nDaten (JSON):\n"
-        + json.dumps(context, ensure_ascii=False)[:6000]
+        "erfinde keine Zahlen.\n\nDaten (JSON):\n" + json.dumps(context, ensure_ascii=False)[:6000]
     )
     payload = {
         "model": model,

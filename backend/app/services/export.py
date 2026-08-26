@@ -1,4 +1,5 @@
 """Export helpers — Banana TSV, styled Excel, semicolon CSV."""
+
 from __future__ import annotations
 
 import io
@@ -34,9 +35,7 @@ def df_to_styled_excel(df: pd.DataFrame) -> bytes:
 
     headers = list(df.columns)
     header_font = Font(bold=True, size=10)
-    header_fill = PatternFill(
-        start_color="D9E1F2", end_color="D9E1F2", fill_type="solid"
-    )
+    header_fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
     thin_border = Border(
         left=Side(style="thin"),
         right=Side(style="thin"),
@@ -44,10 +43,19 @@ def df_to_styled_excel(df: pd.DataFrame) -> bytes:
         bottom=Side(style="thin"),
     )
     col_widths = {
-        "Nr": 6, "Datum": 12, "Beleg": 10, "Rechnung": 10,
-        "Beschreibung": 48, "KtSoll": 8, "KtHaben": 8,
-        "Betrag CHF": 14, "MwStUSt-Code": 16, "Art Betrag": 10,
-        "MwSt-%": 9, "Gebuchte MwStUSt CHF": 20, "KS3": 6,
+        "Nr": 6,
+        "Datum": 12,
+        "Beleg": 10,
+        "Rechnung": 10,
+        "Beschreibung": 48,
+        "KtSoll": 8,
+        "KtHaben": 8,
+        "Betrag CHF": 14,
+        "MwStUSt-Code": 16,
+        "Art Betrag": 10,
+        "MwSt-%": 9,
+        "Gebuchte MwStUSt CHF": 20,
+        "KS3": 6,
     }
 
     for col_idx, header in enumerate(headers, 1):
@@ -56,9 +64,7 @@ def df_to_styled_excel(df: pd.DataFrame) -> bytes:
         cell.fill = header_fill
         cell.border = thin_border
         cell.alignment = Alignment(horizontal="center", wrap_text=True)
-        ws.column_dimensions[get_column_letter(col_idx)].width = col_widths.get(
-            header, 12
-        )
+        ws.column_dimensions[get_column_letter(col_idx)].width = col_widths.get(header, 12)
 
     red_font = Font(color="FF0000", size=10)
     normal_font = Font(size=10)
@@ -74,9 +80,7 @@ def df_to_styled_excel(df: pd.DataFrame) -> bytes:
                 try:
                     numval = float(val)
                     cell.value = numval
-                    cell.number_format = (
-                        "#,##0.00" if header != "MwSt-%" else "0.00"
-                    )
+                    cell.number_format = "#,##0.00" if header != "MwSt-%" else "0.00"
                     cell.alignment = Alignment(horizontal="right")
                     cell.font = red_font if numval < 0 else normal_font
                 except (ValueError, TypeError):
@@ -99,7 +103,12 @@ def df_to_styled_excel(df: pd.DataFrame) -> bytes:
 def df_to_banana_tsv(df: pd.DataFrame) -> str:
     """Export DataFrame to Banana Accounting tab-separated import format."""
     banana_cols = [
-        "Date", "Description", "AccountDebit", "AccountCredit", "Amount", "VatCode",
+        "Date",
+        "Description",
+        "AccountDebit",
+        "AccountCredit",
+        "Amount",
+        "VatCode",
     ]
     lines = ["\t".join(banana_cols)]
 

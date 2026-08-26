@@ -1,4 +1,5 @@
 """AI assistant endpoints — grounded chat + monthly summary over tenant data."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
@@ -35,9 +36,7 @@ async def ai_status(
         async with httpx.AsyncClient(timeout=6) as client:
             resp = await client.get(f"{base_url}/api/tags")
             ok = resp.status_code == 200
-            models = (
-                [m.get("name", "") for m in resp.json().get("models", [])] if ok else []
-            )
+            models = [m.get("name", "") for m in resp.json().get("models", [])] if ok else []
     except Exception:
         ok, models = False, []
 

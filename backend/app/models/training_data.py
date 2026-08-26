@@ -1,4 +1,5 @@
 """Training data rows — tenant-scoped, replaces CSV."""
+
 from sqlalchemy import ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 

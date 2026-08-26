@@ -4,6 +4,7 @@ In-process async implementation with a stable interface that can later be
 backed by Redis/Celery (V9) without changing callers. Jobs are deduplicated
 per tenant so concurrent correction bursts trigger at most one retrain.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -14,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.services.classifier import TenantClassifier
 
 logger = logging.getLogger(__name__)
+
 
 class TrainingWorker:
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
@@ -53,12 +55,15 @@ class TrainingWorker:
         if tasks:
             await asyncio.gather(*tasks, return_exceptions=True)
 
+
 _worker: TrainingWorker | None = None
+
 
 def init_training_worker(session_factory: async_sessionmaker[AsyncSession]) -> TrainingWorker:
     global _worker
     _worker = TrainingWorker(session_factory)
     return _worker
+
 
 def get_training_worker() -> TrainingWorker:
     if _worker is None:

@@ -1,6 +1,8 @@
 """Email sender — professional HTML emails with Banana TXT, CSV & Excel attachments."""
+
 from __future__ import annotations
 
+import contextlib
 import os
 import smtplib
 import ssl
@@ -33,18 +35,18 @@ def is_email_configured() -> bool:
 def _build_html_body(df: pd.DataFrame, today: str, timestamp: str) -> str:
     nrows = len(df)
     total = 0.0
-    try:
-        total = df["Betrag CHF"].apply(
-            lambda x: float(x) if x not in ("", None) and not (isinstance(x, float) and pd.isna(x)) else 0
-        ).sum()
-    except Exception:
-        pass
+    with contextlib.suppress(Exception):
+        total = (
+            df["Betrag CHF"]
+            .apply(lambda x: float(x) if x not in ("", None) and not (isinstance(x, float) and pd.isna(x)) else 0)
+            .sum()
+        )
 
     # Build table rows from dataframe
     table_headers = ["Datum", "Beschreibung", "KtSoll", "KtHaben", "Betrag CHF", "MwStUSt-Code"]
     header_cells = "".join(
         f'<th style="padding:10px 14px;text-align:left;font-size:12px;font-weight:600;'
-        f'color:#64748b;text-transform:uppercase;letter-spacing:0.05em;'
+        f"color:#64748b;text-transform:uppercase;letter-spacing:0.05em;"
         f'border-bottom:2px solid #e2e8f0;">{h}</th>'
         for h in table_headers
     )
@@ -59,12 +61,12 @@ def _build_html_body(df: pd.DataFrame, today: str, timestamp: str) -> str:
             betrag_str = str(betrag)
 
         body_rows += f"""<tr style="background:{bg};">
-            <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;">{row.get('Datum', '')}</td>
-            <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;">{row.get('Beschreibung', '')}</td>
-            <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;font-family:monospace;">{row.get('KtSoll', '')}</td>
-            <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;font-family:monospace;">{row.get('KtHaben', '')}</td>
+            <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;">{row.get("Datum", "")}</td>
+            <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;">{row.get("Beschreibung", "")}</td>
+            <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;font-family:monospace;">{row.get("KtSoll", "")}</td>
+            <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;font-family:monospace;">{row.get("KtHaben", "")}</td>
             <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;text-align:right;font-family:monospace;font-weight:600;">{betrag_str}</td>
-            <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;">{row.get('MwStUSt-Code', '')}</td>
+            <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;">{row.get("MwStUSt-Code", "")}</td>
         </tr>"""
 
     return f"""<!DOCTYPE html>
@@ -185,12 +187,7 @@ def send_bookkeeping_email(
 
     # Alternative part: plain text + HTML
     alt_part = MIMEMultipart("alternative")
-    plain_text = (
-        f"Buchhaltung Export — {today}\n"
-        f"Buchungen: {nrows}\n\n"
-        f"Siehe Anhänge für Details.\n\n"
-        f"— Buchhaltung"
-    )
+    plain_text = f"Buchhaltung Export — {today}\nBuchungen: {nrows}\n\nSiehe Anhänge für Details.\n\n— Buchhaltung"
     alt_part.attach(MIMEText(plain_text, "plain", "utf-8"))
     alt_part.attach(MIMEText(html_content, "html", "utf-8"))
     msg.attach(alt_part)
@@ -201,7 +198,8 @@ def send_bookkeeping_email(
     txt_part.set_payload(txt_data.encode("utf-8"))
     encoders.encode_base64(txt_part)
     txt_part.add_header(
-        "Content-Disposition", "attachment",
+        "Content-Disposition",
+        "attachment",
         filename=f"{base_filename}_{timestamp}.txt",
     )
     msg.attach(txt_part)
@@ -212,7 +210,8 @@ def send_bookkeeping_email(
     csv_part.set_payload(csv_data.encode("utf-8"))
     encoders.encode_base64(csv_part)
     csv_part.add_header(
-        "Content-Disposition", "attachment",
+        "Content-Disposition",
+        "attachment",
         filename=f"{base_filename}_{timestamp}.csv",
     )
     msg.attach(csv_part)
@@ -227,7 +226,8 @@ def send_bookkeeping_email(
         xlsx_part.set_payload(xlsx_data)
         encoders.encode_base64(xlsx_part)
         xlsx_part.add_header(
-            "Content-Disposition", "attachment",
+            "Content-Disposition",
+            "attachment",
             filename=f"{base_filename}_{timestamp}.xlsx",
         )
         msg.attach(xlsx_part)
@@ -241,9 +241,7 @@ def send_bookkeeping_email(
         context.verify_mode = ssl.CERT_NONE
 
         if cfg["port"] == 465:
-            with smtplib.SMTP_SSL(
-                cfg["host"], cfg["port"], context=context, timeout=30
-            ) as server:
+            with smtplib.SMTP_SSL(cfg["host"], cfg["port"], context=context, timeout=30) as server:
                 server.login(cfg["user"], cfg["password"])
                 server.send_message(msg)
         else:

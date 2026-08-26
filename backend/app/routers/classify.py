@@ -24,10 +24,12 @@ from app.services.usage_meter import UsageMeter
 
 router = APIRouter(prefix="/api/classify", tags=["classify"])
 
+
 class ClassifyRequest(BaseModel):
     beschreibung: str
     betrag: float = 0
     is_credit: bool = False
+
 
 class CorrectRequest(BaseModel):
     beschreibung: str
@@ -38,32 +40,37 @@ class CorrectRequest(BaseModel):
     corrected_mwst_code: str = ""
     corrected_mwst_pct: str = ""
 
+
 class PredictRequest(BaseModel):
     beschreibung: str
     betrag: float = 100
+
 
 async def _konto_name_map(db: AsyncSession, tenant_id: int) -> dict[str, str]:
     result = await db.execute(select(Konto).where(Konto.tenant_id == tenant_id))
     rows = result.scalars().all()
     return {str(row.konto_nr): row.beschreibung or "" for row in rows}
 
+
 async def _get_model_row(db: AsyncSession, tenant_id: int) -> ClassifierModel | None:
-    result = await db.execute(
-        select(ClassifierModel).where(ClassifierModel.tenant_id == tenant_id)
-    )
+    result = await db.execute(select(ClassifierModel).where(ClassifierModel.tenant_id == tenant_id))
     return result.scalar_one_or_none()
+
 
 async def _get_memory_rows(db: AsyncSession, tenant_id: int) -> list[Memory]:
     result = await db.execute(select(Memory).where(Memory.tenant_id == tenant_id))
     return list(result.scalars().all())
 
+
 async def _get_correction_rows(db: AsyncSession, tenant_id: int) -> list[Correction]:
     result = await db.execute(select(Correction).where(Correction.tenant_id == tenant_id))
     return list(result.scalars().all())
 
+
 async def _get_konto_default_rows(db: AsyncSession, tenant_id: int) -> list[KontoDefault]:
     result = await db.execute(select(KontoDefault).where(KontoDefault.tenant_id == tenant_id))
     return list(result.scalars().all())
+
 
 @router.post("/predict")
 @limiter.limit("60/minute")
@@ -77,9 +84,7 @@ async def predict(
     result = await clf.classify(body.beschreibung, False, body.betrag)
 
     review_service = ReviewQueueService(user.tenant_id, db)
-    review_item = await review_service.enqueue_if_low_confidence(
-        body.beschreibung, body.betrag, result
-    )
+    review_item = await review_service.enqueue_if_low_confidence(body.beschreibung, body.betrag, result)
     await UsageMeter(user.tenant_id, db).record("classify")
     await db.commit()
 
@@ -119,6 +124,7 @@ async def predict(
         "top_predictions": top_predictions,
     }
 
+
 @router.delete("/{action}")
 async def delete_action(
     action: Literal["memory", "corrections", "model"],
@@ -136,6 +142,7 @@ async def delete_action(
 
     await db.commit()
     return {"status": "ok"}
+
 
 @router.get("/download/{dtype}")
 async def download(
@@ -265,6 +272,7 @@ async def download(
         headers={"Content-Disposition": "attachment; filename=buchhaltung_backup.zip"},
     )
 
+
 @router.post("/upload")
 async def upload_bundle(
     file: UploadFile = File(...),
@@ -342,6 +350,7 @@ async def upload_bundle(
         detail="Unbekanntes Dateiformat. Erwartet: .zip, .pkl oder .json",
     )
 
+
 @router.post("/")
 @limiter.limit("60/minute")
 async def classify_transaction(
@@ -354,9 +363,7 @@ async def classify_transaction(
     result = await clf.classify(body.beschreibung, body.is_credit, body.betrag)
 
     review_service = ReviewQueueService(user.tenant_id, db)
-    review_item = await review_service.enqueue_if_low_confidence(
-        body.beschreibung, body.betrag, result
-    )
+    review_item = await review_service.enqueue_if_low_confidence(body.beschreibung, body.betrag, result)
     await UsageMeter(user.tenant_id, db).record("classify")
     await db.commit()
 
@@ -371,6 +378,7 @@ async def classify_transaction(
         "needs_review": review_item is not None,
         "review_id": review_item.id if review_item else None,
     }
+
 
 @router.post("/correct")
 async def log_correction(
@@ -397,6 +405,7 @@ async def log_correction(
     await db.commit()
     return {"status": "ok"}
 
+
 @router.post("/train")
 async def train_model(
     db: AsyncSession = Depends(get_db),
@@ -411,14 +420,13 @@ async def train_model(
     await db.commit()
     return result
 
+
 @router.get("/info")
 async def classifier_info(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
-    mem_result = await db.execute(
-        select(func.count()).select_from(Memory).where(Memory.tenant_id == user.tenant_id)
-    )
+    mem_result = await db.execute(select(func.count()).select_from(Memory).where(Memory.tenant_id == user.tenant_id))
     memory_count = mem_result.scalar() or 0
 
     corr_result = await db.execute(

@@ -48,19 +48,28 @@ Buchhaltung automates Swiss SME bookkeeping by combining AI-powered document sca
 ### Without Docker
 
 ```bash
-# Clone
 git clone https://github.com/your-org/rds-buchhaltung.git
 cd rds-buchhaltung
 
-# Setup (interactive)
-./scripts/setup.sh
+cp backend/.env.example backend/.env       # then fill in JWT_SECRET
+cp frontend/.env.local.example frontend/.env.local
 
-# Or manually:
-cd backend && pip install -r requirements.txt
-cd ../frontend && npm install
+make setup    # installs backend + frontend deps and the git hooks
+make dev      # runs both
+```
 
-# Start
-./scripts/dev.sh
+### Every command
+
+```bash
+make help        # list everything
+make check       # lint · format · typecheck · tests   ← run before pushing
+make fix         # auto-fix formatting and lint
+make api-types   # regenerate frontend types from the FastAPI OpenAPI schema
+make migration m="add xyz"   # new Alembic migration
+make migrate     # apply migrations
+make ai-context  # refresh the generated repo map for AI agents
+make doctor      # diagnose the venv / toolchain
+make stop        # free ports 8000 and 3000
 ```
 
 ### With Docker
@@ -73,24 +82,15 @@ App available at `http://localhost:3000`, API at `http://localhost:8000`.
 
 ## Configuration
 
-Copy `.env.example` to `.env` in the `backend/` directory:
+All configuration lives in `backend/app/core/config.py` and is set through the
+environment. Start from `backend/.env.example` — it documents every key.
 
-```env
-# Database
-DATABASE_URL=postgresql+asyncpg://user:pass@localhost:5432/buchhaltung
+Production is fail-fast: the API refuses to boot with a default `JWT_SECRET`, a
+wildcard CORS origin, or `AUTO_CREATE_TABLES` enabled (Alembic owns the schema).
 
-# Auth
-JWT_SECRET=your-secret-key-change-in-production
-
-# Ollama
-OLLAMA_BASE_URL=http://localhost:11434
-
-# Email (optional)
-SMTP_HOST=mail.infomaniak.com
-SMTP_PORT=465
-SMTP_USER=your@email.ch
-SMTP_PASSWORD=your-password
-FROM_EMAIL=your@email.ch
+```bash
+cp backend/.env.example backend/.env
+python -c "import secrets; print(secrets.token_urlsafe(48))"   # JWT_SECRET
 ```
 
 ## Project Structure
@@ -149,6 +149,21 @@ The classifier uses a 3-layer cascade:
 3. **Rules** (confidence: 0%) — Keyword-based fallback with `konto_defaults.json`
 
 The system auto-retrains after 20 new corrections. Import existing Banana data to bootstrap the model instantly.
+
+## Contracts & conventions
+
+- **API types are generated, not written.** `make api-types` dumps the FastAPI
+  OpenAPI schema and regenerates `frontend/src/lib/api-types.ts`. CI fails if it
+  drifts. Import stable aliases from `frontend/src/lib/api-schema.ts`.
+- **Every error has the same shape.** Backend:
+  `{"error": {"code", "message", "request_id"}}`. Frontend: `toAppError()` in
+  `src/lib/errors.ts` turns any failure — HTTP, offline, timeout — into one
+  German, user-showable message with a correlation id.
+- **Every request is traceable.** `X-Request-ID` on every response, echoed in the
+  structured JSON logs and shown to the user on error.
+- **Working on this repo with an AI agent?** Read [AGENTS.md](./AGENTS.md), and
+  keep [`scripts/AI_CONTEXT.md`](./scripts/AI_CONTEXT.md) fresh with
+  `make ai-context`.
 
 ## Tech Stack
 

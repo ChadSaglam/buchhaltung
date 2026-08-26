@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { motion } from "motion/react";
-import { Download, Mail, Trash2, Send, Loader2, FileText, AlertTriangle } from "lucide-react";
+import { Download, Mail, Trash2, Send, FileText, AlertTriangle } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";

@@ -1,4 +1,5 @@
 """Tenant model — each organization or individual account."""
+
 from datetime import datetime
 
 from sqlalchemy import DateTime, String, func

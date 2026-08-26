@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import {
   CheckCircle2, XCircle, Server, Eye, Bot,
-  Brain, BookOpen, ChevronRight, Loader2, RefreshCw
+  Brain, BookOpen, ChevronRight, RefreshCw
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";

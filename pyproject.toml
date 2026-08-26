@@ -2,18 +2,44 @@
 line-length = 120
 target-version = "py313"
 src = ["backend"]
-exclude = ["backend/venv", "backend/alembic/versions", "__pycache__"]
+exclude = ["backend/venv", "backend/alembic/versions", "__pycache__", "frontend", "graphify-out"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "B", "UP", "ASYNC"]
-ignore = ["B008", "ASYNC240", "E501"]
+select = ["E", "F", "I", "B", "UP", "ASYNC", "C4", "SIM", "T20", "RUF"]
+ignore = ["B008", "ASYNC240", "E501", "RUF001", "RUF002", "RUF003"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["app"]
 
 [tool.ruff.lint.per-file-ignores]
 "app/main.py" = ["E402"]
+"backend/app/main.py" = ["E402"]
+"backend/tests/*" = ["T20"]
+"backend/scripts/dump_openapi.py" = ["E402"]
+"backend/run_scanner_manual.py" = ["T20"]
+"scripts/*" = ["T20"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["backend/tests"]
+addopts = "-q --strict-markers"
+filterwarnings = ["ignore::DeprecationWarning"]
+# Tests never touch a developer's real database or .env. These are set before
+# any app module is imported (pytest-env), and env vars win over .env files.
+env = [
+    "ENVIRONMENT=test",
+    "AUTO_CREATE_TABLES=true",
+    "D:DATABASE_URL=sqlite+aiosqlite:///./.pytest-test.db",
+    "D:DATABASE_URL_SYNC=sqlite:///./.pytest-test.db",
+    "D:JWT_SECRET=test-only-secret-not-used-outside-the-test-suite",
+    "D:SENTRY_DSN=",
+]
+
+[tool.coverage.run]
+source = ["backend/app"]
+omit = ["*/alembic/*", "*/tests/*", "*/venv/*"]

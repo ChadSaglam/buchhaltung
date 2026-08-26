@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Brain, Plus, Loader2 } from "lucide-react";
+import { Brain, Plus } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/Button";
-import type { BuchungRow, MWST_CODE_OPTIONS, MWST_PCT_OPTIONS } from "../types";
+import type { BuchungRow } from "../types";
 import { calcMwst } from "../helpers";
 
 interface ManualEntryProps {

@@ -56,11 +56,39 @@ def calc_mwst(betrag: float, mwst_pct: str) -> float | str:
 
 
 CLASSIFICATION_RULES: list[tuple[list[str], str, str, str, str]] = [
-    (["iso-trade", "iso-center", "isolier", "material", "baumate", "spenglerei", "werkzeug", "schrauben", "befestigung"], "4000", "1020", "M81", "8.10"),
+    (
+        [
+            "iso-trade",
+            "iso-center",
+            "isolier",
+            "material",
+            "baumate",
+            "spenglerei",
+            "werkzeug",
+            "schrauben",
+            "befestigung",
+        ],
+        "4000",
+        "1020",
+        "M81",
+        "8.10",
+    ),
     (["handelsware", "einkauf waren", "grosshandel"], "4200", "1020", "M81", "8.10"),
-    (["tankstelle", "benzin", "fuel", "agrola", "landi", "socar energy", "diesel", "avia ", "shell ", "bp ", "eni "], "6210", "1020", "I81", "8.10"),
+    (
+        ["tankstelle", "benzin", "fuel", "agrola", "landi", "socar energy", "diesel", "avia ", "shell ", "bp ", "eni "],
+        "6210",
+        "1020",
+        "I81",
+        "8.10",
+    ),
     (["strassenverkehr", "verkehrsamt", "mfk ", "motorfahrzeug"], "6230", "1020", "", ""),
-    (["garage", "auto ", "autoreparatur", "reifenwechsel", "pneu ", "dorfgarage", "feldmann"], "6200", "1020", "I81", "8.10"),
+    (
+        ["garage", "auto ", "autoreparatur", "reifenwechsel", "pneu ", "dorfgarage", "feldmann"],
+        "6200",
+        "1020",
+        "I81",
+        "8.10",
+    ),
     (["autoversicherung", "fahrzeugversicherung"], "6230", "1020", "", ""),
     (["leasing fahrzeug", "autoleasing"], "6260", "1020", "", ""),
     (["lohn", "gehalt", "salary", "aksoy", "nettolohn"], "5000", "1020", "", ""),
@@ -69,17 +97,78 @@ CLASSIFICATION_RULES: list[tuple[list[str], str, str, str, str]] = [
     (["spesen mitarbeiter", "spesenabrechnung", "spesen"], "5800", "1020", "", ""),
     (["miete", "mietverwaltung", "immobilien", "nebenkosten gebäude"], "6000", "1020", "", ""),
     (["reparatur", "unterhalt", "wartung", "service "], "6100", "1020", "I81", "8.10"),
-    (["chadev", "software", "it-", "hosting", "domain", "server", "microsoft", "google workspace", "adobe", "informatik"], "6570", "1020", "I81", "8.10"),
-    (["versicherung", "insurance", "vaudoise", "mobiliar", "helvetia", "axa ", "zurich ", "generali"], "6300", "1020", "", ""),
-    (["werbung", "marketing", "inserat", "google ads", "facebook ads", "flyer", "druckerei", "visitenkarte"], "6600", "1020", "I81", "8.10"),
-    (["coop", "migros", "subway", "gastro", "brot", "zopf", "tchibo", "restaurant", "mcdonald", "pizza", "kebab", "essen", "lunch"], "6500", "1020", "", ""),
+    (
+        [
+            "chadev",
+            "software",
+            "it-",
+            "hosting",
+            "domain",
+            "server",
+            "microsoft",
+            "google workspace",
+            "adobe",
+            "informatik",
+        ],
+        "6570",
+        "1020",
+        "I81",
+        "8.10",
+    ),
+    (
+        ["versicherung", "insurance", "vaudoise", "mobiliar", "helvetia", "axa ", "zurich ", "generali"],
+        "6300",
+        "1020",
+        "",
+        "",
+    ),
+    (
+        ["werbung", "marketing", "inserat", "google ads", "facebook ads", "flyer", "druckerei", "visitenkarte"],
+        "6600",
+        "1020",
+        "I81",
+        "8.10",
+    ),
+    (
+        [
+            "coop",
+            "migros",
+            "subway",
+            "gastro",
+            "brot",
+            "zopf",
+            "tchibo",
+            "restaurant",
+            "mcdonald",
+            "pizza",
+            "kebab",
+            "essen",
+            "lunch",
+        ],
+        "6500",
+        "1020",
+        "",
+        "",
+    ),
     (["büromaterial", "schreibwaren", "post ", "porto", "briefmarke"], "6500", "1020", "I81", "8.10"),
     (["telefon", "swisscom", "sunrise", "salt ", "handy"], "6500", "1020", "I81", "8.10"),
     (["obi ", "interdiscount", "baumarkt", "jumbo ", "hornbach"], "6500", "1020", "I81", "8.10"),
-    (["dienstleistungspreis", "bankgebühr", "kontoführung", "saldo dienst", "kontospesen", "kartengebühr"], "6900", "1020", "", ""),
+    (
+        ["dienstleistungspreis", "bankgebühr", "kontoführung", "saldo dienst", "kontospesen", "kartengebühr"],
+        "6900",
+        "1020",
+        "",
+        "",
+    ),
     (["strom", "elektrizität", "gas ", "heizung", "ewz", "energie"], "6400", "1020", "I81", "8.10"),
     (["steuer", "direkte steuer", "gemeinde", "kanton"], "8900", "1020", "", ""),
-    (["rechtsanwalt", "anwalt", "beratung", "consulting", "treuhänder", "notar", "revision"], "4400", "1020", "I81", "8.10"),
+    (
+        ["rechtsanwalt", "anwalt", "beratung", "consulting", "treuhänder", "notar", "revision"],
+        "4400",
+        "1020",
+        "I81",
+        "8.10",
+    ),
     (["zahlung qr-rechnung", "zahlung qr"], "6500", "1020", "", ""),
     (["lastschrift"], "6500", "1020", "", ""),
     (["clearing", "gutschrift"], "1020", "3000", "V81", "-8.10"),
@@ -108,9 +197,7 @@ class TenantClassifier:
     async def _load_model(self) -> Pipeline | None:
         if self._model is not None:
             return self._model
-        result = await self.db.execute(
-            select(ClassifierModel).where(ClassifierModel.tenant_id == self.tenant_id)
-        )
+        result = await self.db.execute(select(ClassifierModel).where(ClassifierModel.tenant_id == self.tenant_id))
         row = result.scalar_one_or_none()
         if row:
             self._model = pickle.loads(row.model_blob)
@@ -119,9 +206,7 @@ class TenantClassifier:
     async def _load_konto_defaults(self) -> dict[str, dict]:
         if self._konto_defaults is not None:
             return self._konto_defaults
-        result = await self.db.execute(
-            select(KontoDefault).where(KontoDefault.tenant_id == self.tenant_id)
-        )
+        result = await self.db.execute(select(KontoDefault).where(KontoDefault.tenant_id == self.tenant_id))
         self._konto_defaults = {
             r.konto_soll: {
                 "KontoHaben": r.konto_haben,
@@ -287,21 +372,15 @@ class TenantClassifier:
                 await self.train_from_db()
 
     async def correction_count(self) -> int:
-        result = await self.db.execute(
-            select(func.count(Correction.id)).where(Correction.tenant_id == self.tenant_id)
-        )
+        result = await self.db.execute(select(func.count(Correction.id)).where(Correction.tenant_id == self.tenant_id))
         return result.scalar() or 0
 
     async def memory_count(self) -> int:
-        result = await self.db.execute(
-            select(func.count(Memory.id)).where(Memory.tenant_id == self.tenant_id)
-        )
+        result = await self.db.execute(select(func.count(Memory.id)).where(Memory.tenant_id == self.tenant_id))
         return result.scalar() or 0
 
     async def model_info(self) -> dict | None:
-        result = await self.db.execute(
-            select(ClassifierModel).where(ClassifierModel.tenant_id == self.tenant_id)
-        )
+        result = await self.db.execute(select(ClassifierModel).where(ClassifierModel.tenant_id == self.tenant_id))
         row = result.scalar_one_or_none()
         if not row:
             return None
@@ -315,14 +394,10 @@ class TenantClassifier:
         }
 
     async def train_from_db(self) -> dict:
-        result = await self.db.execute(
-            select(TrainingRow).where(TrainingRow.tenant_id == self.tenant_id)
-        )
+        result = await self.db.execute(select(TrainingRow).where(TrainingRow.tenant_id == self.tenant_id))
         training_rows = result.scalars().all()
 
-        result = await self.db.execute(
-            select(Correction).where(Correction.tenant_id == self.tenant_id)
-        )
+        result = await self.db.execute(select(Correction).where(Correction.tenant_id == self.tenant_id))
         corrections = result.scalars().all()
 
         rows = []
@@ -404,9 +479,7 @@ class TenantClassifier:
 
         model_blob = pickle.dumps(pipeline)
 
-        result = await self.db.execute(
-            select(ClassifierModel).where(ClassifierModel.tenant_id == self.tenant_id)
-        )
+        result = await self.db.execute(select(ClassifierModel).where(ClassifierModel.tenant_id == self.tenant_id))
         existing = result.scalar_one_or_none()
         if existing:
             existing.model_blob = model_blob

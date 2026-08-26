@@ -1,8 +1,9 @@
 import axios from 'axios';
+import { toAppError } from './errors';
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-const api = axios.create({ baseURL: API_URL });
+const api = axios.create({ baseURL: API_URL, timeout: 60_000 });
 
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
@@ -15,10 +16,21 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401 && typeof window !== 'undefined') {
+    const appError = toAppError(err);
+
+    if (appError.status === 401 && typeof window !== 'undefined') {
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      localStorage.removeItem('user');
+      // Come back to where the user was after logging in again.
+      const next = encodeURIComponent(window.location.pathname + window.location.search);
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.href = `/login?next=${next}`;
+      }
     }
+
+    // Keep the original axios error (callers may inspect it) but attach the
+    // normalised, user-showable version so no screen has to re-derive it.
+    err.appError = appError;
     return Promise.reject(err);
   }
 );

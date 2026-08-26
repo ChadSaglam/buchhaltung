@@ -1,4 +1,5 @@
 """Classification schemas."""
+
 from pydantic import BaseModel
 
 

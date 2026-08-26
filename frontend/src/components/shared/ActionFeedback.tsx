@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { CheckCircle2, Mail, Download, X, ExternalLink } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 export type FeedbackType = "export" | "email";
 
@@ -23,7 +22,7 @@ interface ActionFeedbackProps {
   onUndo?: () => void;
 }
 
-export function ActionFeedback({ data, onDismiss, onUndo }: ActionFeedbackProps) {
+export function ActionFeedback({ data, onDismiss, onUndo: _onUndo }: ActionFeedbackProps) {
   const [progress, setProgress] = useState(100);
 
   useEffect(() => {

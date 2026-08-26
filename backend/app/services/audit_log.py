@@ -1,4 +1,5 @@
 """Audit-log service — tenant-scoped append-only writes and reads."""
+
 from __future__ import annotations
 
 from sqlalchemy import select
@@ -34,9 +35,6 @@ class AuditLogService:
 
     async def list(self, limit: int = 200) -> list[AuditLog]:
         result = await self.db.execute(
-            select(AuditLog)
-            .where(AuditLog.tenant_id == self.tenant_id)
-            .order_by(AuditLog.id.desc())
-            .limit(limit)
+            select(AuditLog).where(AuditLog.tenant_id == self.tenant_id).order_by(AuditLog.id.desc()).limit(limit)
         )
         return list(result.scalars().all())

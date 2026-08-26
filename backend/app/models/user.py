@@ -1,4 +1,5 @@
 """User model with tenant FK."""
+
 from datetime import datetime
 
 from sqlalchemy import DateTime, ForeignKey, String, func

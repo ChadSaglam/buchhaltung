@@ -12,4 +12,5 @@ def _tenant_or_ip(request: Request) -> str:
         return f"tenant:{tenant_id}"
     return get_remote_address(request)
 
+
 limiter = Limiter(key_func=_tenant_or_ip, default_limits=["200/minute"])

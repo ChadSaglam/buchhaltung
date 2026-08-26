@@ -2,7 +2,7 @@
 
 import { useCallback } from "react";
 import { useDropzone } from "react-dropzone";
-import { Camera, FileText } from "lucide-react";
+import { Camera } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface DropZoneProps {

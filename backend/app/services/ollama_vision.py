@@ -1,4 +1,5 @@
 """Ollama vision integration for invoice/receipt scanning."""
+
 from __future__ import annotations
 
 import asyncio
@@ -56,25 +57,37 @@ INVOICE_SCHEMA = {
 _CACHE_TTL = 60
 
 KNOWN_VISION_FAMILIES = [
-    "gemma3", "llava", "llava-llama3", "llava-phi3", "bakllava",
-    "moondream", "minicpm-v", "llava-v1.6", "kimi-k2.5",
-    "cogvlm2", "internvl2",
+    "gemma3",
+    "llava",
+    "llava-llama3",
+    "llava-phi3",
+    "bakllava",
+    "moondream",
+    "minicpm-v",
+    "llava-v1.6",
+    "kimi-k2.5",
+    "cogvlm2",
+    "internvl2",
 ]
 
 # Keyed by (tenant_id, base_url) — prevents cross-tenant cache bleed
 _VISION_STATUS_CACHE: dict[tuple[str, str], dict[str, Any]] = {}
 
+
 def _get_ollama_url() -> str:
     return settings.OLLAMA_BASE_URL.rstrip("/")
 
+
 def _cache_key(tenant_id: str | None, base_url: str) -> tuple[str, str]:
     return (str(tenant_id or "_global"), base_url)
+
 
 def _get_cache(tenant_id: str | None, base_url: str) -> dict[str, Any]:
     key = _cache_key(tenant_id, base_url)
     if key not in _VISION_STATUS_CACHE:
         _VISION_STATUS_CACHE[key] = {"data": None, "ts": 0.0}
     return _VISION_STATUS_CACHE[key]
+
 
 def clear_vision_status_cache(tenant_id: str | None = None) -> None:
     """Invalidate cached Ollama status for one tenant, or all tenants."""
@@ -83,6 +96,7 @@ def clear_vision_status_cache(tenant_id: str | None = None) -> None:
         return
     for key in [k for k in _VISION_STATUS_CACHE if k[0] == str(tenant_id)]:
         _VISION_STATUS_CACHE.pop(key, None)
+
 
 async def check_ollama_status_async(tenant_id: str | None = None) -> dict:
     base_url = _get_ollama_url()
@@ -95,12 +109,14 @@ async def check_ollama_status_async(tenant_id: str | None = None) -> dict:
     cache["ts"] = now
     return result
 
+
 def check_ollama_status(tenant_id: str | None = None) -> dict:
     """Sync shim — prefer check_ollama_status_async() in async contexts."""
     try:
         loop = asyncio.get_event_loop()
         if loop.is_running():
             import concurrent.futures
+
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
                 future = pool.submit(asyncio.run, _check_ollama_status_impl(_get_ollama_url()))
                 return future.result(timeout=15)
@@ -108,9 +124,11 @@ def check_ollama_status(tenant_id: str | None = None) -> dict:
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
+
 def _is_known_vision(name: str) -> bool:
     base = name.split(":")[0].lower()
     return any(base.startswith(family) for family in KNOWN_VISION_FAMILIES)
+
 
 async def _check_vision_capability(client: httpx.AsyncClient, base_url: str, name: str) -> str | None:
     if _is_known_vision(name):
@@ -129,6 +147,7 @@ async def _check_vision_capability(client: httpx.AsyncClient, base_url: str, nam
         pass
     return None
 
+
 async def _check_ollama_status_impl(base_url: str) -> dict:
     try:
         async with httpx.AsyncClient(timeout=5) as client:
@@ -146,7 +165,7 @@ async def _check_ollama_status_impl(base_url: str) -> dict:
                 results = await asyncio.gather(*tasks)
 
             vision_names = [n for n in results if n]
-            vision_names.sort(key=lambda n: (1 if _is_cloud_model(n) else 0))
+            vision_names.sort(key=lambda n: 1 if _is_cloud_model(n) else 0)
 
             return {
                 "ok": True,
@@ -159,8 +178,10 @@ async def _check_ollama_status_impl(base_url: str) -> dict:
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
+
 def _is_cloud_model(name: str) -> bool:
     return name.endswith(":cloud") or name.endswith("-cloud")
+
 
 def _validate_and_fix(data: dict) -> dict:
     if not data:
@@ -186,6 +207,7 @@ def _validate_and_fix(data: dict) -> dict:
         data["vat_rate"] = closest if abs(vat - closest) < 1.0 else 0
     return data
 
+
 def parse_invoice_text(text: str) -> dict | None:
     """Parse raw OCR text into the invoice dict shape (no LLM)."""
     if not text or not text.strip():
@@ -195,14 +217,15 @@ def parse_invoice_text(text: str) -> dict | None:
         return None
     date = ""
     for d, mo, y in re.findall(r"\b(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{2,4})\b", text):
-        day, month, year = int(d), int(mo), len(y) == 2 and int(f"20{y}") or int(y)
+        day, month, year = int(d), int(mo), (len(y) == 2 and int(f"20{y}")) or int(y)
         if 1 <= day <= 31 and 1 <= month <= 12 and 2000 <= year <= 2100:
             date = f"{day:02d}.{month:02d}.{year}"
             break
     invoice_number = ""
     inv_match = re.search(
         r"(?:Bon|Beleg|Rechnung(?:s)?[- ]?Nr\.?|Trx[- ]?Id|Quittung)[^\dA-Za-z]*([A-Za-z0-9\-]+)",
-        text, re.IGNORECASE,
+        text,
+        re.IGNORECASE,
     )
     if inv_match:
         invoice_number = inv_match.group(1)
@@ -244,11 +267,18 @@ def parse_invoice_text(text: str) -> dict | None:
     if not vendor and total_amount == 0:
         return None
     data = {
-        "vendor": vendor, "date": date, "invoice_number": invoice_number,
-        "total_amount": total_amount, "net_amount": 0, "vat_amount": 0,
-        "vat_rate": vat_rate, "description": " ".join(lines[:3])[:200], "line_items": [],
+        "vendor": vendor,
+        "date": date,
+        "invoice_number": invoice_number,
+        "total_amount": total_amount,
+        "net_amount": 0,
+        "vat_amount": 0,
+        "vat_rate": vat_rate,
+        "description": " ".join(lines[:3])[:200],
+        "line_items": [],
     }
     return _validate_and_fix(data)
+
 
 def _parse_json_response(content: str) -> dict | None:
     if not content or not content.strip():
@@ -270,6 +300,7 @@ def _parse_json_response(content: str) -> dict | None:
             except json.JSONDecodeError:
                 pass
     return None
+
 
 async def extract_invoice_async(image_bytes: bytes, model: str) -> dict | None:
     base_url = _get_ollama_url()
@@ -326,6 +357,7 @@ def extract_invoice(image_bytes: bytes, model: str) -> dict | None:
         loop = asyncio.get_event_loop()
         if loop.is_running():
             import concurrent.futures
+
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
                 future = pool.submit(asyncio.run, extract_invoice_async(image_bytes, model))
                 return future.result(timeout=130)
@@ -336,7 +368,8 @@ def extract_invoice(image_bytes: bytes, model: str) -> dict | None:
 
 
 async def extract_invoice_with_pipeline_async(
-    image_bytes: bytes, vision_model_names: list[str],
+    image_bytes: bytes,
+    vision_model_names: list[str],
 ) -> tuple[dict | None, dict]:
     pipeline_info: dict = {"pipeline": "buchhaltung", "steps": []}
     PREFERRED = ["gemma3:12b", "gemma3:4b", "kimi-k2.5:cloud"]
@@ -365,13 +398,15 @@ async def extract_invoice_with_pipeline_async(
 
 
 def extract_invoice_with_pipeline(
-    image_bytes: bytes, vision_model_names: list[str],
+    image_bytes: bytes,
+    vision_model_names: list[str],
 ) -> tuple[dict | None, dict]:
     """Sync shim retained for backwards compatibility."""
     try:
         loop = asyncio.get_event_loop()
         if loop.is_running():
             import concurrent.futures
+
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
                 future = pool.submit(asyncio.run, extract_invoice_with_pipeline_async(image_bytes, vision_model_names))
                 return future.result(timeout=400)

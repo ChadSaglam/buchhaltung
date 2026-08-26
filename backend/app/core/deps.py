@@ -9,6 +9,7 @@ from app.models.user import User
 
 security = HTTPBearer()
 
+
 async def get_current_user(
     request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(security),

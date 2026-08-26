@@ -1,4 +1,5 @@
 """Export & email endpoints — Banana TXT, Excel, CSV, Email."""
+
 from __future__ import annotations
 
 import pandas as pd
@@ -16,6 +17,7 @@ from app.services.export import df_to_banana_tsv, df_to_csv, df_to_styled_excel
 
 router = APIRouter(prefix="/api/export", tags=["export"])
 
+
 class BuchungRowExport(BaseModel):
     nr: int
     datum: str
@@ -31,32 +33,35 @@ class BuchungRowExport(BaseModel):
     mwstchf: float | str
     ks3: str
 
+
 class ExportRequest(BaseModel):
     rows: list[BuchungRowExport]
+
 
 def _rows_to_df(rows: list[BuchungRowExport]) -> pd.DataFrame:
     data = []
     for r in rows:
-        data.append({
-            "Nr": r.nr,
-            "Datum": r.datum,
-            "Beleg": r.beleg,
-            "Rechnung": r.rechnung,
-            "Beschreibung": r.beschreibung,
-            "KtSoll": r.kt_soll,
-            "KtHaben": r.kt_haben,
-            "Betrag CHF": r.betrag,
-            "MwStUSt-Code": r.mwstcode,
-            "Art Betrag": r.artbetrag,
-            "MwSt-%": r.mwstpct,
-            "Gebuchte MwStUSt CHF": float(r.mwstchf) if r.mwstchf else 0,
-            "KS3": r.ks3,
-        })
+        data.append(
+            {
+                "Nr": r.nr,
+                "Datum": r.datum,
+                "Beleg": r.beleg,
+                "Rechnung": r.rechnung,
+                "Beschreibung": r.beschreibung,
+                "KtSoll": r.kt_soll,
+                "KtHaben": r.kt_haben,
+                "Betrag CHF": r.betrag,
+                "MwStUSt-Code": r.mwstcode,
+                "Art Betrag": r.artbetrag,
+                "MwSt-%": r.mwstpct,
+                "Gebuchte MwStUSt CHF": float(r.mwstchf) if r.mwstchf else 0,
+                "KS3": r.ks3,
+            }
+        )
     return pd.DataFrame(data)
 
-async def _get_bookings_df(
-    db: AsyncSession, tenant_id: int, source: str | None = None
-) -> pd.DataFrame:
+
+async def _get_bookings_df(db: AsyncSession, tenant_id: int, source: str | None = None) -> pd.DataFrame:
     query = select(Booking).where(Booking.tenant_id == tenant_id)
     if source:
         query = query.where(Booking.source == source)
@@ -66,21 +71,23 @@ async def _get_bookings_df(
 
     rows = []
     for b in bookings:
-        rows.append({
-            "Nr": b.id,
-            "Datum": b.datum,
-            "Beleg": b.beleg or "",
-            "Rechnung": b.rechnung or "",
-            "Beschreibung": b.beschreibung or "",
-            "KtSoll": b.kt_soll or "",
-            "KtHaben": b.kt_haben or "",
-            "Betrag CHF": b.betrag or 0,
-            "MwStUSt-Code": b.mwst_code or "",
-            "Art Betrag": "",
-            "MwSt-%": b.mwst_pct or "",
-            "Gebuchte MwStUSt CHF": b.mwst_amount or 0,
-            "KS3": "",
-        })
+        rows.append(
+            {
+                "Nr": b.id,
+                "Datum": b.datum,
+                "Beleg": b.beleg or "",
+                "Rechnung": b.rechnung or "",
+                "Beschreibung": b.beschreibung or "",
+                "KtSoll": b.kt_soll or "",
+                "KtHaben": b.kt_haben or "",
+                "Betrag CHF": b.betrag or 0,
+                "MwStUSt-Code": b.mwst_code or "",
+                "Art Betrag": "",
+                "MwSt-%": b.mwst_pct or "",
+                "Gebuchte MwStUSt CHF": b.mwst_amount or 0,
+                "KS3": "",
+            }
+        )
     return pd.DataFrame(rows)
 
 
@@ -97,6 +104,7 @@ async def export_banana_post(body: ExportRequest):
         headers={"Content-Disposition": "attachment; filename=banana_import.txt"},
     )
 
+
 @router.post("/excel")
 async def export_excel_post(body: ExportRequest):
     if not body.rows:
@@ -108,6 +116,7 @@ async def export_excel_post(body: ExportRequest):
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": "attachment; filename=buchhaltung.xlsx"},
     )
+
 
 @router.post("/csv")
 async def export_csv_post(body: ExportRequest):
@@ -139,6 +148,7 @@ async def export_banana(
         headers={"Content-Disposition": "attachment; filename=banana_import.txt"},
     )
 
+
 @router.get("/excel")
 async def export_excel(
     source: str | None = None,
@@ -155,6 +165,7 @@ async def export_excel(
         headers={"Content-Disposition": "attachment; filename=buchhaltung.xlsx"},
     )
 
+
 @router.get("/csv")
 async def export_csv(
     source: str | None = None,
@@ -170,6 +181,7 @@ async def export_csv(
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=buchhaltung.csv"},
     )
+
 
 class EmailRequest(BaseModel):
     to_email: str
@@ -192,6 +204,7 @@ async def send_email(
     if not ok:
         raise HTTPException(500, msg)
     return {"message": msg}
+
 
 class EmailWithRowsRequest(BaseModel):
     to_email: str

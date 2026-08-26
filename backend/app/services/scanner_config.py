@@ -1,4 +1,5 @@
 """Scanner-config service — tenant-scoped get-or-create and update."""
+
 from __future__ import annotations
 
 from sqlalchemy import select
@@ -13,9 +14,7 @@ class ScannerConfigService:
         self.db = db
 
     async def get_or_create(self) -> ScannerConfig:
-        result = await self.db.execute(
-            select(ScannerConfig).where(ScannerConfig.tenant_id == self.tenant_id)
-        )
+        result = await self.db.execute(select(ScannerConfig).where(ScannerConfig.tenant_id == self.tenant_id))
         config = result.scalar_one_or_none()
         if config is None:
             config = ScannerConfig(tenant_id=self.tenant_id)

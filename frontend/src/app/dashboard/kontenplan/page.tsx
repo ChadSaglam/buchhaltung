@@ -7,7 +7,6 @@ import { PageHeader } from '@/components/ui/page_header';
 import { MetricCard } from '@/components/ui/metric_card';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
 
 interface Konto { konto: string; bezeichnung: string; }
 
@@ -44,7 +43,7 @@ export default function KontenplanPage() {
       const res = await api.post('/api/classify/train');
       setTrainResult(`Trainiert: ${res.data.total_samples} Daten, ${((res.data.cv_accuracy || 0) * 100).toFixed(0)}% Genauigkeit`);
       api.get('/api/classify/info').then(r => setClassifyInfo(r.data));
-    } catch (e: unknown) {
+    } catch (_e: unknown) {
       setTrainResult('Fehler: Nicht genug Daten zum Trainieren.');
     } finally { setTraining(false); }
   };

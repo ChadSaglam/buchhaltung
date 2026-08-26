@@ -12,6 +12,7 @@ _LOCAL_DIR = Path(os.getenv("MODEL_DATA_DIR", "/app/data/models"))
 
 def _get_s3_client():
     import boto3  # type: ignore[import]
+
     return boto3.client(
         "s3",
         endpoint_url=os.getenv("S3_ENDPOINT_URL"),
@@ -42,6 +43,7 @@ def load_model_artifact(tenant_id: int, filename: str = "model.pkl") -> bytes | 
     """Load a model artifact. Returns None if not found."""
     if _STORAGE_BACKEND == "s3":
         import botocore.exceptions  # type: ignore[import]
+
         bucket = os.getenv("S3_BUCKET", "buchhaltung-models")
         key = f"tenants/{tenant_id}/{filename}"
         try:

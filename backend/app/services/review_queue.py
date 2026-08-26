@@ -1,4 +1,5 @@
 """Confidence-threshold review queue service — tenant-scoped."""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -20,9 +21,7 @@ class ReviewQueueService:
 
     async def get_threshold(self) -> float:
         result = await self.db.execute(
-            select(ScannerConfig.review_confidence_threshold).where(
-                ScannerConfig.tenant_id == self.tenant_id
-            )
+            select(ScannerConfig.review_confidence_threshold).where(ScannerConfig.tenant_id == self.tenant_id)
         )
         value = result.scalar_one_or_none()
         return float(value) if value is not None else DEFAULT_THRESHOLD

@@ -40,3 +40,25 @@ docker-compose.override.yml
 
 # OS
 Thumbs.db
+
+# Generated API contract (intermediate)
+backend/openapi.json
+
+# Local scratch
+_to_delete/
+graphify-out/
+
+# Test database
+.pytest-test.db
+
+# Playwright
+frontend/playwright-report/
+frontend/test-results/
+
+# Coverage
+.coverage
+coverage.xml
+htmlcov/
+
+# TS build info
+frontend/tsconfig.tsbuildinfo

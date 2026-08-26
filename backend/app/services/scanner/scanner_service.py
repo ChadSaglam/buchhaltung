@@ -121,9 +121,7 @@ class ScannerService:
         if not status.ok:
             raise HTTPException(503, status.error or "Scanner nicht verfügbar.")
 
-        steps: list[dict[str, Any]] = [
-            {"icon": "📤", "label": "Datei wird verarbeitet", "status": "done"}
-        ]
+        steps: list[dict[str, Any]] = [{"icon": "📤", "label": "Datei wird verarbeitet", "status": "done"}]
         attempts: list[dict[str, Any]] = []
         providers: list[dict[str, str]] = []
 
@@ -212,9 +210,7 @@ class ScannerService:
         return ScannerExtractResponse(data=ExtractedInvoice(**data))
 
     def _validate_upload(self, *, content_type: str, content: bytes) -> None:
-        if not content_type or not (
-            content_type.startswith("image") or content_type == "application/pdf"
-        ):
+        if not content_type or not (content_type.startswith("image") or content_type == "application/pdf"):
             raise HTTPException(400, "Nur Bilder (JPG, PNG, WebP) oder PDF erlaubt.")
         if len(content) > MAX_FILE_SIZE:
             raise HTTPException(400, f"Datei zu gross (max {MAX_FILE_SIZE // 1024 // 1024} MB).")
@@ -230,8 +226,7 @@ class ScannerService:
         vat_rate = self._normalize_vat_rate(data.get("vat_rate", 0))
 
         is_credit = any(
-            kw in f"{vendor} {description}".lower()
-            for kw in ["gutschrift", "zahlung erhalten", "einzahlung"]
+            kw in f"{vendor} {description}".lower() for kw in ["gutschrift", "zahlung erhalten", "einzahlung"]
         )
 
         clf = TenantClassifier(self.user.tenant_id, self.db)

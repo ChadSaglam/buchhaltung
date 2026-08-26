@@ -4,6 +4,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def configure_sentry(dsn: str | None, environment: str = "production") -> None:
     if not dsn:
         logger.info("Sentry DSN not configured; error tracking disabled.")

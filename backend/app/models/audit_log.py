@@ -1,4 +1,5 @@
 """Tenant-scoped, append-only audit log."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -13,9 +14,7 @@ class AuditLog(Base):
     __tablename__ = "audit_logs"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    tenant_id: Mapped[int] = mapped_column(
-        ForeignKey("tenants.id", ondelete="CASCADE"), index=True, nullable=False
-    )
+    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenants.id", ondelete="CASCADE"), index=True, nullable=False)
     actor_user_id: Mapped[int | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), index=True, nullable=True
     )

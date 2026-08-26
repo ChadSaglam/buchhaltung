@@ -51,6 +51,6 @@ async def health_detail() -> dict[str, Any]:
     degraded = any(c.get("status") == "error" for c in checks.values())
     return {
         "status": "degraded" if degraded else "ok",
-        "version": "2.0.0",
+        "version": settings.APP_VERSION,
         "checks": checks,
     }

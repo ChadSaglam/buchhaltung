@@ -1,4 +1,5 @@
 """Kontenplan schemas."""
+
 from pydantic import BaseModel
 
 

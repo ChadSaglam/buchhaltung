@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { motion } from "motion/react";
 import {
   Sparkles, Search, AlertTriangle, TrendingUp, TrendingDown,
   Wand2, Loader2, Info, RefreshCw,

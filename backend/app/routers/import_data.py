@@ -1,4 +1,5 @@
 """Import Banana Buchhaltung XLS/CSV as training data + memory."""
+
 from __future__ import annotations
 
 import io
@@ -26,6 +27,7 @@ def parse_banana_xls(file_bytes: bytes, filename: str) -> list[dict]:
 
     if header.startswith(b"<?xml") or header.startswith(b"\xef\xbb\xbf<?xml"):
         import xml.etree.ElementTree as ET
+
         raw = file_bytes.decode("utf-8", errors="replace")
         if raw.startswith("\ufeff"):
             raw = raw[1:]
@@ -34,32 +36,32 @@ def parse_banana_xls(file_bytes: bytes, filename: str) -> list[dict]:
         root = ET.fromstring(raw)
 
         # Find the Worksheet/Table
-        ns = 'urn:schemas-microsoft-com:spreadsheet'
-        table = root.find(f'.//{{{ns}}}Table')
+        ns = "urn:schemas-microsoft-com:spreadsheet"
+        table = root.find(f".//{{{ns}}}Table")
         if table is None:
             # Try without namespace
-            raw_clean = re.sub(r'<(/?)(\w+):', r'<\1', raw)
-            raw_clean = re.sub(r'\s+xmlns(:[^=]*)?\s*=\s*"[^"]*"', '', raw_clean)
-            raw_clean = re.sub(r'\s+\w+:(\w+)=', r' \1=', raw_clean)
+            raw_clean = re.sub(r"<(/?)(\w+):", r"<\1", raw)
+            raw_clean = re.sub(r'\s+xmlns(:[^=]*)?\s*=\s*"[^"]*"', "", raw_clean)
+            raw_clean = re.sub(r"\s+\w+:(\w+)=", r" \1=", raw_clean)
             root = ET.fromstring(raw_clean)
-            table = root.find('.//Table')
-            ns = ''
+            table = root.find(".//Table")
+            ns = ""
 
         if table is None:
             raise HTTPException(400, "Keine Tabelle in der XML-Datei gefunden.")
 
         all_rows = []
-        tag_row = f'{{{ns}}}Row' if ns else 'Row'
-        tag_cell = f'{{{ns}}}Cell' if ns else 'Cell'
-        tag_data = f'{{{ns}}}Data' if ns else 'Data'
-        attr_index = f'{{{ns}}}Index' if ns else 'Index'
+        tag_row = f"{{{ns}}}Row" if ns else "Row"
+        tag_cell = f"{{{ns}}}Cell" if ns else "Cell"
+        tag_data = f"{{{ns}}}Data" if ns else "Data"
+        attr_index = f"{{{ns}}}Index" if ns else "Index"
 
         for row_el in table.findall(tag_row):
             cells = []
             col_idx = 0
             for cell in row_el.findall(tag_cell):
                 # Handle ss:Index (1-based column skip)
-                idx_attr = cell.get(attr_index) or cell.get('Index')
+                idx_attr = cell.get(attr_index) or cell.get("Index")
                 if idx_attr:
                     target = int(idx_attr) - 1
                     while col_idx < target:
@@ -82,6 +84,7 @@ def parse_banana_xls(file_bytes: bytes, filename: str) -> list[dict]:
         df = pd.DataFrame(data_rows, columns=headers)
 
         import logging
+
         logging.warning(f"Banana import: {len(df)} rows, columns = {list(df.columns)[:10]}")
 
     elif header.startswith(b"PK\x03\x04"):
@@ -122,15 +125,14 @@ def parse_banana_xls(file_bytes: bytes, filename: str) -> list[dict]:
 
     # Log actual columns for debugging
     import logging
+
     logging.warning(f"Banana import: columns after rename = {list(df.columns)}")
     logging.warning(f"Banana import: first 3 rows = {df.head(3).to_dict()}")
 
     required = {"Beschreibung", "KtSoll"}
     if not required.issubset(set(df.columns)):
         raise HTTPException(
-            400,
-            f"Benötigte Spalten fehlen: {required - set(df.columns)}. "
-            f"Gefundene Spalten: {list(df.columns)[:30]}"
+            400, f"Benötigte Spalten fehlen: {required - set(df.columns)}. Gefundene Spalten: {list(df.columns)[:30]}"
         )
 
     rows = []
@@ -140,23 +142,23 @@ def parse_banana_xls(file_bytes: bytes, filename: str) -> list[dict]:
         if not beschreibung or not kt_soll or kt_soll == "nan":
             continue
         # Skip rows where kt_soll is not a valid account number
-        if not re.match(r'^\d{4}$', kt_soll):
+        if not re.match(r"^\d{4}$", kt_soll):
             continue
         kt_haben = str(row.get("KtHaben", "1020")).strip() if pd.notna(row.get("KtHaben")) else "1020"
-        if not re.match(r'^\d{4}$', kt_haben):
+        if not re.match(r"^\d{4}$", kt_haben):
             kt_haben = "1020"
         mwst_code = str(row.get("MwStCode", "")).strip() if pd.notna(row.get("MwStCode")) else ""
         mwst_pct = str(row.get("MwStPct", "")).strip() if pd.notna(row.get("MwStPct")) else ""
-        rows.append({
-            "beschreibung": beschreibung[:500],
-            "kt_soll": kt_soll[:20],
-            "kt_haben": kt_haben[:20],
-            "mwst_code": mwst_code[:10],
-            "mwst_pct": mwst_pct[:10],
-        })
+        rows.append(
+            {
+                "beschreibung": beschreibung[:500],
+                "kt_soll": kt_soll[:20],
+                "kt_haben": kt_haben[:20],
+                "mwst_code": mwst_code[:10],
+                "mwst_pct": mwst_pct[:10],
+            }
+        )
     return rows
-
-
 
 
 @router.post("/banana")
@@ -191,23 +193,23 @@ async def import_banana_file(
     memory_objects = []
 
     for r in rows:
-        training_objects.append(TrainingRow(
-            tenant_id=tid,
-            beschreibung=r["beschreibung"],
-            kt_soll=r["kt_soll"],
-            kt_haben=r["kt_haben"],
-            mwst_code=r["mwst_code"],
-            mwst_pct=r["mwst_pct"],
-        ))
+        training_objects.append(
+            TrainingRow(
+                tenant_id=tid,
+                beschreibung=r["beschreibung"],
+                kt_soll=r["kt_soll"],
+                kt_haben=r["kt_haben"],
+                mwst_code=r["mwst_code"],
+                mwst_pct=r["mwst_pct"],
+            )
+        )
 
         if also_memory:
             key = make_memory_key(r["beschreibung"])
             if key and key not in seen_keys:
                 seen_keys.add(key)
                 # Upsert memory
-                existing = await db.execute(
-                    select(Memory).where(Memory.tenant_id == tid, Memory.lookup_key == key)
-                )
+                existing = await db.execute(select(Memory).where(Memory.tenant_id == tid, Memory.lookup_key == key))
                 mem = existing.scalar_one_or_none()
                 if mem:
                     mem.kt_soll = r["kt_soll"]
@@ -215,11 +217,16 @@ async def import_banana_file(
                     mem.mwst_code = r["mwst_code"]
                     mem.mwst_pct = r["mwst_pct"]
                 else:
-                    memory_objects.append(Memory(
-                        tenant_id=tid, lookup_key=key,
-                        kt_soll=r["kt_soll"], kt_haben=r["kt_haben"],
-                        mwst_code=r["mwst_code"], mwst_pct=r["mwst_pct"],
-                    ))
+                    memory_objects.append(
+                        Memory(
+                            tenant_id=tid,
+                            lookup_key=key,
+                            kt_soll=r["kt_soll"],
+                            kt_haben=r["kt_haben"],
+                            mwst_code=r["mwst_code"],
+                            mwst_pct=r["mwst_pct"],
+                        )
+                    )
 
     db.add_all(training_objects)
     db.add_all(memory_objects)
@@ -260,15 +267,14 @@ async def import_banana_text(
 
         for i, p in enumerate(parts):
             p_clean = p.strip()
-            if re.match(r"^\d{4}$", p_clean) and not kt_soll:
-                # Could be an account number
-                if i > 5:  # Skip date-like positions
-                    kt_soll = p_clean
-                    # Next 4-digit is kt_haben
-                    for j in range(i + 2, min(i + 4, len(parts))):
-                        if re.match(r"^\d{4}$", parts[j].strip()):
-                            parts[j].strip()
-                            break
+            # A 4-digit token past the date-like positions is an account number.
+            if re.match(r"^\d{4}$", p_clean) and not kt_soll and i > 5:
+                kt_soll = p_clean
+                # Next 4-digit is kt_haben
+                for j in range(i + 2, min(i + 4, len(parts))):
+                    if re.match(r"^\d{4}$", parts[j].strip()):
+                        parts[j].strip()
+                        break
 
         # This is complex — better to use the structured parse
         # Recommend uploading XLS instead

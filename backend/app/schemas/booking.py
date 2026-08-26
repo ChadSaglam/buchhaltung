@@ -1,4 +1,5 @@
 """Booking schemas."""
+
 from pydantic import BaseModel
 
 

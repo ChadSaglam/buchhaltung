@@ -19,6 +19,7 @@ from app.services.scanner.base import BaseVisionProvider, ProviderExtractionResu
 
 CUSTOM_OCR_NAME = "custom-ocr"
 
+
 def _run_sync(coro):
     """Run a coroutine safely from sync code, even if a loop is already running."""
     try:
@@ -29,6 +30,7 @@ def _run_sync(coro):
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
             return pool.submit(lambda: asyncio.run(coro)).result()
     return asyncio.run(coro)
+
 
 class OllamaVisionProvider(BaseVisionProvider):
     name = "ollama"

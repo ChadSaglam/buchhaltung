@@ -1,4 +1,5 @@
 """UBS Kontoauszug PDF parser — extracts transactions using pdfplumber."""
+
 from __future__ import annotations
 
 import re
@@ -102,28 +103,16 @@ def extract_transactions_from_pdf(pdf_file: BinaryIO) -> list[dict]:
                     continue
 
                 datum_words = [w for w in line_words if w["x1"] < info_left]
-                info_words = [
-                    w for w in line_words if info_left - 2 <= w["x0"] < belast_left
-                ]
-                belast_words = [
-                    w
-                    for w in line_words
-                    if belast_left <= w["x0"] and w["x1"] <= belast_right + 5
-                ]
-                gutschr_words = [
-                    w
-                    for w in line_words
-                    if gutschr_left <= w["x0"] and w["x1"] <= gutschr_right + 5
-                ]
+                info_words = [w for w in line_words if info_left - 2 <= w["x0"] < belast_left]
+                belast_words = [w for w in line_words if belast_left <= w["x0"] and w["x1"] <= belast_right + 5]
+                gutschr_words = [w for w in line_words if gutschr_left <= w["x0"] and w["x1"] <= gutschr_right + 5]
 
                 datum_text = _reconstruct_text(datum_words)
 
                 if date_pattern.match(datum_text.strip()):
                     # Flush pending details to previous transaction
                     if pending_details and transactions:
-                        transactions[-1]["Beschreibung"] += (
-                            " " + " ".join(pending_details)
-                        )
+                        transactions[-1]["Beschreibung"] += " " + " ".join(pending_details)
                     pending_details = []
 
                     parts = datum_text.strip().split(".")
@@ -161,12 +150,23 @@ def extract_transactions_from_pdf(pdf_file: BinaryIO) -> list[dict]:
                     info_text = _reconstruct_text(info_words)
                     cleaned = info_text.strip()
                     skip_words = [
-                        "formular ohne", "seite", "gnzkoa", "ubs switzerland",
-                        "freundliche gr", "bitten sie", "benachrichtigen",
-                        "umsatztotal", "schlusssaldo", "unstimmigkeiten",
-                        "diesen auszug", "innert 30 tagen zu",
-                        "ubs kontokorrent", "rds isolierungen", "effretikon",
-                        "erstellt am", "kontoauszug 0",
+                        "formular ohne",
+                        "seite",
+                        "gnzkoa",
+                        "ubs switzerland",
+                        "freundliche gr",
+                        "bitten sie",
+                        "benachrichtigen",
+                        "umsatztotal",
+                        "schlusssaldo",
+                        "unstimmigkeiten",
+                        "diesen auszug",
+                        "innert 30 tagen zu",
+                        "ubs kontokorrent",
+                        "rds isolierungen",
+                        "effretikon",
+                        "erstellt am",
+                        "kontoauszug 0",
                     ]
                     if cleaned and not any(s in cleaned.lower() for s in skip_words):
                         pending_details.append(cleaned)

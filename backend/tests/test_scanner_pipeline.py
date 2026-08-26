@@ -10,10 +10,7 @@ from app.services.scanner.base import ProviderExtractionResult
 from app.services.scanner.scanner_service import ScannerService
 from tests.factories import create_tenant, create_user
 
-PNG_BYTES = (
-    b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"
-    b"\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
-)
+PNG_BYTES = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
 
 
 def _ok_status() -> ScannerStatusResponse:

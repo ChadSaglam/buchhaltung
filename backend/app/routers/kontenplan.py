@@ -1,4 +1,5 @@
 """Kontenplan CRUD endpoints."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
@@ -22,9 +23,7 @@ async def get_kontenplan(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(Konto).where(Konto.tenant_id == user.tenant_id)
-    )
+    result = await db.execute(select(Konto).where(Konto.tenant_id == user.tenant_id))
     rows = result.scalars().all()
     plan = {row.konto_nr: row.beschreibung for row in rows}
     return {"kontenplan": plan}
@@ -36,18 +35,18 @@ async def update_kontenplan(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    existing = await db.execute(
-        select(Konto).where(Konto.tenant_id == user.tenant_id)
-    )
+    existing = await db.execute(select(Konto).where(Konto.tenant_id == user.tenant_id))
     for row in existing.scalars().all():
         await db.delete(row)
 
     for konto_nr, beschreibung in body.kontenplan.items():
-        db.add(Konto(
-            tenant_id=user.tenant_id,
-            konto_nr=konto_nr,
-            beschreibung=beschreibung,
-        ))
+        db.add(
+            Konto(
+                tenant_id=user.tenant_id,
+                konto_nr=konto_nr,
+                beschreibung=beschreibung,
+            )
+        )
 
     await db.commit()
     return {"status": "ok", "count": len(body.kontenplan)}
@@ -58,9 +57,7 @@ async def get_defaults(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(KontoDefault).where(KontoDefault.tenant_id == user.tenant_id)
-    )
+    result = await db.execute(select(KontoDefault).where(KontoDefault.tenant_id == user.tenant_id))
     defaults = {
         row.konto_soll: {
             "KontoHaben": row.konto_haben,

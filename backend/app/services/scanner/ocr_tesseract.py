@@ -71,7 +71,7 @@ class TesseractOcrProvider(BaseOcrProvider):
             tmp_path = tmp.name
 
         try:
-            cmd = self.command.split() + [tmp_path, "stdout", "-l", self.language]
+            cmd = [*self.command.split(), tmp_path, "stdout", "-l", self.language]
 
             def _run() -> subprocess.CompletedProcess:
                 return subprocess.run(
@@ -174,5 +174,6 @@ class TesseractOcrProvider(BaseOcrProvider):
     def extract(self, scanner_file: ScannerFile) -> ProviderExtractionResult:
         """Sync shim — do not call from within a running event loop."""
         import concurrent.futures
+
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
             return pool.submit(lambda: asyncio.run(self.extract_async(scanner_file))).result()

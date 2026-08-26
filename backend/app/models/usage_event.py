@@ -12,9 +12,7 @@ class UsageEvent(Base):
     __tablename__ = "usage_events"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    tenant_id: Mapped[int] = mapped_column(
-        ForeignKey("tenants.id", ondelete="CASCADE"), index=True, nullable=False
-    )
+    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenants.id", ondelete="CASCADE"), index=True, nullable=False)
     event_type: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
     quantity: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     created_at: Mapped[datetime] = mapped_column(

@@ -14,9 +14,9 @@ from sqlalchemy.pool import NullPool, StaticPool
 
 os.environ.setdefault("ENV", "test")
 
-from app.core.database import get_db  # noqa: E402
-from app.main import app  # noqa: E402
-from app.models.base import Base  # noqa: E402
+from app.core.database import get_db
+from app.main import app
+from app.models.base import Base
 
 TEST_DATABASE_URL = os.getenv(
     "DATABASE_URL",

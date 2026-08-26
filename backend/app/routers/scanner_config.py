@@ -1,4 +1,5 @@
 """Scanner-config endpoints — tenant-scoped read/update."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
@@ -12,14 +13,9 @@ from app.services.scanner_config import ScannerConfigService
 router = APIRouter(prefix="/api/scanner", tags=["scanner-config"])
 
 
-@router.get("/config", response_model=ScannerConfigResponse)
-async def get_scanner_config(
-    db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
-) -> ScannerConfigResponse:
-    config = await ScannerConfigService(user.tenant_id, db).get_or_create()
-    await db.commit()
-    return ScannerConfigResponse.model_validate(config, from_attributes=True)
+# NOTE: GET /api/scanner/config lives in routers/scanner.py. A second GET was
+# declared here and was unreachable (FastAPI resolves the first match), so it
+# was removed rather than left as dead code with a conflicting response schema.
 
 
 @router.patch("/config", response_model=ScannerConfigResponse)
@@ -28,8 +24,6 @@ async def update_scanner_config(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> ScannerConfigResponse:
-    config = await ScannerConfigService(user.tenant_id, db).update(
-        body.model_dump(exclude_unset=True)
-    )
+    config = await ScannerConfigService(user.tenant_id, db).update(body.model_dump(exclude_unset=True))
     await db.commit()
     return ScannerConfigResponse.model_validate(config, from_attributes=True)

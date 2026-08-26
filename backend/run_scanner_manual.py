@@ -1,4 +1,5 @@
 """Test all vision models with 60s timeout."""
+
 import json
 import os
 import signal
@@ -12,8 +13,10 @@ from app.services.ollama_vision import check_ollama_status, extract_invoice
 class TimeoutError(Exception):
     pass
 
+
 def timeout_handler(signum, frame):
     raise TimeoutError()
+
 
 status = check_ollama_status()
 vision_models = status.get("vision_models", [])
@@ -28,7 +31,7 @@ TIMEOUT = 60
 results = []
 
 for model in vision_models:
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"Testing: {model} (max {TIMEOUT}s)")
 
     signal.signal(signal.SIGALRM, timeout_handler)
@@ -58,11 +61,13 @@ for model in vision_models:
         results.append({"model": model, "time": elapsed, "status": "ERROR", "error": str(e)})
     print()
 
-print(f"\n{'='*60}")
+print(f"\n{'=' * 60}")
 print("SUMMARY")
-print(f"{'='*60}")
+print(f"{'=' * 60}")
 print(f"{'Model':<25} {'Time':>8} {'Status':<8} {'Vendor':<15} {'Total':>8} {'Date':<12} {'Description'}")
 print("-" * 110)
 for r in results:
     d = r.get("data", {})
-    print(f"{r['model']:<25} {r['time']:>7.1f}s {r['status']:<8} {d.get('vendor','—'):<15} {d.get('total_amount','—'):>8} {d.get('date','—'):<12} {d.get('description','—')[:40]}")
+    print(
+        f"{r['model']:<25} {r['time']:>7.1f}s {r['status']:<8} {d.get('vendor', '—'):<15} {d.get('total_amount', '—'):>8} {d.get('date', '—'):<12} {d.get('description', '—')[:40]}"
+    )

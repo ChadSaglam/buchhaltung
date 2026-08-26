@@ -1,4 +1,5 @@
 """Parse raw Banana Buchhaltung tab-separated export."""
+
 from __future__ import annotations
 
 import re
@@ -11,9 +12,7 @@ def parse_banana_text(raw: str) -> list[dict]:
 
     # Skip header lines (contain 'Section', 'Date', etc.)
     data_lines = [
-        line_text
-        for line_text in lines
-        if not line_text.startswith("Section") and not line_text.startswith("Sektion")
+        line_text for line_text in lines if not line_text.startswith("Section") and not line_text.startswith("Sektion")
     ]
 
     for line in data_lines:
@@ -48,12 +47,14 @@ def parse_banana_text(raw: str) -> list[dict]:
                 beschreibung = parts[desc_idx]
 
         if beschreibung and kt_soll:
-            rows.append({
-                "beschreibung": beschreibung,
-                "kt_soll": kt_soll,
-                "kt_haben": kt_haben or "1020",
-                "mwst_code": mwst_code,
-                "mwst_pct": mwst_pct,
-            })
+            rows.append(
+                {
+                    "beschreibung": beschreibung,
+                    "kt_soll": kt_soll,
+                    "kt_haben": kt_haben or "1020",
+                    "mwst_code": mwst_code,
+                    "mwst_pct": mwst_pct,
+                }
+            )
 
     return rows
