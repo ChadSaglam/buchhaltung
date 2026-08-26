@@ -6,14 +6,9 @@ from logging.config import fileConfig
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-import app.models.booking
-import app.models.classifier_model
-import app.models.correction
-import app.models.kontenplan
-import app.models.memory
-import app.models.tenant
-import app.models.training_data
-import app.models.user  # noqa: F401
+# Import the package, not a hand-maintained subset: five models were missing
+# here, so autogenerate would have proposed dropping their tables.
+import app.models  # noqa: F401
 from alembic import context
 from app.core.config import settings
 from app.models.base import Base

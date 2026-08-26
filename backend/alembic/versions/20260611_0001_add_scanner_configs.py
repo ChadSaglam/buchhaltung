@@ -1,7 +1,7 @@
 """add scanner configs
 
 Revision ID: 20260611_0001
-Revises: 
+Revises:
 Create Date: 2026-06-11 06:20:00.000000
 """
 from alembic import op
@@ -9,7 +9,7 @@ import sqlalchemy as sa
 
 
 revision = "20260611_0001"
-down_revision = None
+down_revision = '20260101_0000'
 branch_labels = None
 depends_on = None
 

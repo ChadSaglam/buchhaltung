@@ -1,6 +1,15 @@
 # Fast, local gates. Install once with: make setup  (or: pre-commit install)
 default_install_hook_types: [pre-commit, pre-push]
 
+# Generated or build-derived files: never reformat, never gate a commit on them.
+exclude: |
+  (?x)^(
+    frontend/tsconfig\.tsbuildinfo|
+    frontend/src/lib/api-types\.ts|
+    frontend/package-lock\.json|
+    .*\.min\.(js|css)
+  )$
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
