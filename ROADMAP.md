@@ -9,7 +9,7 @@
 
 **Current phase:** Phase 2 — Security & tenant isolation — IN PROGRESS
 **Branch:** `feat/phase1-platform-contract` (same branch, continued)
-**Next action:** 2.2 add test_tenant_isolation.py
+**Next action:** write test_tenant_isolation.py (2.2)
 
 ---
 
@@ -21,13 +21,18 @@ D1 = B. D2 = billing issues JWTs, buchhaltung verifies via shared SECRET_KEY (HS
 
 ## Phase 0 ✅ / Phase 1 ✅ DONE
 
-See PR #16. Contracts reviewed, tenant migration + role/jti plan logged.
+See PR #16.
 
 ---
 
 ## Phase 2 — Security & tenant isolation — M — IN PROGRESS (buchhaltung tasks)
 
-- [ ] 2.2 Add test_tenant_isolation.py cases for bookings, review queue, scanner config, export (M)
+- [ ] 2.2 Add `backend/tests/test_tenant_isolation.py` (M) — concrete cases:
+  - [ ] tenant A cannot read tenant B's bookings via `GET /api/bookings/{id}`
+  - [ ] tenant A cannot see tenant B's items in the review queue list endpoint
+  - [ ] tenant A cannot read/update tenant B's scanner config
+  - [ ] tenant A's Banana export never includes tenant B's rows
+  - [ ] all above return 404 (not 403) to avoid leaking existence
 - [ ] 2.3 Audit every router for tenant_id from token only — grep tenant_id in request bodies (M)
 - [ ] 2.5 Rate limits on login/register/refresh/scanner-extract; per tenant not per IP only (S)
 
@@ -47,7 +52,7 @@ See PR #16. Contracts reviewed, tenant migration + role/jti plan logged.
 ## Phase 4 — Professional polish — M
 
 - [ ] 4.3 Background jobs to worker compose service (M)
-- [ ] 4.4 Uploads to S3-compatible storage behind StorageBackend interface (M)
+- [ ] 4.4 Uploads to S3-compatible storage behind StorageBackend interface (M) — reference billing's implementation in PR #55 (`app/services/storage.py`: Protocol + LocalStorage + S3Storage)
 - [ ] 4.5 /api/health returns version, db, migration_head, storage (S)
 
 ## Phase 5 — Dynamic & user-friendly UX — L
@@ -81,7 +86,8 @@ See PR #16. Contracts reviewed, tenant migration + role/jti plan logged.
 ## SESSION HANDOFF
 
 ```
-STATE: Phase 2 started on same branch (feat/phase1-platform-contract).
+STATE: Phase 2 in progress. 2.2 test cases scoped (5 concrete cases listed above).
 PR: buchhaltung#16 (open)
-NEXT ACTION: implement 2.2 test_tenant_isolation.py as next commit.
+OPEN: write test_tenant_isolation.py against real router code (blocked this session — GitHub connector returned metadata only, not file text, for backend/app/api/*.py).
+NEXT ACTION: read actual router files, then write the 5 test cases in Phase 2.2.
 ```
