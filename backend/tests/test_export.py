@@ -8,12 +8,13 @@ plain amounts with exactly two decimals and no thousands separator.
 from __future__ import annotations
 
 import io
+from decimal import Decimal
 
 import pandas as pd
 import pytest
 from openpyxl import load_workbook
 
-from app.services.export import df_to_banana_tsv, df_to_csv, df_to_styled_excel, fmt_swiss
+from app.services.export import df_to_banana_tsv, df_to_csv, df_to_styled_excel, fmt_swiss, round_chf
 from tests.factories import auth_headers, create_booking, create_tenant, create_user
 
 BANANA_HEADER = "Date\tDescription\tAccountDebit\tAccountCredit\tAmount\tVatCode"
@@ -80,6 +81,41 @@ def test_fmt_swiss_blank_for_missing(value):
     assert fmt_swiss(value) == ""
 
 
+# Regression guards for the money-rounding bug: the fraction used to be
+# rounded on its own, so 1234.999 rendered as "1'234.00" (the carry was lost),
+# and exact halves rounded half-even ("0.125" -> "0.12") instead of half-up.
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        (1234.999, "1’235.00"),  # carry into the integer part
+        (999.995, "1’000.00"),  # carry across a thousands boundary
+        (1_000_000.995, "1’000’001.00"),  # large amount, carry
+        (0.005, "0.01"),  # half-up on a 3-decimal input
+        (0.125, "0.13"),  # exact binary half: must not be half-even
+        (2.675, "2.68"),  # classic float trap
+        (-0.125, "-0.13"),  # symmetric for negatives
+        (-0.004, "0.00"),  # no "-0.00"
+    ],
+)
+def test_fmt_swiss_rounds_half_up_with_carry(value, expected):
+    assert fmt_swiss(value) == expected
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        (Decimal("2.675"), Decimal("2.68")),
+        (0.125, Decimal("0.13")),
+        (-0.125, Decimal("-0.13")),
+        (1234.999, Decimal("1235.00")),
+        (0, Decimal("0.00")),
+        ("7.777", Decimal("7.78")),
+    ],
+)
+def test_round_chf_half_up(value, expected):
+    assert round_chf(value) == expected
+
+
 # ── Banana TSV ───────────────────────────────────────────────────────────────
 
 
@@ -112,6 +148,16 @@ def test_banana_tsv_negative_amount_keeps_sign():
 def test_banana_tsv_three_decimal_input_is_rounded_to_two():
     out = df_to_banana_tsv(_df(_row(**{"Betrag CHF": 10.994})))
     assert out.split("\n")[1].split("\t")[4] == "10.99"
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [(0.125, "0.13"), (2.675, "2.68"), (-0.125, "-0.13"), (0.005, "0.01"), (1234.999, "1235.00")],
+)
+def test_banana_tsv_amount_rounds_half_up(value, expected):
+    # Regression guard: amounts used to go through f"{x:.2f}" (half-even on exact halves).
+    out = df_to_banana_tsv(_df(_row(**{"Betrag CHF": value})))
+    assert out.split("\n")[1].split("\t")[4] == expected
 
 
 def test_banana_tsv_large_amount_has_no_thousands_separator():
