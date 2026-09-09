@@ -93,6 +93,17 @@ cp backend/.env.example backend/.env
 python -c "import secrets; print(secrets.token_urlsafe(48))"   # JWT_SECRET
 ```
 
+## Storage
+
+Files the backend persists (trained model artifacts today; receipt uploads as
+soon as they are stored) go through `backend/app/services/storage.py`, never
+straight to disk. `STORAGE_BACKEND=local` (default) writes under
+`STORAGE_LOCAL_DIR` (`/app/data`, the `model_data` volume in Docker). Run more
+than one API replica and local disk is no longer shared — switch to
+`STORAGE_BACKEND=s3` with `S3_BUCKET` (+ `S3_ENDPOINT_URL` for MinIO/R2,
+`S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_REGION`). `boto3` is only imported when
+the S3 backend is selected.
+
 ## Project Structure
 
 ```
