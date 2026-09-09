@@ -3,23 +3,38 @@
 from __future__ import annotations
 
 import io
+from decimal import ROUND_HALF_UP, Decimal
 
 import pandas as pd
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
+_CENT = Decimal("0.01")
+
+
+def round_chf(val) -> Decimal:
+    """Round a money value to 2 decimals, half-up (kaufm\u00e4nnisch), on its decimal text.
+
+    Going through the decimal representation (not the binary float) is what
+    makes 2.675 -> 2.68 and 0.125 -> 0.13 instead of the half-even/binary
+    artefacts of ``round()`` and ``f"{x:.2f}"``. Negative zero collapses to 0.
+    """
+    dec = val if isinstance(val, Decimal) else Decimal(repr(float(val)))
+    dec = dec.quantize(_CENT, rounding=ROUND_HALF_UP)
+    return dec if dec != 0 else _CENT * 0
+
 
 def fmt_swiss(val) -> str:
     """Format a number in Swiss style: 1'234.56"""
     if val is None or val == "" or (isinstance(val, float) and pd.isna(val)):
         return ""
-    num = float(val)
+    num = round_chf(val)
     negative = num < 0
     if negative:
         num = abs(num)
     integer_part = int(num)
-    decimal_part = f"{num - integer_part:.2f}"[1:]
+    decimal_part = str(num - integer_part)[1:]  # ".56"
     int_str = f"{integer_part:,}".replace(",", "\u2019")
     result = f"{int_str}{decimal_part}"
     if negative:
@@ -125,7 +140,7 @@ def df_to_banana_tsv(df: pd.DataFrame) -> str:
         betrag = row.get("Betrag CHF", 0)
 
         try:
-            amount = f"{float(betrag):.2f}" if betrag else ""
+            amount = f"{round_chf(betrag):.2f}" if betrag else ""
         except (ValueError, TypeError):
             amount = ""
 
