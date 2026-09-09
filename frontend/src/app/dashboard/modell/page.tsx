@@ -38,87 +38,27 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Badge } from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
 
-// ── Types ────────────────────────────────────────────────────────────────────
-interface ModelInfo {
-  has_model: boolean;
-  model_accuracy: number;
-  train_accuracy: number;
-  total_samples: number;
-  classes: number;
-  memory_count: number;
-  correction_count: number;
-  trained_at: string;
-  sklearn_version: string;
-  model_size_kb: number;
-  memory_size_kb: number;
-}
-
-interface VisionStatus {
-  available: boolean;
-  model_name: string | null;
-  model_count: number;
-  is_cloud: boolean;
-}
-
-interface ClassifyResult {
-  source: string;
-  kt_soll: string;
-  kt_soll_name: string;
-  kt_haben: string;
-  kt_haben_name: string;
-  mwst_code: string;
-  mwst_pct: number;
-  confidence: number;
-  top_predictions?: { klass: string; name: string; probability: number }[];
-}
-
-interface MemoryEntry {
-  lookup_key: string;
-  beschreibung: string;
-  kt_soll: string;
-  kt_haben: string;
-  mwst_code: string;
-  mwst_pct: number;
-}
-
-interface ImportResult {
-  imported: number;
-  memory_entries: number;
-  training?: {
-    total_samples: number;
-    classes: number;
-    cv_accuracy: number | null;
-    train_accuracy: number;
-  };
-}
-
-interface TrainingData {
-  konto_soll: string;
-  bezeichnung: string;
-  anzahl: number;
-}
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-function accuracyBarClass(acc: number) {
-  if (acc >= 0.85) return "bg-success";
-  if (acc >= 0.6) return "bg-warning";
-  return "bg-destructive";
-}
-
-function accuracyTextClass(acc: number) {
-  if (acc >= 0.85) return "text-success";
-  if (acc >= 0.6) return "text-warning";
-  return "text-destructive";
-}
-
-function formatDate(iso: string) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleString("de-CH", {
-    day: "2-digit", month: "2-digit", year: "numeric",
-    hour: "2-digit", minute: "2-digit",
-  });
-}
+import type {
+  ModelInfo,
+  VisionStatus,
+  ClassifyResult,
+  MemoryEntry,
+  ImportResult,
+  TrainingData,
+  InspectTab,
+  DangerAction,
+  DownloadType,
+} from "./types";
+import {
+  accuracyBarClass,
+  accuracyTextClass,
+  formatDate,
+  IMPORT_EXTENSIONS,
+  fileExtension,
+  downloadFilename,
+  filterMemory,
+  isOverfit,
+} from "./helpers";
 
 // ── Sub-components ───────────────────────────────────────────────────────────
 
@@ -197,7 +137,7 @@ export default function ModellPage() {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [replaceData, setReplaceData] = useState(false);
-  const [activeTab, setActiveTab] = useState<"test" | "top" | "memory" | "retrain">("test");
+  const [activeTab, setActiveTab] = useState<InspectTab>("test");
   const [testInput, setTestInput] = useState("");
   const [testResult, setTestResult] = useState<ClassifyResult | null>(null);
   const [testLoading, setTestLoading] = useState(false);
@@ -268,7 +208,7 @@ export default function ModellPage() {
     if (activeTab === "top") fetchTopClasses();
   }, [activeTab]);
 
-  const handleDangerAction = async (action: "memory" | "corrections" | "model") => {
+  const handleDangerAction = async (action: DangerAction) => {
     try {
       await api.delete(`/api/classify/${action}`);
       toast.success(
@@ -282,14 +222,13 @@ export default function ModellPage() {
     }
   };
 
-  const handleDownload = async (type: "bundle" | "model" | "memory") => {
+  const handleDownload = async (type: DownloadType) => {
     try {
       const res = await api.get(`/api/classify/download/${type}`, { responseType: "blob" });
       const url = URL.createObjectURL(res.data);
       const a = document.createElement("a");
-      const ext = type === "bundle" ? "zip" : type === "model" ? "pkl" : "json";
       a.href = url;
-      a.download = `buchhaltung_${type}_${new Date().toISOString().slice(0, 16).replace(/[:-]/g, "")}.${ext}`;
+      a.download = downloadFilename(type);
       a.click();
       URL.revokeObjectURL(url);
     } catch {
@@ -300,8 +239,7 @@ export default function ModellPage() {
   const onDrop = useCallback(async (files: File[]) => {
     const file = files[0];
     if (!file) return;
-    const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
-    if (![".xls", ".xlsx", ".csv"].includes(ext)) {
+    if (!IMPORT_EXTENSIONS.includes(fileExtension(file.name))) {
       toast.error("Nur XLS, XLSX oder CSV Dateien erlaubt");
       return;
     }
@@ -365,9 +303,7 @@ export default function ModellPage() {
   });
 
   const acc = info?.model_accuracy ?? 0;
-  const filteredMemory = memoryEntries.filter(e =>
-    !memoryFilter || (e.lookup_key ?? "").toLowerCase().includes(memoryFilter.toLowerCase())
-  );
+  const filteredMemory = filterMemory(memoryEntries, memoryFilter);
 
   if (loading) {
     return (
@@ -454,7 +390,7 @@ export default function ModellPage() {
             <div className="flex justify-between items-center mb-3">
               <div className="flex items-center gap-3">
                 <span className="text-sm font-semibold text-foreground">Modell-Genauigkeit</span>
-                {info.train_accuracy > 0 && acc > 0 && info.train_accuracy - acc > 0.15 && (
+                {isOverfit(info.train_accuracy, acc) && (
                   <Badge tone="warning" dot>Overfit-Warnung</Badge>
                 )}
               </div>
@@ -922,7 +858,7 @@ export default function ModellPage() {
                     variant="danger"
                     size="sm"
                     className="flex-1"
-                    onClick={() => handleDangerAction(key as "memory" | "corrections" | "model")}
+                    onClick={() => handleDangerAction(key as DangerAction)}
                   >
                     Bestätigen
                   </Button>
