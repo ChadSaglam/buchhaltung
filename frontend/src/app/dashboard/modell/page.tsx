@@ -1,9 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { useDropzone } from "react-dropzone";
-import toast from "react-hot-toast";
-import { api } from "@/lib/api";
 import {
   Brain,
   Upload,
@@ -38,27 +36,12 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Badge } from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
 
-import type {
-  ModelInfo,
-  VisionStatus,
-  ClassifyResult,
-  MemoryEntry,
-  ImportResult,
-  TrainingData,
-  InspectTab,
-  DangerAction,
-  DownloadType,
-} from "./types";
-import {
-  accuracyBarClass,
-  accuracyTextClass,
-  formatDate,
-  IMPORT_EXTENSIONS,
-  fileExtension,
-  downloadFilename,
-  filterMemory,
-  isOverfit,
-} from "./helpers";
+import type { DangerAction } from "./types";
+import { accuracyBarClass, accuracyTextClass, formatDate, isOverfit } from "./helpers";
+import { useModellInfo } from "./hooks/useModellInfo";
+import { useModellActions } from "./hooks/useModellActions";
+import { useModellInspect } from "./hooks/useModellInspect";
+import { useBananaImport } from "./hooks/useBananaImport";
 
 // ── Sub-components ───────────────────────────────────────────────────────────
 
@@ -130,164 +113,40 @@ function SystemStatusBadge({ hasModel, hasVision }: { hasModel: boolean; hasVisi
 // ── Main Page ────────────────────────────────────────────────────────────────
 
 export default function ModellPage() {
-  const [info, setInfo] = useState<ModelInfo | null>(null);
-  const [vision, setVision] = useState<VisionStatus>({ available: false, model_name: null, model_count: 0, is_cloud: false });
-  const [loading, setLoading] = useState(true);
-  const [training, setTraining] = useState(false);
-  const [importing, setImporting] = useState(false);
-  const [importResult, setImportResult] = useState<ImportResult | null>(null);
-  const [replaceData, setReplaceData] = useState(false);
-  const [activeTab, setActiveTab] = useState<InspectTab>("test");
-  const [testInput, setTestInput] = useState("");
-  const [testResult, setTestResult] = useState<ClassifyResult | null>(null);
-  const [testLoading, setTestLoading] = useState(false);
-  const [memoryEntries, setMemoryEntries] = useState<MemoryEntry[]>([]);
-  const [memoryFilter, setMemoryFilter] = useState("");
-  const [topClasses, setTopClasses] = useState<TrainingData[]>([]);
+  const { info, vision, loading, fetchInfo } = useModellInfo();
+  const {
+    training,
+    handleTrain,
+    dangerConfirm,
+    setDangerConfirm,
+    handleDangerAction,
+    handleDownload,
+    handleUploadBundle,
+  } = useModellActions(fetchInfo);
+  const {
+    activeTab,
+    setActiveTab,
+    testInput,
+    setTestInput,
+    testResult,
+    testLoading,
+    handleTest,
+    memoryEntries,
+    memoryFilter,
+    setMemoryFilter,
+    filteredMemory,
+    topClasses,
+  } = useModellInspect();
+  const {
+    importing,
+    importResult,
+    replaceData,
+    setReplaceData,
+    getRootProps,
+    getInputProps,
+    isDragActive,
+  } = useBananaImport(fetchInfo);
   const [showHowItWorks, setShowHowItWorks] = useState(false);
-  const [dangerConfirm, setDangerConfirm] = useState<string | null>(null);
-
-  const fetchInfo = useCallback(async () => {
-    try {
-      const [infoRes, visionRes] = await Promise.allSettled([
-        api.get("/api/classify/info"),
-        api.get("/api/scanner/vision-status")
-      ]);
-      if (infoRes.status === "fulfilled") setInfo(infoRes.value.data);
-      if (visionRes.status === "fulfilled") setVision(visionRes.value.data);
-    } catch {
-      toast.error("Modell-Info konnte nicht geladen werden");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchInfo(); }, [fetchInfo]);
-
-  const handleTrain = async () => {
-    setTraining(true);
-    try {
-      const res = await api.post("/api/classify/train");
-      toast.success(
-        `Modell trainiert! ${res.data.total_samples} Samples, ${((res.data.cv_accuracy || 0) * 100).toFixed(1)}% Genauigkeit`
-      );
-      fetchInfo();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.detail || "Training fehlgeschlagen");
-    } finally {
-      setTraining(false);
-    }
-  };
-
-  const handleTest = async () => {
-    if (!testInput.trim()) return;
-    setTestLoading(true);
-    setTestResult(null);
-    try {
-      const res = await api.post("/api/classify/predict", { beschreibung: testInput, betrag: 100 });
-      setTestResult(res.data);
-    } catch {
-      toast.error("Klassifizierung fehlgeschlagen");
-    } finally {
-      setTestLoading(false);
-    }
-  };
-
-  const fetchMemory = async () => {
-    const res = await api.get("/api/classify/memory");
-    setMemoryEntries(res.data.entries);
-  };
-
-  const fetchTopClasses = async () => {
-    const res = await api.get("/api/classify/top-classes");
-    setTopClasses(res.data);
-  };
-
-  useEffect(() => {
-    if (activeTab === "memory") fetchMemory();
-    if (activeTab === "top") fetchTopClasses();
-  }, [activeTab]);
-
-  const handleDangerAction = async (action: DangerAction) => {
-    try {
-      await api.delete(`/api/classify/${action}`);
-      toast.success(
-        action === "memory" ? "Gedächtnis gelöscht" :
-        action === "corrections" ? "Korrekturen gelöscht" : "ML-Modell gelöscht"
-      );
-      setDangerConfirm(null);
-      fetchInfo();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.detail || "Aktion fehlgeschlagen");
-    }
-  };
-
-  const handleDownload = async (type: DownloadType) => {
-    try {
-      const res = await api.get(`/api/classify/download/${type}`, { responseType: "blob" });
-      const url = URL.createObjectURL(res.data);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = downloadFilename(type);
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      toast.error("Download fehlgeschlagen");
-    }
-  };
-
-  const onDrop = useCallback(async (files: File[]) => {
-    const file = files[0];
-    if (!file) return;
-    if (!IMPORT_EXTENSIONS.includes(fileExtension(file.name))) {
-      toast.error("Nur XLS, XLSX oder CSV Dateien erlaubt");
-      return;
-    }
-    setImporting(true);
-    setImportResult(null);
-    const formData = new FormData();
-    formData.append("file", file);
-    try {
-      const res = await api.post(
-        `/api/import/banana?replace=${replaceData}&also_memory=true&auto_train=true`,
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
-      setImportResult(res.data);
-      toast.success(`${res.data.imported} Buchungen importiert & Modell trainiert!`);
-      fetchInfo();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.detail || "Import fehlgeschlagen");
-    } finally {
-      setImporting(false);
-    }
-  }, [replaceData, fetchInfo]);
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      "application/vnd.ms-excel": [".xls"],
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
-      "text/csv": [".csv"],
-    },
-    maxFiles: 1,
-    disabled: importing,
-  });
-
-  // Upload model bundle
-  const handleUploadBundle = async (file: File) => {
-    const formData = new FormData();
-    formData.append("file", file);
-    try {
-      await api.post("/api/classify/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      toast.success("Modell wiederhergestellt!");
-      fetchInfo();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.detail || "Upload fehlgeschlagen");
-    }
-  };
 
   const {
     getRootProps: getRestoreProps,
@@ -303,7 +162,6 @@ export default function ModellPage() {
   });
 
   const acc = info?.model_accuracy ?? 0;
-  const filteredMemory = filterMemory(memoryEntries, memoryFilter);
 
   if (loading) {
     return (
