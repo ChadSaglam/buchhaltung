@@ -15,6 +15,7 @@ from sqlalchemy.pool import NullPool, StaticPool
 os.environ.setdefault("ENV", "test")
 
 from app.core.database import get_db
+from app.core.rate_limit import limiter
 from app.main import app
 from app.models.base import Base
 
@@ -61,6 +62,8 @@ async def client(db_session: AsyncSession) -> AsyncIterator[AsyncClient]:
         yield db_session
 
     app.dependency_overrides[get_db] = _override_get_db
+    # The in-memory rate limiter is process-global; every test starts with a clean window.
+    limiter.reset()
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
