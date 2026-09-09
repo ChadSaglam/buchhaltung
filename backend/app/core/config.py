@@ -69,6 +69,18 @@ class Settings(BaseSettings):
     FRONTEND_URL: str = "http://localhost:3000"
     SENTRY_DSN: str | None = None
 
+    # --- Storage (uploads, model artifacts) --------------------------------
+    # "local" writes under STORAGE_LOCAL_DIR (fine for one replica); "s3" is
+    # required as soon as the API runs with more than one replica.
+    STORAGE_BACKEND: str = "local"
+    STORAGE_LOCAL_DIR: str = "/app/data"
+    S3_BUCKET: str = ""
+    # Leave empty for AWS; set for MinIO / R2 / any S3-compatible endpoint.
+    S3_ENDPOINT_URL: str = ""
+    S3_ACCESS_KEY: str = ""
+    S3_SECRET_KEY: str = ""
+    S3_REGION: str = ""
+
     # --- Derived ---------------------------------------------------------
     @model_validator(mode="after")
     def _resolve_and_validate(self) -> Settings:
@@ -90,6 +102,8 @@ class Settings(BaseSettings):
                 problems.append("CORS_ORIGINS must not contain '*' in production")
             if self.AUTO_CREATE_TABLES:
                 problems.append("AUTO_CREATE_TABLES must be false in production (Alembic owns the schema)")
+            if self.STORAGE_BACKEND.strip().lower() == "s3" and not self.S3_BUCKET:
+                problems.append("S3_BUCKET must be set when STORAGE_BACKEND=s3")
             if problems:
                 raise ValueError(
                     "Refusing to start in production with an unsafe configuration:\n  - " + "\n  - ".join(problems)
