@@ -105,7 +105,7 @@ async def test_active_tenant_default(client, db_session):
 
 @pytest.mark.skipif(_IS_SQLITE, reason="Alembic chain is verified against Postgres only.")
 def test_tenant_migration_is_reversible():
-    """upgrade head → downgrade one → upgrade head, keeping the existing plan value."""
+    """upgrade head → downgrade below B-26 → upgrade head, keeping the existing plan value."""
     sync_url = TEST_DATABASE_URL.replace("+asyncpg", "")
     engine = sa.create_engine(sync_url, isolation_level="AUTOCOMMIT")
     env = {**os.environ, "DATABASE_URL": TEST_DATABASE_URL}
@@ -134,7 +134,7 @@ def test_tenant_migration_is_reversible():
             row = conn.execute(sa.text("SELECT slug, subscription_plan, trial_ends_at, is_active FROM tenants")).one()
         assert row == (None, "pro", None, True)
 
-        alembic("downgrade", "-1")
+        alembic("downgrade", "73f03c35bbed")  # below B-26, whatever sits above it
         assert "plan" in columns()
         assert not {"slug", "subscription_plan", "trial_ends_at", "is_active"} & columns()
         with engine.connect() as conn:

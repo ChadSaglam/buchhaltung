@@ -81,6 +81,32 @@ def test_preprocess_lowercases_and_strips_digits_and_months(raw, expected):
     assert preprocess(raw) == expected
 
 
+# B-04: month tokens are stripped as whole words only.
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("E-Mail Swisscom 2025", "e-mail swisscom"),  # was "e-l swisscom"
+        ("SEPARAT Rechnung", "separat rechnung"),  # was "arat rechnung"
+        ("Julia Novak", "julia novak"),  # was "ia ak"
+        ("Mailand Reise", "mailand reise"),
+        ("Miete Feb. 2025", "miete"),  # abbreviation with dot
+        ("Miete feb 2025", "miete"),
+        ("Rechnung März 24", "rechnung"),
+        ("Abo Mrz. 2025", "abo"),
+        ("Sept. Abo", "abo"),
+        ("Dezember-Abschluss", "-abschluss"),  # hyphen is a word boundary, like before
+        ("Jan Müller AG", "müller ag"),  # a first name that is a month token still goes (unchanged)
+    ],
+)
+def test_preprocess_strips_months_as_whole_words_only(raw, expected):
+    assert preprocess(raw) == expected
+
+
+def test_memory_key_no_longer_collides_on_month_substrings():
+    assert make_memory_key("E-Mail Hosting") != make_memory_key("E-l Hosting")
+    assert make_memory_key("Julia Novak") != make_memory_key("ia ak")
+
+
 def test_memory_key_is_stable_across_dates_and_case():
     assert make_memory_key("Swisscom Rechnung März 2025") == make_memory_key("SWISSCOM Rechnung April 2024")
 

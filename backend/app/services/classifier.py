@@ -26,15 +26,23 @@ RULE_CONFIDENCE = 0.72
 DEFAULT_RULE_CONFIDENCE = 0.35
 
 
+_MONTH_RE = re.compile(
+    r"\b(?:januar|februar|märz|maerz|april|mai|juni|juli|august|september|oktober|november|dezember"
+    r"|jan|feb|mär|mrz|apr|jun|jul|aug|sep|sept|okt|nov|dez)\b\.?"
+)
+
+
 def preprocess(text: str) -> str:
+    """Normalise a booking text for the ML features and the memory key.
+
+    Lower-case, drop month names/abbreviations (whole words only — B-04: a bare
+    substring match turned "E-Mail" into "e-l"), drop digits, collapse blanks.
+    Changing this function changes every ``memory.lookup_key``; ship a data
+    migration alongside (see ``alembic/versions/*_rederive_memory_lookup_keys.py``).
+    """
     text = (text or "").lower().strip()
-    text = re.sub(
-        r"(januar|februar|märz|april|mai|juni|juli|august|september|oktober|november|dezember)",
-        "",
-        text,
-    )
-    text = re.sub(r"(jan|feb|mr|apr|jun|jul|aug|sep|okt|nov|dez)", "", text)
-    text = re.sub(r"[\d]", "", text)
+    text = _MONTH_RE.sub("", text)
+    text = re.sub(r"\d", "", text)
     text = re.sub(r"\s+", " ", text).strip()
     return text
 
