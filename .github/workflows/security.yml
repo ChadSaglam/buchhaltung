@@ -1,0 +1,194 @@
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 4 * * 1"   # Mondays 04:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.13"
+  NODE_VERSION: "22"
+
+jobs:
+  secrets:
+    name: Secret scanning (gitleaks)
+    runs-on: ubuntu-latest
+    # gitleaks lists the PR's commits through the GitHub API on pull_request
+    # events. With only the workflow-level contents:read that call returns
+    # 403 "Resource not accessible by integration" and the job fails before
+    # scanning anything (push events are unaffected, which is why this only
+    # fails on PRs).
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  python-deps:
+    name: Python dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install pip-audit==2.7.3
+      # Blocking.
+      #
+      # PYSEC-2026-1325 (ecdsa) is ignored: it is a transitive dependency of
+      # python-jose with no fixed release, and the advisory concerns ECDSA
+      # signing. This app signs every token with HS256 (core/config.py
+      # ALGORITHM), so the vulnerable code path is never reached. Re-check
+      # when python-jose drops ecdsa or a fix ships.
+      - name: pip-audit
+        run: pip-audit -r backend/requirements.txt --ignore-vuln PYSEC-2026-1325
+
+  node-deps:
+    name: npm dependency audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      # Blocking at high.
+      #
+      # `npm audit` calls the npmjs advisory endpoint at run time, so a
+      # registry outage ("socket hang up", "audit endpoint returned an
+      # error") fails the job with nothing to do with this codebase. Retry,
+      # then warn and pass on a transport error — but still fail hard when
+      # the audit actually returns findings.
+      - name: npm audit (high/critical)
+        run: |
+          transport_error='audit endpoint returned an error|socket hang up|ECONNRESET|ENOTFOUND|EAI_AGAIN|ETIMEDOUT|502|503|504'
+          for attempt in 1 2 3; do
+            if out=$(npm audit --audit-level=high 2>&1); then
+              echo "$out"
+              exit 0
+            fi
+            if echo "$out" | grep -qiE "$transport_error"; then
+              echo "::warning::npm registry unreachable (attempt $attempt/3), retrying"
+              sleep $((attempt * 15))
+              continue
+            fi
+            echo "$out"
+            echo "::error::npm audit found high or critical advisories"
+            exit 1
+          done
+          echo "$out"
+          echo "::warning::npm audit could not reach the registry after 3 attempts — not treating this as a finding"
+
+  # CodeQL is NOT defined here on purpose.
+  #
+  # Running an advanced CodeQL workflow while GitHub's "default setup" is
+  # enabled for the repository makes every run fail with a SARIF upload
+  # conflict. Default setup covers python and javascript-typescript with no
+  # workflow to maintain, so use that instead:
+  #   Settings -> Code security -> Code scanning -> CodeQL -> Default
+  # If you ever need custom queries, disable default setup first, then add
+  # the codeql job back here.
+
+  container-scan:
+    name: Container image scan (Trivy)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build backend image
+        run: docker build -t buchhaltung-backend:scan ./backend
+
+      # Trivy's vulnerability DB is pulled from ghcr.io and is rate limited
+      # for anonymous clients. Authenticating with the workflow token avoids
+      # the TOOMANYREQUESTS failures.
+      - name: Log in to ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Human-readable findings, always visible in the job log. exit-code 0
+      # keeps a newly published CVE from blocking unrelated PRs.
+      - name: Scan image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: buchhaltung-backend:scan
+          format: table
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "0"
+        env:
+          TRIVY_SKIP_DB_UPDATE: "false"
+
+      - name: Scan image (SARIF)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: buchhaltung-backend:scan
+          format: sarif
+          output: trivy-backend.sarif
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "0"
+
+      # SARIF upload only works where GitHub code scanning accepts results:
+      # a public repo, or a private repo with GitHub Advanced Security. On a
+      # private repo without GHAS the API returns "Resource not accessible by
+      # integration" and fails the job. Findings are already printed by the
+      # table step above, so this is skipped rather than soft-failed.
+      - name: Upload SARIF
+        if: ${{ !github.event.repository.private }}
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-backend.sarif
+          category: trivy-backend
+
+  iac-and-config:
+    name: Static security checks (bandit · semgrep)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install bandit[toml]==1.7.10
+      # Advisory until the known medium findings are worked off (tracked in
+      # ROADMAP.md): ElementTree on uploaded XML (import_data.py), pickle for
+      # model bundles (classifier.py), httpx calls without a timeout
+      # (ai_assistant.py). Flip to blocking once those are closed.
+      - name: Bandit
+        run: bandit -r backend/app -ll
+        continue-on-error: true
+      - name: Semgrep
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: >-
+            p/python
+            p/react
+            p/secrets
+            p/owasp-top-ten
+        continue-on-error: true

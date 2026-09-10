@@ -1,0 +1,16 @@
+# gitleaks configuration for the buchhaltung repo
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Non-secret test and placeholder values"
+paths = [
+  '''\.github/workflows/.*\.yml''',
+  '''backend/tests/.*''',
+  '''backend/\.env\.example''',
+]
+regexes = [
+  '''test-secret-that-is-long-enough-for-ci-usage''',
+  '''test-only-secret-not-used-outside-the-test-suite''',
+  '''change-me-generate-a-random-48-char-secret''',
+]
