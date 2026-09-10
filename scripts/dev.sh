@@ -247,6 +247,11 @@ start_backend() {
   check_database_reachability || exit 1
 
   backend_python="$(venv_python)"
+  # Same schema step the Docker image runs on start: stamp legacy create_all
+  # databases, then alembic upgrade head. Keeps a local Postgres in sync with
+  # the models after every pull.
+  log "Applying database migrations..."
+  PATH="${BACKEND_DIR}/venv/bin:${PATH}" sh scripts/migrate-and-run.sh true || fail "Database migration failed"
   "${backend_python}" -m uvicorn app.main:app --reload --host "${BACKEND_HOST}" --port "${BACKEND_PORT}" &
   PIDS+=("$!")
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env sh
-# Bring the schema to Alembic head, then hand over to the API server.
+# Bring the schema to Alembic head, then hand over to the given command.
+# Used as the Docker ENTRYPOINT and by scripts/dev.sh (`... true` = migrate only).
 # Alembic owns the schema in every non-dev deployment (AGENTS.md rule 3).
 #
 # Volumes created before this entrypoint existed hold tables made by
