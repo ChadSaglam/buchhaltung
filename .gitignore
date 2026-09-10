@@ -12,6 +12,8 @@ __pycache__/
 # Database
 *.db
 *.sqlite3
+# Playwright's throw-away backend storage (frontend/playwright.config.ts)
+backend/e2e-data/
 
 # ML models
 *.pkl

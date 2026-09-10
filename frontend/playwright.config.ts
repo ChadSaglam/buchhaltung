@@ -34,14 +34,21 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: `rm -f e2e.db && ${PYTHON} -m uvicorn app.main:app --host 127.0.0.1 --port ${API_PORT}`,
+      command: `rm -rf e2e.db e2e-data && ${PYTHON} -m uvicorn app.main:app --host 127.0.0.1 --port ${API_PORT} --log-level warning`,
       cwd: BACKEND_DIR,
       url: `${API_URL}/api/health`,
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,
+      // Keep `make check` readable: the API's request log is noise here, but
+      // anything it writes to stderr (tracebacks, startup failures) must
+      // still reach the terminal.
+      stdout: "ignore",
+      stderr: "pipe",
       env: {
         DATABASE_URL: "sqlite+aiosqlite:///./e2e.db",
         AUTO_CREATE_TABLES: "1",
+        // Receipt uploads (B-09) land in a throw-away directory next to the DB.
+        STORAGE_LOCAL_DIR: "./e2e-data",
         ENVIRONMENT: "test",
         SECRET_KEY: "e2e-only-secret-not-used-outside-playwright",
         CORS_ORIGINS: `http://127.0.0.1:${E2E_PORT},http://localhost:${E2E_PORT}`,
