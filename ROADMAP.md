@@ -2,7 +2,7 @@
 
 > One running list. Never duplicated — items move between sections, they don't get re-added.
 > Legend: severity `C`ritical / `H`igh / `M`edium / `L`ow · effort `S` (<1h) / `M` (half day) / `L` (multi-day)
-> IDs: `B-xx` = work item (next free: **B-32**) · `P-xx` = parked (next free: **P-05**)
+> IDs: `B-xx` = work item (next free: **B-33**) · `P-xx` = parked (next free: **P-05**)
 > Cross-product items (SSO, contracts, design tokens) live in `chadev-platform/ROADMAP.md`, not here.
 > Updated: 2026-09-10
 
@@ -30,12 +30,6 @@ Rule: every PR names the B-ID it closes and which north-star column it serves.
 - [ ] **B-05** `calc_mwst` and the credit shortcut use Python `round()` (half-even). Swiss commercial
       rounding is half-up; align with `export.round_chf()` and extend the test matrix. — `M` / `S`
       `backend/app/services/export.py` · `test_export.py`
-- [ ] **B-06** `POST /api/export/{banana,csv,excel}` and `/api/export/email/rows` accept caller-supplied
-      rows with **no auth**. No tenant data leaks, but it is an open compute endpoint. Require auth. — `M` / `S`
-      `backend/app/routers/export.py`
-- [ ] **B-07** Rate limiter keys are per-IP only; add per-tenant keys for `scanner/extract`,
-      `classify`, `ai/*` (expensive endpoints). — `M` / `S`
-      `backend/app/core/rate_limit.py`
 
 ---
 
@@ -49,7 +43,6 @@ Rule: every PR names the B-ID it closes and which north-star column it serves.
 - [ ] **B-10** `settings/page.tsx` (352) and `insights/page.tsx` (320) → ≤200-line files, same split
       pattern as `modell/`. — `M` / `M`
 - [ ] **B-11** Vitest for pure helpers: `booking-analytics`, `lib/errors.ts`, `modell/helpers.ts`. — `M` / `M`
-- [ ] **B-12** `security.yml` (pip-audit + npm audit + gitleaks) copied from billing. — `L` / `S`
 - [ ] **B-13** `/api/health` returns version, db, migration_head, storage backend (trim in production). — `L` / `S`
 
 ---
@@ -73,6 +66,9 @@ Rule: every PR names the B-ID it closes and which north-star column it serves.
 - [ ] **B-21** Replace remaining `err: any` in scanner/modell hooks with generated types. — `L` / `S`
 
 ### Security & data
+- [ ] **B-32** Work off the bandit medium findings so `security.yml` can make it blocking: `defusedxml`
+      for uploaded XML (`routers/import_data.py`), timeouts on the Ollama `httpx` calls (`services/ai_assistant.py`),
+      pickle model bundles only from trusted storage (`services/classifier.py`). — `M` / `S`
 - [ ] **B-24** Postgres RLS (`SET LOCAL app.tenant_id`) as defence in depth — after platform contract. — `H` / `L`
 - [ ] **B-25** Backup/restore script + restore drill (models + DB). — `H` / `M`
 
@@ -96,6 +92,16 @@ Rule: every PR names the B-ID it closes and which north-star column it serves.
 
 ## ✅ Done
 
+- **B-12** ✅ 2026-09-10 — `.github/workflows/security.yml`: gitleaks, pip-audit (blocking, ecdsa/HS256 ignore),
+  npm audit high with registry-retry, Trivy on the backend image, bandit/semgrep advisory. npm audit fix bumped
+  5 transitive dev deps; both audits clean. Bandit mediums → B-32.
+- **B-07** ✅ 2026-09-10 — Rate-limit keys `tenant:<tid>` (Bearer decoded without DB) / `ip:<addr>`. `RATE_LIMIT_DEFAULT`
+  200/min on every route, `RATE_LIMIT_CLASSIFY` 60/min on `classify/{,predict,batch}`, `RATE_LIMIT_HEAVY` 30/min on
+  `scanner/extract`, `pdf/parse`, `ai/{chat,summary}`, `classify/train`. Found and fixed: slowapi's middleware never
+  matched a route on FastAPI ≥ 0.135 (nested routers), so the default limit was silently off — now an app-level
+  dependency. 429 uses the error envelope (`rate_limited`) + `Retry-After`. Tests 216 → **233**.
+- **B-06** ✅ 2026-09-10 — `POST /api/export/{banana,csv,excel}` and `/api/export/email/rows` require a login
+  (same `get_current_user` dependency as everything else); anonymous → 401 covered in the isolation guard.
 - **B-26** ✅ 2026-09-10 — Tenant columns → platform contract: `plan` → `subscription_plan` (rename, data kept),
   `slug` (unique, derived from name, suffix on collision), `trial_ends_at`, `is_active` (403 `Tenant deaktiviert`).
   Migration `921d958b8530` verified up/down/up; API image now runs `alembic upgrade head` on start;
@@ -118,9 +124,9 @@ Rule: every PR names the B-ID it closes and which north-star column it serves.
 | 0 Recon | ✅ |
 | 0.5 Risk fixes before platform work | ✅ B-00…B-03 (branch `feat/phase0-risks`) |
 | 1 Platform contract | 1.2 ✅ B-31 · 1.4 ✅ B-26 · 1.6 ✅ tokens imported |
-| 2 Security | open: B-06, B-07, B-24, B-25 |
+| 2 Security | ✅ B-06, B-07 · open: B-24, B-25, B-32 |
 | 3 Reliability | open: B-04, B-05, B-08, B-11 |
 | 4 Polish | open: B-09, B-13, B-22 |
 | 5 UX | open: B-14…B-21 |
 | 6 Together | see platform |
-| 7 DX | open: B-12, B-29, B-30 |
+| 7 DX | ✅ B-12 · open: B-29, B-30 |
