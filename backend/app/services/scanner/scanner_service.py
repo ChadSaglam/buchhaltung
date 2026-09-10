@@ -4,6 +4,7 @@ from typing import Any
 
 from fastapi import HTTPException
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.scanner_config import ScannerConfig
@@ -73,7 +74,15 @@ class ScannerService:
             auto_classification_enabled=True,
         )
         self.db.add(config)
-        await self.db.commit()
+        try:
+            await self.db.commit()
+        except IntegrityError:
+            # Two requests of the same tenant raced on the first call (the
+            # dashboard fires several status calls at once). The other one
+            # won; use its row.
+            await self.db.rollback()
+            result = await self.db.execute(stmt)
+            return result.scalar_one()
         await self.db.refresh(config)
         return config
 

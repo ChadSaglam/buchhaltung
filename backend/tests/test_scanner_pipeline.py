@@ -119,3 +119,47 @@ async def test_vision_fallback_when_ocr_empty(db_session):
 
     assert response.data.vendor == "Vision GmbH"
     assert response.data.vision_model == "gemma3:12b"
+
+
+@pytest.mark.asyncio
+async def test_get_or_create_config_survives_a_concurrent_insert(db_session):
+    """Two first calls for the same tenant race; the loser must reuse the winner's row."""
+    from app.models.scanner_config import ScannerConfig
+    from tests.factories import create_tenant, create_user
+
+    tenant = await create_tenant(db_session)
+    user = await create_user(db_session, tenant)
+    service = ScannerService(db_session, user)
+
+    # The "winner" already inserted its row …
+    winner = ScannerConfig(
+        tenant_id=tenant.id,
+        ocr_provider="custom-ocr",
+        vision_provider="ollama",
+        fallback_provider="ollama",
+        ollama_base_url="http://localhost:11434",
+        pdf_ocr_enabled=True,
+        invoice_matching_enabled=True,
+        auto_classification_enabled=True,
+    )
+    db_session.add(winner)
+    await db_session.commit()
+    db_session.expunge(winner)
+
+    # … but the "loser" selected before that and saw nothing.
+    original_execute = db_session.execute
+    calls = {"n": 0}
+
+    class _Empty:
+        def scalar_one_or_none(self):
+            return None
+
+    async def stale_first_select(stmt, *args, **kwargs):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return _Empty()
+        return await original_execute(stmt, *args, **kwargs)
+
+    db_session.execute = stale_first_select  # type: ignore[method-assign]
+    config = await service.get_or_create_config_model()
+    assert config.id == winner.id
