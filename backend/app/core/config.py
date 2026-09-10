@@ -48,6 +48,16 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
     ALGORITHM: str = "HS256"
 
+    # --- Rate limiting ---------------------------------------------------
+    # slowapi limit strings ("<count>/<period>"). Requests are keyed per tenant
+    # when they carry a valid Bearer token and per client IP otherwise
+    # (`core/rate_limit.py`). DEFAULT applies to every route; CLASSIFY to the
+    # ML inference routes; HEAVY to routes that run OCR/vision, PDF parsing,
+    # model training or an LLM call.
+    RATE_LIMIT_DEFAULT: str = "200/minute"
+    RATE_LIMIT_CLASSIFY: str = "60/minute"
+    RATE_LIMIT_HEAVY: str = "30/minute"
+
     # --- CORS ------------------------------------------------------------
     # Comma-separated list, e.g. "https://app.example.ch,https://admin.example.ch"
     CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"

@@ -17,8 +17,11 @@ from contextvars import ContextVar
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
+
+from app.core.rate_limit import retry_after_seconds
 
 logger = logging.getLogger(__name__)
 
@@ -93,6 +96,19 @@ def install_error_handlers(app: FastAPI) -> None:
             status_code=exc.status_code,
             content=error_body(f"http_{exc.status_code}", detail),
             headers={REQUEST_ID_HEADER: current_request_id()},
+        )
+
+    @app.exception_handler(RateLimitExceeded)
+    async def _rate_limit_exc(request: Request, exc: RateLimitExceeded):
+        # slowapi's stock handler answers {"error": "<string>"}; keep the envelope.
+        headers = {REQUEST_ID_HEADER: current_request_id()}
+        retry_after = retry_after_seconds(request)
+        if retry_after is not None:
+            headers["Retry-After"] = str(retry_after)
+        return JSONResponse(
+            status_code=429,
+            content=error_body("rate_limited", "Zu viele Anfragen. Bitte kurz warten.", limit=str(exc.detail)),
+            headers=headers,
         )
 
     @app.exception_handler(RequestValidationError)

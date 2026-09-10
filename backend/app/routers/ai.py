@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user, get_db
+from app.core.rate_limit import heavy_limit, limiter
 from app.models.user import User
 from app.services import ai_assistant
 
@@ -44,7 +45,9 @@ async def ai_status(
 
 
 @router.post("/chat")
+@limiter.limit(heavy_limit)
 async def ai_chat(
+    request: Request,
     payload: ChatRequest,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
@@ -68,7 +71,9 @@ async def ai_chat(
 
 
 @router.post("/summary")
+@limiter.limit(heavy_limit)
 async def ai_summary(
+    request: Request,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):

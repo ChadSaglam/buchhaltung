@@ -1,17 +1,14 @@
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
 
 from app.core.config import settings
 from app.core.database import async_session, engine
 from app.core.errors import RequestContextMiddleware, install_error_handlers
 from app.core.logging_config import configure_logging
-from app.core.rate_limit import limiter
+from app.core.rate_limit import enforce_default_limit, limiter
 from app.core.sentry import configure_sentry
 from app.models.base import Base
 from app.services.scheduler import get_scheduler
@@ -39,6 +36,9 @@ application = FastAPI(
     title="Buchhaltung API",
     version=settings.APP_VERSION,
     lifespan=lifespan,
+    # Default rate limit on every route (see core/rate_limit.py for why this is
+    # a dependency and not slowapi's middleware).
+    dependencies=[Depends(enforce_default_limit)],
     # Hide interactive docs in production; the OpenAPI schema stays available
     # for the type-generation pipeline in non-prod environments.
     docs_url=None if settings.is_production else "/docs",
@@ -58,9 +58,8 @@ application.add_middleware(
 application.add_middleware(RequestContextMiddleware)
 install_error_handlers(application)
 
+# 429s go through the uniform error envelope (core/errors.py).
 application.state.limiter = limiter
-application.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-application.add_middleware(SlowAPIMiddleware)
 
 from app.routers import (
     ai,

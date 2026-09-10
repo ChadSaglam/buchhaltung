@@ -12,7 +12,7 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user, get_db
-from app.core.rate_limit import limiter
+from app.core.rate_limit import classify_limit, heavy_limit, limiter
 from app.models.classifier_model import ClassifierModel
 from app.models.correction import Correction
 from app.models.kontenplan import Konto, KontoDefault
@@ -73,7 +73,7 @@ async def _get_konto_default_rows(db: AsyncSession, tenant_id: int) -> list[Kont
 
 
 @router.post("/predict")
-@limiter.limit("60/minute")
+@limiter.limit(classify_limit)
 async def predict(
     request: Request,
     body: PredictRequest,
@@ -352,7 +352,7 @@ async def upload_bundle(
 
 
 @router.post("/")
-@limiter.limit("60/minute")
+@limiter.limit(classify_limit)
 async def classify_transaction(
     request: Request,
     body: ClassifyRequest,
@@ -407,7 +407,9 @@ async def log_correction(
 
 
 @router.post("/train")
+@limiter.limit(heavy_limit)
 async def train_model(
+    request: Request,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> dict[str, Any]:

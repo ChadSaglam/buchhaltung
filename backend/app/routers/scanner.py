@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, File, Form, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user, get_db
+from app.core.rate_limit import heavy_limit, limiter
 from app.models.user import User
 from app.schemas.scanner import (
     ScannerConfigResponse,
@@ -54,7 +55,9 @@ async def update_scanner_config(
 
 
 @router.post("/extract", response_model=ScannerExtractResponse)
+@limiter.limit(heavy_limit)
 async def extract_invoice_endpoint(
+    request: Request,
     file: UploadFile = File(...),
     model: str = Form(default=""),
     user: User = Depends(get_current_user),

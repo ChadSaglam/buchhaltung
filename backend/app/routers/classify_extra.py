@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user, get_db
+from app.core.rate_limit import classify_limit, limiter
 from app.models.correction import Correction
 from app.models.memory import Memory
 from app.models.user import User
@@ -21,7 +22,9 @@ class BatchRequest(BaseModel):
 
 
 @router.post("/batch")
+@limiter.limit(classify_limit)
 async def batch_classify(
+    request: Request,
     body: BatchRequest,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),

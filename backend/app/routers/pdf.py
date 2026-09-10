@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import io
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 
 from app.core.deps import get_current_user
+from app.core.rate_limit import heavy_limit, limiter
 from app.models.user import User
 from app.services.pdf_parser import extract_transactions_from_pdf
 
@@ -14,7 +15,9 @@ router = APIRouter(prefix="/api/pdf", tags=["pdf"])
 
 
 @router.post("/parse")
+@limiter.limit(heavy_limit)
 async def parse_pdf(
+    request: Request,
     file: UploadFile = File(...),
     user: User = Depends(get_current_user),
 ):
