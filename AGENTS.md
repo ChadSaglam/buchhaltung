@@ -127,7 +127,7 @@ frontend/src/
 
 ## 6. Known debt (fix opportunistically, don't let it block you)
 
-- `settings/page.tsx` (352) and `insights/page.tsx` (320) are the next big pages — target ≤200 lines/file (`modell/` is the reference split).
+- Dashboard pages follow the `modell/` split (`components/ hooks/ helpers.ts types.ts`, ≤200 lines/file); `settings/` and `insights/` were the last two big ones. Keep new pages that way.
 - Open work is tracked in `ROADMAP.md` (one running list, R-IDs).
 - A handful of `any` remain in the scanner pages; replace with generated types.
 - No billing/usage-limit enforcement yet (`usage_event` model exists, unused).
