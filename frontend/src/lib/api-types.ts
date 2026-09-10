@@ -492,7 +492,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Health */
+        /**
+         * Health
+         * @description Liveness + deployment facts (B-13).
+         *
+         *     Production answers with status and version only; everything else is an
+         *     internal detail that stays inside the perimeter.
+         */
         get: operations["health_api_health_get"];
         put?: never;
         post?: never;
@@ -2319,7 +2325,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        [key: string]: string;
+                        [key: string]: unknown;
                     };
                 };
             };
