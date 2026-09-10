@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import pickle
+import logging
 import re
 from dataclasses import dataclass
 
@@ -19,6 +19,9 @@ from app.models.kontenplan import KontoDefault
 from app.models.memory import Memory
 from app.models.training_data import TrainingRow
 from app.services.export import round_chf
+from app.services.model_blob import UntrustedModelBlob, pack, unpack
+
+logger = logging.getLogger(__name__)
 
 CONFIDENCE_THRESHOLD = 0.45
 AUTO_RETRAIN_THRESHOLD = 20
@@ -214,7 +217,12 @@ class TenantClassifier:
         result = await self.db.execute(select(ClassifierModel).where(ClassifierModel.tenant_id == self.tenant_id))
         row = result.scalar_one_or_none()
         if row:
-            self._model = pickle.loads(row.model_blob)
+            try:
+                self._model = unpack(row.model_blob)
+            except UntrustedModelBlob:
+                # Unsigned (pre-B-32) or foreign blob: never unpickle it. The
+                # classifier falls through to memory/rules until retraining.
+                logger.warning("[CLASSIFIER] tenant=%s: model blob is not signed, ignoring it", self.tenant_id)
         return self._model
 
     async def _load_konto_defaults(self) -> dict[str, dict]:
@@ -491,7 +499,7 @@ class TenantClassifier:
 
         import sklearn
 
-        model_blob = pickle.dumps(pipeline)
+        model_blob = pack(pipeline)
 
         result = await self.db.execute(select(ClassifierModel).where(ClassifierModel.tenant_id == self.tenant_id))
         existing = result.scalar_one_or_none()

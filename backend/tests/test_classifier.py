@@ -31,6 +31,7 @@ from app.services.classifier import (
     make_memory_key,
     preprocess,
 )
+from app.services.model_blob import pack
 from app.services.review_queue import DEFAULT_THRESHOLD, ReviewQueueService
 from tests.factories import (
     create_konto_default,
@@ -58,7 +59,7 @@ class FakeModel:
 async def _clf(db_session, tenant_id: int, model: FakeModel | None = None) -> TenantClassifier:
     clf = TenantClassifier(tenant_id, db_session)
     if model is not None:
-        db_session.add(ClassifierModel(tenant_id=tenant_id, model_blob=pickle.dumps(model)))
+        db_session.add(ClassifierModel(tenant_id=tenant_id, model_blob=pack(model)))
         await db_session.commit()
     return clf
 
@@ -380,6 +381,20 @@ async def test_model_of_other_tenant_is_not_loaded(db_session):
     clf = await _clf(db_session, tenant_a.id)
 
     assert await clf._load_model() is None
+    assert (await clf.classify("irgendwas", False, 10)).source == "Regeln"
+
+
+@pytest.mark.asyncio
+async def test_unsigned_model_blob_is_never_unpickled(db_session, caplog):
+    """B-32: a raw pickle in classifier_models (pre-B-32 row or foreign upload) is ignored."""
+    tenant = await create_tenant(db_session)
+    db_session.add(ClassifierModel(tenant_id=tenant.id, model_blob=pickle.dumps(FakeModel(["1234"], [0.99]))))
+    await db_session.commit()
+    clf = TenantClassifier(tenant.id, db_session)
+
+    with caplog.at_level("WARNING"):
+        assert await clf._load_model() is None
+    assert "not signed" in caplog.text
     assert (await clf.classify("irgendwas", False, 10)).source == "Regeln"
 
 

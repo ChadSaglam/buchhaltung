@@ -19,6 +19,7 @@ from app.models.kontenplan import Konto, KontoDefault
 from app.models.memory import Memory
 from app.models.user import User
 from app.services.classifier import ClassificationResult, TenantClassifier, preprocess
+from app.services.model_blob import is_trusted
 from app.services.review_queue import ReviewQueueService
 from app.services.usage_meter import UsageMeter
 
@@ -273,6 +274,18 @@ async def download(
     )
 
 
+UNTRUSTED_MODEL_DETAIL = (
+    "Die Modell-Datei stammt nicht aus dieser Installation und wird nicht geladen. "
+    "Bitte das Modell unter «Modell» neu trainieren."
+)
+
+
+def _require_trusted_model(blob: bytes) -> None:
+    """A model blob is a pickle; only accept what this installation signed (B-32)."""
+    if not is_trusted(blob):
+        raise HTTPException(status_code=400, detail=UNTRUSTED_MODEL_DETAIL)
+
+
 @router.post("/upload")
 async def upload_bundle(
     file: UploadFile = File(...),
@@ -284,6 +297,7 @@ async def upload_bundle(
     filename = (file.filename or "").lower()
 
     if filename.endswith(".pkl"):
+        _require_trusted_model(content)
         row = await _get_model_row(db, tid)
         if row:
             row.model_blob = content
@@ -319,6 +333,7 @@ async def upload_bundle(
 
             if "model.pkl" in names:
                 model_blob = zf.read("model.pkl")
+                _require_trusted_model(model_blob)
                 row = await _get_model_row(db, tid)
                 if row:
                     row.model_blob = model_blob
