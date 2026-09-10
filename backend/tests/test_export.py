@@ -258,9 +258,29 @@ def _api_row(**overrides) -> dict:
     return row
 
 
+@pytest.fixture
+async def headers(db_session) -> dict[str, str]:
+    """The stateless POST exports read no tenant data but still require a login (B-06)."""
+    tenant = await create_tenant(db_session)
+    user = await create_user(db_session, tenant)
+    return auth_headers(user)
+
+
+@pytest.mark.parametrize(
+    "path", ["/api/export/banana", "/api/export/csv", "/api/export/excel", "/api/export/email/rows"]
+)
 @pytest.mark.asyncio
-async def test_post_banana_returns_utf8_tsv_attachment(client):
-    resp = await client.post("/api/export/banana", json={"rows": [_api_row(), _api_row(nr=2, betrag=-3.333)]})
+async def test_post_export_rejects_anonymous(client, path):
+    resp = await client.post(path, json={"rows": [_api_row()], "to_email": "a@b.ch"})
+    assert resp.status_code in (401, 403)
+    assert "error" in resp.json()
+
+
+@pytest.mark.asyncio
+async def test_post_banana_returns_utf8_tsv_attachment(client, headers):
+    resp = await client.post(
+        "/api/export/banana", json={"rows": [_api_row(), _api_row(nr=2, betrag=-3.333)]}, headers=headers
+    )
     assert resp.status_code == 200
     assert resp.headers["content-type"].startswith("text/plain")
     assert resp.headers["content-disposition"] == "attachment; filename=banana_import.txt"
@@ -272,13 +292,13 @@ async def test_post_banana_returns_utf8_tsv_attachment(client):
 
 
 @pytest.mark.asyncio
-async def test_post_csv_and_excel_return_attachments(client):
-    resp = await client.post("/api/export/csv", json={"rows": [_api_row()]})
+async def test_post_csv_and_excel_return_attachments(client, headers):
+    resp = await client.post("/api/export/csv", json={"rows": [_api_row()]}, headers=headers)
     assert resp.status_code == 200
     assert resp.headers["content-type"].startswith("text/csv")
     assert "Café Müller" in resp.content.decode("utf-8")
 
-    resp = await client.post("/api/export/excel", json={"rows": [_api_row()]})
+    resp = await client.post("/api/export/excel", json={"rows": [_api_row()]}, headers=headers)
     assert resp.status_code == 200
     assert resp.headers["content-disposition"] == "attachment; filename=buchhaltung.xlsx"
     assert load_workbook(io.BytesIO(resp.content)).active.cell(row=2, column=5).value == "Café Müller"
@@ -286,15 +306,15 @@ async def test_post_csv_and_excel_return_attachments(client):
 
 @pytest.mark.parametrize("fmt", ["banana", "csv", "excel"])
 @pytest.mark.asyncio
-async def test_post_export_with_no_rows_is_404(client, fmt):
-    resp = await client.post(f"/api/export/{fmt}", json={"rows": []})
+async def test_post_export_with_no_rows_is_404(client, headers, fmt):
+    resp = await client.post(f"/api/export/{fmt}", json={"rows": []}, headers=headers)
     assert resp.status_code == 404
     assert resp.json()["error"]["code"] == "http_404"
 
 
 @pytest.mark.asyncio
-async def test_post_export_mwstchf_accepts_blank_string(client):
-    resp = await client.post("/api/export/csv", json={"rows": [_api_row(mwstchf="")]})
+async def test_post_export_mwstchf_accepts_blank_string(client, headers):
+    resp = await client.post("/api/export/csv", json={"rows": [_api_row(mwstchf="")]}, headers=headers)
     assert resp.status_code == 200
     assert resp.content.decode("utf-8").strip().split("\n")[1].split(";")[11] == "0"
 

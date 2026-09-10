@@ -92,8 +92,10 @@ async def _get_bookings_df(db: AsyncSession, tenant_id: int, source: str | None 
 
 
 # ── POST routes (accept frontend state data) ──
+# The rows come from the caller, so no tenant data is read here. Auth is still
+# required: these are open compute endpoints otherwise (B-06).
 @router.post("/banana")
-async def export_banana_post(body: ExportRequest):
+async def export_banana_post(body: ExportRequest, user: User = Depends(get_current_user)):
     if not body.rows:
         raise HTTPException(404, "Keine Buchungen vorhanden.")
     df = _rows_to_df(body.rows)
@@ -106,7 +108,7 @@ async def export_banana_post(body: ExportRequest):
 
 
 @router.post("/excel")
-async def export_excel_post(body: ExportRequest):
+async def export_excel_post(body: ExportRequest, user: User = Depends(get_current_user)):
     if not body.rows:
         raise HTTPException(404, "Keine Buchungen vorhanden.")
     df = _rows_to_df(body.rows)
@@ -119,7 +121,7 @@ async def export_excel_post(body: ExportRequest):
 
 
 @router.post("/csv")
-async def export_csv_post(body: ExportRequest):
+async def export_csv_post(body: ExportRequest, user: User = Depends(get_current_user)):
     if not body.rows:
         raise HTTPException(404, "Keine Buchungen vorhanden.")
     df = _rows_to_df(body.rows)
@@ -213,7 +215,7 @@ class EmailWithRowsRequest(BaseModel):
 
 
 @router.post("/email/rows")
-async def send_email_with_rows(body: EmailWithRowsRequest):
+async def send_email_with_rows(body: EmailWithRowsRequest, user: User = Depends(get_current_user)):
     if not is_email_configured():
         raise HTTPException(400, "E-Mail nicht konfiguriert. SMTP in .env prüfen.")
     if not body.rows:
