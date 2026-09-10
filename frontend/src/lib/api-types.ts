@@ -173,6 +173,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/bookings/{booking_id}/source": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Booking Source
+         * @description The stored document (receipt image / statement PDF) a booking was created from.
+         */
+        get: operations["booking_source_api_bookings__booking_id__source_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/classify/": {
         parameters: {
             query?: never;
@@ -840,6 +860,8 @@ export interface components {
              * @default
              */
             source: string;
+            /** Source Key */
+            source_key?: string | null;
         };
         /** BuchungRowExport */
         BuchungRowExport: {
@@ -1013,6 +1035,8 @@ export interface components {
             scanner_providers?: components["schemas"]["ScannerProviderInfo"][];
             /** Scanner Steps */
             scanner_steps?: components["schemas"]["ScannerEventStep"][];
+            /** Source Key */
+            source_key?: string | null;
             /**
              * Total Amount
              * @default 0
@@ -1634,6 +1658,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    booking_source_api_bookings__booking_id__source_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

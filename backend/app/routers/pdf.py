@@ -10,6 +10,7 @@ from app.core.deps import get_current_user
 from app.core.rate_limit import heavy_limit, limiter
 from app.models.user import User
 from app.services.pdf_parser import extract_transactions_from_pdf
+from app.services.receipts import store_receipt
 
 router = APIRouter(prefix="/api/pdf", tags=["pdf"])
 
@@ -28,6 +29,11 @@ async def parse_pdf(
     if len(content) > 50 * 1024 * 1024:
         raise HTTPException(400, "PDF zu gross (max 50MB).")
 
+    # Audit copy first (B-09): the statement survives even if parsing fails.
+    source_key = store_receipt(
+        user.tenant_id, filename=file.filename, content_type=file.content_type or "application/pdf", content=content
+    )
+
     try:
         transactions = extract_transactions_from_pdf(io.BytesIO(content))
     except Exception as e:
@@ -36,4 +42,4 @@ async def parse_pdf(
     if not transactions:
         raise HTTPException(422, "Keine Transaktionen gefunden.")
 
-    return {"transactions": transactions, "count": len(transactions)}
+    return {"transactions": transactions, "count": len(transactions), "source_key": source_key}

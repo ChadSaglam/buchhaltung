@@ -97,9 +97,11 @@ def test_factory_default_is_local_under_configured_dir(monkeypatch):
 
 
 def test_factory_defaults_match_previous_on_disk_layout():
-    # Fresh Settings without env overrides: local backend under /app/data.
-    assert settings.STORAGE_BACKEND == "local"
-    assert settings.STORAGE_LOCAL_DIR == "/app/data"
+    # Fresh Settings without env overrides: local backend under /app/data
+    # (the autouse fixture in conftest redirects the *test* root to tmp_path).
+    fresh = type(settings)(_env_file=None)
+    assert fresh.STORAGE_BACKEND == "local"
+    assert fresh.STORAGE_LOCAL_DIR == "/app/data"
     assert model_storage.model_artifact_key(42) == "models/42/model.pkl"
 
 

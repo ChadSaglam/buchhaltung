@@ -26,6 +26,7 @@ from app.models.tenant import Tenant
 from app.models.training_data import TrainingRow
 from app.models.user import User
 from app.services.classifier import make_memory_key
+from app.services.receipts import store_receipt
 from app.services.scanner.scanner_service import ScannerService
 from tests.factories import (
     auth_headers,
@@ -118,6 +119,7 @@ async def test_bookings_are_isolated_by_tenant(db_session):
     [
         ("GET", "/api/bookings/"),
         ("GET", "/api/bookings/stats"),
+        ("GET", "/api/bookings/1/source"),
         ("GET", "/api/review/"),
         ("GET", "/api/kontenplan/"),
         ("GET", "/api/kontenplan/defaults"),
@@ -175,6 +177,31 @@ async def test_booking_create_ignores_tenant_id_in_body(client, db_session, tena
 
     assert [b.beschreibung for b in await _rows(db_session, Booking, tenants.tenant_a.id)] == ["smuggled"]
     assert await _rows(db_session, Booking, tenants.tenant_b.id) == []
+
+
+@pytest.mark.asyncio
+async def test_booking_source_document_is_404_for_other_tenant(client, db_session, tenants: TwoTenants):
+    key_b = store_receipt(tenants.tenant_b.id, filename="b.pdf", content_type="application/pdf", content=b"%PDF-B")
+    booking_b = await create_booking(db_session, tenants.tenant_b, beschreibung="B-Beleg")
+    booking_b.source_key = key_b
+    await db_session.commit()
+
+    # By id: B's booking does not exist for A.
+    resp = await client.get(f"/api/bookings/{booking_b.id}/source", headers=tenants.headers_a)
+    assert resp.status_code == 404
+    assert resp.json()["error"]["code"]
+
+    # By key: A cannot attach B's document to its own booking and read it that way.
+    resp = await client.post(
+        "/api/bookings/", json=[{"beschreibung": "steal", "source_key": key_b}], headers=tenants.headers_a
+    )
+    assert resp.status_code == 400
+    assert await _rows(db_session, Booking, tenants.tenant_a.id) == []
+
+    # B itself still gets the file.
+    resp = await client.get(f"/api/bookings/{booking_b.id}/source", headers=tenants.headers_b)
+    assert resp.status_code == 200
+    assert resp.content == b"%PDF-B"
 
 
 # ── review queue ─────────────────────────────────────────────────────────────

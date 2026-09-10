@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from collections.abc import AsyncIterator
 
+import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import (
@@ -14,10 +15,12 @@ from sqlalchemy.pool import NullPool, StaticPool
 
 os.environ.setdefault("ENV", "test")
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.rate_limit import limiter
 from app.main import app
 from app.models.base import Base
+from app.services.storage import reset_storage
 
 TEST_DATABASE_URL = os.getenv(
     "DATABASE_URL",
@@ -35,6 +38,17 @@ def _create_test_engine():
             poolclass=StaticPool,
         )
     return create_async_engine(TEST_DATABASE_URL, poolclass=NullPool)
+
+
+@pytest.fixture(autouse=True)
+def storage_dir(tmp_path, monkeypatch):
+    """Every test gets a throw-away LocalStorage root — nothing is written under /app/data."""
+    root = tmp_path / "storage"
+    monkeypatch.setattr(settings, "STORAGE_BACKEND", "local")
+    monkeypatch.setattr(settings, "STORAGE_LOCAL_DIR", str(root))
+    reset_storage()
+    yield root
+    reset_storage()
 
 
 @pytest_asyncio.fixture

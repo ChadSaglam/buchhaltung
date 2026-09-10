@@ -21,3 +21,5 @@ class Booking(Base):
     mwst_pct = Column(String, default="")
     mwst_amount = Column(Float, default=0)
     source = Column(String, default="")
+    # Storage key of the document this booking came from (services/receipts.py); None for manual rows.
+    source_key = Column(String(255), nullable=True)

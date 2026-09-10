@@ -89,6 +89,9 @@ class ExtractedInvoice(BaseModel):
     classification_confidence: float | None = None
     classification_source: str | None = None
     classification_input: str | None = None
+    # Storage key of the persisted upload (`receipts/<tenant>/<uuid>.<ext>`);
+    # hand it back as `source_key` when the booking is created.
+    source_key: str | None = None
     vision_model: str | None = None
     ocr_provider: str | None = None
     ocr_worked: bool = False

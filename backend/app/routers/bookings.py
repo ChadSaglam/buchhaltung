@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import Response
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.deps import get_current_user, get_db
 from app.models.booking import Booking
 from app.models.user import User
+from app.services.receipts import content_type_for_key, key_belongs_to_tenant, read_receipt
 
 router = APIRouter(prefix="/api/bookings", tags=["bookings"])
 
@@ -26,6 +28,8 @@ class BookingCreate(BaseModel):
     beleg: str = ""
     rechnung: str = ""
     source: str = ""
+    # Key returned by /api/scanner/extract or /api/pdf/parse for the uploaded document.
+    source_key: str | None = None
 
 
 @router.get("/")
@@ -55,6 +59,7 @@ async def list_bookings(
             "beleg": b.beleg,
             "rechnung": b.rechnung,
             "source": b.source,
+            "source_key": b.source_key,
         }
         for b in bookings
     ]
@@ -67,6 +72,10 @@ async def create_bookings(
     user: User = Depends(get_current_user),
 ):
     items = body if isinstance(body, list) else [body]
+    for item in items:
+        # A key is only accepted when it addresses this tenant's own document.
+        if item.source_key and not key_belongs_to_tenant(item.source_key, user.tenant_id):
+            raise HTTPException(status_code=400, detail="Ungültiger Beleg-Schlüssel.")
     created = []
     for item in items:
         booking = Booking(
@@ -82,6 +91,7 @@ async def create_bookings(
             beleg=item.beleg,
             rechnung=item.rechnung,
             source=item.source,
+            source_key=item.source_key or None,
         )
         db.add(booking)
         created.append(booking)
@@ -112,3 +122,24 @@ async def booking_stats(
         "total_amount": float(total_amount),
         "by_source": by_source,
     }
+
+
+@router.get("/{booking_id}/source")
+async def booking_source(
+    booking_id: int,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> Response:
+    """The stored document (receipt image / statement PDF) a booking was created from."""
+    result = await db.execute(select(Booking).where(Booking.id == booking_id, Booking.tenant_id == user.tenant_id))
+    booking = result.scalar_one_or_none()
+    content = read_receipt(booking.source_key, user.tenant_id) if booking and booking.source_key else None
+    if content is None:
+        # Foreign, unknown, keyless or vanished document all look the same to the caller.
+        raise HTTPException(status_code=404, detail="Kein Beleg zu dieser Buchung gefunden.")
+    filename = booking.source_key.rsplit("/", 1)[-1]
+    return Response(
+        content=content,
+        media_type=content_type_for_key(booking.source_key),
+        headers={"Content-Disposition": f'inline; filename="{filename}"'},
+    )

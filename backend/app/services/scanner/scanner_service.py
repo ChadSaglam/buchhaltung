@@ -18,6 +18,7 @@ from app.schemas.scanner import (
 )
 from app.services.classifier import TenantClassifier, calc_mwst
 from app.services.ollama_vision import parse_invoice_text
+from app.services.receipts import store_receipt
 from app.services.scanner.base import ScannerFile
 from app.services.scanner.registry import ScannerProviderRegistry
 
@@ -116,6 +117,8 @@ class ScannerService:
         model: str = "",
     ) -> ScannerExtractResponse:
         self._validate_upload(content_type=content_type, content=content)
+        # Audit copy first (B-09): the document survives even if extraction fails.
+        source_key = store_receipt(self.user.tenant_id, filename=file_name, content_type=content_type, content=content)
         scanner_file = ScannerFile(
             filename=file_name,
             content_type=content_type,
@@ -208,6 +211,7 @@ class ScannerService:
                 }
             )
 
+        data["source_key"] = source_key
         data["vision_model"] = vision_model or ""
         data["ocr_provider"] = ocr_provider or ""
         data["ocr_worked"] = ocr_worked

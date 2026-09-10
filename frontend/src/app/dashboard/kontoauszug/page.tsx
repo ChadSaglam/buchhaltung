@@ -30,13 +30,16 @@ export default function KontoauszugPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  // Storage key of the uploaded statement (B-09); saved on every booking it produces.
+  const [sourceKey, setSourceKey] = useState<string | null>(null);
 
   const processFile = async (file: File) => {
-    setParsing(true); setRows([]); setSaved(false);
+    setParsing(true); setRows([]); setSaved(false); setSourceKey(null);
     try {
       const form = new FormData(); form.append('file', file);
       const parseRes = await api.post('/api/pdf/parse', form);
       const transactions = parseRes.data.transactions || [];
+      setSourceKey(parseRes.data.source_key ?? null);
 
       setClassifying(true);
       const classRes = await api.post('/api/classify/batch', { transactions });
@@ -70,6 +73,7 @@ export default function KontoauszugPage() {
         datum: r.Datum, beschreibung: r.Beschreibung, betrag: r['Betrag CHF'],
         kt_soll: r.KtSoll, kt_haben: r.KtHaben, mwst_code: r['MwStUSt-Code'],
         mwst_pct: r['MwSt-%'], mwst_amount: r['Gebuchte MwStUSt CHF'], source: 'kontoauszug',
+        source_key: sourceKey,
       })));
       for (const r of rows) {
         if (r.KtSoll) await api.post('/api/classify/correct', {

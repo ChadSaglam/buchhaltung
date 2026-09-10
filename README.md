@@ -95,9 +95,10 @@ python -c "import secrets; print(secrets.token_urlsafe(48))"   # JWT_SECRET
 
 ## Storage
 
-Files the backend persists (trained model artifacts today; receipt uploads as
-soon as they are stored) go through `backend/app/services/storage.py`, never
-straight to disk. `STORAGE_BACKEND=local` (default) writes under
+Files the backend persists (trained model artifacts, and every uploaded
+receipt / statement PDF as `receipts/<tenant_id>/<uuid>.<ext>` before it is
+extracted — `GET /api/bookings/{id}/source` streams it back) go through
+`backend/app/services/storage.py`, never straight to disk. `STORAGE_BACKEND=local` (default) writes under
 `STORAGE_LOCAL_DIR` (`/app/data`, the `model_data` volume in Docker). Run more
 than one API replica and local disk is no longer shared — switch to
 `STORAGE_BACKEND=s3` with `S3_BUCKET` (+ `S3_ENDPOINT_URL` for MinIO/R2,
