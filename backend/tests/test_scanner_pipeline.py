@@ -163,3 +163,35 @@ async def test_get_or_create_config_survives_a_concurrent_insert(db_session):
     db_session.execute = stale_first_select  # type: ignore[method-assign]
     config = await service.get_or_create_config_model()
     assert config.id == winner.id
+
+
+@pytest.mark.asyncio
+async def test_scanner_config_service_survives_a_concurrent_insert(db_session):
+    from app.models.scanner_config import ScannerConfig
+    from app.services.scanner_config import ScannerConfigService
+    from tests.factories import create_tenant
+
+    tenant = await create_tenant(db_session)
+    winner = ScannerConfig(tenant_id=tenant.id)
+    db_session.add(winner)
+    await db_session.commit()
+    db_session.expunge(winner)
+
+    original_execute = db_session.execute
+    calls = {"n": 0}
+
+    class _Empty:
+        def scalar_one_or_none(self):
+            return None
+
+    async def stale_first_select(stmt, *args, **kwargs):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return _Empty()
+        return await original_execute(stmt, *args, **kwargs)
+
+    db_session.execute = stale_first_select  # type: ignore[method-assign]
+    config = await ScannerConfigService(tenant.id, db_session).get_or_create()
+    assert config.id == winner.id
+    # The session is still usable afterwards (no PendingRollbackError).
+    await db_session.commit()

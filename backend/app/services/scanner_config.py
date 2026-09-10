@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.scanner_config import ScannerConfig
@@ -18,8 +19,19 @@ class ScannerConfigService:
         config = result.scalar_one_or_none()
         if config is None:
             config = ScannerConfig(tenant_id=self.tenant_id)
-            self.db.add(config)
-            await self.db.flush()
+            try:
+                # Savepoint: if a concurrent request created the row first,
+                # only this insert is rolled back (and the pending object
+                # dropped), not the caller's work.
+                async with self.db.begin_nested():
+                    self.db.add(config)
+                    await self.db.flush()
+            except IntegrityError:
+                with self.db.no_autoflush:
+                    result = await self.db.execute(
+                        select(ScannerConfig).where(ScannerConfig.tenant_id == self.tenant_id)
+                    )
+                config = result.scalar_one()
         return config
 
     async def update(self, fields: dict) -> ScannerConfig:
