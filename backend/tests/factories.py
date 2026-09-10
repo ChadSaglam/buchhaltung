@@ -4,7 +4,7 @@ import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security import create_access_token, get_password_hash
+from app.core.security import get_password_hash, issue_access_token
 from app.models.audit_log import AuditLog
 from app.models.booking import Booking
 from app.models.correction import Correction
@@ -31,11 +31,13 @@ async def create_user(
     tenant: Tenant,
     email: str | None = None,
     password: str = "Test1234!",
+    role: str = "owner",
 ) -> User:
     user = User(
         email=email or f"{uuid.uuid4().hex[:8]}@example.com",
         password_hash=get_password_hash(password),
         tenant_id=tenant.id,
+        role=role,
     )
     db.add(user)
     await db.commit()
@@ -45,7 +47,7 @@ async def create_user(
 
 def auth_headers(user: User) -> dict[str, str]:
     """Bearer header for API tests — same claims the auth router mints."""
-    token = create_access_token({"sub": str(user.id), "tenant_id": user.tenant_id})
+    token = issue_access_token(user)
     return {"Authorization": f"Bearer {token}"}
 
 

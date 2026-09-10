@@ -2,7 +2,7 @@
 
 > One running list. Never duplicated — items move between sections, they don't get re-added.
 > Legend: severity `C`ritical / `H`igh / `M`edium / `L`ow · effort `S` (<1h) / `M` (half day) / `L` (multi-day)
-> IDs: `B-xx` = work item (next free: **B-31**) · `P-xx` = parked (next free: **P-05**)
+> IDs: `B-xx` = work item (next free: **B-32**) · `P-xx` = parked (next free: **P-05**)
 > Cross-product items (SSO, contracts, design tokens) live in `chadev-platform/ROADMAP.md`, not here.
 > Updated: 2026-09-09
 
@@ -98,6 +98,7 @@ Rule: every PR names the B-ID it closes and which north-star column it serves.
 
 ## ✅ Done
 
+- **B-31** ✅ 2026-09-10 — Platform auth contract: token `{sub,tid,role,type,jti}`, `tid`/`type` verified, legacy `tenant_id` accepted one release, `require_role()` ladder (owner›admin›editor›viewer). Tests 193 → **203**.
 - **B-01** ✅ 2026-09-09 — **fix(export)**: `fmt_swiss` lost the carry (`1234.999 → 1'234.00`), amounts used
   half-even. New `round_chf()` (Decimal, `ROUND_HALF_UP`). 13 regression cases.
 - **B-02** ✅ 2026-09-09 — Tests 6 → **193** (+2 skipped): factories, tenant isolation for every router,
@@ -114,7 +115,7 @@ Rule: every PR names the B-ID it closes and which north-star column it serves.
 |---|---|
 | 0 Recon | ✅ |
 | 0.5 Risk fixes before platform work | ✅ B-00…B-03 (branch `feat/phase0-risks`) |
-| 1 Platform contract | waiting — B-26 is this repo's part |
+| 1 Platform contract | 1.2 ✅ B-31 · next: B-26 (tenant columns) |
 | 2 Security | open: B-06, B-07, B-24, B-25 |
 | 3 Reliability | open: B-04, B-05, B-08, B-11 |
 | 4 Polish | open: B-09, B-13, B-22 |
