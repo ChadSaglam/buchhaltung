@@ -1,0 +1,26 @@
+/* chadev design tokens — DRAFT (Phase 1.6). Both apps import this file; nothing else is shared. */
+:root {
+  --cd-color-brand: #1d4ed8;
+  --cd-color-brand-fg: #ffffff;
+  --cd-color-bg: #fafafa;
+  --cd-color-fg: #111827;
+  --cd-color-muted: #6b7280;
+  --cd-color-border: #e5e7eb;
+  --cd-color-success: #15803d;
+  --cd-color-warning: #b45309;
+  --cd-color-danger: #b91c1c;
+  --cd-radius: 8px;
+  --cd-space-1: 4px;
+  --cd-space-2: 8px;
+  --cd-space-3: 12px;
+  --cd-space-4: 16px;
+  --cd-space-6: 24px;
+  --cd-font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --cd-font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+:root[data-theme="dark"], .dark {
+  --cd-color-bg: #0b0f19;
+  --cd-color-fg: #f3f4f6;
+  --cd-color-muted: #9ca3af;
+  --cd-color-border: #1f2937;
+}
