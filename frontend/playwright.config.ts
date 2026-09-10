@@ -6,6 +6,9 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: "list",
+  // Local runs hit a cold `next dev` compile on the first request, which
+  // routinely exceeds Playwright's 5 s default and reports a false failure.
+  expect: { timeout: process.env.CI ? 10_000 : 20_000 },
   use: {
     baseURL: process.env.E2E_BASE_URL ?? "http://127.0.0.1:3000",
     trace: "on-first-retry",
