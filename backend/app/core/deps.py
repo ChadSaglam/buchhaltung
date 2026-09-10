@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import decode_access_token
+from app.models.tenant import Tenant
 from app.models.user import User
 
 security = HTTPBearer()
@@ -34,6 +35,11 @@ async def get_current_user(
     claimed_tenant = payload.get("tid", payload.get("tenant_id"))
     if claimed_tenant is not None and int(claimed_tenant) != user.tenant_id:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+    # Tenant-level gate (platform contract, mirrors billing): a deactivated
+    # tenant locks every user under it.
+    active = await db.scalar(select(Tenant.is_active).where(Tenant.id == user.tenant_id))
+    if not active:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Tenant deaktiviert")
     request.state.tenant_id = user.tenant_id
     return user
 

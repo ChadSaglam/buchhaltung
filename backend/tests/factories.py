@@ -18,8 +18,13 @@ from app.models.user import User
 from app.services.classifier import make_memory_key
 
 
-async def create_tenant(db: AsyncSession, name: str | None = None) -> Tenant:
-    tenant = Tenant(name=name or f"tenant-{uuid.uuid4().hex[:8]}")
+async def create_tenant(
+    db: AsyncSession,
+    name: str | None = None,
+    slug: str | None = None,
+    is_active: bool = True,
+) -> Tenant:
+    tenant = Tenant(name=name or f"tenant-{uuid.uuid4().hex[:8]}", slug=slug, is_active=is_active)
     db.add(tenant)
     await db.commit()
     await db.refresh(tenant)

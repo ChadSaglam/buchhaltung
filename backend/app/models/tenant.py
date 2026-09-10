@@ -1,8 +1,12 @@
-"""Tenant model — each organization or individual account."""
+"""Tenant model — each organization or individual account.
+
+Columns follow the platform contract (chadev-platform/contracts/tenant.md):
+`slug`, `subscription_plan`, `trial_ends_at`, `is_active` are shared with billing.
+"""
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, String, func
+from sqlalchemy import Boolean, DateTime, String, func, true
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
@@ -13,7 +17,12 @@ class Tenant(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(255))
-    plan: Mapped[str] = mapped_column(String(50), default="free")
+    # Nullable: tenants created before the contract have no slug until backfilled.
+    slug: Mapped[str | None] = mapped_column(String(100), unique=True, nullable=True)
+    # Stays String(50) — the contract says str(20), but shrinking would truncate data.
+    subscription_plan: Mapped[str] = mapped_column(String(50), default="free")
+    trial_ends_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     users: Mapped[list["User"]] = relationship(back_populates="tenant")  # noqa: F821

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 from pydantic import BaseModel, EmailStr
 from pydantic.config import ConfigDict
 
@@ -30,3 +32,6 @@ class UserResponse(BaseModel):
     role: str
     tenant_id: int
     tenant_name: str
+    tenant_slug: str | None = None
+    subscription_plan: str = "free"
+    trial_ends_at: datetime | None = None

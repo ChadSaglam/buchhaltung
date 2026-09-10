@@ -10,7 +10,7 @@ from app.core.security import hash_password, issue_access_token, verify_password
 from app.models.tenant import Tenant
 from app.models.user import User
 from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse, UserResponse
-from app.services.tenant_setup import seed_tenant
+from app.services.tenant_setup import seed_tenant, unique_tenant_slug
 
 router = APIRouter()
 
@@ -21,7 +21,14 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=409, detail="Email already registered")
 
-    tenant = Tenant(name=body.tenant_name)
+    # Platform contract (tenant.md): slug derived from the name; buchhaltung
+    # keeps its free plan on sign-up (billing starts on "trial").
+    tenant = Tenant(
+        name=body.tenant_name,
+        slug=await unique_tenant_slug(db, body.tenant_name),
+        subscription_plan="free",
+        is_active=True,
+    )
     db.add(tenant)
     await db.flush()
 
@@ -63,4 +70,7 @@ async def me(user: User = Depends(get_current_user), db: AsyncSession = Depends(
         role=user.role,
         tenant_id=user.tenant_id,
         tenant_name=tenant.name,
+        tenant_slug=tenant.slug,
+        subscription_plan=tenant.subscription_plan,
+        trial_ends_at=tenant.trial_ends_at,
     )

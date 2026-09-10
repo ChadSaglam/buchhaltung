@@ -1,8 +1,41 @@
-"""Tenant onboarding — seed default Kontenplan and konto_defaults."""
+"""Tenant onboarding — slug derivation, seed default Kontenplan and konto_defaults."""
 
+import re
+import unicodedata
+from uuid import uuid4
+
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.kontenplan import Konto, KontoDefault
+from app.models.tenant import Tenant
+
+SLUG_MAX_LEN = 100
+_SLUG_SUFFIX_LEN = 6
+
+
+def slugify(name: str) -> str:
+    """ASCII slug for a tenant name: `"Müller & Söhne AG"` → `"muller-sohne-ag"`.
+
+    Empty input (or a name with no ASCII letters/digits) yields `"tenant"` so
+    the caller always gets a valid slug.
+    """
+    ascii_name = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode()
+    slug = re.sub(r"[^a-z0-9]+", "-", ascii_name.lower()).strip("-")
+    return slug[:SLUG_MAX_LEN].strip("-") or "tenant"
+
+
+async def unique_tenant_slug(db: AsyncSession, name: str) -> str:
+    """Slug derived from `name`; on collision a short random suffix is appended."""
+    base = slugify(name)
+    slug = base
+    while True:
+        taken = await db.scalar(select(Tenant.id).where(Tenant.slug == slug).limit(1))
+        if taken is None:
+            return slug
+        suffix = uuid4().hex[:_SLUG_SUFFIX_LEN]
+        slug = f"{base[: SLUG_MAX_LEN - _SLUG_SUFFIX_LEN - 1]}-{suffix}"
+
 
 FALLBACK_KONTENPLAN: dict[str, str] = {
     "1000": "Kasse",
