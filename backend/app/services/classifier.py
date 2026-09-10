@@ -18,6 +18,7 @@ from app.models.correction import Correction
 from app.models.kontenplan import KontoDefault
 from app.models.memory import Memory
 from app.models.training_data import TrainingRow
+from app.services.export import round_chf
 
 CONFIDENCE_THRESHOLD = 0.45
 AUTO_RETRAIN_THRESHOLD = 20
@@ -43,11 +44,16 @@ def make_memory_key(text: str) -> str:
 
 
 def calc_mwst(betrag: float, mwst_pct: str) -> float | str:
+    """Tax portion of a gross amount, rounded half-up to the Rappen (see ``round_chf``).
+
+    A negative rate (Umsatzsteuer, e.g. ``"-8.10"``) flips the sign; a
+    negative gross keeps its sign. Returns ``""`` when nothing can be computed.
+    """
     if not mwst_pct or not betrag:
         return ""
     try:
         pct_val = abs(float(mwst_pct))
-        mwst_val = round(float(betrag) * pct_val / (100 + pct_val), 2)
+        mwst_val = float(round_chf(float(betrag) * pct_val / (100 + pct_val)))
         if float(mwst_pct) < 0:
             mwst_val = -mwst_val
         return mwst_val
@@ -225,7 +231,7 @@ class TenantClassifier:
                 kt_haben="3000",
                 mwst_code="V81",
                 mwst_pct="-8.10",
-                mwst_amount=round(-betrag * pct / (100 + pct), 2),
+                mwst_amount=float(round_chf(-betrag * pct / (100 + pct))),
                 confidence=1.0,
                 source="Regeln",
             )

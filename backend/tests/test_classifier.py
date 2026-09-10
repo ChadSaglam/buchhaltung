@@ -97,10 +97,31 @@ def test_memory_key_is_stable_across_dates_and_case():
         (1000.0, "8.1", 74.93),
         (108.10, "-8.10", -8.10),  # negative rate flips sign (Vorsteuer/Umsatzsteuer)
         (-108.10, "8.10", -8.10),  # negative gross keeps sign
+        (-108.10, "-8.10", 8.10),  # both negative -> positive
     ],
 )
 def test_calc_mwst_extracts_tax_from_gross(betrag, pct, expected):
     assert calc_mwst(betrag, pct) == pytest.approx(expected)
+
+
+# B-05: the tax portion is rounded half-up (kaufmännisch), not half-even like ``round()``.
+# Each gross below is chosen so that betrag * pct / (100 + pct) lands exactly on a half Rappen.
+@pytest.mark.parametrize(
+    ("betrag", "pct", "expected"),
+    [
+        (0.125 * 108.1 / 8.1, "8.10", 0.13),  # tax = 0.125 -> 0.13 (round() gives 0.12)
+        (0.135 * 108.1 / 8.1, "8.10", 0.14),  # tax = 0.135 -> 0.14
+        (2.675 * 108.1 / 8.1, "8.10", 2.68),  # tax = 2.675 -> 2.68 (classic float trap)
+        (0.125 * 102.6 / 2.6, "2.60", 0.13),  # reduced rate, same rule
+        (2.675 * 102.6 / 2.6, "2.6", 2.68),
+        (-(0.125 * 108.1 / 8.1), "8.10", -0.13),  # symmetric for negative gross
+        (0.125 * 108.1 / 8.1, "-8.10", -0.13),  # and for a negative rate
+        (-(2.675 * 102.6 / 2.6), "-2.60", 2.68),
+    ],
+)
+def test_calc_mwst_rounds_half_up(betrag, pct, expected):
+    assert calc_mwst(betrag, pct) == expected
+    assert isinstance(calc_mwst(betrag, pct), float)
 
 
 @pytest.mark.parametrize(("betrag", "pct"), [(100.0, ""), (0, "8.10"), (100.0, "abc"), (None, "8.10")])
@@ -190,6 +211,22 @@ async def test_credit_is_booked_as_revenue_before_memory(db_session):
     assert (result.kt_soll, result.kt_haben, result.mwst_code, result.mwst_pct) == ("1020", "3000", "V81", "-8.10")
     assert result.mwst_amount == pytest.approx(-16.20)
     assert result.confidence == 1.0
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("betrag", "expected"),
+    [
+        (0.125 * 108.1 / 8.1, -0.13),  # tax portion 0.125 -> half-up, not round()'s 0.12
+        (2.675 * 108.1 / 8.1, -2.68),
+        (-(0.125 * 108.1 / 8.1), 0.13),  # a negative credit flips back
+    ],
+)
+async def test_credit_shortcut_rounds_half_up(db_session, betrag, expected):
+    tenant = await create_tenant(db_session)
+    clf = await _clf(db_session, tenant.id)
+    result = await clf.classify("Gutschrift", True, betrag)
+    assert result.mwst_amount == expected
 
 
 # ── memory layer ─────────────────────────────────────────────────────────────

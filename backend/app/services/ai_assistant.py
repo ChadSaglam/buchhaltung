@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.models.booking import Booking
 from app.models.kontenplan import Konto
+from app.services.export import round_chf
 from app.services.scanner_config import ScannerConfigService
 
 logger = logging.getLogger(__name__)
@@ -115,7 +116,7 @@ async def build_context(tenant_id: int, db: AsyncSession) -> dict[str, Any]:
         {
             "datum": b.datum,
             "beschreibung": b.beschreibung,
-            "betrag": round(float(b.betrag or 0), 2),
+            "betrag": _chf(b.betrag),
             "soll": b.kt_soll,
             "haben": b.kt_haben,
             "mwst": b.mwst_code,
@@ -138,7 +139,8 @@ async def build_context(tenant_id: int, db: AsyncSession) -> dict[str, Any]:
             m["ausgaben"] += abs(amt)
         m["anzahl"] += 1
     monthly_list = [
-        {"monat": k, **{kk: round(vv, 2) for kk, vv in v.items()}} for k, v in sorted(monthly.items(), reverse=True)
+        {"monat": k, "einnahmen": _chf(v["einnahmen"]), "ausgaben": _chf(v["ausgaben"]), "anzahl": int(v["anzahl"])}
+        for k, v in sorted(monthly.items(), reverse=True)
     ][:6]
 
     # Account plan (Kontenplan) — helps VAT/account questions
@@ -146,11 +148,16 @@ async def build_context(tenant_id: int, db: AsyncSession) -> dict[str, Any]:
     kontenplan = [{"konto": k.konto_nr, "bezeichnung": k.beschreibung} for k in konten]
 
     return {
-        "stats": {"anzahl_buchungen": int(total_count or 0), "total_chf": round(float(total_amount or 0), 2)},
+        "stats": {"anzahl_buchungen": int(total_count or 0), "total_chf": _chf(total_amount)},
         "monatlich": monthly_list,
         "kontenplan": kontenplan[:120],
         "letzte_buchungen": recent,
     }
+
+
+def _chf(value: Any) -> float:
+    """Money for the LLM context: 2 decimals, half-up like every export (B-05)."""
+    return float(round_chf(float(value or 0)))
 
 
 def _month_key(datum: str | None) -> str | None:

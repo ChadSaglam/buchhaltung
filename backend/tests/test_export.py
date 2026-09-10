@@ -110,6 +110,14 @@ def test_fmt_swiss_rounds_half_up_with_carry(value, expected):
         (1234.999, Decimal("1235.00")),
         (0, Decimal("0.00")),
         ("7.777", Decimal("7.78")),
+        (0.135, Decimal("0.14")),
+        (-0.135, Decimal("-0.14")),
+        (-2.675, Decimal("-2.68")),
+        (-1234.999, Decimal("-1235.00")),
+        (-0.004, Decimal("0.00")),  # no negative zero
+        (100 * 8.1 / 108.1, Decimal("7.49")),  # 8.1% tax portion of CHF 100
+        (100 * 2.6 / 102.6, Decimal("2.53")),  # 2.6% tax portion of CHF 100
+        (Decimal("0.005"), Decimal("0.01")),
     ],
 )
 def test_round_chf_half_up(value, expected):
