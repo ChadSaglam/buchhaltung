@@ -26,6 +26,8 @@ services:
       - FROM_EMAIL=${FROM_EMAIL:-}
       - OLLAMA_BASE_URL=http://ollama:11434
       - REDIS_URL=redis://redis:6379/0
+      # Background jobs run in the `worker` service below, not in the API.
+      - RUN_WORKER_IN_API=false
     depends_on:
       db:
         condition: service_healthy
@@ -33,6 +35,33 @@ services:
         condition: service_started
     volumes:
       - model_data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/api/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  worker:
+    # Same image as the API; runs the scheduler + training worker
+    # (`python -m app.worker`). Waits for the API so the entrypoint's
+    # `alembic upgrade head` has already run once and the two never race.
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: ["python", "-m", "app.worker"]
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://chadev:chadev@db:5432/chadev_buchhaltung
+      - SECRET_KEY=${SECRET_KEY}
+      - OLLAMA_BASE_URL=http://ollama:11434
+    depends_on:
+      db:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    volumes:
+      - model_data:/app/data
+    restart: unless-stopped
 
   db:
     image: postgres:16-alpine

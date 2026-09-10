@@ -1,7 +1,7 @@
 """B-04 — the `memory.lookup_key` data migration (4c7e2a91b0d3), Postgres only.
 
 Seeds three memory rows through the legacy key function, one of them a
-collision after re-derivation, runs `alembic upgrade head` / `downgrade -1` /
+collision after re-derivation, runs `alembic upgrade head` / `downgrade <B-04 base>` /
 `upgrade head` in a subprocess (like test_tenant_contract.py) and checks the
 keys and the duplicate rule (highest id wins).
 """
@@ -94,7 +94,7 @@ def test_memory_lookup_keys_are_rederived_and_collisions_collapse():
         # highest id (the most recently learned entry) wins.
         assert memory() == [(1, "e-mail hosting", "6570"), (3, "miete", "6010")]
 
-        alembic("downgrade", "-1")
+        alembic("downgrade", PREVIOUS_REVISION)  # below B-04, whatever sits above it
         assert memory() == [(1, "e-l hosting", "6570"), (3, "miete", "6010")]
 
         alembic("upgrade", "head")

@@ -488,26 +488,19 @@ async def test_log_correction_confirmation_only_updates_memory(db_session):
 
 
 @pytest.mark.asyncio
-async def test_auto_retrain_is_enqueued_every_n_corrections(db_session, monkeypatch):
-    from app.services import training_worker
+async def test_auto_retrain_is_enqueued_every_n_corrections(db_session):
+    from app.models.training_job import TrainingJob
 
     tenant = await create_tenant(db_session)
     clf = await _clf(db_session, tenant.id)
-    enqueued: list[int] = []
-
-    class FakeWorker:
-        async def enqueue_training(self, tenant_id: int) -> bool:
-            enqueued.append(tenant_id)
-            return True
-
-    monkeypatch.setattr(training_worker, "get_training_worker", lambda: FakeWorker())
 
     for i in range(AUTO_RETRAIN_THRESHOLD):
         await clf.log_correction(f"Lieferant {i}", _original(), "6570", "1020")
     await db_session.commit()
 
     assert (await db_session.execute(select(Correction).where(Correction.tenant_id == tenant.id))).scalars().all()
-    assert enqueued == [tenant.id]
+    jobs = (await db_session.execute(select(TrainingJob).where(TrainingJob.tenant_id == tenant.id))).scalars().all()
+    assert [j.status for j in jobs] == ["pending"]
 
 
 # ── review-queue threshold ───────────────────────────────────────────────────

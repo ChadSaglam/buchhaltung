@@ -386,12 +386,11 @@ class TenantClassifier:
         )
         count = await self.correction_count()
         if count > 0 and count % AUTO_RETRAIN_THRESHOLD == 0:
-            from app.services.training_worker import get_training_worker
+            from app.services.training_worker import enqueue_training
 
-            try:
-                await get_training_worker().enqueue_training(self.tenant_id)
-            except RuntimeError:
-                await self.train_from_db()
+            # Queued in this session; the worker (in-API or separate process)
+            # picks it up after the request commits.
+            await enqueue_training(self.db, self.tenant_id)
 
     async def correction_count(self) -> int:
         result = await self.db.execute(select(func.count(Correction.id)).where(Correction.tenant_id == self.tenant_id))

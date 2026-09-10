@@ -104,6 +104,15 @@ than one API replica and local disk is no longer shared — switch to
 `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_REGION`). `boto3` is only imported when
 the S3 backend is selected.
 
+## Background jobs
+
+Classifier retrains are queued in the `training_jobs` table and run by the
+worker (`backend/app/worker.py`). With `RUN_WORKER_IN_API=true` (default,
+`scripts/dev.sh`) it shares the API process; `docker compose` runs it as the
+separate `worker` service (`python -m app.worker`) and starts the API with
+`RUN_WORKER_IN_API=false`. `python -m app.worker --once` runs a single pass
+and exits.
+
 ## Project Structure
 
 ```

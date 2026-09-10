@@ -11,8 +11,7 @@ from app.core.logging_config import configure_logging
 from app.core.rate_limit import enforce_default_limit, limiter
 from app.core.sentry import configure_sentry
 from app.models.base import Base
-from app.services.scheduler import get_scheduler
-from app.services.training_worker import get_training_worker, init_training_worker
+from app.worker import BackgroundJobs
 
 load_dotenv()
 configure_logging(settings.LOG_LEVEL)
@@ -25,11 +24,16 @@ async def lifespan(application: FastAPI):
         # Dev/test convenience only — in production Alembic owns the schema.
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-    init_training_worker(async_session)
-    get_scheduler().start_all()
+    # Scheduler + training worker share the API's event loop only when asked
+    # to (dev default). In compose the `worker` service runs them instead.
+    jobs: BackgroundJobs | None = None
+    if settings.RUN_WORKER_IN_API:
+        jobs = BackgroundJobs(async_session)
+        jobs.start()
+    application.state.background_jobs = jobs
     yield
-    get_scheduler().stop_all()
-    await get_training_worker().shutdown()
+    if jobs is not None:
+        await jobs.stop()
 
 
 application = FastAPI(

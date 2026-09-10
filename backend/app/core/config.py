@@ -98,6 +98,14 @@ class Settings(BaseSettings):
     S3_SECRET_KEY: str = ""
     S3_REGION: str = ""
 
+    # --- Background jobs -------------------------------------------------
+    # Scheduler + training worker run inside the API process by default (dev,
+    # single container). Set to false and start `python -m app.worker` as its
+    # own process/service so long-running jobs never share the API's event loop.
+    RUN_WORKER_IN_API: bool = True
+    # Seconds between two passes over the `training_jobs` queue.
+    WORKER_POLL_INTERVAL: float = 5.0
+
     # --- Derived ---------------------------------------------------------
     @model_validator(mode="after")
     def _resolve_and_validate(self) -> Settings:

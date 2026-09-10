@@ -1,71 +1,116 @@
-"""Per-tenant background training worker.
+"""Per-tenant background training, queued through the ``training_jobs`` table.
 
-In-process async implementation with a stable interface that can later be
-backed by Redis/Celery (V9) without changing callers. Jobs are deduplicated
-per tenant so concurrent correction bursts trigger at most one retrain.
+The API side only inserts a row (:func:`enqueue_training`); the worker side
+(:class:`TrainingWorker`) claims pending rows and retrains one tenant per
+job. Because the queue lives in the database the two halves can run in the
+same process (``RUN_WORKER_IN_API=true``, the dev default) or in separate
+containers (``python -m app.worker``) without changing callers.
+
+Jobs are deduplicated per tenant: while a pending job exists for a tenant a
+second enqueue is a no-op, so a burst of corrections triggers one retrain.
 """
 
 from __future__ import annotations
 
 import asyncio
 import logging
+from datetime import UTC, datetime
 
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.models.training_job import (
+    STATUS_DONE,
+    STATUS_FAILED,
+    STATUS_PENDING,
+    STATUS_RUNNING,
+    TrainingJob,
+)
 from app.services.classifier import TenantClassifier
 
 logger = logging.getLogger(__name__)
 
 
+async def enqueue_training(session: AsyncSession, tenant_id: int) -> bool:
+    """Queue a retrain for ``tenant_id`` in the caller's session (committed with it).
+
+    Returns False when a pending job for the tenant already exists.
+    """
+    stmt = select(TrainingJob.id).where(TrainingJob.tenant_id == tenant_id, TrainingJob.status == STATUS_PENDING)
+    if (await session.execute(stmt.limit(1))).scalar_one_or_none() is not None:
+        logger.info("[TRAIN] tenant=%s already queued, skipped", tenant_id)
+        return False
+    session.add(TrainingJob(tenant_id=tenant_id, status=STATUS_PENDING))
+    await session.flush()
+    return True
+
+
 class TrainingWorker:
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
         self._session_factory = session_factory
-        self._tasks: dict[int, asyncio.Task] = {}
-        self._lock = asyncio.Lock()
 
-    async def enqueue_training(self, tenant_id: int) -> bool:
-        """Schedule a retrain for a tenant. Returns False if one is already running."""
-        async with self._lock:
-            existing = self._tasks.get(tenant_id)
-            if existing and not existing.done():
-                logger.info("[TRAIN] tenant=%s already training, skipped", tenant_id)
-                return False
-            task = asyncio.create_task(self._run(tenant_id))
-            self._tasks[tenant_id] = task
-            return True
+    async def run_once(self) -> int:
+        """Claim and run every pending job. Returns the number of jobs processed."""
+        processed = 0
+        while True:
+            job_id = await self._claim_next()
+            if job_id is None:
+                return processed
+            await self._run(job_id)
+            processed += 1
 
-    async def _run(self, tenant_id: int) -> None:
-        try:
-            async with self._session_factory() as session:
-                clf = TenantClassifier(tenant_id, session)
-                result = await clf.train_from_db()
-                await session.commit()
-                logger.info("[TRAIN] tenant=%s done: %s", tenant_id, result)
-        except Exception:
-            logger.exception("[TRAIN] tenant=%s failed", tenant_id)
-        finally:
-            async with self._lock:
-                self._tasks.pop(tenant_id, None)
+    async def _claim_next(self) -> int | None:
+        async with self._session_factory() as session:
+            stmt = (
+                select(TrainingJob.id)
+                .where(TrainingJob.status == STATUS_PENDING)
+                .order_by(TrainingJob.requested_at, TrainingJob.id)
+                .limit(1)
+            )
+            job_id = (await session.execute(stmt)).scalar_one_or_none()
+            if job_id is None:
+                return None
+            # Conditional update = the claim; a concurrent worker that lost the
+            # race sees rowcount 0 and moves on to the next job.
+            result = await session.execute(
+                update(TrainingJob)
+                .where(TrainingJob.id == job_id, TrainingJob.status == STATUS_PENDING)
+                .values(status=STATUS_RUNNING, started_at=datetime.now(UTC))
+            )
+            await session.commit()
+            return job_id if result.rowcount == 1 else await self._claim_next()
 
-    async def shutdown(self) -> None:
-        async with self._lock:
-            tasks = [t for t in self._tasks.values() if not t.done()]
-        for t in tasks:
-            t.cancel()
-        if tasks:
-            await asyncio.gather(*tasks, return_exceptions=True)
+    async def _run(self, job_id: int) -> None:
+        async with self._session_factory() as session:
+            job = await session.get(TrainingJob, job_id)
+            if job is None:
+                return
+            try:
+                result = await TenantClassifier(job.tenant_id, session).train_from_db()
+                job.status = STATUS_FAILED if "error" in result else STATUS_DONE
+                job.error = result.get("error")
+                logger.info("[TRAIN] tenant=%s job=%s %s: %s", job.tenant_id, job_id, job.status, result)
+            except asyncio.CancelledError:
+                # Shutdown mid-training: hand the job back so the next pass retries it.
+                await session.rollback()
+                await self._release(job_id)
+                raise
+            except Exception as exc:
+                await session.rollback()
+                job = await session.get(TrainingJob, job_id)
+                if job is None:
+                    return
+                job.status = STATUS_FAILED
+                job.error = f"{type(exc).__name__}: {exc}"[:2000]
+                logger.exception("[TRAIN] tenant=%s job=%s failed", job.tenant_id, job_id)
+            job.finished_at = datetime.now(UTC)
+            await session.commit()
 
-
-_worker: TrainingWorker | None = None
-
-
-def init_training_worker(session_factory: async_sessionmaker[AsyncSession]) -> TrainingWorker:
-    global _worker
-    _worker = TrainingWorker(session_factory)
-    return _worker
-
-
-def get_training_worker() -> TrainingWorker:
-    if _worker is None:
-        raise RuntimeError("Training worker not initialized. Call init_training_worker() at startup.")
-    return _worker
+    async def _release(self, job_id: int) -> None:
+        async with self._session_factory() as session:
+            await session.execute(
+                update(TrainingJob)
+                .where(TrainingJob.id == job_id, TrainingJob.status == STATUS_RUNNING)
+                .values(status=STATUS_PENDING, started_at=None)
+            )
+            await session.commit()

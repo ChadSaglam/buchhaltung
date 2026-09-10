@@ -18,14 +18,17 @@ class ScheduledTask:
         self._task = asyncio.create_task(self._loop())
         logger.info("[SCHEDULER] started %s every %s", self.name, self.interval)
 
+    async def run_once(self) -> None:
+        try:
+            await self.coro_factory()
+            logger.info("[SCHEDULER] %s ran at %s", self.name, datetime.now(UTC))
+        except Exception:
+            logger.exception("[SCHEDULER] %s failed", self.name)
+
     async def _loop(self) -> None:
         while True:
             await asyncio.sleep(self.interval.total_seconds())
-            try:
-                await self.coro_factory()
-                logger.info("[SCHEDULER] %s ran at %s", self.name, datetime.now(UTC))
-            except Exception:
-                logger.exception("[SCHEDULER] %s failed", self.name)
+            await self.run_once()
 
     def cancel(self) -> None:
         if self._task and not self._task.done():
@@ -33,7 +36,11 @@ class ScheduledTask:
 
 
 class CronScheduler:
-    """Lightweight in-process cron scheduler. Replace with Celery Beat for V9+ scale."""
+    """Lightweight in-process interval scheduler.
+
+    Runs inside the API (``RUN_WORKER_IN_API=true``) or in the dedicated worker
+    process (``python -m app.worker``) — see ``app/worker.py``.
+    """
 
     def __init__(self) -> None:
         self._tasks: list[ScheduledTask] = []
@@ -41,9 +48,18 @@ class CronScheduler:
     def register(self, name: str, interval: timedelta, coro_factory) -> None:
         self._tasks.append(ScheduledTask(name, interval, coro_factory))
 
+    @property
+    def names(self) -> list[str]:
+        return [t.name for t in self._tasks]
+
     def start_all(self) -> None:
         for t in self._tasks:
             t.start()
+
+    async def run_all_once(self) -> None:
+        """One pass over every registered task, in registration order (``--once``)."""
+        for t in self._tasks:
+            await t.run_once()
 
     def stop_all(self) -> None:
         for t in self._tasks:
