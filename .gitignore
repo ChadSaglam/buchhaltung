@@ -65,3 +65,6 @@ frontend/tsconfig.tsbuildinfo
 
 # Session scratch
 .scratch/
+
+# Local AI-assistant scratch (never commit)
+Claude outputs/
