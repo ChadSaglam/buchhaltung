@@ -127,7 +127,8 @@ frontend/src/
 
 ## 6. Known debt (fix opportunistically, don't let it block you)
 
-- `frontend/src/app/dashboard/modell/page.tsx` is ~950 lines — split it.
+- `settings/page.tsx` (352) and `insights/page.tsx` (320) are the next big pages — target ≤200 lines/file (`modell/` is the reference split).
+- Open work is tracked in `ROADMAP.md` (one running list, R-IDs).
 - A handful of `any` remain in the scanner pages; replace with generated types.
 - No billing/usage-limit enforcement yet (`usage_event` model exists, unused).
 - Frontend has e2e coverage only — no component/unit tests.

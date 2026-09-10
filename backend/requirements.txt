@@ -21,4 +21,6 @@ aiosqlite>=0.20.0
 httpx==0.28.1
 slowapi==0.1.10
 sentry-sdk==2.62.0
+# Only imported when STORAGE_BACKEND=s3 (app/services/storage.py); local storage needs no AWS libs.
+boto3>=1.34
 pytest-env>=1.1.5
