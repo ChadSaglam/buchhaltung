@@ -2,7 +2,7 @@
 
 > One running list. Never duplicated — items move between sections, they don't get re-added.
 > Legend: severity `C`ritical / `H`igh / `M`edium / `L`ow · effort `S` (<1h) / `M` (half day) / `L` (multi-day)
-> IDs: `B-xx` = work item (next free: **B-35**) · `P-xx` = parked (next free: **P-05**)
+> IDs: `B-xx` = work item (next free: **B-36**) · `P-xx` = parked (next free: **P-05**)
 > Cross-product items (SSO, contracts, design tokens) live in `chadev-platform/ROADMAP.md`, not here.
 > Updated: 2026-09-10
 
@@ -13,8 +13,8 @@
 | Owner's words | What it means in this repo | Tracks that deliver it |
 |---|---|---|
 | **more dynamic** | Scan → classify → book without a reload; live review queue; optimistic booking edits | B-14, B-15, B-16 |
-| **more professional** | Money that rounds right in every export, audit trail, branded Steuerberater hand-off | B-01 ✅, B-04 ✅, B-05 ✅, B-17 |
-| **easier to improve** | No god-files, one type source, tests that catch regressions, jobs outside the API process | B-02 ✅, B-03 ✅, B-11 ✅, B-33 ✅, B-08, B-09, B-10 |
+| **more professional** | Money that rounds right in every export, audit trail, branded Steuerberater hand-off | B-01 ✅, B-04 ✅, B-05 ✅, B-09 ✅, B-17 |
+| **easier to improve** | No god-files, one type source, tests that catch regressions, jobs outside the API process | B-02 ✅, B-03 ✅, B-08 ✅, B-10 ✅, B-11 ✅, B-13 ✅, B-33 ✅ |
 | **more user-friendly** | Loading/empty/error states everywhere, keyboard-first review, a11y, onboarding | B-18, B-19, B-20, B-21 |
 
 Rule: every PR names the B-ID it closes and which north-star column it serves.
@@ -23,28 +23,23 @@ Rule: every PR names the B-ID it closes and which north-star column it serves.
 
 ## 🔥 NOW — do these in order (one at a time)
 
-- [ ] **B-08** Move scheduler + training worker out of the API process: `worker.py` becomes its own
-      compose service; API only enqueues. — `M` / `M`
-      `backend/app/worker.py` · `docker-compose.yml`
-- [ ] **B-09** Wire receipt/PDF persistence through `services/storage.py` (today bytes stay in memory
-      and are lost after extraction — no re-processing, no audit copy). Key: `receipts/<tenant>/<uuid>.pdf`. — `M` / `M`
-- [ ] **B-10** `settings/page.tsx` (352) and `insights/page.tsx` (320) → ≤200-line files, same split
-      pattern as `modell/`. — `M` / `M`
+- [ ] **B-14** Review queue: optimistic accept/reject with rollback; keyboard `j/k/a/r`. — `M` / `M`
+- [ ] **B-16** Dashboard KPIs auto-refresh (SWR `refreshInterval`), no reload. — `L` / `S`
+- [ ] **B-18** Loading / empty / error states audit — every dashboard page has all three. — `M` / `M`
 
 ---
 
 ## ⏭ NEXT — "easier to improve" foundation
 
-- [ ] **B-13** `/api/health` returns version, db, migration_head, storage backend (trim in production). — `L` / `S`
+- [ ] **B-15** Scan progress streamed (NDJSON already used by AI chat) instead of spinner. — `M` / `M`
+- [ ] **B-34** `classifier_models.model_sha256` column: record the digest of the packed model at training
+      time and check it in `model_blob.unpack()` on top of the HMAC (detects silent corruption, lets an
+      operator audit which model is live). Also: a "Modell neu trainieren" hint in the UI when the API
+      logs an unsigned blob. — `L` / `S`
 
 ---
 
 ## 📋 LATER — by track
-
-### Dynamic
-- [ ] **B-14** Review queue: optimistic accept/reject with rollback; keyboard `j/k/a/r`. — `M` / `M`
-- [ ] **B-15** Scan progress streamed (NDJSON already used by AI chat) instead of spinner. — `M` / `M`
-- [ ] **B-16** Dashboard KPIs auto-refresh (SWR `refreshInterval`), no reload. — `L` / `S`
 
 ### Professional
 - [ ] **B-17** Steuerberater export pack: Banana TSV + PDF summary + receipts zip, one click. — `M` / `L`
@@ -52,16 +47,11 @@ Rule: every PR names the B-ID it closes and which north-star column it serves.
 - [ ] **B-23** Usage limits enforced from `usage_event` (plan free/pro). — `M` / `M`
 
 ### User-friendly
-- [ ] **B-18** Loading / empty / error states audit — every dashboard page has all three. — `M` / `M`
 - [ ] **B-19** a11y: focus trap in dialogs, ARIA on DropZone/DataTable, `Esc` closes. — `M` / `M`
 - [ ] **B-20** Onboarding: first scan guided, sample receipt, Kontenplan import wizard. — `M` / `M`
 - [ ] **B-21** Replace remaining `err: any` in scanner/modell hooks with generated types. — `L` / `S`
 
 ### Security & data
-- [ ] **B-34** `classifier_models.model_sha256` column: record the digest of the packed model at training
-      time and check it in `model_blob.unpack()` on top of the HMAC (detects silent corruption, lets an
-      operator audit which model is live). Also: a "Modell neu trainieren" hint in the UI when the API
-      logs an unsigned blob. — `L` / `S`
 - [ ] **B-24** Postgres RLS (`SET LOCAL app.tenant_id`) as defence in depth — after platform contract. — `H` / `L`
 - [ ] **B-25** Backup/restore script + restore drill (models + DB). — `H` / `M`
 
@@ -85,6 +75,31 @@ Rule: every PR names the B-ID it closes and which north-star column it serves.
 
 ## ✅ Done
 
+- **B-35** ✅ 2026-09-10 — Scanner-config first-call race: the dashboard fires several `/api/scanner/*` calls at
+  once and every one tried to insert the tenant's `scanner_configs` row. `get_or_create` now tolerates the lost
+  `IntegrityError` and re-reads the winner (83bb0b2, `ScannerService`), and the review-threshold service wraps its
+  insert in a savepoint so a lost race cannot poison the request session (c1c2b01, `services/scanner_config.py`).
+  Both paths regression-tested in `test_scanner_pipeline.py`.
+- **B-13** ✅ 2026-09-10 — `GET /api/health` → `{status, version, database, migration_head, storage, worker}`:
+  `database` ok/error (status `degraded` on error), `migration_head` = revision applied in the DB (null on a
+  create_all schema), `storage` = backend name, `worker` = `in-api` | `separate`. `ENVIRONMENT=production` trims
+  the body to `status` + `version`. Tests 303 → **307** (PG).
+- **B-10** ✅ 2026-09-10 — `settings/page.tsx` 352 → 66 and `insights/page.tsx` 320 → 53 lines, split into
+  `hooks/ components/ helpers.ts types.ts` like `modell/`; largest new file 82 lines. No markup or copy change;
+  the e2e Insights step still finds the search input and table.
+- **B-09** ✅ 2026-09-10 — Every upload to `/api/scanner/extract` and `/api/pdf/parse` is written through
+  `services/storage.py` as `receipts/<tenant_id>/<uuid>.<ext>` *before* extraction (`services/receipts.py`) and
+  returned as `source_key`. Migration `55e64308d75f` adds nullable `bookings.source_key`; `POST /api/bookings/`
+  accepts it only for the caller's own tenant (400), `GET /api/bookings/{id}/source` streams the file (404
+  cross-tenant, keyless, or vanished — isolation suite). Kontoauszug passes the key through on save. Tests run
+  LocalStorage under `tmp_path` (autouse fixture). Tests 290 → **303** (PG).
+- **B-08** ✅ 2026-09-10 — `python -m app.worker` is a real entrypoint (loops, `--once`); the API lifespan starts
+  the same jobs in-process only with `RUN_WORKER_IN_API=true` (default). The training queue moved from process
+  memory to `training_jobs` (migration `52eb7a4363f0`): `log_correction` enqueues in the request session, the
+  worker claims by conditional update, dedups per tenant, hands a job back on shutdown. Compose: `worker` service
+  (same image, restart unless-stopped, waits for the api healthcheck), api runs `RUN_WORKER_IN_API=false`.
+  Found on the way: the B-04 migration test used `downgrade -1`, which broke as soon as a newer migration
+  existed — now targets its base revision. Tests 282 → **290** (PG; 279 → 287 SQLite).
 - **B-33** ✅ 2026-09-10 — Playwright happy path against the real API: `playwright.config.ts` starts uvicorn on
   8100 with a throw-away SQLite DB + the frontend with `NEXT_PUBLIC_API_URL`; `e2e/happy-path.spec.ts` registers,
   opens Kontenplan, books via the API with the UI's token, finds the row in Insights, exports CSV. CI frontend job
@@ -135,8 +150,8 @@ Rule: every PR names the B-ID it closes and which north-star column it serves.
 | 0.5 Risk fixes before platform work | ✅ B-00…B-03 (branch `feat/phase0-risks`) |
 | 1 Platform contract | 1.2 ✅ B-31 · 1.4 ✅ B-26 · 1.6 ✅ tokens imported |
 | 2 Security | ✅ B-06, B-07, B-32 · open: B-24, B-25, B-34 |
-| 3 Reliability | ✅ B-04, B-05, B-11, B-33 · open: B-08 |
-| 4 Polish | open: B-09, B-13, B-22 |
-| 5 UX | open: B-14…B-21 |
+| 3 Reliability | ✅ B-04, B-05, B-08, B-11, B-33, B-35 |
+| 4 Polish | ✅ B-09, B-13 · open: B-22 |
+| 5 UX | NOW: B-14, B-16, B-18 · open: B-15, B-17, B-19, B-20, B-21 |
 | 6 Together | see platform |
 | 7 DX | ✅ B-12 · open: B-29, B-30 |
