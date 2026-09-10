@@ -1,13 +1,7 @@
 import { create } from 'zustand';
+import type { UserResponse } from '@/lib/api-schema';
 
-interface User {
-  id: number;
-  email: string;
-  display_name: string;
-  role: string;
-  tenant_id: number;
-  tenant_name: string;
-}
+type User = UserResponse;
 
 interface AuthState {
   user: User | null;

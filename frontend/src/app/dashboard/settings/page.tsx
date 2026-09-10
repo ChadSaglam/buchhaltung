@@ -4,20 +4,14 @@ import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { Save, User, Building2, Bell, Palette, Shield, SlidersHorizontal, Check, Settings, Sun, Moon, Monitor, Languages } from "lucide-react";
 import { getMe, getScannerConfig, updateScannerConfig } from "@/lib/api";
+import type { UserResponse } from "@/lib/api-schema";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page_header";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { useThemeStore, ACCENTS, type Theme, type Accent } from "@/lib/theme-store";
 
-interface UserInfo {
-  id: number;
-  email: string;
-  display_name: string;
-  role: string;
-  tenant_id: number;
-  tenant_name: string;
-}
+type UserInfo = UserResponse;
 
 type TabId = "profile" | "company" | "notifications" | "appearance" | "security" | "review";
 

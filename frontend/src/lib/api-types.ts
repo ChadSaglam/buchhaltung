@@ -1220,10 +1220,19 @@ export interface components {
             id: number;
             /** Role */
             role: string;
+            /**
+             * Subscription Plan
+             * @default free
+             */
+            subscription_plan: string;
             /** Tenant Id */
             tenant_id: number;
             /** Tenant Name */
             tenant_name: string;
+            /** Tenant Slug */
+            tenant_slug?: string | null;
+            /** Trial Ends At */
+            trial_ends_at?: string | null;
         };
         /** ValidationError */
         ValidationError: {
