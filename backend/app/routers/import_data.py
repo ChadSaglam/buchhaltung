@@ -26,14 +26,16 @@ def parse_banana_xls(file_bytes: bytes, filename: str) -> list[dict]:
     header = file_bytes[:20]
 
     if header.startswith(b"<?xml") or header.startswith(b"\xef\xbb\xbf<?xml"):
-        import xml.etree.ElementTree as ET
+        # Uploaded, untrusted XML: defusedxml refuses entity expansion / external
+        # entities (billion-laughs, XXE) that the stdlib parser would follow (B-32).
+        from defusedxml.ElementTree import fromstring as parse_xml
 
         raw = file_bytes.decode("utf-8", errors="replace")
         if raw.startswith("\ufeff"):
             raw = raw[1:]
 
         # Parse with namespace awareness instead of stripping
-        root = ET.fromstring(raw)
+        root = parse_xml(raw)
 
         # Find the Worksheet/Table
         ns = "urn:schemas-microsoft-com:spreadsheet"
@@ -43,7 +45,7 @@ def parse_banana_xls(file_bytes: bytes, filename: str) -> list[dict]:
             raw_clean = re.sub(r"<(/?)(\w+):", r"<\1", raw)
             raw_clean = re.sub(r'\s+xmlns(:[^=]*)?\s*=\s*"[^"]*"', "", raw_clean)
             raw_clean = re.sub(r"\s+\w+:(\w+)=", r" \1=", raw_clean)
-            root = ET.fromstring(raw_clean)
+            root = parse_xml(raw_clean)
             table = root.find(".//Table")
             ns = ""
 

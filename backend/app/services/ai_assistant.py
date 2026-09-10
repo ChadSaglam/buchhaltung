@@ -64,8 +64,8 @@ async def resolve_ollama(tenant_id: int, db: AsyncSession) -> tuple[str, str]:
     # Fetch installed models once (used for validation + auto-detect).
     installed: list[str] = []
     try:
-        async with httpx.AsyncClient(timeout=10) as client:
-            resp = await client.get(f"{base_url}/api/tags")
+        async with httpx.AsyncClient(timeout=settings.OLLAMA_PROBE_TIMEOUT) as client:
+            resp = await client.get(f"{base_url}/api/tags", timeout=settings.OLLAMA_PROBE_TIMEOUT)
             if resp.status_code == 200:
                 installed = [m.get("name", "") for m in resp.json().get("models", []) if m.get("name")]
     except Exception as exc:
@@ -201,8 +201,8 @@ async def stream_chat(tenant_id: int, db: AsyncSession, messages: list[dict]) ->
     emitted_any = False
     try:
         async with (
-            httpx.AsyncClient(timeout=httpx.Timeout(300.0, connect=8.0)) as client,
-            client.stream("POST", f"{base_url}/api/chat", json=payload) as resp,
+            httpx.AsyncClient(timeout=settings.OLLAMA_TIMEOUT) as client,
+            client.stream("POST", f"{base_url}/api/chat", json=payload, timeout=settings.OLLAMA_TIMEOUT) as resp,
         ):
             if resp.status_code != 200:
                 body = (await resp.aread()).decode("utf-8", "ignore")[:300]
@@ -276,8 +276,8 @@ async def summarize(tenant_id: int, db: AsyncSession) -> dict:
         "options": {"temperature": 0.2},
     }
     try:
-        async with httpx.AsyncClient(timeout=httpx.Timeout(90.0, connect=8.0)) as client:
-            resp = await client.post(f"{base_url}/api/chat", json=payload)
+        async with httpx.AsyncClient(timeout=settings.OLLAMA_TIMEOUT) as client:
+            resp = await client.post(f"{base_url}/api/chat", json=payload, timeout=settings.OLLAMA_TIMEOUT)
             if resp.status_code != 200:
                 return {"error": f"Ollama HTTP {resp.status_code}", "model": model}
             content = resp.json().get("message", {}).get("content", "").strip()

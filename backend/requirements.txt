@@ -17,6 +17,8 @@ python-dotenv>=1.0.1
 email-validator>=2.1.0
 pdfplumber>=0.11.0
 xlrd>=2.0.1
+# Safe parser for user-uploaded Banana XML exports (entity expansion / XXE) — routers/import_data.py.
+defusedxml>=0.7.1
 aiosqlite>=0.20.0
 httpx==0.28.1
 slowapi==0.1.10

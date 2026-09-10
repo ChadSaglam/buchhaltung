@@ -134,7 +134,7 @@ async def _check_vision_capability(client: httpx.AsyncClient, base_url: str, nam
     if _is_known_vision(name):
         return name
     try:
-        r = await client.post(f"{base_url}/api/show", json={"name": name}, timeout=10)
+        r = await client.post(f"{base_url}/api/show", json={"name": name}, timeout=settings.OLLAMA_PROBE_TIMEOUT)
         if r.status_code == 200:
             data = r.json()
             caps = data.get("capabilities", [])
@@ -150,8 +150,8 @@ async def _check_vision_capability(client: httpx.AsyncClient, base_url: str, nam
 
 async def _check_ollama_status_impl(base_url: str) -> dict:
     try:
-        async with httpx.AsyncClient(timeout=5) as client:
-            resp = await client.get(f"{base_url}/api/tags")
+        async with httpx.AsyncClient(timeout=settings.OLLAMA_PROBE_TIMEOUT) as client:
+            resp = await client.get(f"{base_url}/api/tags", timeout=settings.OLLAMA_PROBE_TIMEOUT)
             if resp.status_code != 200:
                 return {"ok": False, "error": "Ollama antwortet nicht."}
             models = resp.json().get("models", [])
@@ -160,7 +160,7 @@ async def _check_ollama_status_impl(base_url: str) -> dict:
 
             model_names = [m["name"] for m in models]
 
-            async with httpx.AsyncClient(timeout=10) as vision_client:
+            async with httpx.AsyncClient(timeout=settings.OLLAMA_PROBE_TIMEOUT) as vision_client:
                 tasks = [_check_vision_capability(vision_client, base_url, n) for n in model_names]
                 results = await asyncio.gather(*tasks)
 
@@ -307,7 +307,7 @@ async def extract_invoice_async(image_bytes: bytes, model: str) -> dict | None:
     img_b64 = base64.b64encode(image_bytes).decode("utf-8")
     is_cloud = _is_cloud_model(model)
     formats = ["plain"] if is_cloud else ["schema", "plain"]
-    timeout = 60 if is_cloud else 120
+    timeout = settings.OLLAMA_TIMEOUT if is_cloud else settings.OLLAMA_VISION_TIMEOUT
 
     async with httpx.AsyncClient(timeout=timeout) as client:
         for use_format in formats:
@@ -322,7 +322,7 @@ async def extract_invoice_async(image_bytes: bytes, model: str) -> dict | None:
                 payload["format"] = INVOICE_SCHEMA
             try:
                 logger.info(f"[VISION] {model} attempting ({use_format}, timeout={timeout}s)")
-                resp = await client.post(f"{base_url}/api/chat", json=payload)
+                resp = await client.post(f"{base_url}/api/chat", json=payload, timeout=timeout)
                 if resp.status_code != 200:
                     logger.warning(f"[VISION] {model} returned {resp.status_code}: {resp.text[:200]}")
                     continue
@@ -360,7 +360,7 @@ def extract_invoice(image_bytes: bytes, model: str) -> dict | None:
 
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
                 future = pool.submit(asyncio.run, extract_invoice_async(image_bytes, model))
-                return future.result(timeout=130)
+                return future.result(timeout=settings.OLLAMA_VISION_TIMEOUT + 10)
         return loop.run_until_complete(extract_invoice_async(image_bytes, model))
     except Exception as e:
         logger.warning(f"[VISION] sync shim error: {e}")

@@ -75,6 +75,13 @@ class Settings(BaseSettings):
     # a suitable chat model from Ollama's installed models (vision models are
     # excluded, since the assistant is text-only).
     OLLAMA_CHAT_MODEL: str = ""
+    # Per-request timeouts (seconds) for the Ollama HTTP calls. Text chat/summary
+    # use OLLAMA_TIMEOUT (for the streamed chat it bounds the gap between two
+    # chunks); vision extraction on a local model gets OLLAMA_VISION_TIMEOUT.
+    OLLAMA_TIMEOUT: float = 60.0
+    OLLAMA_VISION_TIMEOUT: float = 120.0
+    # Short probes (/api/tags, /api/show) that only decide which model to use.
+    OLLAMA_PROBE_TIMEOUT: float = 10.0
 
     FRONTEND_URL: str = "http://localhost:3000"
     SENTRY_DSN: str | None = None

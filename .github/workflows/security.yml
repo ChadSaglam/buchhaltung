@@ -176,13 +176,11 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - run: pip install bandit[toml]==1.7.10
-      # Advisory until the known medium findings are worked off (tracked in
-      # ROADMAP.md): ElementTree on uploaded XML (import_data.py), pickle for
-      # model bundles (classifier.py), httpx calls without a timeout
-      # (ai_assistant.py). Flip to blocking once those are closed.
+      # Blocking at medium and above (B-32). The one accepted finding is the
+      # pickle.loads in services/model_blob.py, which only runs after the
+      # blob's HMAC was verified — annotated with `# nosec B301` in place.
       - name: Bandit
         run: bandit -r backend/app -ll
-        continue-on-error: true
       - name: Semgrep
         uses: semgrep/semgrep-action@v1
         with:
