@@ -2,7 +2,7 @@
 
 > One running list. Never duplicated — items move between sections, they don't get re-added.
 > Legend: severity `C`ritical / `H`igh / `M`edium / `L`ow · effort `S` (<1h) / `M` (half day) / `L` (multi-day)
-> IDs: `B-xx` = work item (next free: **B-33**) · `P-xx` = parked (next free: **P-05**)
+> IDs: `B-xx` = work item (next free: **B-35**) · `P-xx` = parked (next free: **P-05**)
 > Cross-product items (SSO, contracts, design tokens) live in `chadev-platform/ROADMAP.md`, not here.
 > Updated: 2026-09-10
 
@@ -13,8 +13,8 @@
 | Owner's words | What it means in this repo | Tracks that deliver it |
 |---|---|---|
 | **more dynamic** | Scan → classify → book without a reload; live review queue; optimistic booking edits | B-14, B-15, B-16 |
-| **more professional** | Money that rounds right in every export, audit trail, branded Steuerberater hand-off | B-01 ✅, B-04, B-05, B-17 |
-| **easier to improve** | No god-files, one type source, tests that catch regressions, jobs outside the API process | B-02 ✅, B-03 ✅, B-08, B-09, B-10 |
+| **more professional** | Money that rounds right in every export, audit trail, branded Steuerberater hand-off | B-01 ✅, B-04 ✅, B-05 ✅, B-17 |
+| **easier to improve** | No god-files, one type source, tests that catch regressions, jobs outside the API process | B-02 ✅, B-03 ✅, B-11 ✅, B-33 ✅, B-08, B-09, B-10 |
 | **more user-friendly** | Loading/empty/error states everywhere, keyboard-first review, a11y, onboarding | B-18, B-19, B-20, B-21 |
 
 Rule: every PR names the B-ID it closes and which north-star column it serves.
@@ -23,18 +23,6 @@ Rule: every PR names the B-ID it closes and which north-star column it serves.
 
 ## 🔥 NOW — do these in order (one at a time)
 
-- [ ] **B-04** `classifier.preprocess()` strips month abbreviations without word boundaries:
-      `"E-Mail" → "e-l"`, `"SEPARAT" → "arat"`. Degrades ML features and collides memory keys.
-      Needs a data migration for `memory.lookup_key` (re-derive keys), not just a code fix. — `M` / `M`
-      `backend/app/services/classifier.py:29-36` · test exists in `test_classifier.py` (xfail it first)
-- [ ] **B-05** `calc_mwst` and the credit shortcut use Python `round()` (half-even). Swiss commercial
-      rounding is half-up; align with `export.round_chf()` and extend the test matrix. — `M` / `S`
-      `backend/app/services/export.py` · `test_export.py`
-
----
-
-## ⏭ NEXT — "easier to improve" foundation
-
 - [ ] **B-08** Move scheduler + training worker out of the API process: `worker.py` becomes its own
       compose service; API only enqueues. — `M` / `M`
       `backend/app/worker.py` · `docker-compose.yml`
@@ -42,7 +30,11 @@ Rule: every PR names the B-ID it closes and which north-star column it serves.
       and are lost after extraction — no re-processing, no audit copy). Key: `receipts/<tenant>/<uuid>.pdf`. — `M` / `M`
 - [ ] **B-10** `settings/page.tsx` (352) and `insights/page.tsx` (320) → ≤200-line files, same split
       pattern as `modell/`. — `M` / `M`
-- [ ] **B-11** Vitest for pure helpers: `booking-analytics`, `lib/errors.ts`, `modell/helpers.ts`. — `M` / `M`
+
+---
+
+## ⏭ NEXT — "easier to improve" foundation
+
 - [ ] **B-13** `/api/health` returns version, db, migration_head, storage backend (trim in production). — `L` / `S`
 
 ---
@@ -66,9 +58,10 @@ Rule: every PR names the B-ID it closes and which north-star column it serves.
 - [ ] **B-21** Replace remaining `err: any` in scanner/modell hooks with generated types. — `L` / `S`
 
 ### Security & data
-- [ ] **B-32** Work off the bandit medium findings so `security.yml` can make it blocking: `defusedxml`
-      for uploaded XML (`routers/import_data.py`), timeouts on the Ollama `httpx` calls (`services/ai_assistant.py`),
-      pickle model bundles only from trusted storage (`services/classifier.py`). — `M` / `S`
+- [ ] **B-34** `classifier_models.model_sha256` column: record the digest of the packed model at training
+      time and check it in `model_blob.unpack()` on top of the HMAC (detects silent corruption, lets an
+      operator audit which model is live). Also: a "Modell neu trainieren" hint in the UI when the API
+      logs an unsigned blob. — `L` / `S`
 - [ ] **B-24** Postgres RLS (`SET LOCAL app.tenant_id`) as defence in depth — after platform contract. — `H` / `L`
 - [ ] **B-25** Backup/restore script + restore drill (models + DB). — `H` / `M`
 
@@ -92,6 +85,23 @@ Rule: every PR names the B-ID it closes and which north-star column it serves.
 
 ## ✅ Done
 
+- **B-33** ✅ 2026-09-10 — Playwright happy path against the real API: `playwright.config.ts` starts uvicorn on
+  8100 with a throw-away SQLite DB + the frontend with `NEXT_PUBLIC_API_URL`; `e2e/happy-path.spec.ts` registers,
+  opens Kontenplan, books via the API with the UI's token, finds the row in Insights, exports CSV. CI frontend job
+  installs the backend for the server. Note: there is no manual booking form in the UI.
+- **B-11** ✅ 2026-09-10 — vitest (`npm run test`, in CI and `make test`): 58 tests for `lib/errors.ts`,
+  `modell/helpers.ts`, `lib/booking-analytics.ts`. Pure helpers only; pages stay on Playwright.
+- **B-32** ✅ 2026-09-10 — bandit `-ll` blocking. `defusedxml` for uploaded Banana XML; every Ollama `httpx` call has
+  a settings timeout (`OLLAMA_TIMEOUT` 60 s, `OLLAMA_VISION_TIMEOUT` 120 s, `OLLAMA_PROBE_TIMEOUT` 10 s). Found on the
+  way: `POST /api/classify/upload` stored any `.pkl` that `_load_model()` later unpickled (RCE for a logged-in user).
+  Model blobs are now HMAC-SHA256 signed with `SECRET_KEY` (`services/model_blob.py`); unsigned blobs are rejected on
+  upload and ignored on load (retrain once). No schema change; sha256 column → B-34. Tests 253 → **277** (SQLite).
+- **B-04** ✅ 2026-09-10 — `preprocess()` strips month tokens as whole words (`\b`, optional trailing dot; `"mr"` →
+  `"mär|mrz"`). Data migration `4c7e2a91b0d3` re-derives every `memory.lookup_key` (source text recovered from the
+  tenant's latest matching `corrections` row, else the new function on the stored key), collapses duplicates to the
+  highest id, reversible with the frozen legacy function inside the migration. Postgres migration test seeds a collision.
+- **B-05** ✅ 2026-09-10 — `calc_mwst`, the credit shortcut and the AI-context money fields go through `round_chf()`
+  (half-up). Matrix: 0.125 / 0.135 / 2.675 at 8.1 % and 2.6 %, negative amounts and rates. Tests 233 → **254** (PG).
 - **B-12** ✅ 2026-09-10 — `.github/workflows/security.yml`: gitleaks, pip-audit (blocking, ecdsa/HS256 ignore),
   npm audit high with registry-retry, Trivy on the backend image, bandit/semgrep advisory. npm audit fix bumped
   5 transitive dev deps; both audits clean. Bandit mediums → B-32.
@@ -124,8 +134,8 @@ Rule: every PR names the B-ID it closes and which north-star column it serves.
 | 0 Recon | ✅ |
 | 0.5 Risk fixes before platform work | ✅ B-00…B-03 (branch `feat/phase0-risks`) |
 | 1 Platform contract | 1.2 ✅ B-31 · 1.4 ✅ B-26 · 1.6 ✅ tokens imported |
-| 2 Security | ✅ B-06, B-07 · open: B-24, B-25, B-32 |
-| 3 Reliability | open: B-04, B-05, B-08, B-11 |
+| 2 Security | ✅ B-06, B-07, B-32 · open: B-24, B-25, B-34 |
+| 3 Reliability | ✅ B-04, B-05, B-11, B-33 · open: B-08 |
 | 4 Polish | open: B-09, B-13, B-22 |
 | 5 UX | open: B-14…B-21 |
 | 6 Together | see platform |
