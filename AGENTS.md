@@ -131,4 +131,4 @@ frontend/src/
 - Open work is tracked in `ROADMAP.md` (one running list, R-IDs).
 - A handful of `any` remain in the scanner pages; replace with generated types.
 - No billing/usage-limit enforcement yet (`usage_event` model exists, unused).
-- Frontend has e2e coverage only — no component/unit tests.
+- Frontend unit tests (vitest) cover pure helpers only; components and pages are covered by Playwright e2e.

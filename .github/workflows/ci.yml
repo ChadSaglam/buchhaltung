@@ -109,7 +109,7 @@ jobs:
           rm -f "$NEW"
 
   frontend:
-    name: Frontend (lint · types · build · e2e)
+    name: Frontend (lint · types · unit · build · e2e)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -126,6 +126,8 @@ jobs:
         run: npm run lint
       - name: Typecheck (tsc)
         run: npm run typecheck
+      - name: Unit tests (vitest)
+        run: npm run test
       - name: Build
         run: npm run build
       - name: Install Playwright browsers

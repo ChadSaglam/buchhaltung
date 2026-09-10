@@ -7,7 +7,7 @@ BIN := backend/venv/bin
 FRONTEND_PORT ?= 3000
 BACKEND_PORT  ?= 8000
 
-.PHONY: help setup doctor dev-deps e2e-deps hooks dev stop ports test test-backend test-e2e lint fix typecheck check api-types migrate migration ai-context clean docker
+.PHONY: help setup doctor dev-deps e2e-deps hooks dev stop ports test test-backend test-unit test-e2e lint fix typecheck check api-types migrate migration ai-context clean docker
 
 help: ## Show this help
 	@grep -hE '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -89,7 +89,10 @@ stop: ## Free the dev ports (kills whatever is on 8000 and 3000)
 	done; \
 	sleep 1; $(MAKE) --no-print-directory ports
 
-test: test-backend test-e2e ## Backend tests + frontend e2e
+test: test-backend test-unit test-e2e ## Backend tests + frontend unit + e2e
+
+test-unit: ## Frontend unit tests only (vitest, pure helpers)
+	cd frontend && npm run test
 
 test-e2e: e2e-deps ## Frontend end-to-end tests only
 	cd frontend && npx playwright test

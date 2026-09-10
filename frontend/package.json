@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "test": "vitest run",
     "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit",
     "gen:api": "bash ../scripts/gen-api-types.sh"
@@ -37,6 +38,7 @@
     "openapi-typescript": "^7.5.0",
     "tailwindcss": "^4.3.2",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.21.0"
+    "typescript-eslint": "^8.21.0",
+    "vitest": "^4.1.11"
   }
 }
