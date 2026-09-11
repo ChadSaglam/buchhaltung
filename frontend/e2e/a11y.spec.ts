@@ -10,8 +10,26 @@ import AxeBuilder from "@axe-core/playwright";
 
 const BLOCKING = new Set(["serious", "critical"]);
 
-/** Motion fades pages in (inline `opacity` styles). Audit the settled DOM, not a frame mid-fade. */
+/**
+ * Motion fades pages in (inline `opacity` styles). `MotionConfig reducedMotion="user"`
+ * + `emulateMedia({ reducedMotion: "reduce" })` make those instant; this is the
+ * belt-and-braces wait for anything that still animates, and it requires the
+ * DOM to hold still for two consecutive frames rather than trusting one sample.
+ */
 async function waitForEnterAnimations(page: Page) {
+  // Data-driven cards (GettingStarted, stats) mount after their fetch and fade in
+  // on their own — let the network go quiet before sampling the DOM.
+  await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+  await page.waitForFunction(
+    () =>
+      new Promise<boolean>((resolve) => {
+        const snap = () => Array.from(document.querySelectorAll<HTMLElement>("[style]")).map((el) => el.style.cssText).join("|");
+        const a = snap();
+        setTimeout(() => resolve(a === snap()), 400);
+      }),
+    undefined,
+    { timeout: 5_000 },
+  ).catch(() => {});
   await page
     .waitForFunction(
       () =>

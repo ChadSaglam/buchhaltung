@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { MotionConfig } from "motion/react";
 import { useThemeStore } from "@/lib/theme-store";
 
 /**
@@ -48,5 +49,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     hydrate();
   }, [hydrate]);
-  return <>{children}</>;
+  // B-19: honour `prefers-reduced-motion` for every motion/react animation
+  // (the library defaults to "never"). Also what lets the axe gate audit a
+  // settled page instead of a frame mid fade-in.
+  return <MotionConfig reducedMotion="user">{children}</MotionConfig>;
 }
