@@ -105,6 +105,42 @@ than one API replica and local disk is no longer shared — switch to
 `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_REGION`). `boto3` is only imported when
 the S3 backend is selected.
 
+## Platform (SSO + events)
+
+buchhaltung is product 2 of 2 on the ChaDev platform; billing is the identity
+issuer (`chadev-platform/docs/ADR-001-sso.md`). Two server-side contracts are
+implemented here, both gated on one shared secret — unset, neither endpoint
+exists (404):
+
+| Var | Where | Purpose |
+|---|---|---|
+| `PLATFORM_SHARED_SECRET` | `backend/.env` | Verifies billing's SSO token and the HMAC on inbound events. Same value as in billing's `.env`; **not** the `JWT_SECRET`. Never logged. |
+| `BILLING_URL` | `backend/.env` | Billing's base URL (app-switcher target, e.g. `http://localhost:5050`). |
+| `NEXT_PUBLIC_BILLING_URL` | `frontend/.env.local` | Same URL for the browser — Next.js only inlines `NEXT_PUBLIC_*`. Empty = no "Apps" menu, no dead link. |
+
+- **SSO** (`contracts/sso.md`, B-36): billing sends the browser to `/sso#token=…`;
+  the page posts the token to `POST /api/auth/sso` and stores the session
+  exactly like `/login`. The token is HS256 with the shared secret, `iss=billing`,
+  `aud=buchhaltung`, `type=sso`, ≤ 120 s, single-use (`sso_nonces` table).
+  Errors: 401 `sso_invalid` / `sso_expired` / `sso_replayed`. The first hop
+  mirrors the billing tenant (`tenants.platform_tenant_id`, Kontenplan seeded)
+  and provisions a *shadow user* (`users.platform_user_id`,
+  `auth_source='platform'`, no usable password — `/api/auth/login` answers 403
+  `platform_user`). Later hops refresh tenant name/plan/trial and the user's
+  email/name/role. Roles pass through unchanged on the shared ladder
+  (`owner › admin › editor › viewer`; unknown → `viewer`). A local user of the
+  *same* mirrored tenant with that email is linked (keeps password and role);
+  one in another tenant blocks the hop with 409 `email_taken_locally`.
+- **Events** (`contracts/events.md`, B-37): `POST /api/platform/events`, HMAC-SHA256
+  over `"<timestamp>.<raw body>"` in `X-Platform-Signature: sha256=<hex>`,
+  `X-Platform-Timestamp` within ±5 min. `invoice.paid` v1 books
+  `1020 Bank an 1100 Debitoren`, amount from the decimal string (half-up,
+  `round_chf`), date `paid_at`, text `Zahlung <number> <client>`,
+  `source=billing`, idempotent on `source_key=billing:invoice:<id>:paid`
+  (202 accepted / 200 duplicate). 401 `bad_signature` / `stale_timestamp`,
+  400 `unsupported_version`, 404 `unknown_tenant` (tenant never did SSO —
+  billing treats it as final).
+
 ## Background jobs
 
 Classifier retrains are queued in the `training_jobs` table and run by the
@@ -160,6 +196,8 @@ frontend/
 | `/api/scanner/vision-status` | GET | Vision model availability |
 | `/api/stats/learning` | GET | Learning progress statistics |
 | `/api/pdf/parse` | POST | Parse bank statement PDF |
+| `/api/auth/sso` | POST | Exchange billing's SSO token for a session (B-36) |
+| `/api/platform/events` | POST | Signed `invoice.paid` events from billing (B-37) |
 
 ## ML Pipeline
 

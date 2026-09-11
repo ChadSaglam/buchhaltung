@@ -35,3 +35,9 @@ class UserResponse(BaseModel):
     tenant_slug: str | None = None
     subscription_plan: str = "free"
     trial_ends_at: datetime | None = None
+
+
+class SsoRequest(BaseModel):
+    """`POST /api/auth/sso` — the SSO token billing put into the `/sso#token=` fragment."""
+
+    token: str

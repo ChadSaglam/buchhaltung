@@ -7,6 +7,8 @@ services:
       - "3000:3000"
     environment:
       - NEXT_PUBLIC_API_URL=http://api:8000
+      # App switcher target (contracts/sso.md); empty hides the "Apps" menu.
+      - NEXT_PUBLIC_BILLING_URL=${BILLING_URL:-http://localhost:5050}
     depends_on:
       - api
 
@@ -28,6 +30,10 @@ services:
       - REDIS_URL=redis://redis:6379/0
       # Background jobs run in the `worker` service below, not in the API.
       - RUN_WORKER_IN_API=false
+      # Platform SSO + events (chadev-platform/contracts/sso.md, events.md).
+      # Same value as billing's PLATFORM_SHARED_SECRET; empty = disabled (404).
+      - PLATFORM_SHARED_SECRET=${PLATFORM_SHARED_SECRET:-}
+      - BILLING_URL=${BILLING_URL:-http://localhost:5050}
     depends_on:
       db:
         condition: service_healthy

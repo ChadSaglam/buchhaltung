@@ -8,6 +8,7 @@ from app.models.kontenplan import Kontenplan
 from app.models.memory import Memory
 from app.models.review_queue import ReviewQueueItem
 from app.models.scanner_config import ScannerConfig
+from app.models.sso_nonce import SsoNonce
 from app.models.tenant import Tenant
 from app.models.training_job import TrainingJob
 from app.models.usage_event import UsageEvent
@@ -24,6 +25,7 @@ __all__ = [
     "Memory",
     "ReviewQueueItem",
     "ScannerConfig",
+    "SsoNonce",
     "Tenant",
     "TrainingJob",
     "UsageEvent",

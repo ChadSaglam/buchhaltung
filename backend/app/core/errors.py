@@ -14,7 +14,7 @@ import time
 import uuid
 from contextvars import ContextVar
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
@@ -31,6 +31,18 @@ _request_id: ContextVar[str] = ContextVar("request_id", default="-")
 
 def current_request_id() -> str:
     return _request_id.get()
+
+
+class ApiError(HTTPException):
+    """HTTPException with an explicit envelope `code` (default is `http_<status>`).
+
+    Use it where the frontend or a machine client has to branch on *why*
+    a request failed (`sso_expired`, `unknown_tenant`, …), not just on the status.
+    """
+
+    def __init__(self, status_code: int, code: str, message: str) -> None:
+        super().__init__(status_code=status_code, detail=message)
+        self.code = code
 
 
 def error_body(code: str, message: str, **extra: object) -> dict:
@@ -92,9 +104,10 @@ def install_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(StarletteHTTPException)
     async def _http_exc(request: Request, exc: StarletteHTTPException):
         detail = exc.detail if isinstance(exc.detail, str) else "Request failed"
+        code = getattr(exc, "code", None) or f"http_{exc.status_code}"
         return JSONResponse(
             status_code=exc.status_code,
-            content=error_body(f"http_{exc.status_code}", detail),
+            content=error_body(code, detail),
             headers={REQUEST_ID_HEADER: current_request_id()},
         )
 

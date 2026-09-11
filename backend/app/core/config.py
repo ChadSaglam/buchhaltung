@@ -86,6 +86,16 @@ class Settings(BaseSettings):
     FRONTEND_URL: str = "http://localhost:3000"
     SENTRY_DSN: str | None = None
 
+    # --- Platform (chadev-platform/contracts/sso.md + events.md) -----------
+    # Verifies the SSO hand-off token minted by billing and the HMAC on
+    # inbound platform events. Deliberately NOT the app's own SECRET_KEY: the
+    # session key never leaves this app and rotating the platform secret logs
+    # nobody out. Unset (or "") = SSO + events disabled, both routes answer 404.
+    # Never logged.
+    PLATFORM_SHARED_SECRET: str | None = None
+    # App-switcher target ("Billing" entry). Unset = no entry, no dead link.
+    BILLING_URL: str | None = None
+
     # --- Storage (uploads, model artifacts) --------------------------------
     # "local" writes under STORAGE_LOCAL_DIR (fine for one replica); "s3" is
     # required as soon as the API runs with more than one replica.
@@ -115,6 +125,12 @@ class Settings(BaseSettings):
         # JWT_SECRET wins if explicitly provided (keeps CI/README/compose honest).
         if self.JWT_SECRET:
             object.__setattr__(self, "SECRET_KEY", self.JWT_SECRET)
+
+        # "" in the environment means unset — an empty secret must never verify anything.
+        if self.PLATFORM_SHARED_SECRET is not None and not self.PLATFORM_SHARED_SECRET.strip():
+            object.__setattr__(self, "PLATFORM_SHARED_SECRET", None)
+        if self.BILLING_URL is not None and not self.BILLING_URL.strip():
+            object.__setattr__(self, "BILLING_URL", None)
 
         if self.AUTO_CREATE_TABLES is None:
             object.__setattr__(self, "AUTO_CREATE_TABLES", not self.is_production)

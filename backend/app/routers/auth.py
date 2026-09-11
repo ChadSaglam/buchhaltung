@@ -7,9 +7,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
+from app.core.errors import ApiError
 from app.core.security import hash_password, issue_access_token, verify_password
 from app.models.tenant import Tenant
-from app.models.user import User
+from app.models.user import AUTH_SOURCE_LOCAL, User
 from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse, UserResponse
 from app.services.tenant_setup import seed_tenant, unique_tenant_slug
 
@@ -65,6 +66,10 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
 async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.email == body.email))
     user = result.scalar_one_or_none()
+    # Shadow users provisioned by platform SSO have no usable password
+    # (contracts/sso.md): say so before touching the hash at all.
+    if user is not None and user.auth_source != AUTH_SOURCE_LOCAL:
+        raise ApiError(403, "platform_user", "Dieses Konto meldet sich über die Plattform (Billing) an")
     if not user or not verify_password(body.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     token = issue_access_token(user)

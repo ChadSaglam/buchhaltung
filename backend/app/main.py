@@ -76,14 +76,18 @@ from app.routers import (
     health,
     import_data,
     pdf,
+    platform_events,
     review,
     scanner,
     scanner_config,
+    sso,
     stats,
 )
 from app.routers import kontenplan as kontenplan_router
 
 application.include_router(auth.router, prefix="/api/auth", tags=["auth"])
+application.include_router(sso.router)
+application.include_router(platform_events.router)
 application.include_router(classify.router)
 application.include_router(classify_extra.router)
 application.include_router(bookings.router)
