@@ -6,7 +6,12 @@ export type Accent = "blue" | "violet" | "emerald" | "amber" | "rose";
 const THEME_KEY = "theme";
 const ACCENT_KEY = "accent";
 
-/** Accent presets — primary/ring + the brand-500..700 ramp used across the UI. */
+/**
+ * Accent presets — primary/ring + the brand-300..700 ramp used across the UI.
+ * "blue" is the platform brand: it sets nothing inline so the `--cd-*` tokens
+ * in globals.css (light/dark aware) stay in charge; the values here are only
+ * the swatch and a reference.
+ */
 export const ACCENTS: Record<Accent, { label: string; swatch: string; primary: string; ring: string; b400: string; b500: string; b600: string; b700: string; b300: string }> = {
   blue: { label: "Blau", swatch: "#2451e6", primary: "#2451e6", ring: "#3b6cf6", b300: "#8eb5ff", b400: "#598dff", b500: "#3b6cf6", b600: "#2451e6", b700: "#1d3fc4" },
   violet: { label: "Violett", swatch: "#7c3aed", primary: "#7c3aed", ring: "#8b5cf6", b300: "#c4b5fd", b400: "#a78bfa", b500: "#8b5cf6", b600: "#7c3aed", b700: "#6d28d9" },
@@ -29,10 +34,16 @@ function applyTheme(theme: Theme) {
   document.documentElement.classList.toggle("dark", resolve(theme) === "dark");
 }
 
+const ACCENT_VARS = ["--primary", "--ring", "--color-brand-300", "--color-brand-400", "--color-brand-500", "--color-brand-600", "--color-brand-700"];
+
 function applyAccent(accent: Accent) {
   if (typeof document === "undefined") return;
-  const a = ACCENTS[accent];
   const root = document.documentElement.style;
+  if (accent === "blue") {
+    ACCENT_VARS.forEach((v) => root.removeProperty(v));
+    return;
+  }
+  const a = ACCENTS[accent];
   root.setProperty("--primary", a.primary);
   root.setProperty("--ring", a.ring);
   root.setProperty("--color-brand-300", a.b300);

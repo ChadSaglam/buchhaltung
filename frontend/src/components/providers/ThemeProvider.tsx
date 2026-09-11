@@ -20,7 +20,9 @@ const THEME_INIT_SCRIPT = `
       amber:  ['#d97706','#f59e0b','#fcd34d','#fbbf24','#f59e0b','#d97706','#b45309'],
       rose:   ['#e11d48','#f43f5e','#fda4af','#fb7185','#f43f5e','#e11d48','#be123c']
     };
-    var a = accents[localStorage.getItem('accent') || 'blue'];
+    // "blue" is the platform brand and lives in the stylesheet (--cd-*).
+    var accent = localStorage.getItem('accent') || 'blue';
+    var a = accent === 'blue' ? null : accents[accent];
     if (a) {
       var s = document.documentElement.style;
       s.setProperty('--primary', a[0]); s.setProperty('--ring', a[1]);
