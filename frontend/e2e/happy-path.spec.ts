@@ -20,7 +20,7 @@ async function tokenFromStorage(page: Page): Promise<string> {
 }
 
 test("register, browse the Kontenplan, book and export", async ({ page, request }) => {
-  const stamp = Date.now();
+  const stamp = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const email = `e2e-${stamp}@example.ch`;
   const description = `E2E Büromaterial ${stamp}`;
 

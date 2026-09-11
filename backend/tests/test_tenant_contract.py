@@ -145,3 +145,31 @@ def test_tenant_migration_is_reversible():
     finally:
         reset()
         engine.dispose()
+
+
+async def test_register_survives_lost_slug_race(client, db_session, monkeypatch):
+    """Two sign-ups with the same company name in the same instant both see the
+    base slug as free; the loser hits the UNIQUE index and must retry with a
+    suffix instead of answering 500."""
+    from app.routers import auth as auth_router
+    from app.services import tenant_setup
+
+    await create_tenant(db_session, name="Race AG", slug="race-ag")
+    real = tenant_setup.unique_tenant_slug
+    calls = {"n": 0}
+
+    async def racing_slug(db, name):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return "race-ag"  # what the pre-check returned before the other insert landed
+        return await real(db, name)
+
+    monkeypatch.setattr(auth_router, "unique_tenant_slug", racing_slug)
+    resp = await client.post(
+        "/api/auth/register",
+        json={"email": "race@example.com", "password": "Secret123!", "tenant_name": "Race AG"},
+    )
+    assert resp.status_code == 201, resp.text
+    assert calls["n"] == 2
+    me = await client.get("/api/auth/me", headers={"Authorization": f"Bearer {resp.json()['access_token']}"})
+    assert me.status_code == 200

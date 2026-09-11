@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -23,14 +24,25 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
 
     # Platform contract (tenant.md): slug derived from the name; buchhaltung
     # keeps its free plan on sign-up (billing starts on "trial").
-    tenant = Tenant(
-        name=body.tenant_name,
-        slug=await unique_tenant_slug(db, body.tenant_name),
-        subscription_plan="free",
-        is_active=True,
-    )
-    db.add(tenant)
-    await db.flush()
+    # Two sign-ups with the same company name in the same instant both see the
+    # base slug as free; the UNIQUE index decides, so retry the loser with a
+    # fresh suffix inside a savepoint instead of surfacing a 500.
+    for _attempt in range(3):
+        tenant = Tenant(
+            name=body.tenant_name,
+            slug=await unique_tenant_slug(db, body.tenant_name),
+            subscription_plan="free",
+            is_active=True,
+        )
+        try:
+            async with db.begin_nested():
+                db.add(tenant)
+                await db.flush()
+            break
+        except IntegrityError:
+            continue
+    else:
+        raise HTTPException(status_code=409, detail="Tenant name is taken, please retry")
 
     user = User(
         tenant_id=tenant.id,

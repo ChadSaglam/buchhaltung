@@ -44,7 +44,8 @@ async function checkA11y(page: Page, name: string) {
 }
 
 async function register(page: Page) {
-  const stamp = Date.now();
+  // Parallel workers can start in the same millisecond — Date.now() alone collides.
+  const stamp = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   await page.goto("/register");
   await page.getByLabel("Firmenname").fill(`A11y AG ${stamp}`);
   await page.getByLabel("Ihr Name").fill("Axe Tester");
