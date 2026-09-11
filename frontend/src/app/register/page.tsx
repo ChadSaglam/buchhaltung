@@ -40,7 +40,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background p-4">
+    <main id="main" className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background p-4">
       <div className="pointer-events-none absolute inset-0 bg-grid opacity-[0.4]" />
       <div className="pointer-events-none absolute -top-40 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-brand-500/20 blur-[120px]" />
 
@@ -65,20 +65,20 @@ export default function RegisterPage() {
         <div className="card-elevated p-6 shadow-lg">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Firmenname</label>
-              <Input placeholder="Meine Firma GmbH" icon={<Building2 />} value={tenantName} onChange={(e) => setTenantName(e.target.value)} />
+              <label htmlFor="reg-tenant" className="text-xs font-medium text-muted-foreground">Firmenname</label>
+              <Input id="reg-tenant" placeholder="Meine Firma GmbH" icon={<Building2 />} value={tenantName} onChange={(e) => setTenantName(e.target.value)} />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Ihr Name</label>
-              <Input placeholder="Max Muster" icon={<User />} value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+              <label htmlFor="reg-name" className="text-xs font-medium text-muted-foreground">Ihr Name</label>
+              <Input id="reg-name" placeholder="Max Muster" icon={<User />} value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">E-Mail</label>
-              <Input type="email" placeholder="name@firma.ch" icon={<Mail />} value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
+              <label htmlFor="reg-email" className="text-xs font-medium text-muted-foreground">E-Mail</label>
+              <Input id="reg-email" type="email" placeholder="name@firma.ch" icon={<Mail />} value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Passwort</label>
-              <Input type="password" placeholder="Mindestens 8 Zeichen" icon={<Lock />} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} autoComplete="new-password" />
+              <label htmlFor="reg-password" className="text-xs font-medium text-muted-foreground">Passwort</label>
+              <Input id="reg-password" type="password" placeholder="Mindestens 8 Zeichen" icon={<Lock />} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} autoComplete="new-password" />
             </div>
             {error && (
               <motion.p
@@ -102,6 +102,6 @@ export default function RegisterPage() {
           </a>
         </p>
       </motion.div>
-    </div>
+    </main>
   );
 }

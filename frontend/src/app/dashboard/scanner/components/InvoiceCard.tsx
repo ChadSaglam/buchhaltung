@@ -30,12 +30,13 @@ interface InvoiceCardProps {
   added: boolean;
 }
 
+/** A `<label>` wrapper: whatever control is rendered inside is labelled by `label`. */
 function Field({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
   return (
-    <div className={className}>
-      <p className="mb-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
+    <label className={cn("block", className)}>
+      <span className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{label}</span>
       {children}
-    </div>
+    </label>
   );
 }
 

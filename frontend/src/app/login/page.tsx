@@ -45,7 +45,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background p-4">
+    <main id="main" className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background p-4">
       {/* Ambient background */}
       <div className="pointer-events-none absolute inset-0 bg-grid opacity-[0.4]" />
       <div className="pointer-events-none absolute -top-40 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-brand-500/20 blur-[120px]" />
@@ -71,8 +71,9 @@ export default function LoginPage() {
         <div className="card-elevated p-6 shadow-lg">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">E-Mail</label>
+              <label htmlFor="login-email" className="text-xs font-medium text-muted-foreground">E-Mail</label>
               <Input
+                id="login-email"
                 type="email"
                 placeholder="name@firma.ch"
                 icon={<Mail />}
@@ -83,8 +84,9 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Passwort</label>
+              <label htmlFor="login-password" className="text-xs font-medium text-muted-foreground">Passwort</label>
               <Input
+                id="login-password"
                 type="password"
                 placeholder="••••••••"
                 icon={<Lock />}
@@ -96,6 +98,7 @@ export default function LoginPage() {
             </div>
             {error && (
               <motion.p
+                role="alert"
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive"
@@ -103,7 +106,7 @@ export default function LoginPage() {
                 {error}
               </motion.p>
             )}
-            <Button type="submit" size="lg" className="w-full" loading={loading} iconRight={<ArrowRight className="h-4 w-4" />}>
+            <Button type="submit" size="lg" className="w-full" loading={loading} iconRight={<ArrowRight className="h-4 w-4" aria-hidden="true" />}>
               Anmelden
             </Button>
           </form>
@@ -116,6 +119,6 @@ export default function LoginPage() {
           </a>
         </p>
       </motion.div>
-    </div>
+    </main>
   );
 }

@@ -32,7 +32,7 @@ export function DropZone({ onFilesAccepted, disabled, compact }: DropZoneProps) 
           isDragActive ? "border-brand-500 bg-brand-500/8" : "border-border hover:border-brand-400 hover:bg-accent"
         )}
       >
-        <input {...getInputProps()} />
+        <input {...getInputProps({ "aria-label": "Rechnung oder Quittung auswählen" })} />
         <Camera className="h-5 w-5 text-muted-foreground" />
         <p className="text-sm text-muted-foreground">Weitere Rechnungen hochladen</p>
       </div>
@@ -50,7 +50,7 @@ export function DropZone({ onFilesAccepted, disabled, compact }: DropZoneProps) 
         disabled && "opacity-50 cursor-not-allowed"
       )}
     >
-      <input {...getInputProps()} />
+      <input {...getInputProps({ "aria-label": "Rechnung oder Quittung auswählen" })} />
       <div className="rounded-2xl bg-brand-500/12 p-4 mb-4 group-hover:bg-brand-500/20 transition-colors">
         <Camera className="h-8 w-8 text-brand-600 dark:text-brand-300" />
       </div>
@@ -60,7 +60,7 @@ export function DropZone({ onFilesAccepted, disabled, compact }: DropZoneProps) 
       <p className="mt-1 text-sm text-muted-foreground">
         Hierher ziehen oder klicken — JPG, PNG, WebP, BMP
       </p>
-      <p className="mt-3 text-xs text-muted-foreground/60">
+      <p className="mt-3 text-xs text-muted-foreground">
         AI erkennt automatisch alle Rechnungsdetails
       </p>
     </div>

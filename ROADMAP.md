@@ -4,7 +4,7 @@
 > Legend: severity `C`ritical / `H`igh / `M`edium / `L`ow · effort `S` (<1h) / `M` (half day) / `L` (multi-day)
 > IDs: `B-xx` = work item (next free: **B-36**) · `P-xx` = parked (next free: **P-05**)
 > Cross-product items (SSO, contracts, design tokens) live in `chadev-platform/ROADMAP.md`, not here.
-> Updated: 2026-09-10
+> Updated: 2026-09-11
 
 ---
 
@@ -15,7 +15,7 @@
 | **more dynamic** | Scan → classify → book without a reload; live review queue; optimistic booking edits | B-14, B-15, B-16 |
 | **more professional** | Money that rounds right in every export, audit trail, branded Steuerberater hand-off | B-01 ✅, B-04 ✅, B-05 ✅, B-09 ✅, B-17 |
 | **easier to improve** | No god-files, one type source, tests that catch regressions, jobs outside the API process | B-02 ✅, B-03 ✅, B-08 ✅, B-10 ✅, B-11 ✅, B-13 ✅, B-33 ✅ |
-| **more user-friendly** | Loading/empty/error states everywhere, keyboard-first review, a11y, onboarding | B-18, B-19, B-20, B-21 |
+| **more user-friendly** | Loading/empty/error states everywhere, keyboard-first review, a11y, onboarding | B-18 ✅, B-19 ✅, B-20, B-21 |
 
 Rule: every PR names the B-ID it closes and which north-star column it serves.
 
@@ -23,8 +23,10 @@ Rule: every PR names the B-ID it closes and which north-star column it serves.
 
 ## 🔥 NOW — do these in order (one at a time)
 
-- [ ] **B-14** Review queue: optimistic accept/reject with rollback; keyboard `j/k/a/r`. — `M` / `M`
+- [ ] **B-14** Review queue: optimistic accept/reject with rollback; keyboard `j/k/a/r`. (Queue is on SWR since
+      B-18 — `mutate(optimistic, { rollbackOnError: true })` is the whole change.) — `M` / `M`
 - [ ] **B-16** Dashboard KPIs auto-refresh (SWR `refreshInterval`), no reload. — `L` / `S`
+- [ ] **B-21** Replace remaining `err: any` in scanner/modell hooks with generated types (5 eslint warnings). — `L` / `S`
 
 ---
 
@@ -46,9 +48,7 @@ Rule: every PR names the B-ID it closes and which north-star column it serves.
 - [ ] **B-23** Usage limits enforced from `usage_event` (plan free/pro). — `M` / `M`
 
 ### User-friendly
-- [ ] **B-19** a11y: focus trap in dialogs, ARIA on DropZone/DataTable, `Esc` closes. — `M` / `M`
 - [ ] **B-20** Onboarding: first scan guided, sample receipt, Kontenplan import wizard. — `M` / `M`
-- [ ] **B-21** Replace remaining `err: any` in scanner/modell hooks with generated types. — `L` / `S`
 
 ### Security & data
 - [ ] **B-24** Postgres RLS (`SET LOCAL app.tenant_id`) as defence in depth — after platform contract. — `H` / `L`
@@ -74,6 +74,18 @@ Rule: every PR names the B-ID it closes and which north-star column it serves.
 
 ## ✅ Done
 
+- **B-19** ✅ 2026-09-11 — a11y pass. Skip link → `<main id="main">` (AppShell, login, register); `hooks/useFocusTrap`
+  gives CommandPalette, ShortcutsModal, AssistantPanel and the mobile sidebar Tab-cycling, `Esc` and focus return;
+  `<html lang>` follows `getLocale()` (`LangSync`, `setLocale`); every input/select/textarea has a label
+  (settings, scanner InvoiceCard `Field` is now a `<label>`, dropzone file inputs, search fields), every table an
+  `aria-label`, decorative icons `aria-hidden`. Contrast: light `--muted-foreground`/`--success`/`--warning` are the
+  platform tokens mixed 15 % toward `--cd-color-fg` (raw values were 4.1–4.3:1 on the app's tinted chips), `--link`
+  = `--cd-color-brand-hover` in dark (brand is 4.2:1 as text), opacity-faded text removed. Found on the way:
+  `dark:` utilities never applied — Tailwind 4 defaults to `prefers-color-scheme`, the app toggles `.dark`; fixed
+  with `@custom-variant dark`. Gate: `e2e/a11y.spec.ts` (`@axe-core/playwright`) fails on any serious/critical
+  violation on login, dashboard, scanner, modell, settings in light **and** dark, plus skip-link and focus-trap
+  checks. Playwright 3 → **11**. Advisory (moderate) left open: heading-order on `modell`, duplicate landmark on
+  `settings`.
 - **B-18** ✅ 2026-09-11 — Every dashboard page has skeleton / empty / error. Shared `components/shared/`
   `EmptyState` (existing) · `ErrorState` (envelope `error.message` + request id via `lib/errors.ts`, retry =
   SWR `mutate` or the hook's `load`) · `PageSkeleton` (header/metrics/rows; `dashboard/loading.tsx` uses it).
@@ -171,6 +183,6 @@ Rule: every PR names the B-ID it closes and which north-star column it serves.
 | 2 Security | ✅ B-06, B-07, B-32 · open: B-24, B-25, B-34 |
 | 3 Reliability | ✅ B-04, B-05, B-08, B-11, B-33, B-35 |
 | 4 Polish | ✅ B-09, B-13 · open: B-22 |
-| 5 UX | NOW: B-14, B-16, B-18 · open: B-15, B-17, B-19, B-20, B-21 |
+| 5 UX | ✅ B-18, B-19 · NOW: B-14, B-16, B-21 · open: B-15, B-17, B-20 |
 | 6 Together | see platform |
 | 7 DX | ✅ B-12 · open: B-29, B-30 |

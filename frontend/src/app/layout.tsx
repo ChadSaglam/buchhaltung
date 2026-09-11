@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import { cn } from "@/lib/utils";
 import { ThemeProvider, ThemeScript } from "@/components/providers/ThemeProvider";
+import { LangSync } from "@/components/providers/LangSync";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
@@ -19,8 +20,9 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f6f8fb" },
-    { media: "(prefers-color-scheme: dark)", color: "#070b16" },
+    // Mirrors --cd-color-bg (tokens.css); the browser chrome can't read CSS vars.
+    { media: "(prefers-color-scheme: light)", color: "#fafafa" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b0f19" },
   ],
   width: "device-width",
   initialScale: 1,
@@ -37,6 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeScript />
       </head>
       <body className="min-h-screen bg-background text-foreground antialiased font-sans">
+        <LangSync />
         <ThemeProvider>{children}</ThemeProvider>
         <Toaster
           position="bottom-right"

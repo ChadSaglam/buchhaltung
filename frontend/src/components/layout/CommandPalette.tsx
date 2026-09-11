@@ -11,6 +11,7 @@ import { useCommandStore } from "@/lib/command-store";
 import { useUiStore } from "@/lib/ui-store";
 import { useThemeStore, ACCENTS, type Accent } from "@/lib/theme-store";
 import { useAuthStore } from "@/lib/auth-store";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { cn } from "@/lib/utils";
 
 interface Command {
@@ -33,6 +34,9 @@ export function CommandPalette() {
   const [active, setActive] = useState(0);
   const [mounted, setMounted] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  // Esc closes, Tab stays inside, focus returns to the trigger (⌘K / topbar).
+  useFocusTrap(open, () => setOpen(false), dialogRef);
 
   useEffect(() => setMounted(true), []);
 
@@ -178,12 +182,14 @@ export function CommandPalette() {
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[100] flex items-start justify-center p-4 pt-[12vh]"
         >
-          <div className="absolute inset-0 bg-black/45 backdrop-blur-sm" onClick={close} />
+          <div className="absolute inset-0 bg-black/45 backdrop-blur-sm" onClick={close} aria-hidden="true" />
           <motion.div
             initial={{ opacity: 0, y: -12, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 380, damping: 30 }}
+            ref={dialogRef}
+            tabIndex={-1}
             role="dialog"
             aria-modal="true"
             aria-label="Befehlspalette"
@@ -194,6 +200,7 @@ export function CommandPalette() {
               <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
               <input
                 autoFocus
+                aria-label="Suchen oder Befehl eingeben"
                 value={query}
                 onChange={(e) => { setQuery(e.target.value); setActive(0); }}
                 onKeyDown={onKeyDown}
@@ -214,7 +221,7 @@ export function CommandPalette() {
               ) : (
                 groups.map(([group, items]) => (
                   <div key={group} className="mb-1">
-                    <p className="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                    <p className="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                       {group}
                     </p>
                     {items.map((cmd) => {
@@ -223,6 +230,7 @@ export function CommandPalette() {
                       return (
                         <button
                           key={cmd.id}
+                          type="button"
                           data-idx={idx}
                           onMouseEnter={() => setActive(idx)}
                           onClick={() => cmd.run()}

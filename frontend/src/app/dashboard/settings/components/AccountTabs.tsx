@@ -12,7 +12,7 @@ export function ProfileTab({ user, displayName, setDisplayName }: {
       <h2 className="text-base font-semibold text-foreground mb-1">Profil</h2>
       <p className="text-sm text-muted-foreground mb-6">Persönliche Informationen verwalten</p>
       <SettingsField label="Anzeigename" description="Wird in der App angezeigt">
-        <SettingsInput value={displayName} onChange={setDisplayName} />
+        <SettingsInput value={displayName} onChange={setDisplayName} label="Anzeigename" />
       </SettingsField>
       <SettingsField label="E-Mail" description="Anmelde-E-Mail (nicht änderbar)">
         <p className="text-sm text-muted-foreground py-2">{user?.email ?? "–"}</p>
@@ -34,7 +34,7 @@ export function CompanyTab({ user, companyName, setCompanyName }: {
       <h2 className="text-base font-semibold text-foreground mb-1">Unternehmen</h2>
       <p className="text-sm text-muted-foreground mb-6">Firmendaten verwalten</p>
       <SettingsField label="Firmenname">
-        <SettingsInput value={companyName} onChange={setCompanyName} />
+        <SettingsInput value={companyName} onChange={setCompanyName} label="Firmenname" />
       </SettingsField>
       <SettingsField label="Mandanten-ID">
         <p className="font-mono text-sm text-muted-foreground py-2">{user?.tenant_id ?? "–"}</p>
@@ -50,9 +50,9 @@ export function SecurityTab() {
       <p className="text-sm text-muted-foreground mb-6">Passwort und Sicherheitsoptionen</p>
       <SettingsField label="Passwort ändern">
         <div className="space-y-3">
-          <SettingsInput value="" onChange={() => {}} type="password" placeholder="Aktuelles Passwort" />
-          <SettingsInput value="" onChange={() => {}} type="password" placeholder="Neues Passwort" />
-          <SettingsInput value="" onChange={() => {}} type="password" placeholder="Passwort bestätigen" />
+          <SettingsInput value="" onChange={() => {}} type="password" placeholder="Aktuelles Passwort" label="Aktuelles Passwort" />
+          <SettingsInput value="" onChange={() => {}} type="password" placeholder="Neues Passwort" label="Neues Passwort" />
+          <SettingsInput value="" onChange={() => {}} type="password" placeholder="Passwort bestätigen" label="Passwort bestätigen" />
         </div>
       </SettingsField>
     </div>

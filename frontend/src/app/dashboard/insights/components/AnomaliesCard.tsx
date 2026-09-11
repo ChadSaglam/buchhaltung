@@ -28,7 +28,7 @@ export function AnomaliesCard({ anomalies, loading }: { anomalies: Anomaly[]; lo
                   </Badge>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">{a.reason}</p>
-                <p className="mt-0.5 text-[11px] text-muted-foreground/70 tabular-nums">
+                <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
                   {a.booking.datum} · {chf(Math.abs(Number(a.booking.betrag) || 0))}
                 </p>
               </li>

@@ -50,7 +50,7 @@ export function BananaImportCard({ fetchInfo }: { fetchInfo: () => Promise<void>
               : "border-border hover:border-brand-400 hover:bg-brand-500/6"
           )}
         >
-          <input {...getInputProps()} />
+          <input {...getInputProps({ "aria-label": "Banana-Datei auswählen" })} />
           {importing ? (
             <div className="flex flex-col items-center gap-2">
               <Loader2 className="w-10 h-10 animate-spin text-brand-600 dark:text-brand-300" />

@@ -82,7 +82,7 @@ export function RestoreCard({ handleUploadBundle }: { handleUploadBundle: (file:
           {...getRestoreProps()}
           className="border-2 border-dashed rounded-xl p-6 text-center cursor-pointer hover:border-brand-400 hover:bg-brand-500/6 transition-all"
         >
-          <input {...getRestoreInputProps()} />
+          <input {...getRestoreInputProps({ "aria-label": "Modell-Bundle auswählen" })} />
           <Upload className="w-6 h-6 text-muted-foreground/40 mx-auto mb-1" />
           <p className="text-xs text-muted-foreground">.zip / .pkl / .json hierher ziehen</p>
         </div>

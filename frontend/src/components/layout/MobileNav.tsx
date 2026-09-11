@@ -32,8 +32,8 @@ export function MobileNav() {
                 className="absolute -top-px left-1/2 h-[3px] w-8 -translate-x-1/2 rounded-full bg-primary"
               />
             )}
-            <item.icon className={cn("h-5 w-5 transition-colors", active ? "text-primary" : "text-muted-foreground")} />
-            <span className={cn("text-[10px] font-medium transition-colors", active ? "text-primary" : "text-muted-foreground")}>
+            <item.icon className={cn("h-5 w-5 transition-colors", active ? "text-link" : "text-muted-foreground")} aria-hidden="true" />
+            <span className={cn("text-[10px] font-medium transition-colors", active ? "text-link" : "text-muted-foreground")}>
               {item.label}
             </span>
           </Link>

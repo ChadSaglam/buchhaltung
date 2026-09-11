@@ -175,6 +175,7 @@ export function BuchungTable({ rows, onRemove, onClear }: BuchungTableProps) {
             <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
             <input
               type="email"
+              aria-label="E-Mail-Empfänger"
               value={emailTo}
               onChange={(e) => setEmailTo(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleEmail()}
@@ -197,7 +198,7 @@ export function BuchungTable({ rows, onRemove, onClear }: BuchungTableProps) {
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm" aria-label="Buchungen">
             <thead>
               <tr className="border-b border-border bg-muted/30">
                 {HEADERS.map((h) => (

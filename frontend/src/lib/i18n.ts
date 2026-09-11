@@ -296,6 +296,7 @@ export function setLocale(locale: Locale) {
   currentLocale = locale;
   if (typeof window !== 'undefined') {
     localStorage.setItem('locale', locale);
+    document.documentElement.lang = locale;
   }
 }
 

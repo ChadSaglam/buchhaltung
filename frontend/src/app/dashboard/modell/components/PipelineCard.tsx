@@ -13,9 +13,9 @@ function PipelineStep({ num, label, desc, tone }: { num: number; label: string; 
   }[tone];
   return (
     <div className={cn("flex-1 rounded-xl px-4 py-3", styles)}>
-      <div className="text-[11px] font-bold opacity-60">Stufe {num}</div>
+      <div className="text-[11px] font-bold">Stufe {num}</div>
       <div className="font-semibold text-sm mt-0.5">{label}</div>
-      <div className="text-xs opacity-70 mt-0.5">{desc}</div>
+      <div className="text-xs mt-0.5">{desc}</div>
     </div>
   );
 }

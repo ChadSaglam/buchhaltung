@@ -21,6 +21,7 @@ export function TestTab({ testInput, setTestInput, testResult, testLoading, hand
       <div className="flex gap-3">
         <input
           type="text"
+          aria-label="Beschreibung zum Testen"
           value={testInput}
           onChange={(e) => setTestInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleTest()}

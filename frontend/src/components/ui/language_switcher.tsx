@@ -35,7 +35,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
               "rounded-md px-2 py-1 text-xs font-semibold uppercase transition-colors select-none",
               locale === l.code
                 ? "bg-card text-foreground shadow-sm"
-                : "text-muted-foreground/70"
+                : "text-muted-foreground"
             )}
           >
             {l.code}

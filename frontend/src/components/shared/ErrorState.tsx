@@ -54,7 +54,7 @@ export function ErrorState({ error, onRetry, title, icon: Icon = AlertCircle, va
       <h3 className="mt-4 text-base font-semibold text-foreground">{heading}</h3>
       <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">{e.message}</p>
       {e.requestId && (
-        <p className="mt-1 font-mono text-xs text-muted-foreground/80">
+        <p className="mt-1 font-mono text-xs text-muted-foreground">
           {t("state.request_ref")}: {e.requestId}
         </p>
       )}

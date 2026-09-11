@@ -1,11 +1,13 @@
 "use client";
 
+import { useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { getNavSections, type NavItem } from "@/lib/navigation";
 import { Logo } from "@/components/ui/Logo";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { cn } from "@/lib/utils";
 
 const sections = getNavSections();
@@ -84,7 +86,7 @@ export function SidebarContent({ collapsed, onToggle, onNavigate, showCollapse =
         {Array.from(sections.entries()).map(([section, items]) => (
           <div key={section}>
             {!collapsed && (
-              <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+              <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {section}
               </p>
             )}
@@ -142,6 +144,9 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
 
 /** Mobile slide-over drawer. */
 export function MobileSidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const drawerRef = useRef<HTMLElement>(null);
+  // Esc closes, Tab stays inside the drawer, focus returns to the menu button.
+  useFocusTrap(open, onClose, drawerRef);
   return (
     <AnimatePresence>
       {open && (
@@ -151,9 +156,15 @@ export function MobileSidebar({ open, onClose }: { open: boolean; onClose: () =>
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
+            aria-hidden="true"
             className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm md:hidden"
           />
           <motion.aside
+            ref={drawerRef}
+            tabIndex={-1}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Navigation"
             initial={{ x: "-100%" }}
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}

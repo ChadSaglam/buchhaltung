@@ -7,7 +7,7 @@ export function TopClassesTab({ topClasses }: { topClasses: TrainingData[] }) {
       <p className="text-sm text-muted-foreground mb-4">Häufigste Kontoklassen im Trainingsset</p>
       {topClasses.length > 0 ? (
         <div className="overflow-hidden rounded-xl border border-border">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm" aria-label="Häufigste Konten">
             <thead>
               <tr className="bg-muted text-left">
                 <th className="px-4 py-2.5 font-semibold text-muted-foreground">KontoSoll</th>

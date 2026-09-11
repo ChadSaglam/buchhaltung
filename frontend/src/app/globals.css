@@ -3,6 +3,11 @@
 @import "./tokens.css";
 @import "tailwindcss";
 
+/* The theme is a class toggled by lib/theme-store.ts (and the no-flash init
+   script), not the OS preference: `dark:` utilities must follow `.dark`.
+   Without this, every `dark:text-brand-300` etc. silently never applied. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ============================================================
    Design tokens
    A single source of truth for color, radius, spacing, motion.
@@ -20,6 +25,9 @@
    and spacing (--cd-space-* has no app counterpart; Tailwind's scale is used).
    --link is the brand colour that is safe as *text*: in dark mode the brand
    (#3b6cf6) is 4.2:1 on the ground, so links use --cd-color-brand-hover.
+   Light-mode muted/success/warning are mixed 15 % toward --cd-color-fg:
+   the raw platform values pass on white (4.8–5.0:1) but not on the app's
+   tinted chips and badges; the mix keeps ≥ 4.5:1 everywhere (B-19 axe gate).
    ============================================================ */
 
 @theme {
@@ -85,7 +93,10 @@
   --card: #ffffff;
   --card-foreground: var(--cd-color-fg);
   --muted: #eef2f7;
-  --muted-foreground: var(--cd-color-muted);
+  /* 15 % toward fg: the platform value is 4.8:1 on white but the app also
+     sets muted text on --muted chips and badges (4.3:1); this keeps every
+     use ≥ 4.5:1 (B-19). Same for success/warning on their /12–/15 tints. */
+  --muted-foreground: color-mix(in srgb, var(--cd-color-muted) 85%, var(--cd-color-fg));
   --border: var(--cd-color-border);
   --border-strong: #d2dae8;
   --input: var(--cd-color-border);
@@ -97,8 +108,8 @@
   --link: var(--cd-color-brand);
   --destructive: var(--cd-color-danger);
   --destructive-foreground: #ffffff;
-  --success: var(--cd-color-success);
-  --warning: var(--cd-color-warning);
+  --success: color-mix(in srgb, var(--cd-color-success) 85%, var(--cd-color-fg));
+  --warning: color-mix(in srgb, var(--cd-color-warning) 85%, var(--cd-color-fg));
   --info: var(--cd-color-brand);
 
   --glass-bg: rgba(255, 255, 255, 0.72);

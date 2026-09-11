@@ -6,6 +6,7 @@ import {
   RotateCcw, Wifi, WifiOff, AlertTriangle, Trash2,
 } from "lucide-react";
 import { useUiStore } from "@/lib/ui-store";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { aiChatStream, aiStatus, type AiChatMessage, type AiStatus } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -49,6 +50,9 @@ export function AssistantPanel() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const panelRef = useRef<HTMLElement>(null);
+  // Esc closes, Tab stays inside the drawer, focus returns to the opener.
+  useFocusTrap(assistantOpen, () => setAssistantOpen(false), panelRef);
 
   const refreshStatus = useCallback(() => {
     aiStatus().then(setStatus).catch(() => setStatus({ ok: false, model: "", base_url: "", available_models: [] }));
@@ -64,15 +68,6 @@ export function AssistantPanel() {
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, sending]);
-
-  useEffect(() => {
-    if (!assistantOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setAssistantOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [assistantOpen, setAssistantOpen]);
 
   const runChat = useCallback(async (history: ChatEntry[]) => {
     setSending(true);
@@ -139,11 +134,13 @@ export function AssistantPanel() {
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={() => setAssistantOpen(false)}
+            aria-hidden="true"
             className="fixed inset-0 z-[90] bg-black/40 backdrop-blur-sm"
           />
           <motion.aside
             initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
             transition={{ type: "spring", stiffness: 380, damping: 38 }}
+            ref={panelRef} tabIndex={-1}
             role="dialog" aria-modal="true" aria-label="AI-Assistent"
             className="fixed inset-y-0 right-0 z-[95] flex w-full max-w-md flex-col border-l border-border bg-surface shadow-2xl"
           >
@@ -237,7 +234,7 @@ export function AssistantPanel() {
                 <textarea
                   ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
-                  rows={1} placeholder="Frage stellen…"
+                  rows={1} placeholder="Frage stellen…" aria-label="Frage an den AI-Assistenten"
                   className="max-h-32 flex-1 resize-none bg-transparent px-1.5 py-1 text-sm text-foreground outline-none placeholder:text-muted-foreground"
                 />
                 {sending ? (

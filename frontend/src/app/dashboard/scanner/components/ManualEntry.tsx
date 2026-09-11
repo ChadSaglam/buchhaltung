@@ -70,6 +70,7 @@ export function ManualEntry({ onAddRow, nextNr }: ManualEntryProps) {
 
       <div className="grid grid-cols-1 sm:grid-cols-[1fr_120px_auto] gap-3">
         <input
+          aria-label="Beschreibung"
           value={beschreibung}
           onChange={(e) => { setBeschreibung(e.target.value); setResult(null); }}
           placeholder="Beschreibung eingeben..."
@@ -77,6 +78,7 @@ export function ManualEntry({ onAddRow, nextNr }: ManualEntryProps) {
           onKeyDown={(e) => e.key === "Enter" && handleClassify()}
         />
         <input
+          aria-label="Betrag"
           type="number"
           step="0.01"
           value={betrag}

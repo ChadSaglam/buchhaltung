@@ -9,6 +9,7 @@ import { CommandPalette } from "@/components/layout/CommandPalette";
 import { ShortcutsModal } from "@/components/layout/ShortcutsModal";
 import { AssistantPanel } from "@/components/layout/AssistantPanel";
 import { useSidebarStore } from "@/lib/sidebar-store";
+import { t } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -24,6 +25,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background">
+      <a
+        href="#main"
+        className="sr-only z-[200] rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
+      >
+        {t("a11y.skip")}
+      </a>
       <Sidebar collapsed={collapsed} onToggle={toggle} />
       <MobileSidebar open={mobileOpen} onClose={() => setMobileOpen(false)} />
 
@@ -36,7 +43,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       >
         <Topbar onMenuClick={() => setMobileOpen(true)} onToggleSidebar={toggle} sidebarCollapsed={collapsed} />
 
-        <main className="flex-1 px-4 pb-24 pt-6 md:pb-8 lg:px-8">
+        <main id="main" tabIndex={-1} className="flex-1 px-4 pb-24 pt-6 outline-none md:pb-8 lg:px-8">
           <div className="mx-auto w-full max-w-7xl">
             <AnimatePresence mode="wait">
               <motion.div

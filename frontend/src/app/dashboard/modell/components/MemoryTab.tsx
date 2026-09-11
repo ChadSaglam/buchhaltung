@@ -15,7 +15,8 @@ export function MemoryTab({ memoryEntries, filteredMemory, memoryFilter, setMemo
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
-            type="text"
+            type="search"
+            aria-label="Gedächtnis durchsuchen"
             value={memoryFilter}
             onChange={(e) => setMemoryFilter(e.target.value)}
             placeholder="Gedächtnis durchsuchen…"
@@ -28,7 +29,7 @@ export function MemoryTab({ memoryEntries, filteredMemory, memoryFilter, setMemo
       </div>
       {filteredMemory.length > 0 ? (
         <div className="overflow-hidden rounded-xl border border-border max-h-96 overflow-y-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm" aria-label="Gedächtnis-Einträge">
             <thead className="sticky top-0 bg-card">
               <tr className="bg-muted text-left border-b border-border">
                 <th className="px-4 py-2.5 font-semibold text-muted-foreground">Beschreibung</th>

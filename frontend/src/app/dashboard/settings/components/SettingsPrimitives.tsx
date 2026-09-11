@@ -16,15 +16,18 @@ export function SettingsField({ label, description, children }: {
   );
 }
 
-export function SettingsInput({ value, onChange, type = "text", placeholder }: {
+export function SettingsInput({ value, onChange, type = "text", placeholder, label }: {
   value: string;
   onChange: (v: string) => void;
   type?: string;
   placeholder?: string;
+  /** Accessible name; the visible caption lives in the surrounding `SettingsField`. */
+  label: string;
 }) {
   return (
     <input
       type={type}
+      aria-label={label}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
@@ -42,8 +45,10 @@ export function SettingsToggle({ checked, onChange, label }: {
     <label className="flex items-center justify-between cursor-pointer">
       <span className="text-sm text-foreground">{label}</span>
       <button
+        type="button"
         role="switch"
         aria-checked={checked}
+        aria-label={label}
         onClick={() => onChange(!checked)}
         className={cn(
           "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",

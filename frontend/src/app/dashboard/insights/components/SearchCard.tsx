@@ -15,13 +15,15 @@ export function SearchCard({ query, setQuery, activeFilters, resultCount }: {
         <div className="flex items-center gap-2.5 rounded-lg border border-border bg-surface px-3 focus-within:border-border-strong focus-within:ring-2 focus-within:ring-ring/30">
           <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
           <input
+            type="search"
+            aria-label="Buchungen durchsuchen"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="z. B. Ausgaben über 500 im Juni  ·  Migros Lebensmittel  ·  Konto 6500"
             className="h-11 w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
           />
           {query && (
-            <button onClick={() => setQuery("")} className="text-xs text-muted-foreground hover:text-foreground">
+            <button type="button" onClick={() => setQuery("")} className="text-xs text-muted-foreground hover:text-foreground">
               Löschen
             </button>
           )}
