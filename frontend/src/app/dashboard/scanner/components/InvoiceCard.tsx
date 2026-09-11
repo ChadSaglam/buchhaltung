@@ -225,7 +225,7 @@ export function InvoiceCard({ invoice, index, onUpdate, onAddToBookings, added }
               )}
             </AnimatePresence>
           </div>
-          
+
       <div
         className="flex cursor-pointer items-center justify-between gap-4 p-4"
         onClick={() => setExpanded(!expanded)}
