@@ -8,26 +8,30 @@
    A single source of truth for color, radius, spacing, motion.
    Adjust the values below to re-skin the whole app.
 
-   App variables resolve to `--cd-*` only where the value is unchanged
-   (font fallbacks, brand foreground). Deliberately NOT mapped because the
-   platform value differs and would change the look: --radius-* (cd: 8px,
-   app: 6–24px scale), --primary / --ring (cd-color-brand #1d4ed8 vs app
-   #2451e6 / #3b6cf6), --background / --foreground / --muted-foreground /
-   --border (cd-color-bg/fg/muted/border), --success / --warning /
-   --destructive (cd-color-success/warning/danger). Spacing tokens
-   (--cd-space-*) have no app counterpart; Tailwind's scale is used instead.
+   Colour is owned by the platform (`--cd-*`, phase 5.3): --primary, --ring,
+   the semantic bg/fg/muted/border tokens, success/warning/destructive and the
+   anchor points of the brand scale (50 → brand-soft, 600 → brand,
+   700 → brand-hover) all resolve to `--cd-*` and follow its light/dark switch
+   (`.dark`). The intermediate brand steps (100–500, 800, 900) are the app's
+   own tints/shades around those anchors — the platform defines only three
+   brand points. Deliberately NOT mapped: --radius-* (cd: 8px, app: 6–24px
+   scale), the dark-mode success/warning/destructive (the platform ships light
+   values only and #b91c1c-style reds fall below 4.5:1 on the dark ground),
+   and spacing (--cd-space-* has no app counterpart; Tailwind's scale is used).
+   --link is the brand colour that is safe as *text*: in dark mode the brand
+   (#3b6cf6) is 4.2:1 on the ground, so links use --cd-color-brand-hover.
    ============================================================ */
 
 @theme {
   /* Brand scale (indigo/blue) */
-  --color-brand-50: #eef4ff;
+  --color-brand-50: var(--cd-color-brand-soft);
   --color-brand-100: #d9e6ff;
   --color-brand-200: #bcd2ff;
   --color-brand-300: #8eb5ff;
   --color-brand-400: #598dff;
   --color-brand-500: #3b6cf6;
-  --color-brand-600: #2451e6;
-  --color-brand-700: #1d3fc4;
+  --color-brand-600: var(--cd-color-brand);
+  --color-brand-700: var(--cd-color-brand-hover);
   --color-brand-800: #1d379e;
   --color-brand-900: #1d337d;
 
@@ -47,6 +51,7 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-link: var(--link);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-success: var(--success);
@@ -74,26 +79,27 @@
 
 /* ---------- Light theme ---------- */
 :root {
-  --background: #f6f8fb;
+  --background: var(--cd-color-bg);
   --surface: #ffffff;
-  --foreground: #0b1220;
+  --foreground: var(--cd-color-fg);
   --card: #ffffff;
-  --card-foreground: #0b1220;
+  --card-foreground: var(--cd-color-fg);
   --muted: #eef2f7;
-  --muted-foreground: #5a6b85;
-  --border: #e4e9f2;
+  --muted-foreground: var(--cd-color-muted);
+  --border: var(--cd-color-border);
   --border-strong: #d2dae8;
-  --input: #e4e9f2;
-  --ring: #3b6cf6;
+  --input: var(--cd-color-border);
+  --ring: var(--cd-color-brand);
   --accent: #eef2f7;
-  --accent-foreground: #0b1220;
-  --primary: #2451e6;
+  --accent-foreground: var(--cd-color-fg);
+  --primary: var(--cd-color-brand);
   --primary-foreground: var(--cd-color-brand-fg);
-  --destructive: #e1483a;
+  --link: var(--cd-color-brand);
+  --destructive: var(--cd-color-danger);
   --destructive-foreground: #ffffff;
-  --success: #0f9d6b;
-  --warning: #d9870b;
-  --info: #2563eb;
+  --success: var(--cd-color-success);
+  --warning: var(--cd-color-warning);
+  --info: var(--cd-color-brand);
 
   --glass-bg: rgba(255, 255, 255, 0.72);
   --glass-border: rgba(15, 23, 42, 0.07);
@@ -108,26 +114,29 @@
 
 /* ---------- Dark theme ---------- */
 .dark {
-  --background: #070b16;
+  --background: var(--cd-color-bg);
   --surface: #0e1525;
-  --foreground: #eef2f9;
+  --foreground: var(--cd-color-fg);
   --card: #0f1726;
-  --card-foreground: #eef2f9;
+  --card-foreground: var(--cd-color-fg);
   --muted: #182236;
-  --muted-foreground: #93a1bd;
-  --border: rgba(255, 255, 255, 0.08);
+  --muted-foreground: var(--cd-color-muted);
+  --border: var(--cd-color-border);
   --border-strong: rgba(255, 255, 255, 0.14);
   --input: rgba(255, 255, 255, 0.12);
-  --ring: #598dff;
+  --ring: var(--cd-color-brand-hover);
   --accent: #182236;
-  --accent-foreground: #eef2f9;
-  --primary: #3b6cf6;
+  --accent-foreground: var(--cd-color-fg);
+  --primary: var(--cd-color-brand);
   --primary-foreground: var(--cd-color-brand-fg);
+  --link: var(--cd-color-brand-hover);
+  /* Platform ships light-only status colours; these are the same hues lifted
+     to ≥ 4.5:1 on --cd-color-bg. */
   --destructive: #f06a5d;
   --destructive-foreground: #0b1220;
   --success: #34d399;
   --warning: #fbbf24;
-  --info: #60a5fa;
+  --info: var(--cd-color-brand-hover);
 
   --glass-bg: rgba(15, 23, 42, 0.55);
   --glass-border: rgba(255, 255, 255, 0.08);
@@ -175,8 +184,8 @@
   }
 
   ::selection {
-    background: var(--color-brand-500);
-    color: #fff;
+    background: var(--cd-color-brand);
+    color: var(--cd-color-brand-fg);
   }
 }
 

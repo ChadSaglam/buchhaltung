@@ -1,6 +1,8 @@
-/* chadev design tokens — DRAFT (Phase 1.6). Both apps import this file; nothing else is shared. */
+/* chadev design tokens (Phase 1.6, colours decided in 5.3). Both apps import this file; nothing else is shared. */
 :root {
-  --cd-color-brand: #1d4ed8;
+  --cd-color-brand: #2451e6;
+  --cd-color-brand-hover: #1e44c4;
+  --cd-color-brand-soft: #eef4ff;
   --cd-color-brand-fg: #ffffff;
   --cd-color-bg: #fafafa;
   --cd-color-fg: #111827;
@@ -23,4 +25,7 @@
   --cd-color-fg: #f3f4f6;
   --cd-color-muted: #9ca3af;
   --cd-color-border: #1f2937;
+  --cd-color-brand: #3b6cf6;
+  --cd-color-brand-hover: #5b84f8;
+  --cd-color-brand-soft: #172554;
 }
