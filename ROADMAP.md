@@ -59,10 +59,6 @@ Rule: every PR names the B-ID it closes and which north-star column it serves.
 - [ ] **B-27** N+1 audit on bookings list + stats. — `M` / `M`
 - [ ] **B-28** Index audit: `(tenant_id, date)`, `(tenant_id, status)` on bookings. — `M` / `S`
 
-### DX
-- [ ] **B-29** Pre-commit: ruff + prettier + api-types freshness. — `L` / `S`
-- [ ] **B-30** `scripts/project-overview.sh` → auto-updated `STATUS.md`. — `L` / `S`
-
 ---
 
 ## 🅿️ Parked
@@ -77,6 +73,15 @@ Rule: every PR names the B-ID it closes and which north-star column it serves.
 
 ## ✅ Done
 
+- **B-30** ✅ 2026-09-11 — `scripts/status.sh` → `STATUS.md` (`make status`): app version, backend/vitest/e2e test
+  counts, routers + routes, models, Alembic migrations + head (venv `alembic heads`, else derived from the files),
+  open B-xx table folded from ROADMAP.md, done count, date + commit. Pure grep/find, shellcheck-clean;
+  `scripts/project-overview.sh` untouched.
+- **B-29** ✅ 2026-09-11 — Pre-commit gates completed: `api-types` local hook at pre-push runs
+  `scripts/gen-api-types.sh` and fails on `git diff` of `frontend/src/lib/api-types.ts` (same check as the CI
+  "api-types" job), triggered by `backend/app/{routers,schemas,models}/**.py`; `eslint` (`npm run lint`) at pre-push
+  for `frontend/**.{ts,tsx,css}` — the frontend has no prettier, so eslint is the formatter gate. ruff, gitleaks,
+  tsc were already in place.
 - **B-37** ✅ 2026-09-11 — Inbound platform events (contracts/events.md, receiver side). `POST /api/platform/events`
   (`routers/platform_events.py`, `services/platform_events.py`): HMAC-SHA256 over `"<ts>.<raw body>"` from
   `X-Platform-Signature: sha256=<hex>` with `PLATFORM_SHARED_SECRET` (constant-time), `X-Platform-Timestamp` ±5 min;
@@ -213,4 +218,4 @@ Rule: every PR names the B-ID it closes and which north-star column it serves.
 | 4 Polish | ✅ B-09, B-13 · open: B-22 |
 | 5 UX | ✅ B-18, B-19 · NOW: B-14, B-16, B-21 · open: B-15, B-17, B-20 |
 | 6 Together | ✅ B-36 (SSO + mirroring), B-37 (events) · parked: B-38 |
-| 7 DX | ✅ B-12 · open: B-29, B-30 |
+| 7 DX | ✅ B-12, B-29, B-30 |

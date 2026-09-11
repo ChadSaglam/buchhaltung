@@ -7,7 +7,7 @@ BIN := backend/venv/bin
 FRONTEND_PORT ?= 3000
 BACKEND_PORT  ?= 8000
 
-.PHONY: help setup doctor dev-deps e2e-deps hooks dev stop ports test test-backend test-unit test-e2e lint fix typecheck check api-types migrate migration ai-context clean docker
+.PHONY: help setup doctor dev-deps e2e-deps hooks dev stop ports test test-backend test-unit test-e2e lint fix typecheck check api-types migrate migration ai-context status clean docker
 
 help: ## Show this help
 	@grep -hE '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -126,6 +126,9 @@ migration: ## Create a migration: make migration m="add x"
 
 ai-context: ## Regenerate the machine-readable repo map for AI agents
 	./scripts/ai-context.sh
+
+status: ## Regenerate STATUS.md (tests, routes, migrations, open roadmap items)
+	./scripts/status.sh
 
 docker: ## Build and run the whole stack
 	docker compose up --build

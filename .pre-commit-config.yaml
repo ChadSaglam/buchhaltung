@@ -46,3 +46,28 @@ repos:
         files: ^frontend/.*\.(ts|tsx)$
         pass_filenames: false
         stages: [pre-push]
+
+      # No prettier in the frontend toolchain — eslint is the formatter gate.
+      - id: eslint
+        name: ESLint (frontend)
+        entry: bash -c 'cd frontend && npm run lint'
+        language: system
+        files: ^frontend/.*\.(ts|tsx|css)$
+        pass_filenames: false
+        stages: [pre-push]
+
+      # Mirrors CI "api-types" job: regenerate, then fail if the committed file drifted.
+      - id: api-types
+        name: API types are fresh
+        entry: >-
+          bash -c '
+          ./scripts/gen-api-types.sh >/dev/null &&
+          if ! git diff --quiet -- frontend/src/lib/api-types.ts; then
+            echo "frontend/src/lib/api-types.ts is out of date. run: make api-types";
+            git --no-pager diff --stat -- frontend/src/lib/api-types.ts;
+            exit 1;
+          fi'
+        language: system
+        files: ^backend/app/(routers|schemas|models)/.*\.py$
+        pass_filenames: false
+        stages: [pre-push]
