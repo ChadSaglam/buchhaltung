@@ -10,7 +10,24 @@ import AxeBuilder from "@axe-core/playwright";
 
 const BLOCKING = new Set(["serious", "critical"]);
 
+/** Motion fades pages in (inline `opacity` styles). Audit the settled DOM, not a frame mid-fade. */
+async function waitForEnterAnimations(page: Page) {
+  await page
+    .waitForFunction(
+      () =>
+        Array.from(document.querySelectorAll<HTMLElement>('[style*="opacity"]')).every(
+          (el) => getComputedStyle(el).opacity === "1",
+        ),
+      undefined,
+      { timeout: 5_000 },
+    )
+    .catch(() => {
+      /* something is intentionally faded (e.g. a disabled control) — audit what is there */
+    });
+}
+
 async function checkA11y(page: Page, name: string) {
+  await waitForEnterAnimations(page);
   const results = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "best-practice"])
     .analyze();
@@ -76,6 +93,7 @@ for (const theme of ["light", "dark"] as const) {
     test(`${route} (${theme}) has no serious axe violations`, async ({ page }) => {
       // The theme init script reads localStorage before first paint.
       await page.addInitScript((t) => localStorage.setItem("theme", t), theme);
+      await page.emulateMedia({ reducedMotion: "reduce" });
       await register(page);
       await page.goto(route);
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
