@@ -2,7 +2,7 @@
 
 > One running list. Never duplicated — items move between sections, they don't get re-added.
 > Legend: severity `C`ritical / `H`igh / `M`edium / `L`ow · effort `S` (<1h) / `M` (half day) / `L` (multi-day)
-> IDs: `B-xx` = work item (next free: **B-36**) · `P-xx` = parked (next free: **P-05**)
+> IDs: `B-xx` = work item (next free: **B-39**) · `P-xx` = parked (next free: **P-05**)
 > Cross-product items (SSO, contracts, design tokens) live in `chadev-platform/ROADMAP.md`, not here.
 > Updated: 2026-09-11
 
@@ -15,6 +15,7 @@
 | **more dynamic** | Scan → classify → book without a reload; live review queue; optimistic booking edits | B-14, B-15, B-16 |
 | **more professional** | Money that rounds right in every export, audit trail, branded Steuerberater hand-off | B-01 ✅, B-04 ✅, B-05 ✅, B-09 ✅, B-17 |
 | **easier to improve** | No god-files, one type source, tests that catch regressions, jobs outside the API process | B-02 ✅, B-03 ✅, B-08 ✅, B-10 ✅, B-11 ✅, B-13 ✅, B-33 ✅ |
+| **together** (platform) | One login across billing + buchhaltung, paid invoices book themselves | B-36 ✅, B-37 ✅, B-38 🅿️ |
 | **more user-friendly** | Loading/empty/error states everywhere, keyboard-first review, a11y, onboarding | B-18 ✅, B-19 ✅, B-20, B-21 |
 
 Rule: every PR names the B-ID it closes and which north-star column it serves.
@@ -69,11 +70,38 @@ Rule: every PR names the B-ID it closes and which north-star column it serves.
 - **P-02** Client portal for buchhaltung (Steuerberater view).
 - **P-03** Mobile PWA for receipt capture.
 - **P-04** Stripe vs Lemon Squeezy — decided at platform level (chadev-platform 6.4).
+- **B-38** `invoice.unpaid` reversal event (status set back from `paid` in billing → storno of the B-37 booking).
+  Not in events v1 (contracts/events.md); needs a decision on storno vs. delete first.
 
 ---
 
 ## ✅ Done
 
+- **B-37** ✅ 2026-09-11 — Inbound platform events (contracts/events.md, receiver side). `POST /api/platform/events`
+  (`routers/platform_events.py`, `services/platform_events.py`): HMAC-SHA256 over `"<ts>.<raw body>"` from
+  `X-Platform-Signature: sha256=<hex>` with `PLATFORM_SHARED_SECRET` (constant-time), `X-Platform-Timestamp` ±5 min;
+  no Bearer, default per-IP rate limit. `invoice.paid` v1 → one booking `1020 Bank an 1100 Debitoren`, amount from
+  the decimal string via `round_chf` (half-up), `datum` = `paid_at` as `DD.MM.YYYY`, text `Zahlung <number> <client>`,
+  `source=billing`, `rechnung=<number>`, idempotent on `source_key=billing:invoice:<id>:paid` (202 accepted / 200
+  duplicate). 404 secret unset · 401 `bad_signature`/`stale_timestamp` · 400 `unsupported_version`/`unsupported_event`/
+  `invalid_payload` · 404 `unknown_tenant` (tid never did SSO — final for billing). `core/errors.py` gained
+  `ApiError(status, code, message)` so a route can name its envelope code. 13 tests, signed like billing's sender.
+- **B-36** ✅ 2026-09-11 — SSO hand-off + tenant mirroring (contracts/sso.md, ADR-001 amendment, verifier side).
+  `POST /api/auth/sso {token}` (`routers/sso.py`, `services/sso.py`): HS256 with `PLATFORM_SHARED_SECRET`,
+  `iss=billing`/`aud=buchhaltung`/`type=sso`, `exp-iat ≤ 120 s`, `jti` single-use via `sso_nonces` table (works across
+  workers, expired rows purged on the way). 404 secret unset · 401 `sso_invalid`/`sso_expired`/`sso_replayed` · 409
+  `email_taken_locally`. Migration `a400bdc46480` (batch ops, PG + SQLite): `tenants.platform_tenant_id` (unique),
+  `users.platform_user_id` + `auth_source` (default `local`), unique `(tenant_id, platform_user_id)`, `sso_nonces`.
+  First hop creates the tenant from the snapshot (`unique_tenant_slug` + `seed_tenant`) and a shadow user
+  (`auth_source=platform`, `password_hash="!platform"`); later hops refresh tenant name/plan/trial and user
+  email/name/role. `/api/auth/login` answers 403 `platform_user` for shadow users before checking the password.
+  Roles pass through on the shared ladder (unknown → viewer; billing `admin` stays `admin`, no promotion to owner).
+  Same email as a local user of the same mirrored tenant → linked (keeps password/role); other tenant → 409.
+  Frontend: `/sso` reads `#token=` once (StrictMode-safe), clears the fragment, stores the session like `/login`,
+  `router.replace("/dashboard")`, translated error state with a link to `/login`; "Apps" switcher in the top bar
+  (`AppSwitcher`, `lib/platform.ts`) links to `NEXT_PUBLIC_BILLING_URL`, hidden when unset. Env: `PLATFORM_SHARED_SECRET`,
+  `BILLING_URL`, `NEXT_PUBLIC_BILLING_URL` (.env examples, compose, README "Platform (SSO + events)"). Tests: 18 pytest
+  (PG 339 / SQLite 335 passed), Playwright 14 → **17** (`e2e/sso.spec.ts` mints the token with node:crypto).
 - **B-19** ✅ 2026-09-11 — a11y pass. Skip link → `<main id="main">` (AppShell, login, register); `hooks/useFocusTrap`
   gives CommandPalette, ShortcutsModal, AssistantPanel and the mobile sidebar Tab-cycling, `Esc` and focus return;
   `<html lang>` follows `getLocale()` (`LangSync`, `setLocale`); every input/select/textarea has a label
@@ -184,5 +212,5 @@ Rule: every PR names the B-ID it closes and which north-star column it serves.
 | 3 Reliability | ✅ B-04, B-05, B-08, B-11, B-33, B-35 |
 | 4 Polish | ✅ B-09, B-13 · open: B-22 |
 | 5 UX | ✅ B-18, B-19 · NOW: B-14, B-16, B-21 · open: B-15, B-17, B-20 |
-| 6 Together | see platform |
+| 6 Together | ✅ B-36 (SSO + mirroring), B-37 (events) · parked: B-38 |
 | 7 DX | ✅ B-12 · open: B-29, B-30 |

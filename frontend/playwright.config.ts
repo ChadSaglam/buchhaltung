@@ -13,6 +13,10 @@ const E2E_PORT = process.env.E2E_PORT ?? "3100";
 const API_PORT = process.env.E2E_API_PORT ?? "8100";
 const API_URL = `http://127.0.0.1:${API_PORT}`;
 const BACKEND_DIR = path.join(__dirname, "..", "backend");
+// Platform wiring for e2e/sso.spec.ts: the secret signs the SSO token the
+// test mints, the URL makes the "Apps" switcher render its Billing entry.
+export const E2E_PLATFORM_SECRET = "e2e-platform-secret-not-used-outside-playwright";
+export const E2E_BILLING_URL = "http://127.0.0.1:5050";
 // `make setup` puts the backend toolchain in backend/venv; CI installs it globally.
 const PYTHON = existsSync(path.join(BACKEND_DIR, "venv", "bin", "python")) ? "venv/bin/python" : "python3";
 
@@ -53,6 +57,9 @@ export default defineConfig({
         SECRET_KEY: "e2e-only-secret-not-used-outside-playwright",
         CORS_ORIGINS: `http://127.0.0.1:${E2E_PORT},http://localhost:${E2E_PORT}`,
         SENTRY_DSN: "",
+        // Platform SSO (e2e/sso.spec.ts mints the hand-off token with this secret).
+        PLATFORM_SHARED_SECRET: E2E_PLATFORM_SECRET,
+        BILLING_URL: E2E_BILLING_URL,
       },
     },
     {
@@ -67,7 +74,7 @@ export default defineConfig({
       timeout: 120_000,
       // NEXT_PUBLIC_* is inlined at build time: the CI build step must export
       // the same value (see .github/workflows/ci.yml).
-      env: { NEXT_PUBLIC_API_URL: API_URL },
+      env: { NEXT_PUBLIC_API_URL: API_URL, NEXT_PUBLIC_BILLING_URL: E2E_BILLING_URL },
     },
   ],
 });

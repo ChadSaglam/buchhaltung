@@ -23,7 +23,9 @@ api.interceptors.response.use(
       localStorage.removeItem('user');
       // Come back to where the user was after logging in again.
       const next = encodeURIComponent(window.location.pathname + window.location.search);
-      if (!window.location.pathname.startsWith('/login')) {
+      // /sso shows its own error state for a rejected hand-off token.
+      const path = window.location.pathname;
+      if (!path.startsWith('/login') && !path.startsWith('/sso')) {
         window.location.href = `/login?next=${next}`;
       }
     }
@@ -50,6 +52,12 @@ export async function register(email: string, password: string, tenantName: stri
 
 export async function login(email: string, password: string) {
   const res = await api.post('/api/auth/login', { email, password });
+  return res.data;
+}
+
+/** Exchange billing's SSO hand-off token for a session (chadev-platform/contracts/sso.md). */
+export async function ssoLogin(token: string) {
+  const res = await api.post('/api/auth/sso', { token });
   return res.data;
 }
 

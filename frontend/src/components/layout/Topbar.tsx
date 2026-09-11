@@ -8,6 +8,7 @@ import { getQuickActions } from "@/lib/quick-actions";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LanguageSwitcher } from "@/components/ui/language_switcher";
 import { UserMenu } from "@/components/layout/UserMenu";
+import { AppSwitcher } from "@/components/layout/AppSwitcher";
 import { NotificationsBell } from "@/components/layout/NotificationsBell";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 
@@ -111,6 +112,7 @@ export function Topbar({ onMenuClick, onToggleSidebar, sidebarCollapsed }: Topba
 
         <LanguageSwitcher className="hidden sm:flex" />
         <ThemeToggle />
+        <AppSwitcher />
         <div className="mx-1 hidden h-6 w-px bg-border sm:block" />
         <UserMenu />
       </div>
