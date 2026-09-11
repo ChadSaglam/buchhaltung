@@ -25,7 +25,10 @@
   --cd-color-fg: #f3f4f6;
   --cd-color-muted: #9ca3af;
   --cd-color-border: #1f2937;
-  --cd-color-brand: #3b6cf6;
-  --cd-color-brand-hover: #5b84f8;
+  --cd-color-brand: #3b6cf6;        /* white on it: 4.50:1 — buttons OK */
+  --cd-color-brand-hover: #5b84f8;  /* use THIS for link text on the dark bg (brand as text is only 4.25:1) */
   --cd-color-brand-soft: #172554;
+  --cd-color-success: #4ade80;
+  --cd-color-warning: #fbbf24;
+  --cd-color-danger: #f87171;
 }
