@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { MetricCard } from "@/components/ui/metric_card";
 import { MetricCardSkeleton } from "@/components/shared/LoadingSkeleton";
+import { ErrorState } from "@/components/shared/ErrorState";
 import { SystemChecklist } from "@/components/shared/SystemChecklist";
 import { GettingStarted } from "@/components/shared/GettingStarted";
 import { useApi } from "@/hooks/useApi";
@@ -46,9 +47,14 @@ const ACTIONS = [
 ];
 
 export default function DashboardPage() {
-  const { data: info, isLoading: infoLoading } = useApi<ClassifierInfo>("/api/classify/info");
-  const { data: bookingStats, isLoading: bookingsLoading } = useApi<BookingStats>("/api/bookings/stats");
-  const isLoading = infoLoading || bookingsLoading;
+  const info = useApi<ClassifierInfo>("/api/classify/info");
+  const stats = useApi<BookingStats>("/api/bookings/stats");
+  const isLoading = info.isLoading || stats.isLoading;
+  const error = info.error ?? stats.error;
+  const retry = () => {
+    info.mutate();
+    stats.mutate();
+  };
 
   return (
     <div className="space-y-8">
@@ -72,12 +78,14 @@ export default function DashboardPage() {
           >
             {isLoading ? (
               Array.from({ length: 4 }).map((_, i) => <MetricCardSkeleton key={i} />)
+            ) : error ? (
+              <ErrorState error={error} onRetry={retry} variant="inline" className="sm:col-span-2" />
             ) : (
               <>
                 <motion.div variants={item}>
                   <MetricCard
                     title="ML-Modell"
-                    value={info ? `${Math.round(info.model_accuracy * 100)}%` : "–"}
+                    value={info.data ? `${Math.round(info.data.model_accuracy * 100)}%` : "–"}
                     subtitle="Genauigkeit"
                     accent="brand"
                     icon={<Bot />}
@@ -86,7 +94,7 @@ export default function DashboardPage() {
                 <motion.div variants={item}>
                   <MetricCard
                     title="Gedächtnis"
-                    value={info?.memory_count ?? "–"}
+                    value={info.data?.memory_count ?? "–"}
                     subtitle="Einträge"
                     accent="success"
                     icon={<Brain />}
@@ -95,7 +103,7 @@ export default function DashboardPage() {
                 <motion.div variants={item}>
                   <MetricCard
                     title="Korrekturen"
-                    value={info?.corrections_count ?? "–"}
+                    value={info.data?.corrections_count ?? "–"}
                     subtitle="Gesamt"
                     accent="warning"
                     icon={<Pencil />}
@@ -104,7 +112,7 @@ export default function DashboardPage() {
                 <motion.div variants={item}>
                   <MetricCard
                     title="Buchungen"
-                    value={bookingStats?.total_count ?? "–"}
+                    value={stats.data?.total_count ?? "–"}
                     subtitle="In Datenbank"
                     accent="danger"
                     icon={<BookOpen />}

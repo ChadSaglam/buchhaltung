@@ -1,8 +1,12 @@
 "use client";
 
-import { Brain, Loader2, Download, Sparkles } from "lucide-react";
+import { Brain, Download, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/ui/page_header";
 import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { ErrorState } from "@/components/shared/ErrorState";
+import { PageSkeleton } from "@/components/shared/PageSkeleton";
+import { t } from "@/lib/i18n";
 import { useModellInfo } from "./hooks/useModellInfo";
 import { useModellActions } from "./hooks/useModellActions";
 import { useModellInspect } from "./hooks/useModellInspect";
@@ -16,7 +20,7 @@ import { PipelineCard } from "./components/PipelineCard";
 import { DangerZone } from "./components/DangerZone";
 
 export default function ModellPage() {
-  const { info, vision, loading, fetchInfo } = useModellInfo();
+  const { info, vision, loading, error, fetchInfo } = useModellInfo();
   const {
     training,
     handleTrain,
@@ -30,14 +34,9 @@ export default function ModellPage() {
 
   const acc = info?.model_accuracy ?? 0;
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-80 gap-3">
-        <Loader2 className="w-10 h-10 animate-spin text-brand-600 dark:text-brand-300" />
-        <span className="text-sm text-muted-foreground">Modell wird geladen…</span>
-      </div>
-    );
-  }
+  if (loading) return <PageSkeleton header metrics={4} rows={4} className="max-w-5xl mx-auto" />;
+  if (error || !info) return <ErrorState error={error} onRetry={fetchInfo} />;
+  const canTrain = (info.total_samples ?? 0) >= 5;
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto pb-12">
@@ -51,7 +50,7 @@ export default function ModellPage() {
             <Button
               variant="outline"
               onClick={() => handleDownload("bundle")}
-              disabled={!info?.has_model && (info?.memory_count ?? 0) === 0}
+              disabled={!info.has_model && (info.memory_count ?? 0) === 0}
               icon={<Download className="w-4 h-4" />}
             >
               Exportieren
@@ -59,7 +58,7 @@ export default function ModellPage() {
             <Button
               variant="primary"
               onClick={handleTrain}
-              disabled={training || (info?.total_samples ?? 0) < 5}
+              disabled={training || !canTrain}
               loading={training}
               icon={<Sparkles className="w-4 h-4" />}
             >
@@ -70,16 +69,29 @@ export default function ModellPage() {
       />
 
       {/* ── System Status ─────────────────────────────────────────────── */}
-      <SystemStatusBadge hasModel={info?.has_model ?? false} hasVision={vision.available} />
+      <SystemStatusBadge hasModel={info.has_model} hasVision={vision.available} />
 
       {/* ── Stat Cards ────────────────────────────────────────────────── */}
       <ModelStatGrid info={info} vision={vision} acc={acc} />
 
       {/* ── Accuracy Bar ──────────────────────────────────────────────── */}
-      {info?.has_model && <AccuracyCard info={info} acc={acc} />}
+      {info.has_model ? (
+        <AccuracyCard info={info} acc={acc} />
+      ) : (
+        <EmptyState
+          icon={Brain}
+          title={t("empty.modell.title")}
+          description={t("empty.modell.desc")}
+          action={
+            <Button onClick={handleTrain} disabled={training || !canTrain} loading={training} icon={<Sparkles className="w-4 h-4" aria-hidden="true" />}>
+              {t("empty.modell.action")}
+            </Button>
+          }
+        />
+      )}
 
       {/* ── Inspect Tabs ──────────────────────────────────────────────── */}
-      {info?.has_model && (
+      {info.has_model && (
         <InspectTabs info={info} training={training} handleTrain={handleTrain} inspect={inspect} />
       )}
 

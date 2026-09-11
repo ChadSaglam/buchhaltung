@@ -1,6 +1,7 @@
 "use client";
 import { motion, type HTMLMotionProps } from "motion/react";
 import { Loader2 } from "lucide-react";
+import Link, { type LinkProps } from "next/link";
 import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +40,26 @@ const sizes: Record<ButtonSize, string> = {
   icon: "h-9 w-9 rounded-lg",
 };
 
+const BASE =
+  "inline-flex items-center justify-center font-medium select-none transition-[filter,background-color,border-color,color] duration-150 disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+
+/** The Button look on a Next `<Link>` — for calls to action that navigate. */
+export function ButtonLink({
+  variant = "primary",
+  size = "md",
+  icon,
+  className,
+  children,
+  ...props
+}: LinkProps & { variant?: ButtonVariant; size?: ButtonSize; icon?: React.ReactNode; className?: string; children: React.ReactNode }) {
+  return (
+    <Link className={cn(BASE, variants[variant], sizes[size], className)} {...props}>
+      {icon}
+      {children}
+    </Link>
+  );
+}
+
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
     { variant = "primary", size = "md", loading, icon, iconRight, children, disabled, className, ...props },
@@ -50,9 +71,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         whileTap={{ scale: 0.97 }}
         transition={{ type: "spring", stiffness: 500, damping: 30 }}
         className={cn(
-          "inline-flex items-center justify-center font-medium select-none",
-          "transition-[filter,background-color,border-color,color] duration-150",
-          "disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+          BASE,
           variants[variant],
           sizes[size],
           className

@@ -1,22 +1,20 @@
-import { Search, Loader2 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/Card";
+import { Search } from "lucide-react";
+import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { PageSkeleton } from "@/components/shared/PageSkeleton";
 import type { Booking } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { t } from "@/lib/i18n";
 
 export function ResultsTable({ results, loading }: { results: Booking[]; loading: boolean }) {
-  if (loading) {
-    return (
-      <Card><CardContent className="flex items-center justify-center py-12 text-muted-foreground"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Laden…</CardContent></Card>
-    );
-  }
+  if (loading) return <PageSkeleton rows={5} />;
   if (results.length === 0) {
-    return <EmptyState icon={Search} title="Keine Treffer" description="Passe deine Suche an oder lösche Filter." />;
+    return <EmptyState icon={Search} title={t("empty.insights.search")} description={t("empty.insights.search_desc")} />;
   }
   return (
     <Card>
       <div className="overflow-x-auto">
-        <table className="w-full text-sm min-w-[640px]">
+        <table className="w-full text-sm min-w-[640px]" aria-label="Suchergebnisse">
           <thead>
             <tr className="border-b border-border bg-muted text-left">
               <th className="px-3 py-3 font-medium text-muted-foreground">Datum</th>

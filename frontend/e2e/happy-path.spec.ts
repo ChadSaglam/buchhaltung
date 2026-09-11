@@ -35,7 +35,7 @@ test("register, browse the Kontenplan, book and export", async ({ page, request 
 
   // ── Kontenplan page ──────────────────────────────────────────────────
   await page.goto("/dashboard/kontenplan");
-  await expect(page.getByRole("heading", { name: "Kontenplan" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Kontenplan & Training" })).toBeVisible();
 
   // ── create a booking (API, with the UI's token) ───────────────────────
   const token = await tokenFromStorage(page);

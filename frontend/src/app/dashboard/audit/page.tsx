@@ -3,11 +3,14 @@
 import useSWR from "swr";
 import { ScrollText } from "lucide-react";
 import { api } from "@/lib/api";
+import { t } from "@/lib/i18n";
 import { PageHeader } from "@/components/ui/page_header";
 import { Badge } from "@/components/ui/Badge";
+import { ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { MetricCardSkeleton } from "@/components/shared/LoadingSkeleton";
+import { ErrorState } from "@/components/shared/ErrorState";
+import { PageSkeleton } from "@/components/shared/PageSkeleton";
 
 interface AuditEntry {
   id: number;
@@ -36,7 +39,7 @@ function formatDate(iso: string | null): string {
 }
 
 export default function AuditPage() {
-  const { data, error, isLoading } = useSWR<AuditResponse>("/api/audit/", (url: string) =>
+  const { data, error, isLoading, mutate } = useSWR<AuditResponse>("/api/audit/", (url: string) =>
     api.get(url).then((r) => r.data)
   );
 
@@ -53,24 +56,27 @@ export default function AuditPage() {
         }
       />
 
-      {isLoading && <MetricCardSkeleton />}
+      {isLoading && <PageSkeleton rows={6} />}
 
-      {error && (
-        <p className="text-sm text-destructive">Protokoll konnte nicht geladen werden.</p>
-      )}
+      {error && <ErrorState error={error} onRetry={() => mutate()} />}
 
       {data && data.items.length === 0 && (
         <EmptyState
           icon={ScrollText}
-          title="Keine Audit-Einträge"
-          description="Sobald Aktionen ausgeführt werden, erscheinen sie hier."
+          title={t("empty.audit.title")}
+          description={t("empty.audit.desc")}
+          action={
+            <ButtonLink variant="outline" href="/dashboard">
+              {t("empty.audit.action")}
+            </ButtonLink>
+          }
         />
       )}
 
       {data && data.items.length > 0 && (
         <Card>
           <div className="overflow-hidden rounded-xl">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm" aria-label="Audit-Protokoll">
               <thead className="bg-muted text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3">Zeitpunkt</th>

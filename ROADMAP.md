@@ -25,7 +25,6 @@ Rule: every PR names the B-ID it closes and which north-star column it serves.
 
 - [ ] **B-14** Review queue: optimistic accept/reject with rollback; keyboard `j/k/a/r`. — `M` / `M`
 - [ ] **B-16** Dashboard KPIs auto-refresh (SWR `refreshInterval`), no reload. — `L` / `S`
-- [ ] **B-18** Loading / empty / error states audit — every dashboard page has all three. — `M` / `M`
 
 ---
 
@@ -75,6 +74,26 @@ Rule: every PR names the B-ID it closes and which north-star column it serves.
 
 ## ✅ Done
 
+- **B-18** ✅ 2026-09-11 — Every dashboard page has skeleton / empty / error. Shared `components/shared/`
+  `EmptyState` (existing) · `ErrorState` (envelope `error.message` + request id via `lib/errors.ts`, retry =
+  SWR `mutate` or the hook's `load`) · `PageSkeleton` (header/metrics/rows; `dashboard/loading.tsx` uses it).
+  Copy is in `lib/i18n.ts` (DE + EN; FR falls back to DE). `review`, `audit`, `kontenplan`, `lernverlauf` moved
+  to SWR so retry is a `mutate()`; `kontenplan`, `lernverlauf`, `kontoauszug`, `scanner` split into
+  `hooks/ components/ types.ts` (B-10 rule, every page ≤ 120 lines). `alert()` is gone. vitest 58 → **65**
+  (`states.test.tsx`, jsdom for the three components only).
+
+  | Page | Before (loading · empty · error) | After |
+  |---|---|---|
+  | `dashboard` | metric skeletons · `GettingStarted` · none — cards showed "–" | skeletons · same · inline `ErrorState`, retry re-fetches both keys |
+  | `review` | "Laden…" spinner · `EmptyState` without action · swallowed (looked empty) | `PageSkeleton` · `EmptyState` + "Rechnung scannen" · `ErrorState` + `mutate`; approve/reject failures toast the envelope |
+  | `audit` | one `MetricCardSkeleton` · `EmptyState` · red sentence, no retry | `PageSkeleton` · `EmptyState` + action · `ErrorState` + `mutate`; table has `aria-label` |
+  | `kontenplan` | none · none (blank table) · none (unhandled rejection) | `PageSkeleton` · `EmptyState` (+ "Keine Konten gefunden" for a filtered list) · `ErrorState` + retry; save/train report the envelope |
+  | `lernverlauf` | whole page spinner · per-tab `EmptyState` (charts: none) · none (unhandled rejection) | `PageSkeleton` · translated `EmptyState` per tab + action, charts included · `ErrorState` + retry |
+  | `kontoauszug` | processing card · drop zone · `alert()` with raw `detail` | same · drop zone (keyboard-operable) · `ErrorState` with "Erneut versuchen" (same file) or "Andere Datei"; save/export failures toast the envelope |
+  | `scanner` | `StatusBar` skeleton · `DropZone` · toast only | same · same · inline `ErrorState` per failed file with retry; envelope message instead of raw `detail` |
+  | `modell` | spinner · none (only the status badge) · toast, then a blank page | `PageSkeleton` · `EmptyState` "Noch kein Modell trainiert" + train action · `ErrorState` + retry |
+  | `insights` | spinner in `ResultsTable` · "Keine Treffer" (search only) · none (silently empty) | `PageSkeleton` · `EmptyState` "Noch keine Buchungen" + "Kontoauszug hochladen" · `ErrorState` + retry |
+  | `settings` | none ("–" placeholders) · n/a · swallowed | `PageSkeleton` in the tab body · n/a · `ErrorState` + retry; save failures toast |
 - **B-35** ✅ 2026-09-10 — Scanner-config first-call race: the dashboard fires several `/api/scanner/*` calls at
   once and every one tried to insert the tenant's `scanner_configs` row. `get_or_create` now tolerates the lost
   `IntegrityError` and re-reads the winner (83bb0b2, `ScannerService`), and the review-threshold service wraps its

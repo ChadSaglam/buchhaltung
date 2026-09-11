@@ -9,6 +9,8 @@ import { SettingsTabs } from "./components/SettingsTabs";
 import { ProfileTab, CompanyTab, SecurityTab } from "./components/AccountTabs";
 import { ReviewTab, NotificationsTab } from "./components/PreferenceTabs";
 import { AppearanceTab } from "./components/AppearanceTab";
+import { ErrorState } from "@/components/shared/ErrorState";
+import { PageSkeleton } from "@/components/shared/PageSkeleton";
 
 export default function SettingsPage() {
   const s = useSettings();
@@ -42,23 +44,31 @@ export default function SettingsPage() {
           transition={{ duration: 0.2 }}
           className="flex-1 rounded-xl border border-border bg-card p-6"
         >
-          {s.activeTab === "profile" && (
-            <ProfileTab user={s.user} displayName={s.displayName} setDisplayName={s.setDisplayName} />
+          {s.loading ? (
+            <PageSkeleton rows={3} />
+          ) : s.error ? (
+            <ErrorState error={s.error} onRetry={s.load} />
+          ) : (
+            <>
+              {s.activeTab === "profile" && (
+                <ProfileTab user={s.user} displayName={s.displayName} setDisplayName={s.setDisplayName} />
+              )}
+              {s.activeTab === "company" && (
+                <CompanyTab user={s.user} companyName={s.companyName} setCompanyName={s.setCompanyName} />
+              )}
+              {s.activeTab === "review" && <ReviewTab threshold={s.threshold} setThreshold={s.setThreshold} />}
+              {s.activeTab === "notifications" && (
+                <NotificationsTab
+                  emailNotifs={s.emailNotifs}
+                  setEmailNotifs={s.setEmailNotifs}
+                  exportNotifs={s.exportNotifs}
+                  setExportNotifs={s.setExportNotifs}
+                />
+              )}
+              {s.activeTab === "appearance" && <AppearanceTab />}
+              {s.activeTab === "security" && <SecurityTab />}
+            </>
           )}
-          {s.activeTab === "company" && (
-            <CompanyTab user={s.user} companyName={s.companyName} setCompanyName={s.setCompanyName} />
-          )}
-          {s.activeTab === "review" && <ReviewTab threshold={s.threshold} setThreshold={s.setThreshold} />}
-          {s.activeTab === "notifications" && (
-            <NotificationsTab
-              emailNotifs={s.emailNotifs}
-              setEmailNotifs={s.setEmailNotifs}
-              exportNotifs={s.exportNotifs}
-              setExportNotifs={s.setExportNotifs}
-            />
-          )}
-          {s.activeTab === "appearance" && <AppearanceTab />}
-          {s.activeTab === "security" && <SecurityTab />}
         </motion.div>
       </div>
     </div>

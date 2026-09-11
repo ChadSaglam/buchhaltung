@@ -1,13 +1,19 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import useSWR from "swr";
 import { motion } from "motion/react";
-import { CheckCircle2, XCircle, Loader2, ListChecks } from "lucide-react";
+import toast from "react-hot-toast";
+import { CheckCircle2, XCircle, ListChecks, ScanLine } from "lucide-react";
 import { getReviewQueue, approveReviewItem, rejectReviewItem } from "@/lib/api";
+import { errorMessage } from "@/lib/errors";
+import { t } from "@/lib/i18n";
 import { PageHeader } from "@/components/ui/page_header";
-import { Button } from "@/components/ui/Button";
+import { Button, ButtonLink } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { ErrorState } from "@/components/shared/ErrorState";
+import { PageSkeleton } from "@/components/shared/PageSkeleton";
 
 interface ReviewItem {
   id: number;
@@ -23,48 +29,35 @@ interface ReviewItem {
   created_at: string | null;
 }
 
+interface ReviewQueue {
+  items: ReviewItem[];
+  threshold?: number;
+}
+
 export default function ReviewPage() {
-  const [items, setItems] = useState<ReviewItem[]>([]);
-  const [threshold, setThreshold] = useState<number>(0.8);
-  const [loading, setLoading] = useState(true);
+  const { data, error, isLoading, mutate } = useSWR<ReviewQueue>("/api/review/", getReviewQueue, {
+    revalidateOnFocus: false,
+  });
   const [busyId, setBusyId] = useState<number | null>(null);
+  const items = data?.items ?? [];
+  const threshold = typeof data?.threshold === "number" ? data.threshold : 0.8;
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await getReviewQueue();
-      setItems(data.items ?? []);
-      if (typeof data.threshold === "number") setThreshold(data.threshold);
-    } catch {
-      setItems([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  const handleApprove = async (id: number) => {
+  const decide = async (id: number, action: typeof approveReviewItem | typeof rejectReviewItem) => {
     setBusyId(id);
     try {
-      await approveReviewItem(id);
-      setItems((prev) => prev.filter((i) => i.id !== id));
+      await action(id);
+      await mutate(
+        (prev) => (prev ? { ...prev, items: prev.items.filter((i) => i.id !== id) } : prev),
+        { revalidate: false }
+      );
+    } catch (e) {
+      toast.error(errorMessage(e));
     } finally {
       setBusyId(null);
     }
   };
-
-  const handleReject = async (id: number) => {
-    setBusyId(id);
-    try {
-      await rejectReviewItem(id);
-      setItems((prev) => prev.filter((i) => i.id !== id));
-    } finally {
-      setBusyId(null);
-    }
-  };
+  const handleApprove = (id: number) => decide(id, approveReviewItem);
+  const handleReject = (id: number) => decide(id, rejectReviewItem);
 
   return (
     <div className="space-y-6">
@@ -79,15 +72,20 @@ export default function ReviewPage() {
         }
       />
 
-      {loading ? (
-        <div className="flex items-center justify-center py-20 text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin mr-2" /> Laden...
-        </div>
+      {isLoading ? (
+        <PageSkeleton rows={4} />
+      ) : error ? (
+        <ErrorState error={error} onRetry={() => mutate()} />
       ) : items.length === 0 ? (
         <EmptyState
           icon={ListChecks}
-          title="Keine Einträge zur Überprüfung"
-          description="Alle Buchungen haben eine ausreichende Konfidenz."
+          title={t("review.empty")}
+          description={t("empty.review.desc")}
+          action={
+            <ButtonLink variant="outline" href="/dashboard/scanner" icon={<ScanLine className="h-4 w-4" aria-hidden="true" />}>
+              {t("empty.review.action")}
+            </ButtonLink>
+          }
         />
       ) : (
         <div className="space-y-3">
