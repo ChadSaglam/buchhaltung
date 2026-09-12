@@ -118,6 +118,9 @@ jobs:
       # Playwright starts the real backend (SQLite) on this port; NEXT_PUBLIC_*
       # is inlined into the production build, so the build must see it too.
       NEXT_PUBLIC_API_URL: http://127.0.0.1:8100
+      # Same value as E2E_BILLING_URL in playwright.config.ts — the switcher is
+      # only rendered when this is set, and `next build` inlines it.
+      NEXT_PUBLIC_BILLING_URL: http://127.0.0.1:5050
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
