@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.deps import get_current_user, get_db
+from app.core.deps import get_current_user, get_db, require_admin, require_editor
 from app.core.rate_limit import classify_limit, heavy_limit, limiter
 from app.models.classifier_model import ClassifierModel
 from app.models.correction import Correction
@@ -79,7 +79,7 @@ async def predict(
     request: Request,
     body: PredictRequest,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_editor),
 ) -> dict[str, Any]:
     clf = TenantClassifier(user.tenant_id, db)
     result = await clf.classify(body.beschreibung, False, body.betrag)
@@ -130,7 +130,7 @@ async def predict(
 async def delete_action(
     action: Literal["memory", "corrections", "model"],
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_admin),
 ) -> dict[str, str]:
     if action == "memory":
         await db.execute(delete(Memory).where(Memory.tenant_id == user.tenant_id))
@@ -290,7 +290,7 @@ def _require_trusted_model(blob: bytes) -> None:
 async def upload_bundle(
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_admin),
 ) -> dict[str, Any]:
     tid = user.tenant_id
     content = await file.read()
@@ -372,7 +372,7 @@ async def classify_transaction(
     request: Request,
     body: ClassifyRequest,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_editor),
 ) -> dict[str, Any]:
     clf = TenantClassifier(user.tenant_id, db)
     result = await clf.classify(body.beschreibung, body.is_credit, body.betrag)
@@ -399,7 +399,7 @@ async def classify_transaction(
 async def log_correction(
     body: CorrectRequest,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_editor),
 ) -> dict[str, str]:
     clf = TenantClassifier(user.tenant_id, db)
     original = ClassificationResult(
@@ -426,7 +426,7 @@ async def log_correction(
 async def train_model(
     request: Request,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_editor),
 ) -> dict[str, Any]:
     clf = TenantClassifier(user.tenant_id, db)
     result = await clf.train_from_db()

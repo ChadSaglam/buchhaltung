@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.deps import get_current_user, get_db
+from app.core.deps import get_current_user, get_db, require_editor
 from app.models.booking import Booking
 from app.models.user import User
 from app.services.receipts import content_type_for_key, key_belongs_to_tenant, read_receipt
@@ -69,7 +69,7 @@ async def list_bookings(
 async def create_bookings(
     body: BookingCreate | list[BookingCreate],
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_editor),
 ):
     items = body if isinstance(body, list) else [body]
     for item in items:

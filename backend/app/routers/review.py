@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.deps import get_current_user, get_db
+from app.core.deps import get_current_user, get_db, require_editor
 from app.models.user import User
 from app.services.audit_log import AuditLogService
 from app.services.review_queue import ReviewQueueService
@@ -53,7 +53,7 @@ async def approve_item(
     item_id: int,
     body: ApproveRequest,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_editor),
 ) -> dict[str, str]:
     service = ReviewQueueService(user.tenant_id, db)
     item = await service.approve(
@@ -82,7 +82,7 @@ async def approve_item(
 async def reject_item(
     item_id: int,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_editor),
 ) -> dict[str, str]:
     service = ReviewQueueService(user.tenant_id, db)
     item = await service.reject(item_id)

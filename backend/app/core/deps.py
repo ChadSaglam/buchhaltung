@@ -68,6 +68,7 @@ def require_role(minimum: str):
             )
         return user
 
+    _check.minimum_role = minimum  # inspected by tests/test_rbac_routes.py
     return _check
 
 

@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.deps import get_current_user, get_db
+from app.core.deps import get_current_user, get_db, require_editor
 from app.models.booking import Booking
 from app.models.user import User
 from app.services.email_sender import is_email_configured, send_bookkeeping_email
@@ -195,7 +195,7 @@ class EmailRequest(BaseModel):
 async def send_email(
     body: EmailRequest,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_editor),
 ):
     if not is_email_configured():
         raise HTTPException(400, "E-Mail nicht konfiguriert.")
@@ -215,7 +215,7 @@ class EmailWithRowsRequest(BaseModel):
 
 
 @router.post("/email/rows")
-async def send_email_with_rows(body: EmailWithRowsRequest, user: User = Depends(get_current_user)):
+async def send_email_with_rows(body: EmailWithRowsRequest, user: User = Depends(require_editor)):
     if not is_email_configured():
         raise HTTPException(400, "E-Mail nicht konfiguriert. SMTP in .env prüfen.")
     if not body.rows:

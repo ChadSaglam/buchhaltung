@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.deps import get_current_user, get_db
+from app.core.deps import ROLE_RANK, get_db, require_editor
 from app.models.memory import Memory
 from app.models.training_data import TrainingRow
 from app.models.user import User
@@ -170,7 +170,7 @@ async def import_banana_file(
     also_memory: bool = True,
     auto_train: bool = True,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_editor),
 ):
     """Import a Banana Buchhaltung XLS export as training data.
 
@@ -178,6 +178,10 @@ async def import_banana_file(
     - also_memory: if True, also populate memory table for exact matches
     - auto_train: if True, retrain model after import
     """
+    # Wiping a tenant's training data is destructive: admin and up (B-40). Check before any work.
+    if replace and ROLE_RANK.get(user.role, -1) < ROLE_RANK["admin"]:
+        raise HTTPException(403, "Requires admin role or higher")
+
     content = await file.read()
     rows = parse_banana_xls(content, file.filename or "data.xls")
 
@@ -249,7 +253,7 @@ async def import_banana_file(
 async def import_banana_text(
     body: dict,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_editor),
 ):
     """Import from raw paste text (the paste-6.txt tab-separated format)."""
 

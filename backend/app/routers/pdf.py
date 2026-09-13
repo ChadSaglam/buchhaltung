@@ -6,7 +6,7 @@ import io
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 
-from app.core.deps import get_current_user
+from app.core.deps import require_editor
 from app.core.rate_limit import heavy_limit, limiter
 from app.models.user import User
 from app.services.pdf_parser import extract_transactions_from_pdf
@@ -20,7 +20,7 @@ router = APIRouter(prefix="/api/pdf", tags=["pdf"])
 async def parse_pdf(
     request: Request,
     file: UploadFile = File(...),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_editor),
 ):
     if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(400, "Nur PDF-Dateien erlaubt.")

@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.deps import get_current_user, get_db
+from app.core.deps import get_current_user, get_db, require_editor
 from app.core.rate_limit import classify_limit, limiter
 from app.models.correction import Correction
 from app.models.memory import Memory
@@ -27,7 +27,7 @@ async def batch_classify(
     request: Request,
     body: BatchRequest,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_editor),
 ):
     clf = TenantClassifier(user.tenant_id, db)
 

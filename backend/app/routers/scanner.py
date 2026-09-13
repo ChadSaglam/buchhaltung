@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.deps import get_current_user, get_db
+from app.core.deps import get_current_user, get_db, require_admin, require_editor
 from app.core.rate_limit import heavy_limit, limiter
 from app.models.user import User
 from app.schemas.scanner import (
@@ -47,7 +47,7 @@ async def get_scanner_config(
 @router.put("/config", response_model=ScannerConfigResponse)
 async def update_scanner_config(
     payload: ScannerConfigUpdate,
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ) -> ScannerConfigResponse:
     service = ScannerService(db=db, user=user)
@@ -60,7 +60,7 @@ async def extract_invoice_endpoint(
     request: Request,
     file: UploadFile = File(...),
     model: str = Form(default=""),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_editor),
     db: AsyncSession = Depends(get_db),
 ) -> ScannerExtractResponse:
     service = ScannerService(db=db, user=user)

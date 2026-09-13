@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.deps import get_current_user, get_db
+from app.core.deps import get_current_user, get_db, require_admin
 from app.models.kontenplan import Konto, KontoDefault
 from app.models.user import User
 
@@ -33,7 +33,7 @@ async def get_kontenplan(
 async def update_kontenplan(
     body: KontenplanUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_admin),
 ):
     existing = await db.execute(select(Konto).where(Konto.tenant_id == user.tenant_id))
     for row in existing.scalars().all():
