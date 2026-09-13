@@ -5,6 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.core.config import settings
 from app.schemas.common import Money
 
 ScannerStatusLiteral = Literal["active", "done", "failed", "pending"]
@@ -154,14 +155,22 @@ class ScannerConfigResponse(BaseModel):
 
     model_config = {"from_attributes": True}
 
+    # B-42: the Ollama endpoint is deployment configuration, not tenant data. The
+    # column still exists, but every reader uses `settings` and the API reports that.
+    @field_validator("ollama_base_url", mode="before")
+    @classmethod
+    def _ollama_url_from_settings(cls, _value):
+        return settings.OLLAMA_BASE_URL
+
 
 class ScannerConfigUpdate(BaseModel):
+    """`ollama_base_url` and `ocr_command` are deliberately absent (B-42): a tenant
+    must not point the server at an arbitrary host or hand it a shell command."""
+
     ocr_provider: str
     vision_provider: str
     fallback_provider: str | None = None
-    ollama_base_url: str
     default_ollama_model: str | None = None
-    ocr_command: str | None = None
     pdf_ocr_enabled: bool = True
     invoice_matching_enabled: bool = True
     auto_classification_enabled: bool = True

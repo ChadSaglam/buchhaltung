@@ -97,9 +97,7 @@ class ScannerService:
         config.ocr_provider = payload.ocr_provider
         config.vision_provider = payload.vision_provider
         config.fallback_provider = payload.fallback_provider
-        config.ollama_base_url = payload.ollama_base_url
         config.default_ollama_model = payload.default_ollama_model
-        config.ocr_command = payload.ocr_command
         config.pdf_ocr_enabled = payload.pdf_ocr_enabled
         config.invoice_matching_enabled = payload.invoice_matching_enabled
         config.auto_classification_enabled = payload.auto_classification_enabled

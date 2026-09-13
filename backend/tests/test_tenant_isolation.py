@@ -16,6 +16,7 @@ from dataclasses import dataclass
 import pytest
 from sqlalchemy import select
 
+from app.core.config import settings
 from app.models.booking import Booking
 from app.models.correction import Correction
 from app.models.kontenplan import Konto
@@ -293,6 +294,8 @@ async def test_scanner_config_put_does_not_touch_other_tenant(client, db_session
     assert resp.status_code == 200
     assert resp.json()["tenant_id"] == tenants.tenant_a.id
     assert resp.json()["ocr_provider"] == "a-ocr"
+    # B-42: a tenant cannot repoint the server's Ollama endpoint; the API reports the deployment URL.
+    assert resp.json()["ollama_base_url"] == settings.OLLAMA_BASE_URL
 
     await db_session.refresh(config_b)
     assert config_b.ocr_provider == "b-ocr"

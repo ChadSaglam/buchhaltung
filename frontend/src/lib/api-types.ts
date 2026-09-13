@@ -1359,7 +1359,11 @@ export interface components {
             /** Vision Provider */
             vision_provider: string;
         };
-        /** ScannerConfigUpdate */
+        /**
+         * ScannerConfigUpdate
+         * @description `ollama_base_url` and `ocr_command` are deliberately absent (B-42): a tenant
+         *     must not point the server at an arbitrary host or hand it a shell command.
+         */
         app__schemas__scanner__ScannerConfigUpdate: {
             /**
              * Auto Classification Enabled
@@ -1375,12 +1379,8 @@ export interface components {
              * @default true
              */
             invoice_matching_enabled: boolean;
-            /** Ocr Command */
-            ocr_command?: string | null;
             /** Ocr Provider */
             ocr_provider: string;
-            /** Ollama Base Url */
-            ollama_base_url: string;
             /**
              * Pdf Ocr Enabled
              * @default true
@@ -1410,7 +1410,10 @@ export interface components {
             /** Vision Provider */
             vision_provider: string;
         };
-        /** ScannerConfigUpdate */
+        /**
+         * ScannerConfigUpdate
+         * @description No `ollama_base_url` / `ocr_command` (B-42): deployment settings, not tenant data.
+         */
         app__schemas__scanner_config__ScannerConfigUpdate: {
             /** Auto Classification Enabled */
             auto_classification_enabled?: boolean | null;
@@ -1422,8 +1425,6 @@ export interface components {
             invoice_matching_enabled?: boolean | null;
             /** Ocr Provider */
             ocr_provider?: string | null;
-            /** Ollama Base Url */
-            ollama_base_url?: string | null;
             /** Pdf Ocr Enabled */
             pdf_ocr_enabled?: boolean | null;
             /** Review Confidence Threshold */

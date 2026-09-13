@@ -8,7 +8,7 @@ from fastapi import HTTPException
 from app.schemas.scanner import ScannerStatusResponse
 from app.services.scanner.base import ProviderExtractionResult
 from app.services.scanner.scanner_service import ScannerService
-from tests.factories import create_tenant, create_user
+from tests.factories import auth_headers, create_tenant, create_user
 
 PNG_BYTES = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
 
@@ -209,3 +209,42 @@ def test_validate_and_fix_flags_large_amounts_instead_of_zeroing():
     small = _validate_and_fix({"vendor": "Migros", "total_amount": 42.0, "vat_rate": 7.9})
     assert "needs_review" not in small
     assert small["vat_rate"] == 8.1  # snapped to the nearest real Swiss rate
+
+
+# --- B-42: tenant config cannot point the server at another host --------------------------
+@pytest.mark.asyncio
+async def test_config_update_ignores_ollama_url_and_ocr_command(client, db_session):
+    from sqlalchemy import select
+
+    from app.core.config import settings
+    from app.models.scanner_config import ScannerConfig
+
+    tenant = await create_tenant(db_session)
+    user = await create_user(db_session, tenant)
+    headers = auth_headers(user)
+    body = {
+        "ocr_provider": "custom-ocr",
+        "vision_provider": "ollama",
+        "ollama_base_url": "http://169.254.169.254",
+        "ocr_command": "rm -rf /",
+    }
+    for method in (client.put, client.patch):
+        resp = await method("/api/scanner/config", json=body, headers=headers)
+        assert resp.status_code == 200
+        assert resp.json()["ollama_base_url"] == settings.OLLAMA_BASE_URL
+    row = (await db_session.execute(select(ScannerConfig).where(ScannerConfig.tenant_id == tenant.id))).scalar_one()
+    assert row.ollama_base_url != "http://169.254.169.254"
+    assert row.ocr_command is None
+
+
+@pytest.mark.asyncio
+async def test_resolve_ollama_uses_deployment_url_not_tenant_row(db_session):
+    from app.core.config import settings
+    from app.services import ai_assistant
+    from tests.factories import create_scanner_config
+
+    tenant = await create_tenant(db_session)
+    await create_scanner_config(db_session, tenant, ollama_base_url="http://evil:11434", default_ollama_model="")
+    with patch.object(ai_assistant.settings, "OLLAMA_CHAT_MODEL", "llama3"):
+        base_url, _model = await ai_assistant.resolve_ollama(tenant.id, db_session)
+    assert base_url == settings.OLLAMA_BASE_URL.rstrip("/")

@@ -45,12 +45,12 @@ async def resolve_ollama(tenant_id: int, db: AsyncSession) -> tuple[str, str]:
     looks like a chat model → auto-detected chat model from Ollama's installed
     list (vision models excluded).
     """
+    # The endpoint comes from deployment settings only (B-42): a tenant-stored URL
+    # would let one tenant make the server talk to any host it names.
     base_url = settings.OLLAMA_BASE_URL
     scanner_model: str | None = None
     try:
         cfg = await ScannerConfigService(tenant_id, db).get_or_create()
-        if cfg.ollama_base_url:
-            base_url = cfg.ollama_base_url
         scanner_model = cfg.default_ollama_model
     except Exception as exc:  # pragma: no cover - defensive
         logger.warning("[AI] could not load ScannerConfig: %s", exc)
@@ -205,8 +205,16 @@ async def stream_chat(tenant_id: int, db: AsyncSession, messages: list[dict]) ->
             client.stream("POST", f"{base_url}/api/chat", json=payload, timeout=settings.OLLAMA_TIMEOUT) as resp,
         ):
             if resp.status_code != 200:
+                # Upstream bodies stay in the server log (B-42), never in the client stream.
                 body = (await resp.aread()).decode("utf-8", "ignore")[:300]
-                yield _sse({"error": f"Ollama HTTP {resp.status_code}", "detail": body, "model": model})
+                logger.warning("[AI] Ollama HTTP %s for model %s: %s", resp.status_code, model, body)
+                yield _sse(
+                    {
+                        "error": f"Ollama HTTP {resp.status_code}",
+                        "detail": "Antwort des Modells fehlgeschlagen.",
+                        "model": model,
+                    }
+                )
                 return
             yield _sse({"start": True, "model": model})
             # Ollama streams newline-delimited JSON. Parse from a byte buffer
@@ -249,12 +257,13 @@ async def stream_chat(tenant_id: int, db: AsyncSession, messages: list[dict]) ->
             else:
                 yield _sse({"error": "empty", "detail": "Leere Antwort vom Modell.", "model": model})
     except httpx.ConnectError as exc:
-        yield _sse({"error": "connect", "detail": f"{base_url}: {exc}", "model": model})
+        logger.warning("[AI] Ollama unreachable at %s: %s", base_url, exc)
+        yield _sse({"error": "connect", "detail": "Ollama ist nicht erreichbar.", "model": model})
     except httpx.TimeoutException:
         yield _sse({"error": "timeout", "model": model})
-    except Exception as exc:  # pragma: no cover - defensive
+    except Exception:  # pragma: no cover - defensive
         logger.exception("[AI] stream_chat failed")
-        yield _sse({"error": "unknown", "detail": str(exc)[:200]})
+        yield _sse({"error": "unknown", "detail": "Unerwarteter Fehler."})
 
 
 async def summarize(tenant_id: int, db: AsyncSession) -> dict:
@@ -285,12 +294,13 @@ async def summarize(tenant_id: int, db: AsyncSession) -> dict:
                 return {"error": "empty", "model": model}
             return {"content": content, "model": model}
     except httpx.ConnectError as exc:
-        return {"error": "connect", "detail": str(exc)[:200], "model": model}
+        logger.warning("[AI] Ollama unreachable at %s: %s", base_url, exc)
+        return {"error": "connect", "detail": "Ollama ist nicht erreichbar.", "model": model}
     except httpx.TimeoutException:
         return {"error": "timeout", "model": model}
-    except Exception as exc:  # pragma: no cover
+    except Exception:  # pragma: no cover
         logger.exception("[AI] summarize failed")
-        return {"error": "unknown", "detail": str(exc)[:200]}
+        return {"error": "unknown", "detail": "Unerwarteter Fehler."}
 
 
 def _sse(obj: dict) -> str:
