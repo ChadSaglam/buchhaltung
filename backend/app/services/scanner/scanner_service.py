@@ -16,7 +16,7 @@ from app.schemas.scanner import (
     ScannerExtractResponse,
     ScannerStatusResponse,
 )
-from app.services.classifier import TenantClassifier, calc_mwst
+from app.services.classifier import TenantClassifier, calc_mwst, vat_code_for
 from app.services.ollama_vision import parse_invoice_text
 from app.services.receipts import store_receipt
 from app.services.scanner.base import ScannerFile
@@ -264,13 +264,10 @@ class ScannerService:
         if best_result is None:
             raise HTTPException(422, "Klassifizierung fehlgeschlagen.")
 
-        if vat_rate > 0:
-            if vat_rate >= 7.0:
-                best_result.mwst_pct = "8.10"
-                best_result.mwst_code = best_result.mwst_code or "I81"
-            elif vat_rate >= 2.0:
-                best_result.mwst_pct = "2.60"
-                best_result.mwst_code = best_result.mwst_code or "I25"
+        # B-48: the rate on the receipt decides pct and code exactly — no ">= 7 means 8.1".
+        vat = vat_code_for(vat_rate, best_result.mwst_code or "") if vat_rate > 0 else None
+        if vat:
+            best_result.mwst_pct, best_result.mwst_code = vat
             best_result.mwst_amount = calc_mwst(total_amount, best_result.mwst_pct)
 
         result_data = dict(data)

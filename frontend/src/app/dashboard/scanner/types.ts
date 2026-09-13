@@ -63,6 +63,8 @@ export interface ExtractedInvoice {
   classification_confidence?: number;
   classification_source?: string;
   classification_input?: string;
+  needs_review?: boolean;
+  review_reason?: string | null;
   vision_model?: string;
   ocr_provider?: string;
   ocr_worked?: boolean;

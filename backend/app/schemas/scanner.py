@@ -89,6 +89,9 @@ class ExtractedInvoice(BaseModel):
     classification_confidence: float | None = None
     classification_source: str | None = None
     classification_input: str | None = None
+    # Set by extraction when a value is suspicious (e.g. amount > 50'000); the UI shows why.
+    needs_review: bool = False
+    review_reason: str | None = None
     # Storage key of the persisted upload (`receipts/<tenant>/<uuid>.<ext>`);
     # hand it back as `source_key` when the booking is created.
     source_key: str | None = None

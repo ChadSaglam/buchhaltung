@@ -54,6 +54,25 @@ def make_memory_key(text: str) -> str:
     return preprocess(text).strip()
 
 
+# Swiss VAT rate -> Vorsteuer code (Banana). Current rates first, pre-2024 rates kept
+# for old receipts. The rate printed on the receipt is the truth; codes follow it.
+VAT_CODE_BY_RATE: dict[float, str] = {8.1: "I81", 2.6: "I26", 3.8: "I38", 7.7: "I77", 2.5: "I25", 3.7: "I37"}
+
+
+def vat_code_for(rate: float, current_code: str = "") -> tuple[str, str] | None:
+    """(mwst_pct, mwst_code) for a detected VAT rate, or None when the rate is unknown.
+
+    A code the classifier already chose is kept when it belongs to the same rate
+    (``V81``/``M81`` stay), otherwise it is replaced — code and rate must agree.
+    """
+    code = VAT_CODE_BY_RATE.get(round(float(rate), 1))
+    if not code:
+        return None
+    if current_code and current_code.endswith(code[1:]):
+        code = current_code
+    return f"{round(float(rate), 1):.2f}", code
+
+
 def calc_mwst(betrag: float, mwst_pct: str) -> float | str:
     """Tax portion of a gross amount, rounded half-up to the Rappen (see ``round_chf``).
 

@@ -1058,6 +1058,11 @@ export interface components {
             /** Mwst Pct */
             mwst_pct?: string | null;
             /**
+             * Needs Review
+             * @default false
+             */
+            needs_review: boolean;
+            /**
              * Net Amount
              * @default 0
              */
@@ -1069,6 +1074,8 @@ export interface components {
              * @default false
              */
             ocr_worked: boolean;
+            /** Review Reason */
+            review_reason?: string | null;
             /** Scanner Attempts */
             scanner_attempts?: components["schemas"]["ScannerAttempt"][];
             /** Scanner Providers */

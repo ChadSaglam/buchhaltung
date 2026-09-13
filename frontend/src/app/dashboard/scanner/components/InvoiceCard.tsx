@@ -248,6 +248,9 @@ export function InvoiceCard({ invoice, index, onUpdate, onAddToBookings, added }
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
+          {safeInvoice.needs_review && (
+            <Badge tone="warning" title={safeInvoice.review_reason ?? undefined}>Prüfen</Badge>
+          )}
           <Badge tone={confidenceTone}>
             {sourceIcon(classSource)} {(confidence * 100).toFixed(0)}%
           </Badge>

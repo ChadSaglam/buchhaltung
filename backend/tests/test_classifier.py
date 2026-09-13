@@ -552,3 +552,24 @@ async def test_end_to_end_unknown_text_lands_in_review_queue(db_session):
     result = await clf.classify("xqzv völlig unbekannt", False, 12.0)
     item = await ReviewQueueService(tenant.id, db_session).enqueue_if_low_confidence("xqzv", 12.0, result)
     assert item is not None and item.confidence == DEFAULT_RULE_CONFIDENCE
+
+
+# --- B-48: VAT rate -> code is an exact map, not ">= 7 means 8.1" ---------------------------
+def test_vat_code_for_maps_every_swiss_rate_exactly():
+    from app.services.classifier import vat_code_for
+
+    assert vat_code_for(8.1) == ("8.10", "I81")
+    assert vat_code_for(2.6) == ("2.60", "I26")
+    assert vat_code_for(3.8) == ("3.80", "I38")
+    assert vat_code_for(7.7) == ("7.70", "I77")
+    assert vat_code_for(2.5) == ("2.50", "I25")
+    assert vat_code_for(3.7) == ("3.70", "I37")
+    assert vat_code_for(5.0) is None
+    assert vat_code_for(0) is None
+
+
+def test_vat_code_for_keeps_a_classifier_code_of_the_same_rate_only():
+    from app.services.classifier import vat_code_for
+
+    assert vat_code_for(8.1, "V81") == ("8.10", "V81")  # same rate, different kind: keep
+    assert vat_code_for(2.6, "I81") == ("2.60", "I26")  # rate disagrees: the receipt wins

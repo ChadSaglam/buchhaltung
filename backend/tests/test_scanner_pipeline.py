@@ -195,3 +195,17 @@ async def test_scanner_config_service_survives_a_concurrent_insert(db_session):
     assert config.id == winner.id
     # The session is still usable afterwards (no PendingRollbackError).
     await db_session.commit()
+
+
+# --- B-48: extraction never zeroes a real amount; it flags it -------------------------------
+def test_validate_and_fix_flags_large_amounts_instead_of_zeroing():
+    from app.services.ollama_vision import _validate_and_fix
+
+    data = _validate_and_fix({"vendor": "Bauunternehmung AG", "total_amount": 82_500.0, "vat_rate": 8.1})
+    assert data["total_amount"] == 82_500.0
+    assert data["needs_review"] is True
+    assert "50'000" in data["review_reason"]
+
+    small = _validate_and_fix({"vendor": "Migros", "total_amount": 42.0, "vat_rate": 7.9})
+    assert "needs_review" not in small
+    assert small["vat_rate"] == 8.1  # snapped to the nearest real Swiss rate
