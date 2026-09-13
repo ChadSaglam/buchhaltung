@@ -109,8 +109,23 @@ services:
           devices:
             - capabilities: [gpu]
 
+  # Optional LLM gateway (OpenAI-compatible, 352+ providers, auto-fallback).
+  # Opt-in: `docker compose --profile gateway up omniroute` → dashboard http://localhost:20128
+  # Point a client at http://omniroute:20128/v1 (inside compose) or http://localhost:20128/v1.
+  omniroute:
+    image: diegosouzapw/omniroute:latest
+    profiles: ["gateway"]
+    ports:
+      - "127.0.0.1:20128:20128"
+    environment:
+      - OMNIROUTE_MEMORY_MB=${OMNIROUTE_MEMORY_MB:-2048}
+    volumes:
+      - omniroute_data:/app/data
+    restart: unless-stopped
+
 volumes:
   pgdata:
   ollama_models:
   model_data:
   redis_data:
+  omniroute_data:
