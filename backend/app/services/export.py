@@ -21,6 +21,8 @@ def round_chf(val) -> Decimal:
     artefacts of ``round()`` and ``f"{x:.2f}"``. Negative zero collapses to 0.
     """
     dec = val if isinstance(val, Decimal) else Decimal(repr(float(val)))
+    if not dec.is_finite():
+        raise ValueError(f"non-finite amount: {val!r}")
     dec = dec.quantize(_CENT, rounding=ROUND_HALF_UP)
     return dec if dec != 0 else _CENT * 0
 

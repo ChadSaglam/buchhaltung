@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.deps import get_current_user, get_db, require_editor
 from app.models.booking import Booking
 from app.models.user import User
+from app.schemas.common import Money
 from app.services.email_sender import is_email_configured, send_bookkeeping_email
 from app.services.export import df_to_banana_tsv, df_to_csv, df_to_styled_excel
 
@@ -26,11 +27,11 @@ class BuchungRowExport(BaseModel):
     beschreibung: str
     kt_soll: str
     kt_haben: str
-    betrag: float
+    betrag: Money
     mwstcode: str
     artbetrag: str
     mwstpct: str
-    mwstchf: float | str
+    mwstchf: Money | str
     ks3: str
 
 

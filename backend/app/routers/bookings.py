@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import Response
 from pydantic import BaseModel
 from sqlalchemy import func, select
@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.deps import get_current_user, get_db, require_editor
 from app.models.booking import Booking
 from app.models.user import User
+from app.schemas.common import Money
 from app.services.receipts import content_type_for_key, key_belongs_to_tenant, read_receipt
 
 router = APIRouter(prefix="/api/bookings", tags=["bookings"])
@@ -19,12 +20,12 @@ router = APIRouter(prefix="/api/bookings", tags=["bookings"])
 class BookingCreate(BaseModel):
     datum: str = ""
     beschreibung: str = ""
-    betrag: float = 0
+    betrag: Money = 0
     kt_soll: str = ""
     kt_haben: str = ""
     mwst_code: str = ""
     mwst_pct: str = ""
-    mwst_amount: float = 0
+    mwst_amount: Money = 0
     beleg: str = ""
     rechnung: str = ""
     source: str = ""
@@ -35,7 +36,7 @@ class BookingCreate(BaseModel):
 @router.get("/")
 async def list_bookings(
     source: str | None = None,
-    limit: int = 500,
+    limit: int = Query(500, ge=1, le=1000),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):

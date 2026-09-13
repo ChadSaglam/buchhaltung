@@ -357,3 +357,22 @@ async def test_get_export_with_no_bookings_is_404(client, db_session):
     for fmt in ("banana", "csv", "excel"):
         resp = await client.get(f"/api/export/{fmt}", headers=auth_headers(user))
         assert resp.status_code == 404, fmt
+
+
+# --- B-47: money is bounded and finite at the edge -------------------------------------------
+@pytest.mark.parametrize("value", [float("inf"), float("-inf"), float("nan")])
+def test_round_chf_rejects_non_finite(value):
+    with pytest.raises(ValueError):
+        round_chf(value)
+
+
+@pytest.mark.asyncio
+async def test_bookings_reject_absurd_and_non_finite_amounts(client, db_session):
+    tenant = await create_tenant(db_session)
+    user = await create_user(db_session, tenant)
+    headers = auth_headers(user)
+    for betrag in (1e12, "Infinity", "NaN"):
+        resp = await client.post("/api/bookings/", json={"beschreibung": "x", "betrag": betrag}, headers=headers)
+        assert resp.status_code == 422, betrag
+    assert (await client.get("/api/bookings/?limit=0", headers=headers)).status_code == 422
+    assert (await client.get("/api/bookings/?limit=5000", headers=headers)).status_code == 422

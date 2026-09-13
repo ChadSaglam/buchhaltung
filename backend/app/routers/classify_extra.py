@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Request
+import math
+
+from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -38,7 +40,11 @@ async def batch_classify(
         betrag = tx.get("Betrag CHF", 0)
         is_credit = gutschrift is not None and gutschrift > 0
 
-        result = await clf.classify(beschreibung, is_credit, float(betrag or 0))
+        try:
+            amount = float(betrag or 0)
+        except (TypeError, ValueError):
+            amount = 0.0
+        result = await clf.classify(beschreibung, is_credit, amount if math.isfinite(amount) else 0.0)
         results.append(
             {
                 "nr": i + 1,
@@ -60,7 +66,7 @@ async def batch_classify(
 
 @router.get("/corrections")
 async def list_corrections(
-    limit: int = 200,
+    limit: int = Query(200, ge=1, le=1000),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):

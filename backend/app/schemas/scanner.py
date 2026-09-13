@@ -5,6 +5,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.schemas.common import Money
+
 ScannerStatusLiteral = Literal["active", "done", "failed", "pending"]
 
 
@@ -65,7 +67,7 @@ class ScannerStatusResponse(BaseModel):
 
 class ExtractedLineItem(BaseModel):
     item: str
-    amount: float
+    amount: Money
 
 
 _REQUIRED_STR_FIELDS = {"vendor", "date", "invoice_number", "description"}
@@ -75,9 +77,9 @@ class ExtractedInvoice(BaseModel):
     vendor: str = ""
     date: str = ""
     invoice_number: str = ""
-    total_amount: float | None = 0.0
-    net_amount: float | None = 0.0
-    vat_amount: float | None = 0.0
+    total_amount: Money | None = 0.0
+    net_amount: Money | None = 0.0
+    vat_amount: Money | None = 0.0
     vat_rate: float | None = 0.0
     description: str = ""
     line_items: list[ExtractedLineItem] = Field(default_factory=list)
@@ -85,7 +87,7 @@ class ExtractedInvoice(BaseModel):
     kt_haben: str | None = None
     mwst_code: str | None = None
     mwst_pct: str | None = None
-    mwst_amount: float | None = None
+    mwst_amount: Money | None = None
     classification_confidence: float | None = None
     classification_source: str | None = None
     classification_input: str | None = None

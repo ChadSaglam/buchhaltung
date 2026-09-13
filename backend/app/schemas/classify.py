@@ -2,10 +2,12 @@
 
 from pydantic import BaseModel
 
+from app.schemas.common import Money
+
 
 class ClassifyRequest(BaseModel):
     beschreibung: str
-    betrag: float = 0.0
+    betrag: Money = 0.0
     is_credit: bool = False
 
 
