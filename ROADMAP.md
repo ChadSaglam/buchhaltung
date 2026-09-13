@@ -15,7 +15,7 @@
 |---|---|---|
 | **more professional** | Money that rounds right in every export, correct VAT codes, audit trail, Treuhänder hand-off that is accepted first time | B-01 ✅, B-04 ✅, B-05 ✅, B-09 ✅, B-47 ✅, B-48 ✅, B-51, B-53, B-17, B-22 |
 | **more dynamic** | Scan → classify → book without a reload; live review queue; optimistic booking edits; the learning loop visibly closes | B-45 ✅, B-14, B-15, B-16 |
-| **easier to improve** | No god-files, one type source, tests that catch regressions, jobs outside the API process, prod == compose | B-02 ✅, B-03 ✅, B-08 ✅, B-10 ✅, B-11 ✅, B-13 ✅, B-33 ✅, B-39 ✅, B-41, B-49, B-59, B-60 |
+| **easier to improve** | No god-files, one type source, tests that catch regressions, jobs outside the API process, prod == compose | B-02 ✅, B-03 ✅, B-08 ✅, B-10 ✅, B-11 ✅, B-13 ✅, B-33 ✅, B-39 ✅, B-41 ✅, B-49, B-59, B-60 |
 | **together** (platform) | One login across billing + buchhaltung, paid invoices book themselves, roles mean something | B-36 ✅, B-37 ✅, B-40 ✅, B-52, B-38 🅿️ |
 | **more user-friendly** | Loading/empty/error states everywhere, keyboard-first review, a11y, onboarding, no fake saves | B-18 ✅, B-19 ✅, B-44, B-46, B-50 ✅, B-58, B-20 |
 
@@ -26,9 +26,6 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 
 ## 🔥 NOW — production blockers, in this order (one at a time)
 
-- [ ] **B-41** Production compose: `ENVIRONMENT=production` on api + worker, `${SECRET_KEY:?}`, drop `--reload` from the
-      image CMD, worker bypasses the migrate ENTRYPOINT (or one-shot `migrate` service + `pg_advisory_xact_lock` in `env.py`),
-      no published ports for db/redis/ollama, `backend/.dockerignore` (`venv .env* tests *.db`), `USER app`, multi-stage. — `H` / `S`
 - [ ] **B-42** SSRF: `ollama_base_url` (and latent `ocr_command`) become read-only from `settings` — drop them from the
       update schemas; never echo upstream bodies or exception text (`ai_assistant.py:208-209,252`). — `H` / `S`
 - [ ] **B-43** Email export hardening: `EmailStr` single recipient, `html.escape` every cell, `heavy_limit` + `require_editor`
@@ -135,6 +132,11 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 
 ## ✅ Done
 
+- **B-41** ✅ 2026-09-13 — production compose: `ENVIRONMENT=production` on api + worker, `${SECRET_KEY:?}` /
+  `${POSTGRES_PASSWORD:?}`, no `--reload`, two-stage image with `USER app`, `backend/.dockerignore`, worker
+  overrides the migrate ENTRYPOINT, db/redis/ollama unpublished, `pg_advisory_xact_lock` in `alembic/env.py`,
+  `NEXT_PUBLIC_API_URL` is a build arg the browser can reach, root `.env.example`. **Not built here** — first
+  `docker compose up --build` on the Mac is the smoke test.
 - **B-50** ✅ 2026-09-13 — one error path in the frontend: the 7 `.response.data.detail` sites use `errorMessage()`;
   dashboard KPI reads `correction_count`; InvoiceCard effect deps fixed. Folds **B-21** — eslint at 0 warnings.
 - **B-47** ✅ 2026-09-13 — `schemas/common.py:Money` (finite, ±1e9) on bookings, classify, scanner, export rows;
@@ -289,7 +291,7 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 | 0 Recon | ✅ |
 | 0.5 Risk fixes before platform work | ✅ B-00…B-03 (branch `feat/phase0-risks`) |
 | 1 Platform contract | 1.2 ✅ B-31 · 1.4 ✅ B-26 · 1.6 ✅ tokens imported |
-| 2 Security | ✅ B-06, B-07, B-32, B-40 · NOW: B-41, B-42, B-43 · open: B-24 (ADR-002), B-25, B-34, B-54, B-55 |
+| 2 Security | ✅ B-06, B-07, B-32, B-40, B-41 · NOW: B-42, B-43 · open: B-24 (ADR-002), B-25, B-34, B-54, B-55 |
 | 3 Reliability | ✅ B-04, B-05, B-08, B-11, B-33, B-35, B-39, B-47, B-48 · open: B-49, B-51, B-52, B-56, B-57 |
 | 4 Polish | ✅ B-09, B-13 · open: B-22, B-53, B-61 |
 | 5 UX | ✅ B-18, B-19, B-45, B-50 (+B-21) · NEXT: B-44, B-46, B-14, B-16 · open: B-15, B-17, B-20, B-58, B-59 |

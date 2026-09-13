@@ -3,7 +3,7 @@
 import asyncio
 from logging.config import fileConfig
 
-from sqlalchemy import pool
+from sqlalchemy import pool, text
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 # Import the package, not a hand-maintained subset: five models were missing
@@ -30,6 +30,10 @@ def run_migrations_offline() -> None:
 def do_run_migrations(connection):
     context.configure(connection=connection, target_metadata=target_metadata)
     with context.begin_transaction():
+        if connection.dialect.name == "postgresql":
+            # Two API replicas starting at once must not both run `upgrade head`;
+            # the lock is released with the transaction (B-41).
+            connection.execute(text("SELECT pg_advisory_xact_lock(724_411)"))
         context.run_migrations()
 
 

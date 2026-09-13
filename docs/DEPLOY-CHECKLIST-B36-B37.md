@@ -2,18 +2,18 @@
 
 **Date:** 2026-09-12 · **Deployer:** Chad · **Migration:** `a400bdc46480` (additive) · **Rollback unit:** the image, not the migration
 
-> Status 2026-09-12: **NOT READY.** Three blockers from the deep review must land first (section 0).
+> Status 2026-09-13: section-0 blockers landed on `feat/phase-0-cleanup` (B-39, B-40, B-41). Re-run sections 1–4 against that branch.
 > Everything else below is verified against the code at `9e0c22b` (file:line in brackets).
 
 ## 0. Blockers — do before the rest of this list
 
-- [ ] **B-39** `training_data` migration exists and `alembic upgrade head` on a fresh PG creates it
+- [x] **B-39** (2026-09-13, `c1d2e3f4a5b6`) `training_data` migration exists and `alembic upgrade head` on a fresh PG creates it
       (`ENVIRONMENT=production` disables `create_all` → import + training would 500 today).
-- [ ] **B-41** Production compose: `ENVIRONMENT=production` on `api` **and** `worker`; `SECRET_KEY=${SECRET_KEY:?}`;
+- [x] **B-41** (2026-09-13) Production compose: `ENVIRONMENT=production` on `api` **and** `worker`; `SECRET_KEY=${SECRET_KEY:?}`;
       no `--reload` (`backend/Dockerfile:20`); worker runs `python -m app.worker` **without** the migrate ENTRYPOINT
       (or a one-shot `migrate` service + `service_completed_successfully`); no `ports:` on db/redis/ollama;
       `backend/.dockerignore` (`venv .env* tests *.db`); `USER app`.
-- [ ] **B-40** role ladder wired (a `viewer` from SSO must not be able to mutate) — SSO makes viewer accounts real for the first time.
+- [x] **B-40** (2026-09-13) role ladder wired (a `viewer` from SSO must not be able to mutate) — SSO makes viewer accounts real for the first time.
 
 ## 1. Pre-deploy
 

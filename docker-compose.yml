@@ -3,12 +3,14 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        # Inlined into the browser bundle at build time, so it must be the URL the
+        # *browser* reaches the API at — never the compose-internal http://api:8000.
+        NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8000}
+        # App switcher target (contracts/sso.md); empty hides the "Apps" menu.
+        NEXT_PUBLIC_BILLING_URL: ${BILLING_URL:-}
     ports:
       - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://api:8000
-      # App switcher target (contracts/sso.md); empty hides the "Apps" menu.
-      - NEXT_PUBLIC_BILLING_URL=${BILLING_URL:-http://localhost:5050}
     depends_on:
       - api
 
@@ -19,8 +21,14 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://chadev:chadev@db:5432/chadev_buchhaltung
-      - SECRET_KEY=${SECRET_KEY}
+      # Production settings (B-41): config.py refuses to boot with a default secret,
+      # a wildcard CORS origin or AUTO_CREATE_TABLES. Local overrides belong in
+      # docker-compose.override.yml (gitignored), not here.
+      - ENVIRONMENT=production
+      - DATABASE_URL=postgresql+asyncpg://chadev:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/chadev_buchhaltung
+      - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (>= 32 random chars)}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
       - SMTP_HOST=${SMTP_HOST:-}
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USER=${SMTP_USER:-}
@@ -55,10 +63,12 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    command: ["python", "-m", "app.worker"]
+    # Bypass the image ENTRYPOINT: only the API migrates, the worker never races it.
+    entrypoint: ["python", "-m", "app.worker"]
     environment:
-      - DATABASE_URL=postgresql+asyncpg://chadev:chadev@db:5432/chadev_buchhaltung
-      - SECRET_KEY=${SECRET_KEY}
+      - ENVIRONMENT=production
+      - DATABASE_URL=postgresql+asyncpg://chadev:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/chadev_buchhaltung
+      - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (>= 32 random chars)}
       - OLLAMA_BASE_URL=http://ollama:11434
     depends_on:
       db:
@@ -73,10 +83,9 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: chadev
-      POSTGRES_PASSWORD: chadev
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: chadev_buchhaltung
-    ports:
-      - "5432:5432"
+    # No published port: only the compose network reaches the database.
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -87,8 +96,6 @@ services:
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -99,8 +106,6 @@ services:
 
   ollama:
     image: ollama/ollama
-    ports:
-      - "11434:11434"
     volumes:
       - ollama_models:/root/.ollama
     deploy:

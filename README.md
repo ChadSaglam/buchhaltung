@@ -74,8 +74,11 @@ make setup    # backend venv + frontend deps + git hooks
 make dev      # backend on :8000, frontend on :3000, migrations applied
 ```
 
-Or with Docker: `docker compose up --build` (app on `:3000`, API on `:8000`,
-OpenAPI docs on `:8000/docs`).
+Or with Docker — production settings by default (`ENVIRONMENT=production`, no
+`--reload`, non-root, only `web` and `api` published): copy `.env.example` to
+`.env`, set `SECRET_KEY` and `POSTGRES_PASSWORD`, then `docker compose up --build`
+(app on `:3000`, API on `:8000`, OpenAPI docs on `:8000/docs`). Local tweaks go
+in `docker-compose.override.yml` (gitignored).
 
 ### Every command
 
