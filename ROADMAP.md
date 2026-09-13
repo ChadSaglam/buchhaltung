@@ -4,7 +4,7 @@
 > Legend: severity `C`ritical / `H`igh / `M`edium / `L`ow · effort `S` (<1h) / `M` (half day) / `L` (multi-day)
 > IDs: `B-xx` = work item (next free: **B-63**) · `P-xx` = parked (next free: **P-05**)
 > Cross-product items (SSO, contracts, design tokens) live in `chadev-platform/ROADMAP.md`, not here.
-> Updated: 2026-09-12 — reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
+> Updated: 2026-09-13 — Phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
 > Companion docs: `docs/ADR-002-rls.md` (B-24) · `docs/DEPLOY-CHECKLIST-B36-B37.md` · `docs/BRAINSTORM-2026-09-12.md`.
 
 ---
@@ -13,11 +13,11 @@
 
 | Owner's words | What it means in this repo | Tracks that deliver it |
 |---|---|---|
-| **more professional** | Money that rounds right in every export, correct VAT codes, audit trail, Treuhänder hand-off that is accepted first time | B-01 ✅, B-04 ✅, B-05 ✅, B-09 ✅, B-47, B-48, B-51, B-53, B-17, B-22 |
-| **more dynamic** | Scan → classify → book without a reload; live review queue; optimistic booking edits; the learning loop visibly closes | B-45, B-14, B-15, B-16 |
-| **easier to improve** | No god-files, one type source, tests that catch regressions, jobs outside the API process, prod == compose | B-02 ✅, B-03 ✅, B-08 ✅, B-10 ✅, B-11 ✅, B-13 ✅, B-33 ✅, B-39, B-41, B-49, B-59, B-60 |
-| **together** (platform) | One login across billing + buchhaltung, paid invoices book themselves, roles mean something | B-36 ✅, B-37 ✅, B-40, B-52, B-38 🅿️ |
-| **more user-friendly** | Loading/empty/error states everywhere, keyboard-first review, a11y, onboarding, no fake saves | B-18 ✅, B-19 ✅, B-44, B-46, B-50, B-58, B-20 |
+| **more professional** | Money that rounds right in every export, correct VAT codes, audit trail, Treuhänder hand-off that is accepted first time | B-01 ✅, B-04 ✅, B-05 ✅, B-09 ✅, B-47 ✅, B-48 ✅, B-51, B-53, B-17, B-22 |
+| **more dynamic** | Scan → classify → book without a reload; live review queue; optimistic booking edits; the learning loop visibly closes | B-45 ✅, B-14, B-15, B-16 |
+| **easier to improve** | No god-files, one type source, tests that catch regressions, jobs outside the API process, prod == compose | B-02 ✅, B-03 ✅, B-08 ✅, B-10 ✅, B-11 ✅, B-13 ✅, B-33 ✅, B-39 ✅, B-41, B-49, B-59, B-60 |
+| **together** (platform) | One login across billing + buchhaltung, paid invoices book themselves, roles mean something | B-36 ✅, B-37 ✅, B-40 ✅, B-52, B-38 🅿️ |
+| **more user-friendly** | Loading/empty/error states everywhere, keyboard-first review, a11y, onboarding, no fake saves | B-18 ✅, B-19 ✅, B-44, B-46, B-50 ✅, B-58, B-20 |
 
 Rule: every PR names the B-ID it closes and which north-star column it serves.
 Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a wrong VAT code costs money on every receipt; optimistic UI saves 300 ms.
@@ -26,14 +26,6 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 
 ## 🔥 NOW — production blockers, in this order (one at a time)
 
-- [ ] **B-39** `training_data` table has **no migration** and `TrainingRow` is not exported from `app.models`
-      (invisible to Alembic and to the CI drift check). With `ENVIRONMENT=production` (`create_all` off) Banana import,
-      every training job and `/api/classify/top-classes` 500. Fix: export the model, add `create_table` +
-      `ix_training_data_tenant_id` migration, make the drift job import `app.services`, add a "every `Base.metadata`
-      table exists after `upgrade head`" test. — `C` / `S`
-- [ ] **B-40** Wire the role ladder: `require_editor` on every mutating route, `require_admin` on Kontenplan replace,
-      model/memory/corrections delete, scanner config, `import?replace=true`. `core/deps.py:55-75` exists, zero callers —
-      an SSO `viewer` can wipe a tenant today. Add a route-table test: every non-GET route carries a role dependency. — `H` / `M`
 - [ ] **B-41** Production compose: `ENVIRONMENT=production` on api + worker, `${SECRET_KEY:?}`, drop `--reload` from the
       image CMD, worker bypasses the migrate ENTRYPOINT (or one-shot `migrate` service + `pg_advisory_xact_lock` in `env.py`),
       no published ports for db/redis/ollama, `backend/.dockerignore` (`venv .env* tests *.db`), `USER app`, multi-stage. — `H` / `S`
@@ -47,13 +39,6 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 ## ⏭ NEXT — make the two promises true (correctness first, then the NOW-items of 09-11)
 
 ### Correctness (professional)
-- [ ] **B-45** Kontoauszug save posts `original_soll: r.KtSoll` (the *edited* value) — no `Correction` is ever logged, the
-      learning loop is dead on that path. Send `r.suggSoll`/`suggHaben`, only for changed rows, `Promise.allSettled` +
-      summary toast (or a `/classify/correct/batch` endpoint). — `H` / `S`
-- [ ] **B-48** Scanner VAT: exact map `{8.1:I81, 2.6:I26, 3.8:I38, 7.7:I77, 2.5:I25, 3.7:I37}` instead of `≥7→8.1`, `≥2→2.6/I25`;
-      keep the detected rate; `_validate_and_fix` must not zero amounts > 50 000 — set `needs_review`. — `H` / `M`
-- [ ] **B-47** Input bounds: `betrag`/`mwst_amount` `Field(allow_inf_nan=False, ge=-1e9, le=1e9)` on every money schema;
-      `limit: int = Query(500, ge=1, le=1000)` on every list route (`audit.py:29` is the pattern); `round_chf` rejects non-finite. — `H` / `S`
 - [ ] **B-49** Off the event loop: sklearn `fit`+CV (`/train`, `import?auto_train`, in-API worker), the sync Ollama chain in
       `ScannerService` (use the existing `*_async` variants, one status probe per request), `smtplib`, `pdfplumber` →
       `asyncio.to_thread`; compose sets `RUN_WORKER_IN_API=false`. — `H` / `M`
@@ -62,9 +47,6 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 - [ ] **B-44** Logout clears SWR cache + notifications store; `useApi` keyed by user id (tenant B sees tenant A's KPIs today). — `H` / `S`
 - [ ] **B-46** Settings: 4 of 6 tabs "save" with a 600 ms sleep and show "Gespeichert". Wire profile/company or hide them;
       remove the password tab until `/api/auth/password` exists. — `H` / `S`
-- [ ] **B-50** `errorMessage(err)` at the 7 `.response.data.detail` sites (login, register, BuchungTable, useBananaImport,
-      useModellActions ×3) — the backend never sends `detail`; `corrections_count` → `correction_count` on the dashboard.
-      **Folds B-21** (the 5 `err: any` are the same sites). — `M` / `S`
 - [ ] **B-14** Review queue: optimistic accept/reject with rollback; keyboard `j/k/a/r`. Sketch in `docs/REVIEW-2026-09-12.md` §5.
       **First** move the global bare-`a` assistant hotkey (`ShortcutsModal.tsx:53`) to `Shift+A`. — `M` / `M`
 - [ ] **B-16** Dashboard KPIs auto-refresh via `useApi(path, { refreshInterval })`. **First** put `SystemChecklist`,
@@ -153,6 +135,20 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 
 ## ✅ Done
 
+- **B-50** ✅ 2026-09-13 — one error path in the frontend: the 7 `.response.data.detail` sites use `errorMessage()`;
+  dashboard KPI reads `correction_count`; InvoiceCard effect deps fixed. Folds **B-21** — eslint at 0 warnings.
+- **B-47** ✅ 2026-09-13 — `schemas/common.py:Money` (finite, ±1e9) on bookings, classify, scanner, export rows;
+  `limit=Query(ge=1, le=1000)` on list routes; `round_chf` raises on inf/nan; 422 tests.
+- **B-40** ✅ 2026-09-13 — role ladder wired: `require_editor` on every mutating route, `require_admin` on Kontenplan
+  replace, classify delete/upload, scanner config, `import?replace=true`. `tests/test_rbac_routes.py` walks the route
+  table (a new mutating route without a role check fails CI) + viewer/editor 403 over HTTP.
+- **B-48** ✅ 2026-09-13 — `VAT_CODE_BY_RATE` exact map + `vat_code_for()`; the receipt's rate wins, a classifier code
+  of the same rate (V81/M81) is kept; amounts > 50'000 are flagged `needs_review` (scanner card shows "Prüfen") instead
+  of zeroed.
+- **B-45** ✅ 2026-09-13 — Kontoauszug save logs real corrections: `correctionsFor(rows)` sends suggestion as original,
+  only for changed rows, `Promise.allSettled` + count in the toast. Unit-tested.
+- **B-39** ✅ 2026-09-13 — `TrainingRow` exported; migration `c1d2e3f4a5b6` creates `training_data` (idempotent for
+  dev DBs that already have it); PG test: every `Base.metadata` table exists after `upgrade head`.
 - **B-30** ✅ 2026-09-11 — `scripts/status.sh` → `STATUS.md` (`make status`): app version, backend/vitest/e2e test
   counts, routers + routes, models, Alembic migrations + head (venv `alembic heads`, else derived from the files),
   open B-xx table folded from ROADMAP.md, done count, date + commit. Pure grep/find, shellcheck-clean;
@@ -293,9 +289,9 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 | 0 Recon | ✅ |
 | 0.5 Risk fixes before platform work | ✅ B-00…B-03 (branch `feat/phase0-risks`) |
 | 1 Platform contract | 1.2 ✅ B-31 · 1.4 ✅ B-26 · 1.6 ✅ tokens imported |
-| 2 Security | ✅ B-06, B-07, B-32 · NOW: B-40, B-41, B-42, B-43 · open: B-24 (ADR-002), B-25, B-34, B-54, B-55 |
-| 3 Reliability | ✅ B-04, B-05, B-08, B-11, B-33, B-35 · NOW: B-39 · open: B-47, B-48, B-49, B-51, B-52, B-56, B-57 |
+| 2 Security | ✅ B-06, B-07, B-32, B-40 · NOW: B-41, B-42, B-43 · open: B-24 (ADR-002), B-25, B-34, B-54, B-55 |
+| 3 Reliability | ✅ B-04, B-05, B-08, B-11, B-33, B-35, B-39, B-47, B-48 · open: B-49, B-51, B-52, B-56, B-57 |
 | 4 Polish | ✅ B-09, B-13 · open: B-22, B-53, B-61 |
-| 5 UX | ✅ B-18, B-19 · NEXT: B-44, B-45, B-46, B-50 (folds B-21), B-14, B-16 · open: B-15, B-17, B-20, B-58, B-59 |
+| 5 UX | ✅ B-18, B-19, B-45, B-50 (+B-21) · NEXT: B-44, B-46, B-14, B-16 · open: B-15, B-17, B-20, B-58, B-59 |
 | 6 Together | ✅ B-36 (SSO + mirroring), B-37 (events) · deploy: `docs/DEPLOY-CHECKLIST-B36-B37.md` · parked: B-38 |
 | 7 DX | ✅ B-12, B-29, B-30 · open: B-60, B-62 |
