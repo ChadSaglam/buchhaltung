@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import contextlib
-import os
+import html
+import logging
 import smtplib
 import ssl
 from datetime import datetime
@@ -14,17 +15,26 @@ from email.mime.text import MIMEText
 
 import pandas as pd
 
+from app.core.config import settings
 from app.services.export import df_to_banana_tsv, df_to_csv, df_to_styled_excel, fmt_swiss
+
+logger = logging.getLogger(__name__)
 
 
 def _load_smtp_config() -> dict:
+    # One config source (B-43): config.py, not a second read of os.environ.
     return {
-        "host": os.environ.get("SMTP_HOST", ""),
-        "port": int(os.environ.get("SMTP_PORT", "465")),
-        "user": os.environ.get("SMTP_USER", ""),
-        "password": os.environ.get("SMTP_PASSWORD", ""),
-        "from_email": os.environ.get("FROM_EMAIL", ""),
+        "host": settings.SMTP_HOST,
+        "port": settings.SMTP_PORT,
+        "user": settings.SMTP_USER,
+        "password": settings.SMTP_PASSWORD,
+        "from_email": settings.FROM_EMAIL,
     }
+
+
+def _cell(value) -> str:
+    """Booking text is user input and lands inside HTML: escape every cell (B-43)."""
+    return html.escape("" if value is None else str(value), quote=True)
 
 
 def is_email_configured() -> bool:
@@ -58,15 +68,15 @@ def _build_html_body(df: pd.DataFrame, today: str, timestamp: str) -> str:
         try:
             betrag_str = fmt_swiss(float(betrag))
         except (ValueError, TypeError):
-            betrag_str = str(betrag)
+            betrag_str = _cell(betrag)
 
         body_rows += f"""<tr style="background:{bg};">
-            <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;">{row.get("Datum", "")}</td>
-            <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;">{row.get("Beschreibung", "")}</td>
-            <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;font-family:monospace;">{row.get("KtSoll", "")}</td>
-            <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;font-family:monospace;">{row.get("KtHaben", "")}</td>
+            <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;">{_cell(row.get("Datum", ""))}</td>
+            <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;">{_cell(row.get("Beschreibung", ""))}</td>
+            <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;font-family:monospace;">{_cell(row.get("KtSoll", ""))}</td>
+            <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;font-family:monospace;">{_cell(row.get("KtHaben", ""))}</td>
             <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;text-align:right;font-family:monospace;font-weight:600;">{betrag_str}</td>
-            <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;">{row.get("MwStUSt-Code", "")}</td>
+            <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;">{_cell(row.get("MwStUSt-Code", ""))}</td>
         </tr>"""
 
     return f"""<!DOCTYPE html>
@@ -236,9 +246,9 @@ def send_bookkeeping_email(
 
     # Send
     try:
+        # Default context = certificate and hostname verified (B-43). A mail server
+        # with a broken certificate is a configuration problem, not something to hide.
         context = ssl.create_default_context()
-        context.check_hostname = False
-        context.verify_mode = ssl.CERT_NONE
 
         if cfg["port"] == 465:
             with smtplib.SMTP_SSL(cfg["host"], cfg["port"], context=context, timeout=30) as server:
@@ -253,7 +263,6 @@ def send_bookkeeping_email(
         return True, f"E-Mail gesendet an {to_email}"
     except smtplib.SMTPAuthenticationError:
         return False, "SMTP Anmeldung fehlgeschlagen. Zugangsdaten in .env prüfen."
-    except smtplib.SMTPException as e:
-        return False, f"SMTP Fehler: {e}"
-    except Exception as e:
-        return False, f"E-Mail Fehler: {e}"
+    except (smtplib.SMTPException, OSError) as e:
+        logger.warning("[MAIL] send failed: %s", e)
+        return False, "E-Mail konnte nicht gesendet werden. SMTP-Konfiguration prüfen."

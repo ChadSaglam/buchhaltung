@@ -376,3 +376,51 @@ async def test_bookings_reject_absurd_and_non_finite_amounts(client, db_session)
         assert resp.status_code == 422, betrag
     assert (await client.get("/api/bookings/?limit=0", headers=headers)).status_code == 422
     assert (await client.get("/api/bookings/?limit=5000", headers=headers)).status_code == 422
+
+
+# --- B-43: e-mail export hardening ------------------------------------------------------------
+def test_email_html_escapes_booking_text():
+    from app.services.email_sender import _build_html_body
+
+    df = pd.DataFrame(
+        [
+            {
+                "Datum": "2025-03-15",
+                "Beschreibung": '<img src=x onerror="alert(1)">',
+                "KtSoll": "6500",
+                "KtHaben": "1020",
+                "Betrag CHF": 12.5,
+                "MwStUSt-Code": "I81",
+            }
+        ]
+    )
+    html_body = _build_html_body(df, "15.03.2025", "20250315_1200")
+    assert "<img src=x" not in html_body
+    assert "&lt;img src=x" in html_body
+
+
+@pytest.mark.asyncio
+async def test_email_rejects_bad_recipient_and_multiline_subject(client, headers):
+    bad = await client.post(
+        "/api/export/email/rows", json={"rows": [_api_row()], "to_email": "a@b.ch, c@d.ch"}, headers=headers
+    )
+    assert bad.status_code == 422
+    bad = await client.post(
+        "/api/export/email/rows", json={"rows": [_api_row()], "to_email": "not-an-email"}, headers=headers
+    )
+    assert bad.status_code == 422
+    from app.routers.export import EmailWithRowsRequest
+
+    req = EmailWithRowsRequest(to_email="a@b.ch", subject="Hallo\r\nBcc: x@y.z", rows=[])
+    assert "\n" not in req.subject and "\r" not in req.subject
+
+
+def test_smtp_config_comes_from_settings(monkeypatch):
+    from app.core.config import settings
+    from app.services import email_sender
+
+    monkeypatch.setattr(settings, "SMTP_HOST", "smtp.example.ch")
+    monkeypatch.setattr(settings, "SMTP_USER", "u")
+    monkeypatch.setattr(settings, "SMTP_PASSWORD", "p")
+    assert email_sender.is_email_configured() is True
+    assert email_sender._load_smtp_config()["host"] == "smtp.example.ch"

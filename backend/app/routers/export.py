@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import pandas as pd
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user, get_db, require_editor
+from app.core.rate_limit import heavy_limit, limiter
 from app.models.booking import Booking
 from app.models.user import User
 from app.schemas.common import Money
@@ -186,14 +187,23 @@ async def export_csv(
     )
 
 
+def _single_line(value: str) -> str:
+    """A subject is one header line — no CR/LF that could smuggle extra headers (B-43)."""
+    return " ".join(value.splitlines()).strip()
+
+
 class EmailRequest(BaseModel):
-    to_email: str
-    subject: str = ""
+    to_email: EmailStr  # exactly one, well-formed recipient (B-43)
+    subject: str = Field("", max_length=200)
     source: str | None = None
+
+    _subject = field_validator("subject")(classmethod(lambda cls, v: _single_line(v)))
 
 
 @router.post("/email")
+@limiter.limit(heavy_limit)
 async def send_email(
+    request: Request,
     body: EmailRequest,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_editor),
@@ -210,13 +220,16 @@ async def send_email(
 
 
 class EmailWithRowsRequest(BaseModel):
-    to_email: str
-    subject: str = ""
-    rows: list[BuchungRowExport]
+    to_email: EmailStr
+    subject: str = Field("", max_length=200)
+    rows: list[BuchungRowExport] = Field(max_length=5000)
+
+    _subject = field_validator("subject")(classmethod(lambda cls, v: _single_line(v)))
 
 
 @router.post("/email/rows")
-async def send_email_with_rows(body: EmailWithRowsRequest, user: User = Depends(require_editor)):
+@limiter.limit(heavy_limit)
+async def send_email_with_rows(request: Request, body: EmailWithRowsRequest, user: User = Depends(require_editor)):
     if not is_email_configured():
         raise HTTPException(400, "E-Mail nicht konfiguriert. SMTP in .env prüfen.")
     if not body.rows:

@@ -997,7 +997,10 @@ export interface components {
              * @default
              */
             subject: string;
-            /** To Email */
+            /**
+             * To Email
+             * Format: email
+             */
             to_email: string;
         };
         /** EmailWithRowsRequest */
@@ -1009,7 +1012,10 @@ export interface components {
              * @default
              */
             subject: string;
-            /** To Email */
+            /**
+             * To Email
+             * Format: email
+             */
             to_email: string;
         };
         /** ExportRequest */

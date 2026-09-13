@@ -25,7 +25,7 @@
   - [ ] `SECRET_KEY` ≥ 32 chars, not in `INSECURE_SECRETS` [config.py:11,140] (prod refuses to boot otherwise — good).
   - [ ] `CORS_ORIGINS` includes the frontend origin serving `/sso` [config.py, main.py].
   - [ ] `BILLING_URL` [config.py:97] is read by nothing — optional; do not spend time on it.
-  - [ ] `SMTP_PORT`: compose injects 587, config default 465 → decide one (587 = STARTTLS path) [config.py:67, docker-compose.yml].
+  - [x] `SMTP_PORT`: 465 everywhere (B-43, 2026-09-13).
 - [ ] Env, frontend: `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_BILLING_URL` are **build-time** [frontend/src/lib/platform.ts:8-10]. Pass them as `build.args`/`ARG` (B-62) — a runtime `environment:` entry does nothing; the Apps switcher stays hidden and the API URL falls back to `localhost:8000`.
 - [ ] Migration `a400bdc46480` [alembic/versions/a400bdc46480_*.py:29-45] reviewed: creates `sso_nonces(jti PK, expires_at)`; adds `tenants.platform_tenant_id` (nullable, unique), `users.platform_user_id` (nullable), `users.auth_source NOT NULL DEFAULT 'local'`, unique `(tenant_id, platform_user_id)`. **Additive with server defaults → old image keeps working during rollout.** Downgrade exercised in CI (`test_tenant_migration_is_reversible`).
 - [ ] Backup taken **before** migrating: `pg_dump -Fc` of the DB and a copy of the `model_data` volume (receipts + model blobs). There is no scheduled backup yet (B-25) — do it by hand and record where it went.

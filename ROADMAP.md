@@ -26,8 +26,6 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 
 ## 🔥 NOW — production blockers, in this order (one at a time)
 
-- [ ] **B-43** Email export hardening: `EmailStr` single recipient, `html.escape` every cell, `heavy_limit` + `require_editor`
-      on `/api/export/email*`, default SSL context (no `CERT_NONE`), SMTP settings from `Settings` not `os.environ`. — `H` / `S`
 
 ---
 
@@ -130,6 +128,9 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 
 ## ✅ Done
 
+- **B-43** ✅ 2026-09-13 — e-mail export: `EmailStr` single recipient, subject one line ≤ 200 chars, rows ≤ 5000,
+  `heavy_limit` on both `/api/export/email*`, every HTML cell `html.escape`d, default SSL context (no `CERT_NONE`),
+  SMTP settings read from `Settings`, SMTP errors logged not echoed; compose/.env.example agree on port 465.
 - **B-42** ✅ 2026-09-13 — SSRF closed: `ollama_base_url` / `ocr_command` dropped from both update schemas and the
   update path; `resolve_ollama` uses `settings.OLLAMA_BASE_URL` only; responses report the deployment URL;
   AI stream/summary never echo upstream bodies or exception text (logged server-side instead). Tests for PUT/PATCH
@@ -293,7 +294,7 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 | 0 Recon | ✅ |
 | 0.5 Risk fixes before platform work | ✅ B-00…B-03 (branch `feat/phase0-risks`) |
 | 1 Platform contract | 1.2 ✅ B-31 · 1.4 ✅ B-26 · 1.6 ✅ tokens imported |
-| 2 Security | ✅ B-06, B-07, B-32, B-40, B-41, B-42 · NOW: B-43 · open: B-24 (ADR-002), B-25, B-34, B-54, B-55 |
+| 2 Security | ✅ B-06, B-07, B-32, B-40, B-41, B-42, B-43 · open: B-24 (ADR-002), B-25, B-34, B-54, B-55 |
 | 3 Reliability | ✅ B-04, B-05, B-08, B-11, B-33, B-35, B-39, B-47, B-48 · open: B-49, B-51, B-52, B-56, B-57 |
 | 4 Polish | ✅ B-09, B-13 · open: B-22, B-53, B-61 |
 | 5 UX | ✅ B-18, B-19, B-45, B-50 (+B-21) · NEXT: B-44, B-46, B-14, B-16 · open: B-15, B-17, B-20, B-58, B-59 |
