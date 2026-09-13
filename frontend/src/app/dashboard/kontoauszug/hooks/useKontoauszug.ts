@@ -2,7 +2,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { api } from "@/lib/api";
 import { errorMessage } from "@/lib/errors";
-import { toRow } from "../helpers";
+import { correctionsFor, toRow } from "../helpers";
 import type { ExportFormat, TxRow } from "../types";
 
 export function useKontoauszug() {
@@ -42,14 +42,14 @@ export function useKontoauszug() {
         mwst_pct: r["MwSt-%"], mwst_amount: r["Gebuchte MwStUSt CHF"], source: "kontoauszug",
         source_key: sourceKey,
       })));
-      for (const r of rows) {
-        if (r.KtSoll) await api.post("/api/classify/correct", {
-          beschreibung: r.Beschreibung, original_soll: r.KtSoll, original_haben: r.KtHaben,
-          corrected_soll: r.KtSoll, corrected_haben: r.KtHaben,
-        }).catch(() => {});
-      }
+      // B-45: only rows the user changed are corrections, with the *suggested* accounts as
+      // originals — sending the edited value on both sides logged nothing.
+      const corrections = correctionsFor(rows);
+      const results = await Promise.allSettled(corrections.map((c) => api.post("/api/classify/correct", c)));
+      const failed = results.filter((x) => x.status === "rejected").length;
       setSaved(true);
-      toast.success("Buchungen gespeichert");
+      if (failed) toast.error(`Buchungen gespeichert, aber ${failed} von ${corrections.length} Korrekturen konnten nicht gelernt werden`);
+      else toast.success(corrections.length ? `Buchungen gespeichert · ${corrections.length} Korrekturen gelernt` : "Buchungen gespeichert");
     } catch (e) {
       toast.error(errorMessage(e));
     } finally {

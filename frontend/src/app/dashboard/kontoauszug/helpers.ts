@@ -28,3 +28,18 @@ export function toRow(r: Record<string, unknown>, i: number): TxRow {
     accepted: false,
   };
 }
+
+/** Payload for `/api/classify/correct`, one per row the user changed (B-45). Unchanged rows teach nothing. */
+export function correctionsFor(rows: TxRow[]) {
+  return rows
+    .filter((r) => r.KtSoll && (r.KtSoll !== r.suggSoll || r.KtHaben !== r.suggHaben))
+    .map((r) => ({
+      beschreibung: r.Beschreibung,
+      original_soll: r.suggSoll ?? "",
+      original_haben: r.suggHaben ?? "",
+      corrected_soll: r.KtSoll,
+      corrected_haben: r.KtHaben,
+      corrected_mwst_code: r["MwStUSt-Code"],
+      corrected_mwst_pct: r["MwSt-%"],
+    }));
+}
