@@ -40,40 +40,42 @@ function Field({ label, children, className }: { label: string; children: React.
   );
 }
 
+const EMPTY_INVOICE: ExtractedInvoice = {
+  vendor: "",
+  date: "",
+  invoice_number: "",
+  description: "",
+  total_amount: 0,
+  vat_rate: 0,
+  line_items: [],
+  kt_soll: "",
+  kt_haben: "",
+  mwst_code: "",
+  mwst_pct: "",
+  mwst_amount: 0,
+  classification_confidence: 0,
+  classification_source: "",
+  classification_input: "",
+  vision_model: "",
+  ocr_provider: "",
+  ocr_worked: false,
+  custom_ocr_available: false,
+  scanner_steps: [],
+  scanner_attempts: [],
+  scanner_providers: [],
+};
+
 export function InvoiceCard({ invoice, index, onUpdate, onAddToBookings, added }: InvoiceCardProps) {
   const [editing, setEditing] = useState(false);
   const [expanded, setExpanded] = useState(true);
   const [showTech, setShowTech] = useState(false);
 
-  const safeInvoice: ExtractedInvoice = invoice ?? {
-    vendor: "",
-    date: "",
-    invoice_number: "",
-    description: "",
-    total_amount: 0,
-    vat_rate: 0,
-    line_items: [],
-    kt_soll: "",
-    kt_haben: "",
-    mwst_code: "",
-    mwst_pct: "",
-    mwst_amount: 0,
-    classification_confidence: 0,
-    classification_source: "",
-    classification_input: "",
-    vision_model: "",
-    ocr_provider: "",
-    ocr_worked: false,
-    custom_ocr_available: false,
-    scanner_steps: [],
-    scanner_attempts: [],
-    scanner_providers: [],
-  };
+  const safeInvoice: ExtractedInvoice = invoice ?? EMPTY_INVOICE;
 
   const [draft, setDraft] = useState<ExtractedInvoice>(safeInvoice);
 
   useEffect(() => {
-    setDraft(safeInvoice);
+    setDraft(invoice ?? EMPTY_INVOICE);
   }, [invoice]);
 
   const confidence = safeInvoice.classification_confidence ?? 0;

@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import { Download, Mail, Trash2, Send, FileText, AlertTriangle } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "@/lib/api";
+import { errorMessage } from "@/lib/errors";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import type { BuchungRow } from "../types";
@@ -83,9 +84,8 @@ export function BuchungTable({ rows, onRemove, onClear }: BuchungTableProps) {
       });
       setShowEmail(false);
       setEmailTo("");
-    } catch (e: any) {
-      const msg = e.response?.data?.detail || e.message || "E-Mail fehlgeschlagen";
-      toast.error(msg);
+    } catch (e) {
+      toast.error(errorMessage(e));
     } finally {
       setSendingEmail(false);
     }

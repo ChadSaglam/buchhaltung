@@ -21,7 +21,7 @@ interface ClassifierInfo {
   total_samples: number;
   classes: number;
   memory_count: number;
-  corrections_count: number;
+  correction_count: number;
 }
 
 interface BookingStats {
@@ -103,7 +103,7 @@ export default function DashboardPage() {
                 <motion.div variants={item}>
                   <MetricCard
                     title="Korrekturen"
-                    value={info.data?.corrections_count ?? "–"}
+                    value={info.data?.correction_count ?? "–"}
                     subtitle="Gesamt"
                     accent="warning"
                     icon={<Pencil />}

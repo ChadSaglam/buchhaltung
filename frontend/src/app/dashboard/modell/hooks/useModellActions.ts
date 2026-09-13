@@ -1,6 +1,7 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { api } from "@/lib/api";
+import { errorMessage } from "@/lib/errors";
 import { downloadFilename } from "../helpers";
 import type { DangerAction, DownloadType } from "../types";
 
@@ -16,8 +17,8 @@ export function useModellActions(fetchInfo: () => Promise<void>) {
         `Modell trainiert! ${res.data.total_samples} Samples, ${((res.data.cv_accuracy || 0) * 100).toFixed(1)}% Genauigkeit`
       );
       fetchInfo();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.detail || "Training fehlgeschlagen");
+    } catch (err) {
+      toast.error(errorMessage(err));
     } finally {
       setTraining(false);
     }
@@ -32,8 +33,8 @@ export function useModellActions(fetchInfo: () => Promise<void>) {
       );
       setDangerConfirm(null);
       fetchInfo();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.detail || "Aktion fehlgeschlagen");
+    } catch (err) {
+      toast.error(errorMessage(err));
     }
   };
 
@@ -61,8 +62,8 @@ export function useModellActions(fetchInfo: () => Promise<void>) {
       });
       toast.success("Modell wiederhergestellt!");
       fetchInfo();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.detail || "Upload fehlgeschlagen");
+    } catch (err) {
+      toast.error(errorMessage(err));
     }
   };
 

@@ -9,6 +9,7 @@ import { LogoMark } from "@/components/ui/Logo";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { login as apiLogin, getMe } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
+import { errorMessage } from "@/lib/errors";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -36,9 +37,7 @@ export default function LoginPage() {
       setAuth(access_token, user);
       router.push("/dashboard");
     } catch (err) {
-      const detail =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setError(detail || "Login fehlgeschlagen");
+      setError(errorMessage(err));
     } finally {
       setLoading(false);
     }
