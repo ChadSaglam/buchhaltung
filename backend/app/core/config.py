@@ -100,7 +100,9 @@ class Settings(BaseSettings):
     # "local" writes under STORAGE_LOCAL_DIR (fine for one replica); "s3" is
     # required as soon as the API runs with more than one replica.
     STORAGE_BACKEND: str = "local"
-    STORAGE_LOCAL_DIR: str = "/app/data"
+    # Default = <backend>/data: /app/data in the image, backend/data on a dev
+    # machine. A hard-coded /app/data made every upload 500 outside Docker.
+    STORAGE_LOCAL_DIR: str = str(Path(__file__).resolve().parents[2] / "data")
     S3_BUCKET: str = ""
     # Leave empty for AWS; set for MinIO / R2 / any S3-compatible endpoint.
     S3_ENDPOINT_URL: str = ""

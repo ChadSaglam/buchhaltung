@@ -18,8 +18,7 @@ backend/e2e-data/
 # ML models
 *.pkl
 backend/ml_models/
-backend/data/memory_*.json
-backend/data/corrections_*.json
+backend/data/
 
 # Build
 .next/

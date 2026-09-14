@@ -72,8 +72,11 @@ class LocalStorage:
 
     def save(self, key: str, data: bytes, content_type: str = DEFAULT_CONTENT_TYPE) -> str:
         dest = self._path(key)
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_bytes(data)
+        try:
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_bytes(data)
+        except OSError as exc:
+            raise StorageError(f"Cannot write to STORAGE_LOCAL_DIR {self.root}: {exc.strerror or exc}") from exc
         logger.info("[STORAGE] local saved key=%s bytes=%d", key, len(data))
         return str(dest)
 

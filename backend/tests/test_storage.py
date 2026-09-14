@@ -97,11 +97,11 @@ def test_factory_default_is_local_under_configured_dir(monkeypatch):
 
 
 def test_factory_defaults_match_previous_on_disk_layout():
-    # Fresh Settings without env overrides: local backend under /app/data
-    # (the autouse fixture in conftest redirects the *test* root to tmp_path).
+    # Fresh Settings without env overrides: local backend under <backend>/data
+    # (/app/data in the image; the autouse fixture redirects the *test* root to tmp_path).
     fresh = type(settings)(_env_file=None)
     assert fresh.STORAGE_BACKEND == "local"
-    assert fresh.STORAGE_LOCAL_DIR == "/app/data"
+    assert Path(fresh.STORAGE_LOCAL_DIR) == Path(__file__).resolve().parents[1] / "data"
     assert model_storage.model_artifact_key(42) == "models/42/model.pkl"
 
 
@@ -277,3 +277,23 @@ def test_model_storage_with_s3_backend(monkeypatch):
     assert model_storage.save_model_artifact(7, b"blob") == "s3://models-bucket/models/7/model.pkl"
     assert model_storage.load_model_artifact(7) == b"blob"
     assert model_storage.load_model_artifact(8) is None
+
+
+def test_default_storage_dir_is_inside_the_backend_tree():
+    """Uploads must work outside Docker: the default is <backend>/data, not /app/data."""
+    from pathlib import Path
+
+    from app.core.config import Settings
+
+    default = Path(Settings.model_fields["STORAGE_LOCAL_DIR"].default)
+    assert default.name == "data"
+    assert default.parent == Path(__file__).resolve().parents[1]
+
+
+def test_local_storage_reports_unwritable_root_as_storage_error(tmp_path):
+    from app.services.storage import LocalStorage, StorageError
+
+    blocked = tmp_path / "file-not-dir"
+    blocked.write_text("x")
+    with pytest.raises(StorageError):
+        LocalStorage(blocked / "data").save("receipts/1/a.pdf", b"%PDF")
