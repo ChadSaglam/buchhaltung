@@ -402,7 +402,9 @@ class TenantClassifier:
                 )
 
         best = max(candidates, key=lambda c: c.confidence)  # max() keeps the first of equals
-        if by_amount and best is not by_amount:
+        # The remembered description only makes sense when it belongs to the account we
+        # chose: "BANCOMAT → 5820 (ML)" must not be captioned "Swiss Life" (the 5720 memory).
+        if by_amount and best is not by_amount and best.kt_soll == by_amount.kt_soll:
             best.beschreibung_vorschlag = by_amount.beschreibung_vorschlag
         return best
 

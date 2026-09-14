@@ -120,6 +120,18 @@ async def test_weak_amount_hit_only_lends_its_description(db_session):
 
 
 @pytest.mark.asyncio
+async def test_description_is_dropped_when_another_tier_picks_a_different_account(db_session):
+    tenant = await create_tenant(db_session)
+    for _ in range(3):
+        await create_training_row(db_session, tenant, "Swiss Life", "5720", betrag=300.0)
+    clf = await _clf(db_session, tenant.id, FakeModel(["5820"], [0.92]))
+
+    r = await clf.classify("BEZUG UBS BANCOMAT", False, 300.0)
+    assert (r.source, r.kt_soll) == ("ML", "5820")
+    assert r.beschreibung_vorschlag == ""
+
+
+@pytest.mark.asyncio
 async def test_credit_keeps_revenue_default_but_gets_the_customer_name(db_session):
     tenant = await create_tenant(db_session)
     for _ in range(2):
