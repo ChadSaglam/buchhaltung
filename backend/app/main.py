@@ -72,6 +72,7 @@ from app.routers import (
     bookings,
     classify,
     classify_extra,
+    documents,
     export,
     health,
     import_data,
@@ -102,6 +103,7 @@ application.include_router(review.router)
 application.include_router(audit.router)
 application.include_router(health.router)
 application.include_router(ai.router)
+application.include_router(documents.router)
 
 
 app = application

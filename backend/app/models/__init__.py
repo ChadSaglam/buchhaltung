@@ -4,6 +4,7 @@ from app.models.base import Base
 from app.models.booking import Booking
 from app.models.classifier_model import ClassifierModel
 from app.models.correction import Correction
+from app.models.document import Document
 from app.models.kontenplan import Kontenplan
 from app.models.memory import Memory
 from app.models.review_queue import ReviewQueueItem
@@ -22,6 +23,7 @@ __all__ = [
     "Booking",
     "ClassifierModel",
     "Correction",
+    "Document",
     "Kontenplan",
     "Memory",
     "ReviewQueueItem",

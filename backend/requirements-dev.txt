@@ -6,3 +6,4 @@ pytest-asyncio>=0.25
 pytest-cov>=6.0
 pytest-env>=1.1.5
 pre-commit>=4.0
+segno>=1.6  # test-only: renders QR-bills for the decoder tests

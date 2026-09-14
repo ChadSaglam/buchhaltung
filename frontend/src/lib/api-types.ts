@@ -438,6 +438,79 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/documents/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Documents */
+        get: operations["list_documents_api_documents__get"];
+        put?: never;
+        /**
+         * Upload Documents
+         * @description Drag 1..50 invoices in; every file becomes a Document, failures included (status 'fehler').
+         */
+        post: operations["upload_documents_api_documents__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/documents/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Documents Summary */
+        get: operations["documents_summary_api_documents_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/documents/{document_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Document */
+        get: operations["get_document_api_documents__document_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Document */
+        patch: operations["update_document_api_documents__document_id__patch"];
+        trace?: never;
+    };
+    "/api/documents/{document_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Document File */
+        get: operations["document_file_api_documents__document_id__file_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/export/banana": {
         parameters: {
             query?: never;
@@ -867,6 +940,11 @@ export interface components {
             /** File */
             file: string;
         };
+        /** Body_upload_documents_api_documents__post */
+        Body_upload_documents_api_documents__post: {
+            /** Files */
+            files: string[];
+        };
         /** BookingCreate */
         BookingCreate: {
             /**
@@ -1011,6 +1089,126 @@ export interface components {
              * @default
              */
             original_soll: string;
+        };
+        /** DocumentListResponse */
+        DocumentListResponse: {
+            /** Count */
+            count: number;
+            /** Items */
+            items: components["schemas"]["DocumentOut"][];
+        };
+        /** DocumentOut */
+        DocumentOut: {
+            /** Amount */
+            amount: number | null;
+            /** Booking Id */
+            booking_id: number | null;
+            /** Classification Confidence */
+            classification_confidence: number;
+            /** Created At */
+            created_at: string | null;
+            /** Currency */
+            currency: string;
+            /** Due Date */
+            due_date: string | null;
+            /** Error */
+            error: string;
+            /** Extraction Confidence */
+            extraction_confidence: number;
+            /** Extraction Source */
+            extraction_source: string;
+            /** Filename */
+            filename: string;
+            /** Id */
+            id: number;
+            /** Invoice Date */
+            invoice_date: string | null;
+            /** Invoice No */
+            invoice_no: string;
+            /** Kind */
+            kind: string;
+            /** Kt Haben */
+            kt_haben: string;
+            /** Kt Soll */
+            kt_soll: string;
+            /** Mwst Code */
+            mwst_code: string;
+            /** Mwst Pct */
+            mwst_pct: string;
+            /** Qr Iban */
+            qr_iban: string;
+            /** Qr Message */
+            qr_message: string;
+            /** Qr Reference */
+            qr_reference: string;
+            /** Status */
+            status: string;
+            /** Updated At */
+            updated_at: string | null;
+            /** Vendor */
+            vendor: string;
+        };
+        /** DocumentSummary */
+        DocumentSummary: {
+            /** Bezahlt */
+            bezahlt: number;
+            /** Exportiert */
+            exportiert: number;
+            /** Fehler */
+            fehler: number;
+            /** Offen */
+            offen: number;
+            /** Offen Betrag */
+            offen_betrag: number;
+            /** Ueberfaellig */
+            ueberfaellig: number;
+        };
+        /**
+         * DocumentUpdate
+         * @description Fields the user may correct on an open document.
+         */
+        DocumentUpdate: {
+            /** Amount */
+            amount?: number | null;
+            /** Currency */
+            currency?: string | null;
+            /** Due Date */
+            due_date?: string | null;
+            /** Invoice Date */
+            invoice_date?: string | null;
+            /** Invoice No */
+            invoice_no?: string | null;
+            /** Kt Haben */
+            kt_haben?: string | null;
+            /** Kt Soll */
+            kt_soll?: string | null;
+            /** Mwst Code */
+            mwst_code?: string | null;
+            /** Mwst Pct */
+            mwst_pct?: string | null;
+            /** Status */
+            status?: ("offen" | "bezahlt" | "exportiert" | "fehler") | null;
+            /** Vendor */
+            vendor?: string | null;
+        };
+        /** DocumentUploadResponse */
+        DocumentUploadResponse: {
+            /** Created */
+            created: number;
+            /** Failed */
+            failed: number;
+            /** Results */
+            results: components["schemas"]["DocumentUploadResult"][];
+        };
+        /** DocumentUploadResult */
+        DocumentUploadResult: {
+            document?: components["schemas"]["DocumentOut"] | null;
+            /** Error */
+            error?: string | null;
+            /** Filename */
+            filename: string;
+            /** Ok */
+            ok: boolean;
         };
         /** EmailRequest */
         EmailRequest: {
@@ -2233,6 +2431,188 @@ export interface operations {
                     "application/json": {
                         [key: string]: string;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_documents_api_documents__get: {
+        parameters: {
+            query?: {
+                status?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_documents_api_documents__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_documents_api_documents__post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentUploadResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    documents_summary_api_documents_summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentSummary"];
+                };
+            };
+        };
+    };
+    get_document_api_documents__document_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_document_api_documents__document_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocumentUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    document_file_api_documents__document_id__file_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
