@@ -3,8 +3,9 @@
 Layer order in TenantClassifier.classify():
   1. credit note shortcut (is_credit)            confidence 1.0, "Regeln"
   2. exact memory hit (tenant-scoped)             confidence 1.0, "Gedächtnis"
-  3. ML model if present and proba >= 0.45        confidence = proba, "ML"
-  4. keyword rules, default 6500/1020 at 0.35     "Regeln"
+  3. most confident of: amount memory ("Betrag", tests/test_amount_memory.py),
+     ML model if proba >= 0.45 ("ML"), keyword rules / default 6500 at 0.35 ("Regeln");
+     ties go amount → rules → ML.
 """
 
 from __future__ import annotations
@@ -354,13 +355,13 @@ async def test_ml_receives_preprocessed_text(db_session):
 @pytest.mark.asyncio
 async def test_ml_below_threshold_falls_through_to_rules(db_session):
     tenant = await create_tenant(db_session)
-    model = FakeModel(["4000", "6570"], [0.56, 0.44])  # max 0.56 >= 0.45 -> ML
+    model = FakeModel(["4000", "6570"], [0.56, 0.44])  # max 0.56 >= 0.45 -> ML (no keyword rule for "Hetzner")
     clf = await _clf(db_session, tenant.id)
     clf._model = model
-    assert (await clf.classify("Swisscom", False, 10)).source == "ML"
+    assert (await clf.classify("Hetzner", False, 10)).source == "ML"
 
     clf._model = FakeModel(["4000", "6570"], [0.44, 0.40])  # max 0.44 < 0.45 -> rules
-    result = await clf.classify("Swisscom", False, 10)
+    result = await clf.classify("Hetzner", False, 10)
     assert result.source == "Regeln"
     assert result.kt_soll == "6500"
 

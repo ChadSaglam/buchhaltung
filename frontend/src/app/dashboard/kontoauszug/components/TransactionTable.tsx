@@ -40,7 +40,20 @@ export function TransactionTable({ rows, onUpdate, onAccept }: Props) {
                 <tr key={r.Nr} className="border-b border-border last:border-0 hover:bg-accent transition-colors">
                   <td className="px-3 py-2 text-muted-foreground w-12 tabular-nums">{r.Nr}</td>
                   <td className="px-3 py-2">{field(i, r, "Datum", "w-24 text-foreground", "Datum")}</td>
-                  <td className="px-3 py-2">{field(i, r, "Beschreibung", "w-full min-w-[200px] text-foreground", "Beschreibung")}</td>
+                  <td className="px-3 py-2">
+                    {field(i, r, "Beschreibung", "w-full min-w-[200px] text-foreground", "Beschreibung")}
+                    {r.vorschlag && r.vorschlag !== r.Beschreibung && (
+                      <button
+                        type="button"
+                        onClick={() => onUpdate(i, "Beschreibung", r.vorschlag ?? "")}
+                        className="mt-0.5 block max-w-full truncate text-left text-xs text-muted-foreground hover:text-foreground"
+                        title="Beschreibung aus früheren Buchungen mit gleichem Betrag übernehmen"
+                        aria-label={`Beschreibung für Zeile ${r.Nr} durch „${r.vorschlag}“ ersetzen`}
+                      >
+                        ↳ {r.vorschlag}
+                      </button>
+                    )}
+                  </td>
                   <td className="px-3 py-2">{field(i, r, "KtSoll", "w-16 font-mono text-brand-600 dark:text-brand-300", "KtSoll")}</td>
                   <td className="px-3 py-2">{field(i, r, "KtHaben", "w-16 font-mono text-success", "KtHaben")}</td>
                   <td className="px-3 py-2 font-mono text-right tabular-nums text-foreground">{(r["Betrag CHF"] || 0).toFixed(2)}</td>

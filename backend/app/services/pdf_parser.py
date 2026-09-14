@@ -179,6 +179,8 @@ def extract_transactions_from_pdf(pdf_file: BinaryIO) -> list[dict]:
         r"Sie,.+benachrichtigen\.",
         r"Gr.{1,5}e\.",
         r"hne Unterschrift\.",
+        # "Freundliche Grüsse UBS Switzerland AG" split across lines leaves "Grüße AG" on the last row.
+        r"\b(?:Freundliche\s+)?Gr(?:ü|ue|u)(?:ss|ß)e(?:\s+UBS)?(?:\s+Switzerland)?(?:\s+AG)?\s*$",
     ]
     for tx in transactions:
         desc = tx["Beschreibung"]

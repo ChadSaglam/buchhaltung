@@ -31,3 +31,12 @@ describe("correctionsFor (B-45)", () => {
     expect(correctionsFor([haben, empty]).map((c) => c.corrected_haben)).toEqual(["2000"]);
   });
 });
+
+describe("toRow — Betrag-Gedächtnis", () => {
+  it("carries the description suggestion and leaves it undefined when the backend sends none", () => {
+    const withHint = toRow({ beschreibung: "E-BANKING-AUFTRAG", kt_soll: "6260", betrag: 770.6, beschreibung_vorschlag: "Cembra Money, Leasing" }, 0);
+    expect(withHint.vorschlag).toBe("Cembra Money, Leasing");
+    expect(withHint.Beschreibung).toBe("E-BANKING-AUFTRAG");
+    expect(toRow({ beschreibung: "Coop", kt_soll: "6500", betrag: 10, beschreibung_vorschlag: "" }, 0).vorschlag).toBeUndefined();
+  });
+});

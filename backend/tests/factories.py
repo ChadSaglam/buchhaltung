@@ -224,11 +224,13 @@ async def create_training_row(
     kt_haben: str = "1020",
     mwst_code: str = "",
     mwst_pct: str = "",
+    betrag: float | None = None,
 ) -> TrainingRow:
     return await _persist(
         db,
         TrainingRow(
             tenant_id=tenant.id,
+            betrag=betrag,
             beschreibung=beschreibung,
             kt_soll=kt_soll,
             kt_haben=kt_haben,

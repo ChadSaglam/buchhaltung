@@ -12,6 +12,8 @@ export interface TxRow {
   source?: string;
   suggSoll?: string;
   suggHaben?: string;
+  /** Description the tenant used for this amount before (Betrag-Gedächtnis); one click replaces the bank text. */
+  vorschlag?: string;
   accepted?: boolean;
 }
 

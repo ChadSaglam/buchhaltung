@@ -4,7 +4,7 @@
 > Legend: severity `C`ritical / `H`igh / `M`edium / `L`ow · effort `S` (<1h) / `M` (half day) / `L` (multi-day)
 > IDs: `B-xx` = work item (next free: **B-63**) · `P-xx` = parked (next free: **P-05**)
 > Cross-product items (SSO, contracts, design tokens) live in `chadev-platform/ROADMAP.md`, not here.
-> Updated: 2026-09-13 — Phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
+> Updated: 2026-09-14 — B-63 Betrag-Gedächtnis (amount memory). 2026-09-13 — Phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
 > Companion docs: `docs/ADR-002-rls.md` (B-24) · `docs/DEPLOY-CHECKLIST-B36-B37.md` · `docs/BRAINSTORM-2026-09-12.md`.
 
 ---
@@ -147,6 +147,12 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 - **B-40** ✅ 2026-09-13 — role ladder wired: `require_editor` on every mutating route, `require_admin` on Kontenplan
   replace, classify delete/upload, scanner config, `import?replace=true`. `tests/test_rbac_routes.py` walks the route
   table (a new mutating route without a role check fails CI) + viewer/editor 403 over HTTP.
+- **B-63** ✅ 2026-09-14 — Betrag-Gedächtnis: `training_data.betrag` (migration `d7e8f9a0b1c2`, Banana import fills it);
+  `amount_candidate()` classifies a bank line by earlier bookings with the same amount (≥ 2 hits, ≥ 60 % agreeing,
+  confidence 0.67 → 0.92), source "Betrag", and carries the tenant's own description ("Cembra Money, Leasing") which the
+  Kontoauszug table offers under the bank text. Candidates amount / rules / ML — most confident wins, so a keyword rule
+  now beats a hesitant model (the 48 % "revenue" for a 4.00 bank fee). Real UBS April statement × 2024 Banana export:
+  8 of 20 counterparty-less E-Banking lines resolved; the rest are Sammelaufträge (n:1 → phase 3 Abgleich).
 - **B-48** ✅ 2026-09-13 — `VAT_CODE_BY_RATE` exact map + `vat_code_for()`; the receipt's rate wins, a classifier code
   of the same rate (V81/M81) is kept; amounts > 50'000 are flagged `needs_review` (scanner card shows "Prüfen") instead
   of zeroed.

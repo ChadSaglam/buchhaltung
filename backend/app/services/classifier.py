@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import re
+from collections import Counter
 from dataclasses import dataclass
 
 import pandas as pd
@@ -13,6 +14,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.accuracy_history import AccuracyHistory
+from app.models.booking import Booking
 from app.models.classifier_model import ClassifierModel
 from app.models.correction import Correction
 from app.models.kontenplan import KontoDefault
@@ -27,6 +29,12 @@ CONFIDENCE_THRESHOLD = 0.45
 AUTO_RETRAIN_THRESHOLD = 20
 RULE_CONFIDENCE = 0.72
 DEFAULT_RULE_CONFIDENCE = 0.35
+# Amount memory (Betrag-Gedächtnis): a bank line without a counterparty
+# ("E-BANKING-AUFTRAG 770.60") is still recognisable by its amount when the
+# tenant booked that exact amount before, consistently to one account.
+AMOUNT_MIN_HITS = 2
+AMOUNT_MIN_SHARE = 0.6
+AMOUNT_MAX_CONFIDENCE = 0.92
 
 
 _MONTH_RE = re.compile(
@@ -221,6 +229,46 @@ class ClassificationResult:
     mwst_amount: float | str
     confidence: float = 0.0
     source: str = "Regeln"
+    # Description the tenant used for the same amount before (amount memory);
+    # empty when there is nothing better than the bank text.
+    beschreibung_vorschlag: str = ""
+
+
+AmountRow = tuple[str, str, str, str, str]  # beschreibung, kt_soll, kt_haben, mwst_code, mwst_pct
+
+
+def amount_candidate(rows: list[AmountRow], betrag: float) -> ClassificationResult | None:
+    """Classification from earlier bookings with the same amount, or None.
+
+    Needs at least ``AMOUNT_MIN_HITS`` earlier bookings of which a share of
+    ``AMOUNT_MIN_SHARE`` agree on the account pair. Confidence grows with the
+    number of agreeing bookings and shrinks with disagreement: 12/12 → 0.92,
+    2/2 → 0.67, 11/18 → 0.56 — the last one is shown as "unsicher", on purpose.
+    """
+    if len(rows) < AMOUNT_MIN_HITS:
+        return None
+    pairs = Counter((r[1], r[2]) for r in rows if r[1])
+    if not pairs:
+        return None
+    (kt_soll, kt_haben), hits = pairs.most_common(1)[0]
+    share = hits / len(rows)
+    if hits < AMOUNT_MIN_HITS or share < AMOUNT_MIN_SHARE:
+        return None
+    agreeing = [r for r in rows if (r[1], r[2]) == (kt_soll, kt_haben)]
+    mwst_code, mwst_pct = Counter((r[3] or "", r[4] or "") for r in agreeing).most_common(1)[0][0]
+    descriptions = Counter(r[0].strip() for r in agreeing if r[0] and r[0].strip())
+    vorschlag = descriptions.most_common(1)[0][0] if descriptions else ""
+    confidence = round(min(AMOUNT_MAX_CONFIDENCE, 0.55 + 0.06 * hits) * share, 3)
+    return ClassificationResult(
+        kt_soll=kt_soll,
+        kt_haben=kt_haben,
+        mwst_code=mwst_code,
+        mwst_pct=mwst_pct,
+        mwst_amount=calc_mwst(betrag, mwst_pct),
+        confidence=confidence,
+        source="Betrag",
+        beschreibung_vorschlag=vorschlag,
+    )
 
 
 class TenantClassifier:
@@ -258,8 +306,42 @@ class TenantClassifier:
         }
         return self._konto_defaults
 
+    async def _amount_history(self, betrag: float) -> list[AmountRow]:
+        """Earlier bookings of this tenant with the same gross amount (± half a Rappen)."""
+        try:
+            amount = round(abs(float(betrag)), 2)
+        except (TypeError, ValueError):
+            return []
+        if not amount or not (amount < float("inf")):
+            return []
+        lo, hi = amount - 0.005, amount + 0.005
+        rows: list[AmountRow] = []
+        result = await self.db.execute(
+            select(
+                TrainingRow.beschreibung,
+                TrainingRow.kt_soll,
+                TrainingRow.kt_haben,
+                TrainingRow.mwst_code,
+                TrainingRow.mwst_pct,
+            ).where(TrainingRow.tenant_id == self.tenant_id, TrainingRow.betrag.between(lo, hi))
+        )
+        rows.extend(tuple(r) for r in result.all())
+        result = await self.db.execute(
+            select(Booking.beschreibung, Booking.kt_soll, Booking.kt_haben, Booking.mwst_code, Booking.mwst_pct).where(
+                Booking.tenant_id == self.tenant_id,
+                Booking.betrag.between(lo, hi),
+                Booking.kt_soll != "",
+            )
+        )
+        rows.extend(tuple(r) for r in result.all())
+        return rows
+
     async def classify(self, beschreibung: str, is_credit: bool, betrag: float) -> ClassificationResult:
+        by_amount = amount_candidate(await self._amount_history(betrag), betrag)
+
         if is_credit:
+            if by_amount and by_amount.confidence >= 0.6:
+                return by_amount
             pct = 8.10
             return ClassificationResult(
                 kt_soll="1020",
@@ -269,6 +351,7 @@ class TenantClassifier:
                 mwst_amount=float(round_chf(-betrag * pct / (100 + pct))),
                 confidence=1.0,
                 source="Regeln",
+                beschreibung_vorschlag=by_amount.beschreibung_vorschlag if by_amount else "",
             )
 
         key = make_memory_key(beschreibung)
@@ -287,6 +370,14 @@ class TenantClassifier:
                 source="Gedächtnis",
             )
 
+        # Three candidates, most confident wins; ties go amount → rules → ML.
+        # A keyword rule (≥ 0.72) therefore beats a hesitant model (0.45–0.71):
+        # the model used to turn "SALDO DIENSTLEISTUNGSPREIS…" into revenue at 48 %.
+        candidates: list[ClassificationResult] = []
+        if by_amount:
+            candidates.append(by_amount)
+        candidates.append(self._classify_rules(beschreibung, betrag))
+
         model = await self._load_model()
         if model is not None:
             clean = preprocess(beschreibung)
@@ -298,17 +389,22 @@ class TenantClassifier:
                 kt_haben = defaults.get("KontoHaben", "1020")
                 mwst_code = defaults.get("MwStCode", "")
                 mwst_pct = defaults.get("MwStUStProz", "")
-                return ClassificationResult(
-                    kt_soll=predicted_soll,
-                    kt_haben=kt_haben,
-                    mwst_code=mwst_code,
-                    mwst_pct=mwst_pct,
-                    mwst_amount=calc_mwst(betrag, mwst_pct),
-                    confidence=confidence,
-                    source="ML",
+                candidates.append(
+                    ClassificationResult(
+                        kt_soll=predicted_soll,
+                        kt_haben=kt_haben,
+                        mwst_code=mwst_code,
+                        mwst_pct=mwst_pct,
+                        mwst_amount=calc_mwst(betrag, mwst_pct),
+                        confidence=confidence,
+                        source="ML",
+                    )
                 )
 
-        return self._classify_rules(beschreibung, betrag)
+        best = max(candidates, key=lambda c: c.confidence)  # max() keeps the first of equals
+        if by_amount and best is not by_amount:
+            best.beschreibung_vorschlag = by_amount.beschreibung_vorschlag
+        return best
 
     def _classify_rules(self, beschreibung: str, betrag: float) -> ClassificationResult:
         desc_lower = (beschreibung or "").lower()

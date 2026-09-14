@@ -58,6 +58,7 @@ async def batch_classify(
                 "mwst_amount": result.mwst_amount,
                 "source": result.source,
                 "confidence": result.confidence,
+                "beschreibung_vorschlag": result.beschreibung_vorschlag,
             }
         )
 

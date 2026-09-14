@@ -120,6 +120,7 @@ async def predict(
         "mwst_code": result.mwst_code,
         "mwst_pct": result.mwst_pct,
         "confidence": result.confidence,
+        "beschreibung_vorschlag": result.beschreibung_vorschlag,
         "needs_review": review_item is not None,
         "review_id": review_item.id if review_item else None,
         "top_predictions": top_predictions,
@@ -390,6 +391,7 @@ async def classify_transaction(
         "mwst_amount": result.mwst_amount,
         "confidence": result.confidence,
         "source": result.source,
+        "beschreibung_vorschlag": result.beschreibung_vorschlag,
         "needs_review": review_item is not None,
         "review_id": review_item.id if review_item else None,
     }

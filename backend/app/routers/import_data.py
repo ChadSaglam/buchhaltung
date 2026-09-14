@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import math
 import re
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
@@ -151,6 +152,7 @@ def parse_banana_xls(file_bytes: bytes, filename: str) -> list[dict]:
             kt_haben = "1020"
         mwst_code = str(row.get("MwStCode", "")).strip() if pd.notna(row.get("MwStCode")) else ""
         mwst_pct = str(row.get("MwStPct", "")).strip() if pd.notna(row.get("MwStPct")) else ""
+        betrag = _amount(row.get("Betrag"))
         rows.append(
             {
                 "beschreibung": beschreibung[:500],
@@ -158,9 +160,21 @@ def parse_banana_xls(file_bytes: bytes, filename: str) -> list[dict]:
                 "kt_haben": kt_haben[:20],
                 "mwst_code": mwst_code[:10],
                 "mwst_pct": mwst_pct[:10],
+                "betrag": betrag,
             }
         )
     return rows
+
+
+def _amount(value) -> float | None:
+    """Banana amount cell → float, or None when empty/unparseable (never a fake 0)."""
+    if value is None or (isinstance(value, float) and math.isnan(value)):
+        return None
+    try:
+        num = float(str(value).replace("'", "").replace(",", ".").strip())
+    except ValueError:
+        return None
+    return num if math.isfinite(num) else None
 
 
 @router.post("/banana")
@@ -207,6 +221,7 @@ async def import_banana_file(
                 kt_haben=r["kt_haben"],
                 mwst_code=r["mwst_code"],
                 mwst_pct=r["mwst_pct"],
+                betrag=r["betrag"],
             )
         )
 

@@ -25,6 +25,7 @@ export function toRow(r: Record<string, unknown>, i: number): TxRow {
     source: (r.source as string) || undefined,
     suggSoll: (r.kt_soll as string) || "",
     suggHaben: (r.kt_haben as string) || "",
+    vorschlag: (r.beschreibung_vorschlag as string) || undefined,
     accepted: false,
   };
 }
