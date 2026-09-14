@@ -1,5 +1,7 @@
 import { create } from 'zustand';
+import { mutate } from 'swr';
 import type { UserResponse } from '@/lib/api-schema';
+import { useNotificationsStore } from '@/lib/notifications-store';
 
 type User = UserResponse;
 
@@ -23,6 +25,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     set({ token: null, user: null });
+    // B-44: nothing of this session may survive into the next login — the SWR cache
+    // still held tenant A's KPIs for tenant B; the bell still showed A's review queue.
+    void mutate(() => true, undefined, { revalidate: false });
+    useNotificationsStore.getState().reset();
   },
   hydrate: () => {
     const token = localStorage.getItem('token');

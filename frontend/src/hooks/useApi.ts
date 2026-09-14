@@ -11,7 +11,23 @@ function getToken(): string | null {
   return localStorage.getItem("token");
 }
 
-async function fetcher(url: string) {
+/** Id of the signed-in user, from the stored session; "" when signed out or unreadable. */
+export function currentUserKey(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    const user = JSON.parse(localStorage.getItem("user") || "null");
+    return user && user.id != null ? String(user.id) : "";
+  } catch {
+    return "";
+  }
+}
+
+/** SWR key for a path: scoped to the user so two logins in one tab never share an entry (B-44). */
+export function apiKey(path: string, userKey: string): [string, string] {
+  return [path, userKey];
+}
+
+async function fetcher([url]: [string, string]) {
   const token = getToken();
   if (!token) throw new Error("No token");
 
@@ -47,13 +63,13 @@ async function fetcher(url: string) {
 }
 
 export function useApi<T = Record<string, unknown>>(path: string | null) {
-  const [ready, setReady] = useState(false);
+  const [userKey, setUserKey] = useState<string | null>(null);
 
   useEffect(() => {
-    setReady(!!localStorage.getItem("token"));
+    setUserKey(localStorage.getItem("token") ? currentUserKey() : "");
   }, []);
 
-  return useSWR<T>(ready ? path : null, fetcher, {
+  return useSWR<T>(userKey && path ? apiKey(path, userKey) : null, fetcher, {
     revalidateOnFocus: false,
     errorRetryCount: 0,
     shouldRetryOnError: false,

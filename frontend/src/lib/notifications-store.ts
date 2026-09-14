@@ -45,6 +45,8 @@ interface NotifState {
   markRead: (id: string) => void;
   markAllRead: () => void;
   unreadCount: () => number;
+  /** Drop everything in memory (logout). Read-ids in localStorage stay — they are harmless per browser. */
+  reset: () => void;
 }
 
 export const useNotificationsStore = create<NotifState>((set, get) => ({
@@ -139,4 +141,5 @@ export const useNotificationsStore = create<NotifState>((set, get) => ({
     set({ items: get().items.map((i) => ({ ...i, read: true })) });
   },
   unreadCount: () => get().items.filter((i) => !i.read).length,
+  reset: () => set({ items: [], loading: false }),
 }));
