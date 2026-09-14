@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from pydantic.config import ConfigDict
 
 
@@ -41,3 +41,31 @@ class SsoRequest(BaseModel):
     """`POST /api/auth/sso` — the SSO token billing put into the `/sso#token=` fragment."""
 
     token: str
+
+
+class ProfileUpdate(BaseModel):
+    """Self-service: what a user may change about themselves (B-46)."""
+
+    display_name: str = Field(min_length=1, max_length=255)
+
+    @field_validator("display_name")
+    @classmethod
+    def _strip(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Anzeigename darf nicht leer sein")
+        return v
+
+
+class TenantUpdate(BaseModel):
+    """Tenant-wide: the company name (admin and up)."""
+
+    name: str = Field(min_length=1, max_length=255)
+
+    @field_validator("name")
+    @classmethod
+    def _strip(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Firmenname darf nicht leer sein")
+        return v

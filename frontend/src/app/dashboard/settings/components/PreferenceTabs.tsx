@@ -1,4 +1,4 @@
-import { SettingsField, SettingsToggle } from "./SettingsPrimitives";
+import { SettingsField } from "./SettingsPrimitives";
 
 export function ReviewTab({ threshold, setThreshold }: { threshold: number; setThreshold: (v: number) => void }) {
   return (
@@ -23,26 +23,6 @@ export function ReviewTab({ threshold, setThreshold }: { threshold: number; setT
           <span className="w-16 text-right font-mono text-sm text-foreground tabular-nums">
             {Math.round(threshold * 100)}%
           </span>
-        </div>
-      </SettingsField>
-    </div>
-  );
-}
-
-export function NotificationsTab({ emailNotifs, setEmailNotifs, exportNotifs, setExportNotifs }: {
-  emailNotifs: boolean;
-  setEmailNotifs: (v: boolean) => void;
-  exportNotifs: boolean;
-  setExportNotifs: (v: boolean) => void;
-}) {
-  return (
-    <div>
-      <h2 className="text-base font-semibold text-foreground mb-1">Benachrichtigungen</h2>
-      <p className="text-sm text-muted-foreground mb-6">E-Mail- und App-Benachrichtigungen</p>
-      <SettingsField label="E-Mail-Benachrichtigungen">
-        <div className="space-y-4">
-          <SettingsToggle checked={emailNotifs} onChange={setEmailNotifs} label="Tägliche Zusammenfassung" />
-          <SettingsToggle checked={exportNotifs} onChange={setExportNotifs} label="Export-Bestätigung per E-Mail" />
         </div>
       </SettingsField>
     </div>

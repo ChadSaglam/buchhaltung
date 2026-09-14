@@ -16,8 +16,11 @@ from tests.factories import auth_headers, create_tenant, create_user
 PUBLIC = {"/api/auth/register", "/api/auth/login", "/api/auth/sso", "/api/platform/events"}
 # POST in shape only — they read, they don't write. Every authenticated role may call them.
 READ_POSTS = {"/api/ai/chat", "/api/ai/summary", "/api/export/banana", "/api/export/excel", "/api/export/csv"}
+# Self-service on the caller's own row: authenticated, any role (B-46).
+SELF_SERVICE = {("PATCH", "/api/auth/me")}
 # Destructive or tenant-wide configuration: admin and up.
 ADMIN = {
+    ("PATCH", "/api/auth/me/tenant"),
     ("PUT", "/api/kontenplan/"),
     ("DELETE", "/api/classify/{action}"),
     ("POST", "/api/classify/upload"),
@@ -48,7 +51,7 @@ def _mutating_routes():
 def test_every_mutating_route_has_a_role_check():
     missing = []
     for method, route in _mutating_routes():
-        if route.path in PUBLIC or route.path in READ_POSTS:
+        if route.path in PUBLIC or route.path in READ_POSTS or (method, route.path) in SELF_SERVICE:
             continue
         expected = "admin" if (method, route.path) in ADMIN else "editor"
         if _minimum_role(route.dependant) != expected:

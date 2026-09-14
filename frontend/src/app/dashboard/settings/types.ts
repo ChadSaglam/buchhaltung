@@ -2,7 +2,7 @@ import type { UserResponse } from "@/lib/api-schema";
 
 export type UserInfo = UserResponse;
 
-export type TabId = "profile" | "company" | "notifications" | "appearance" | "security" | "review";
+export type TabId = "profile" | "company" | "review" | "appearance";
 
 export interface Tab {
   id: TabId;

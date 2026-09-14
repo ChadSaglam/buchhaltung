@@ -24,36 +24,25 @@ export function ProfileTab({ user, displayName, setDisplayName }: {
   );
 }
 
-export function CompanyTab({ user, companyName, setCompanyName }: {
+export function CompanyTab({ user, companyName, setCompanyName, canEdit }: {
   user: UserInfo | null;
   companyName: string;
   setCompanyName: (v: string) => void;
+  canEdit: boolean;
 }) {
   return (
     <div>
       <h2 className="text-base font-semibold text-foreground mb-1">Unternehmen</h2>
       <p className="text-sm text-muted-foreground mb-6">Firmendaten verwalten</p>
-      <SettingsField label="Firmenname">
-        <SettingsInput value={companyName} onChange={setCompanyName} label="Firmenname" />
+      <SettingsField label="Firmenname" description={canEdit ? undefined : "Nur Admin oder Owner können den Firmennamen ändern"}>
+        {canEdit ? (
+          <SettingsInput value={companyName} onChange={setCompanyName} label="Firmenname" />
+        ) : (
+          <p className="text-sm text-muted-foreground py-2">{companyName || "–"}</p>
+        )}
       </SettingsField>
       <SettingsField label="Mandanten-ID">
         <p className="font-mono text-sm text-muted-foreground py-2">{user?.tenant_id ?? "–"}</p>
-      </SettingsField>
-    </div>
-  );
-}
-
-export function SecurityTab() {
-  return (
-    <div>
-      <h2 className="text-base font-semibold text-foreground mb-1">Sicherheit</h2>
-      <p className="text-sm text-muted-foreground mb-6">Passwort und Sicherheitsoptionen</p>
-      <SettingsField label="Passwort ändern">
-        <div className="space-y-3">
-          <SettingsInput value="" onChange={() => {}} type="password" placeholder="Aktuelles Passwort" label="Aktuelles Passwort" />
-          <SettingsInput value="" onChange={() => {}} type="password" placeholder="Neues Passwort" label="Neues Passwort" />
-          <SettingsInput value="" onChange={() => {}} type="password" placeholder="Passwort bestätigen" label="Passwort bestätigen" />
-        </div>
       </SettingsField>
     </div>
   );

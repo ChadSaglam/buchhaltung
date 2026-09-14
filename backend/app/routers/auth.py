@@ -6,12 +6,19 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import get_current_user
+from app.core.deps import get_current_user, require_admin
 from app.core.errors import ApiError
 from app.core.security import hash_password, issue_access_token, verify_password
 from app.models.tenant import Tenant
 from app.models.user import AUTH_SOURCE_LOCAL, User
-from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse, UserResponse
+from app.schemas.auth import (
+    LoginRequest,
+    ProfileUpdate,
+    RegisterRequest,
+    TenantUpdate,
+    TokenResponse,
+    UserResponse,
+)
 from app.services.tenant_setup import seed_tenant, unique_tenant_slug
 
 router = APIRouter()
@@ -76,10 +83,7 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
     return TokenResponse(access_token=token)
 
 
-@router.get("/me", response_model=UserResponse)
-async def me(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Tenant).where(Tenant.id == user.tenant_id))
-    tenant = result.scalar_one()
+def _me_response(user: User, tenant: Tenant) -> UserResponse:
     return UserResponse(
         id=user.id,
         email=user.email,
@@ -91,3 +95,32 @@ async def me(user: User = Depends(get_current_user), db: AsyncSession = Depends(
         subscription_plan=tenant.subscription_plan,
         trial_ends_at=tenant.trial_ends_at,
     )
+
+
+async def _tenant_of(user: User, db: AsyncSession) -> Tenant:
+    result = await db.execute(select(Tenant).where(Tenant.id == user.tenant_id))
+    return result.scalar_one()
+
+
+@router.get("/me", response_model=UserResponse)
+async def me(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    return _me_response(user, await _tenant_of(user, db))
+
+
+@router.patch("/me", response_model=UserResponse)
+async def update_me(body: ProfileUpdate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Self-service profile (B-46): every signed-in user may rename themselves."""
+    user.display_name = body.display_name
+    await db.commit()
+    await db.refresh(user)
+    return _me_response(user, await _tenant_of(user, db))
+
+
+@router.patch("/me/tenant", response_model=UserResponse)
+async def update_my_tenant(body: TenantUpdate, user: User = Depends(require_admin), db: AsyncSession = Depends(get_db)):
+    """Company name is tenant-wide: admin and up (B-46)."""
+    tenant = await _tenant_of(user, db)
+    tenant.name = body.name
+    await db.commit()
+    await db.refresh(tenant)
+    return _me_response(user, tenant)

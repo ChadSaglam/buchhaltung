@@ -116,3 +116,37 @@ async def test_require_role_ladder(db_session, role, editor_ok, admin_ok, owner_
         for path, ok in (("/editor", editor_ok), ("/admin", admin_ok), ("/owner", owner_ok)):
             resp = await ac.get(path, headers=headers)
             assert resp.status_code == (200 if ok else 403), (role, path, resp.text)
+
+
+# ── B-46: settings save for real ─────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_profile_rename_is_self_service_and_persists(client, db_session):
+    tenant = await create_tenant(db_session)
+    viewer = await create_user(db_session, tenant, role="viewer")
+    headers = auth_headers(viewer)
+
+    resp = await client.patch("/api/auth/me", json={"display_name": "  Neuer Name  "}, headers=headers)
+    assert resp.status_code == 200
+    assert resp.json()["display_name"] == "Neuer Name"
+    assert (await client.get("/api/auth/me", headers=headers)).json()["display_name"] == "Neuer Name"
+
+    assert (await client.patch("/api/auth/me", json={"display_name": "   "}, headers=headers)).status_code == 422
+    assert (await client.patch("/api/auth/me", json={"display_name": "x"})).status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_company_rename_needs_admin(client, db_session):
+    tenant = await create_tenant(db_session)
+    editor = await create_user(db_session, tenant, role="editor")
+    admin = await create_user(db_session, tenant, role="admin")
+
+    assert (
+        await client.patch("/api/auth/me/tenant", json={"name": "Neu AG"}, headers=auth_headers(editor))
+    ).status_code == 403
+    resp = await client.patch("/api/auth/me/tenant", json={"name": "Neu AG"}, headers=auth_headers(admin))
+    assert resp.status_code == 200
+    assert resp.json()["tenant_name"] == "Neu AG"
+    # the editor sees the new company name too — it is tenant-wide
+    assert (await client.get("/api/auth/me", headers=auth_headers(editor))).json()["tenant_name"] == "Neu AG"

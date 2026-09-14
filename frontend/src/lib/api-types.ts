@@ -118,7 +118,31 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Update Me
+         * @description Self-service profile (B-46): every signed-in user may rename themselves.
+         */
+        patch: operations["update_me_api_auth_me_patch"];
+        trace?: never;
+    };
+    "/api/auth/me/tenant": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update My Tenant
+         * @description Company name is tenant-wide: admin and up (B-46).
+         */
+        patch: operations["update_my_tenant_api_auth_me_tenant_patch"];
         trace?: never;
     };
     "/api/auth/register": {
@@ -1152,6 +1176,14 @@ export interface components {
              */
             betrag: number;
         };
+        /**
+         * ProfileUpdate
+         * @description Self-service: what a user may change about themselves (B-46).
+         */
+        ProfileUpdate: {
+            /** Display Name */
+            display_name: string;
+        };
         /** RegisterRequest */
         RegisterRequest: {
             /**
@@ -1284,6 +1316,14 @@ export interface components {
         SsoRequest: {
             /** Token */
             token: string;
+        };
+        /**
+         * TenantUpdate
+         * @description Tenant-wide: the company name (admin and up).
+         */
+        TenantUpdate: {
+            /** Name */
+            name: string;
         };
         /** TokenResponse */
         TokenResponse: {
@@ -1602,6 +1642,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+        };
+    };
+    update_me_api_auth_me_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_my_tenant_api_auth_me_tenant_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TenantUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

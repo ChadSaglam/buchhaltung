@@ -6,8 +6,8 @@ import { PageHeader } from "@/components/ui/page_header";
 import { Button } from "@/components/ui/Button";
 import { useSettings } from "./hooks/useSettings";
 import { SettingsTabs } from "./components/SettingsTabs";
-import { ProfileTab, CompanyTab, SecurityTab } from "./components/AccountTabs";
-import { ReviewTab, NotificationsTab } from "./components/PreferenceTabs";
+import { ProfileTab, CompanyTab } from "./components/AccountTabs";
+import { ReviewTab } from "./components/PreferenceTabs";
 import { AppearanceTab } from "./components/AppearanceTab";
 import { ErrorState } from "@/components/shared/ErrorState";
 import { PageSkeleton } from "@/components/shared/PageSkeleton";
@@ -22,7 +22,7 @@ export default function SettingsPage() {
         title="Einstellungen"
         subtitle="Konto- und Anwendungseinstellungen verwalten"
         action={
-          <Button
+          s.canSave && <Button
             variant={s.saved ? "success" : "primary"}
             onClick={s.handleSave}
             disabled={s.saving}
@@ -54,19 +54,15 @@ export default function SettingsPage() {
                 <ProfileTab user={s.user} displayName={s.displayName} setDisplayName={s.setDisplayName} />
               )}
               {s.activeTab === "company" && (
-                <CompanyTab user={s.user} companyName={s.companyName} setCompanyName={s.setCompanyName} />
-              )}
-              {s.activeTab === "review" && <ReviewTab threshold={s.threshold} setThreshold={s.setThreshold} />}
-              {s.activeTab === "notifications" && (
-                <NotificationsTab
-                  emailNotifs={s.emailNotifs}
-                  setEmailNotifs={s.setEmailNotifs}
-                  exportNotifs={s.exportNotifs}
-                  setExportNotifs={s.setExportNotifs}
+                <CompanyTab
+                  user={s.user}
+                  companyName={s.companyName}
+                  setCompanyName={s.setCompanyName}
+                  canEdit={s.canEditCompany}
                 />
               )}
+              {s.activeTab === "review" && <ReviewTab threshold={s.threshold} setThreshold={s.setThreshold} />}
               {s.activeTab === "appearance" && <AppearanceTab />}
-              {s.activeTab === "security" && <SecurityTab />}
             </>
           )}
         </motion.div>
