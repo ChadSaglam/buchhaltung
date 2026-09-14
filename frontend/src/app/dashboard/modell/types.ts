@@ -1,5 +1,7 @@
 export interface ModelInfo {
   has_model: boolean;
+  /** False when a stored model is unsigned/foreign/altered — the classifier ignores it (B-34). */
+  model_trusted?: boolean;
   model_accuracy: number;
   train_accuracy: number;
   total_samples: number;

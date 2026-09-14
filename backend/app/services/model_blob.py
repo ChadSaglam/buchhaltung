@@ -20,30 +20,61 @@ import hmac
 import pickle
 from typing import Any
 
-from app.core.config import settings
+from app.core.config import INSECURE_SECRETS, settings
 
 MAGIC = b"BHM1"
 _DIGEST_LEN = hashlib.sha256().digest_size
+# B-34: the signing key is derived, not the raw SECRET_KEY — a leaked model
+# signature can never be turned into a JWT-signing oracle, and vice versa.
+_KEY_CONTEXT = b"model-blob-v1"
+INSECURE_SECRET_DETAIL = (
+    "SECRET_KEY ist unsicher (Standardwert oder zu kurz). Setze einen zufälligen Wert in backend/.env, "
+    'z. B. python -c "import secrets; print(secrets.token_urlsafe(48))", und starte neu.'
+)
 
 
 class UntrustedModelBlob(ValueError):
     """The blob is not signed by this installation and must not be unpickled."""
 
 
+class InsecureSecretKey(UntrustedModelBlob):
+    """Signing with a default/short SECRET_KEY would let anyone forge a blob — refused everywhere."""
+
+
+def _key() -> bytes:
+    secret = settings.SECRET_KEY
+    if secret.strip().lower() in INSECURE_SECRETS or len(secret) < 32:
+        raise InsecureSecretKey(INSECURE_SECRET_DETAIL)
+    return hmac.new(secret.encode("utf-8"), _KEY_CONTEXT, hashlib.sha256).digest()
+
+
 def _sign(payload: bytes) -> bytes:
-    return hmac.new(settings.SECRET_KEY.encode("utf-8"), payload, hashlib.sha256).digest()
+    return hmac.new(_key(), payload, hashlib.sha256).digest()
 
 
 def is_trusted(blob: bytes | None) -> bool:
-    """True if ``blob`` is a container whose signature matches our SECRET_KEY."""
+    """True if ``blob`` is a container whose signature matches our derived key.
+
+    False (never an exception) for a foreign, tampered or raw blob — and for an
+    insecure SECRET_KEY, since nothing can be verified with it.
+    """
     if not blob or len(blob) <= len(MAGIC) + _DIGEST_LEN or not blob.startswith(MAGIC):
         return False
     digest = blob[len(MAGIC) : len(MAGIC) + _DIGEST_LEN]
     payload = blob[len(MAGIC) + _DIGEST_LEN :]
-    return hmac.compare_digest(digest, _sign(payload))
+    try:
+        return hmac.compare_digest(digest, _sign(payload))
+    except InsecureSecretKey:
+        return False
+
+
+def sha256_hex(blob: bytes) -> str:
+    """Fingerprint stored next to the blob (``classifier_models.model_sha256``, B-34)."""
+    return hashlib.sha256(blob).hexdigest()
 
 
 def pack(obj: Any) -> bytes:
+    """Serialise and sign. Raises ``InsecureSecretKey`` rather than signing with a guessable key."""
     payload = pickle.dumps(obj)
     return MAGIC + _sign(payload) + payload
 

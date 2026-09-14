@@ -14,6 +14,11 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.pool import NullPool, StaticPool
 
 os.environ.setdefault("ENV", "test")
+# B-34: model blobs refuse to sign with the default secret; tests need a real-looking one.
+os.environ.setdefault("SECRET_KEY", "test-secret-key-for-pytest-only-0123456789abcdef")
+os.environ.setdefault(
+    "JWT_SECRET", os.environ["SECRET_KEY"]
+)  # JWT_SECRET (also from backend/.env) wins over SECRET_KEY
 
 from app.core.config import settings
 from app.core.database import get_db

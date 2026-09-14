@@ -21,7 +21,7 @@ from app.models.kontenplan import KontoDefault
 from app.models.memory import Memory
 from app.models.training_data import TrainingRow
 from app.services.export import round_chf
-from app.services.model_blob import UntrustedModelBlob, pack, unpack
+from app.services.model_blob import UntrustedModelBlob, pack, sha256_hex, unpack
 
 logger = logging.getLogger(__name__)
 
@@ -271,6 +271,17 @@ def amount_candidate(rows: list[AmountRow], betrag: float) -> ClassificationResu
     )
 
 
+def model_row_is_trusted(row: ClassifierModel | None) -> bool:
+    """Signed by this installation and — when the fingerprint exists — unchanged since written."""
+    if row is None or not row.model_blob:
+        return False
+    if row.model_sha256 and sha256_hex(row.model_blob) != row.model_sha256:
+        return False
+    from app.services.model_blob import is_trusted
+
+    return is_trusted(row.model_blob)
+
+
 class TenantClassifier:
     def __init__(self, tenant_id: int, db: AsyncSession):
         self.tenant_id = tenant_id
@@ -284,11 +295,14 @@ class TenantClassifier:
         result = await self.db.execute(select(ClassifierModel).where(ClassifierModel.tenant_id == self.tenant_id))
         row = result.scalar_one_or_none()
         if row:
+            if not model_row_is_trusted(row):
+                # Unsigned (pre-B-32), foreign, or altered since it was written (B-34):
+                # never unpickle it. The classifier falls through to memory/rules until retraining.
+                logger.warning("[CLASSIFIER] tenant=%s: model blob is not trusted, ignoring it", self.tenant_id)
+                return None
             try:
                 self._model = unpack(row.model_blob)
             except UntrustedModelBlob:
-                # Unsigned (pre-B-32) or foreign blob: never unpickle it. The
-                # classifier falls through to memory/rules until retraining.
                 logger.warning("[CLASSIFIER] tenant=%s: model blob is not signed, ignoring it", self.tenant_id)
         return self._model
 
@@ -621,6 +635,7 @@ class TenantClassifier:
         existing = result.scalar_one_or_none()
         if existing:
             existing.model_blob = model_blob
+            existing.model_sha256 = sha256_hex(model_blob)
             existing.total_samples = len(df)
             existing.num_classes = int(y.nunique())
             existing.cv_accuracy = cv_acc
@@ -631,6 +646,7 @@ class TenantClassifier:
                 ClassifierModel(
                     tenant_id=self.tenant_id,
                     model_blob=model_blob,
+                    model_sha256=sha256_hex(model_blob),
                     total_samples=len(df),
                     num_classes=int(y.nunique()),
                     cv_accuracy=cv_acc,

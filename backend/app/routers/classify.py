@@ -18,8 +18,8 @@ from app.models.correction import Correction
 from app.models.kontenplan import Konto, KontoDefault
 from app.models.memory import Memory
 from app.models.user import User
-from app.services.classifier import ClassificationResult, TenantClassifier, preprocess
-from app.services.model_blob import is_trusted
+from app.services.classifier import ClassificationResult, TenantClassifier, model_row_is_trusted, preprocess
+from app.services.model_blob import INSECURE_SECRET_DETAIL, InsecureSecretKey, is_trusted, sha256_hex
 from app.services.review_queue import ReviewQueueService
 from app.services.usage_meter import UsageMeter
 
@@ -302,8 +302,9 @@ async def upload_bundle(
         row = await _get_model_row(db, tid)
         if row:
             row.model_blob = content
+            row.model_sha256 = sha256_hex(content)
         else:
-            db.add(ClassifierModel(tenant_id=tid, model_blob=content))
+            db.add(ClassifierModel(tenant_id=tid, model_blob=content, model_sha256=sha256_hex(content)))
         await db.commit()
         return {"status": "ok", "restored": ["model"]}
 
@@ -338,8 +339,9 @@ async def upload_bundle(
                 row = await _get_model_row(db, tid)
                 if row:
                     row.model_blob = model_blob
+                    row.model_sha256 = sha256_hex(model_blob)
                 else:
-                    db.add(ClassifierModel(tenant_id=tid, model_blob=model_blob))
+                    db.add(ClassifierModel(tenant_id=tid, model_blob=model_blob, model_sha256=sha256_hex(model_blob)))
                 restored.append("model")
 
             if "memory.json" in names:
@@ -431,7 +433,10 @@ async def train_model(
     user: User = Depends(require_editor),
 ) -> dict[str, Any]:
     clf = TenantClassifier(user.tenant_id, db)
-    result = await clf.train_from_db()
+    try:
+        result = await clf.train_from_db()
+    except InsecureSecretKey:
+        raise HTTPException(status_code=503, detail=INSECURE_SECRET_DETAIL) from None
     if not result:
         raise HTTPException(status_code=400, detail="Nicht genug Daten zum Trainieren.")
     if "error" in result:
@@ -456,6 +461,8 @@ async def classifier_info(
     model_row = await _get_model_row(db, user.tenant_id)
 
     has_model = model_row is not None and model_row.model_blob is not None
+    # B-34: a stored model the classifier refuses to load (unsigned, foreign, altered) → "neu trainieren".
+    model_trusted = model_row_is_trusted(model_row)
     model_accuracy = float(model_row.cv_accuracy or 0.0) if model_row else 0.0
     train_accuracy = float(model_row.train_accuracy or 0.0) if model_row else 0.0
     total_samples = int(model_row.total_samples or 0) if model_row else 0
@@ -463,6 +470,7 @@ async def classifier_info(
 
     return {
         "has_model": has_model,
+        "model_trusted": model_trusted,
         "model_accuracy": model_accuracy,
         "train_accuracy": train_accuracy,
         "total_samples": total_samples,

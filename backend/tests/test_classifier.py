@@ -395,7 +395,7 @@ async def test_unsigned_model_blob_is_never_unpickled(db_session, caplog):
 
     with caplog.at_level("WARNING"):
         assert await clf._load_model() is None
-    assert "not signed" in caplog.text
+    assert "not trusted" in caplog.text
     assert (await clf.classify("irgendwas", False, 10)).source == "Regeln"
 
 
