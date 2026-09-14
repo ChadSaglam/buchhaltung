@@ -62,7 +62,12 @@ async function fetcher([url]: [string, string]) {
   return res.json();
 }
 
-export function useApi<T = Record<string, unknown>>(path: string | null) {
+export interface UseApiOptions {
+  /** Poll every n ms (B-16: dashboard KPIs, system status, the bell). Off by default. */
+  refreshInterval?: number;
+}
+
+export function useApi<T = Record<string, unknown>>(path: string | null, options: UseApiOptions = {}) {
   const [userKey, setUserKey] = useState<string | null>(null);
 
   useEffect(() => {
@@ -73,5 +78,9 @@ export function useApi<T = Record<string, unknown>>(path: string | null) {
     revalidateOnFocus: false,
     errorRetryCount: 0,
     shouldRetryOnError: false,
+    refreshInterval: options.refreshInterval ?? 0,
+    // One request per key per mount burst: the dashboard mounts four readers of
+    // /classify/info at once and used to fire four requests.
+    dedupingInterval: 5_000,
   });
 }

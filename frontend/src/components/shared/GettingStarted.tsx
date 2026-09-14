@@ -7,7 +7,7 @@ import {
   Rocket, X, CheckCircle2, Circle, ArrowRight,
   ScanLine, FileText, Bot, ListChecks, type LucideIcon,
 } from "lucide-react";
-import api from "@/lib/api";
+import { useBookingStats, useClassifierInfo, useVisionStatus } from "@/hooks/useSystemData";
 import { cn } from "@/lib/utils";
 
 /**
@@ -30,42 +30,32 @@ interface Step {
 }
 
 export function GettingStarted() {
-  const [visible, setVisible] = useState(false);
-  const [steps, setSteps] = useState<Step[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [dismissed, setDismissed] = useState<boolean | null>(null);
+  const info = useClassifierInfo();
+  const bookings = useBookingStats();
+  const scanner = useVisionStatus();
 
   useEffect(() => {
-    const dismissed = typeof window !== "undefined" && localStorage.getItem(DISMISS_KEY) === "true";
-
-    (async () => {
-      const [info, bookings, scanner] = await Promise.all([
-        api.get("/api/classify/info").then((r) => r.data).catch(() => null),
-        api.get("/api/bookings/stats").then((r) => r.data).catch(() => null),
-        api.get("/api/scanner/vision-status").then((r) => r.data).catch(() => null),
-      ]);
-
-      const hasBookings = (bookings?.total_count ?? 0) > 0;
-      const hasModel = !!info?.has_model;
-      const hasMemory = (info?.memory_count ?? 0) > 0;
-      const ollamaOk = !!scanner?.ok;
-
-      const s: Step[] = [
-        { id: "ollama", label: "AI-Dienst verbinden", desc: "Ollama starten für Scanner & Assistent", href: "/dashboard/scanner", icon: Bot, done: ollamaOk },
-        { id: "import", label: "Erste Buchungen erfassen", desc: "Kontoauszug hochladen oder Beleg scannen", href: "/dashboard/kontoauszug", icon: FileText, done: hasBookings },
-        { id: "scan", label: "Beleg scannen", desc: "Rechnung fotografieren → AI-Kontierung", href: "/dashboard/scanner", icon: ScanLine, done: hasMemory },
-        { id: "train", label: "Modell trainieren", desc: "Automatische Kontierung aktivieren", href: "/dashboard/modell", icon: ListChecks, done: hasModel },
-      ];
-      setSteps(s);
-
-      const allDone = s.every((x) => x.done);
-      setVisible(!dismissed && !allDone);
-      setLoading(false);
-    })();
+    setDismissed(localStorage.getItem(DISMISS_KEY) === "true");
   }, []);
+
+  const loading = dismissed === null || info.isLoading || bookings.isLoading || scanner.isLoading;
+  const hasBookings = (bookings.data?.total_count ?? 0) > 0;
+  const hasModel = !!info.data?.has_model;
+  const hasMemory = (info.data?.memory_count ?? 0) > 0;
+  const ollamaOk = !!scanner.data?.ok;
+
+  const steps: Step[] = [
+    { id: "ollama", label: "AI-Dienst verbinden", desc: "Ollama starten für Scanner & Assistent", href: "/dashboard/scanner", icon: Bot, done: ollamaOk },
+    { id: "import", label: "Erste Buchungen erfassen", desc: "Kontoauszug hochladen oder Beleg scannen", href: "/dashboard/kontoauszug", icon: FileText, done: hasBookings },
+    { id: "scan", label: "Beleg scannen", desc: "Rechnung fotografieren → AI-Kontierung", href: "/dashboard/scanner", icon: ScanLine, done: hasMemory },
+    { id: "train", label: "Modell trainieren", desc: "Automatische Kontierung aktivieren", href: "/dashboard/modell", icon: ListChecks, done: hasModel },
+  ];
+  const visible = !dismissed && !steps.every((x) => x.done);
 
   const dismiss = () => {
     localStorage.setItem(DISMISS_KEY, "true");
-    setVisible(false);
+    setDismissed(true);
   };
 
   if (loading || !visible) return null;

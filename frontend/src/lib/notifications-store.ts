@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import api from "@/lib/api";
 
 /**
  * Notifications center.
@@ -38,10 +37,82 @@ function persistReadIds(ids: Set<string>) {
   localStorage.setItem(READ_KEY, JSON.stringify(Array.from(ids)));
 }
 
+export interface NotifSources {
+  review: unknown;
+  info: { has_model?: boolean; model_accuracy?: number } | null | undefined;
+  aiStatus: { ok?: boolean } | null | undefined;
+  stats: { total_count?: number; total_amount?: number } | null | undefined;
+}
+
+/** Pure: system signals → notification items (read flags applied by the store). */
+export function buildNotifications({ review, info, aiStatus, stats }: NotifSources, now = Date.now()): AppNotification[] {
+  const items: AppNotification[] = [];
+  const reviewCount = Array.isArray(review) ? review.length : ((review as { count?: number } | null)?.count ?? 0);
+  if (reviewCount > 0) {
+    items.push({
+      id: `review-${reviewCount}`,
+      kind: "review",
+      title: "Überprüfung ausstehend",
+      body: `${reviewCount} Buchung${reviewCount === 1 ? "" : "en"} mit niedriger Konfidenz warten auf Bestätigung.`,
+      href: "/dashboard/review",
+      ts: now,
+      read: false,
+    });
+  }
+
+  if (info && info.has_model === false) {
+    items.push({
+      id: "model-untrained",
+      kind: "model",
+      title: "Modell noch nicht trainiert",
+      body: "Trainiere das ML-Modell, um die automatische Kontierung zu verbessern.",
+      href: "/dashboard/modell",
+      ts: now,
+      read: false,
+    });
+  } else if (info && typeof info.model_accuracy === "number" && info.model_accuracy > 0) {
+    const pct = Math.round(info.model_accuracy * 100);
+    items.push({
+      id: `model-acc-${pct}`,
+      kind: "model",
+      title: "Modell aktiv",
+      body: `Aktuelle Genauigkeit: ${pct}%.`,
+      href: "/dashboard/modell",
+      ts: now,
+      read: false,
+    });
+  }
+
+  if (aiStatus && aiStatus.ok === false) {
+    items.push({
+      id: "ollama-offline",
+      kind: "system",
+      title: "Ollama nicht erreichbar",
+      body: "Der lokale AI-Dienst ist offline. Scanner und Assistent sind eingeschränkt.",
+      href: "/dashboard/scanner",
+      ts: now,
+      read: false,
+    });
+  }
+
+  if (stats && (stats.total_count ?? 0) > 0) {
+    items.push({
+      id: `bookings-${stats.total_count}`,
+      kind: "booking",
+      title: "Buchungen gespeichert",
+      body: `${stats.total_count} Buchungen in der Datenbank (Total CHF ${Number(stats.total_amount ?? 0).toFixed(2)}).`,
+      href: "/dashboard/kontoauszug",
+      ts: now,
+      read: false,
+    });
+  }
+  return items;
+}
+
 interface NotifState {
   items: AppNotification[];
-  loading: boolean;
-  refresh: () => Promise<void>;
+  /** Feed the store from the shared SWR readers (B-16) — no fetch of its own. */
+  setFromSources: (sources: NotifSources) => void;
   markRead: (id: string) => void;
   markAllRead: () => void;
   unreadCount: () => number;
@@ -51,82 +122,13 @@ interface NotifState {
 
 export const useNotificationsStore = create<NotifState>((set, get) => ({
   items: [],
-  loading: false,
-  refresh: async () => {
-    set({ loading: true });
+  setFromSources: (sources) => {
     const readIds = loadReadIds();
-    const items: AppNotification[] = [];
-    const now = Date.now();
-
-    const [review, info, aiStatus, stats] = await Promise.all([
-      api.get("/api/review/").then((r) => r.data).catch(() => []),
-      api.get("/api/classify/info").then((r) => r.data).catch(() => null),
-      api.get("/api/ai/status").then((r) => r.data).catch(() => null),
-      api.get("/api/bookings/stats").then((r) => r.data).catch(() => null),
-    ]);
-
-    const reviewCount = Array.isArray(review) ? review.length : (review?.count ?? 0);
-    if (reviewCount > 0) {
-      items.push({
-        id: `review-${reviewCount}`,
-        kind: "review",
-        title: "Überprüfung ausstehend",
-        body: `${reviewCount} Buchung${reviewCount === 1 ? "" : "en"} mit niedriger Konfidenz warten auf Bestätigung.`,
-        href: "/dashboard/review",
-        ts: now,
-        read: false,
-      });
-    }
-
-    if (info && info.has_model === false) {
-      items.push({
-        id: "model-untrained",
-        kind: "model",
-        title: "Modell noch nicht trainiert",
-        body: "Trainiere das ML-Modell, um die automatische Kontierung zu verbessern.",
-        href: "/dashboard/modell",
-        ts: now,
-        read: false,
-      });
-    } else if (info && typeof info.model_accuracy === "number" && info.model_accuracy > 0) {
-      const pct = Math.round(info.model_accuracy * 100);
-      items.push({
-        id: `model-acc-${pct}`,
-        kind: "model",
-        title: "Modell aktiv",
-        body: `Aktuelle Genauigkeit: ${pct}%.`,
-        href: "/dashboard/modell",
-        ts: now,
-        read: false,
-      });
-    }
-
-    if (aiStatus && aiStatus.ok === false) {
-      items.push({
-        id: "ollama-offline",
-        kind: "system",
-        title: "Ollama nicht erreichbar",
-        body: "Der lokale AI-Dienst ist offline. Scanner und Assistent sind eingeschränkt.",
-        href: "/dashboard/scanner",
-        ts: now,
-        read: false,
-      });
-    }
-
-    if (stats && (stats.total_count ?? 0) > 0) {
-      items.push({
-        id: `bookings-${stats.total_count}`,
-        kind: "booking",
-        title: "Buchungen gespeichert",
-        body: `${stats.total_count} Buchungen in der Datenbank (Total CHF ${Number(stats.total_amount ?? 0).toFixed(2)}).`,
-        href: "/dashboard/kontoauszug",
-        ts: now,
-        read: false,
-      });
-    }
-
-    for (const it of items) it.read = readIds.has(it.id);
-    set({ items, loading: false });
+    const items = buildNotifications(sources).map((it) => ({ ...it, read: readIds.has(it.id) }));
+    const prev = get().items;
+    // Same ids, same read flags → keep the reference so subscribers don't re-render every poll.
+    if (prev.length === items.length && prev.every((p, i) => p.id === items[i].id && p.read === items[i].read)) return;
+    set({ items });
   },
   markRead: (id) => {
     const readIds = loadReadIds();
@@ -141,5 +143,5 @@ export const useNotificationsStore = create<NotifState>((set, get) => ({
     set({ items: get().items.map((i) => ({ ...i, read: true })) });
   },
   unreadCount: () => get().items.filter((i) => !i.read).length,
-  reset: () => set({ items: [], loading: false }),
+  reset: () => set({ items: [] }),
 }));

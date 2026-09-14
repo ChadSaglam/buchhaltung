@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { Bell, CheckCheck, ListChecks, Bot, Server, BookOpen, type LucideIcon } from "lucide-react";
 import { useNotificationsStore, type NotifKind } from "@/lib/notifications-store";
+import { useAiStatus, useBookingStats, useClassifierInfo, useReviewQueue } from "@/hooks/useSystemData";
 import { cn } from "@/lib/utils";
 
 const KIND_ICON: Record<NotifKind, LucideIcon> = {
@@ -21,16 +22,22 @@ const KIND_TINT: Record<NotifKind, string> = {
 };
 
 export function NotificationsBell() {
-  const { items, loading, refresh, markRead, markAllRead, unreadCount } = useNotificationsStore();
+  const { items, setFromSources, markRead, markAllRead, unreadCount } = useNotificationsStore();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const unread = unreadCount();
 
+  // Same SWR keys as the dashboard cards — one request, one poll (B-16).
+  const review = useReviewQueue();
+  const info = useClassifierInfo();
+  const ai = useAiStatus();
+  const stats = useBookingStats();
+  const loading = review.isLoading || info.isLoading || ai.isLoading || stats.isLoading;
+
   useEffect(() => {
-    refresh();
-    const t = setInterval(refresh, 60_000);
-    return () => clearInterval(t);
-  }, [refresh]);
+    if (loading) return;
+    setFromSources({ review: review.data, info: info.data, aiStatus: ai.data, stats: stats.data });
+  }, [loading, review.data, info.data, ai.data, stats.data, setFromSources]);
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {

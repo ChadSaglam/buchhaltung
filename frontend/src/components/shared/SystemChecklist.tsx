@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion } from "motion/react";
 import {
   CheckCircle2, XCircle, Server, Eye, Bot,
   Brain, BookOpen, ChevronRight, RefreshCw
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import api from "@/lib/api";
+import { useBookingStats, useClassifierInfo, useVisionStatus } from "@/hooks/useSystemData";
 
 interface SystemStatus {
   ollama: boolean;
@@ -39,36 +39,33 @@ function buildChecklist(s: SystemStatus): CheckItem[] {
 }
 
 export function SystemChecklist() {
-  const [status, setStatus] = useState<SystemStatus | null>(null);
-  const [loading, setLoading] = useState(true);
+  const scanner = useVisionStatus();
+  const classify = useClassifierInfo();
+  const bookings = useBookingStats();
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchStatus = async (isRefresh = false) => {
-    if (isRefresh) setRefreshing(true);
+  const loading = scanner.isLoading || classify.isLoading || bookings.isLoading;
+  // A failed probe reads as "offline"/"none", never as a broken card.
+  const status: SystemStatus | null = loading
+    ? null
+    : {
+        ollama: scanner.data?.ok ?? false,
+        vision: !!scanner.data?.best_vision,
+        visionModel: scanner.data?.best_vision ?? null,
+        mlModel: classify.data?.has_model ?? false,
+        mlAccuracy: classify.data?.model_accuracy ?? 0,
+        memoryCount: classify.data?.memory_count ?? 0,
+        bookingCount: bookings.data?.total_count ?? 0,
+      };
+
+  const fetchStatus = async () => {
+    setRefreshing(true);
     try {
-      const [scanner, classify, bookings] = await Promise.all([
-        api.get("/api/scanner/vision-status").catch(() => ({ data: { ok: false } })),
-        api.get("/api/classify/info").catch(() => ({ data: { has_model: false, model_accuracy: 0, memory_count: 0 } })),
-        api.get("/api/bookings/stats").catch(() => ({ data: { total_count: 0 } })),
-      ]);
-      setStatus({
-        ollama: scanner.data.ok ?? false,
-        vision: !!scanner.data.best_vision,
-        visionModel: scanner.data.best_vision ?? null,
-        mlModel: classify.data.has_model ?? false,
-        mlAccuracy: classify.data.model_accuracy ?? 0,
-        memoryCount: classify.data.memory_count ?? 0,
-        bookingCount: bookings.data.total_count ?? 0,
-      });
-    } catch {
-      setStatus(null);
+      await Promise.all([scanner.mutate(), classify.mutate(), bookings.mutate()]);
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
   };
-
-  useEffect(() => { fetchStatus(); }, []);
 
   const checklist = status ? buildChecklist(status) : [];
   const okCount = checklist.filter((c) => c.ok).length;
@@ -107,7 +104,7 @@ export function SystemChecklist() {
           </p>
         </div>
         <button
-          onClick={() => fetchStatus(true)}
+          onClick={fetchStatus}
           disabled={refreshing}
           className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
           aria-label="Aktualisieren"

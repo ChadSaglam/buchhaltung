@@ -11,24 +11,8 @@ import { MetricCardSkeleton } from "@/components/shared/LoadingSkeleton";
 import { ErrorState } from "@/components/shared/ErrorState";
 import { SystemChecklist } from "@/components/shared/SystemChecklist";
 import { GettingStarted } from "@/components/shared/GettingStarted";
-import { useApi } from "@/hooks/useApi";
+import { useBookingStats, useClassifierInfo } from "@/hooks/useSystemData";
 import { cn } from "@/lib/utils";
-
-interface ClassifierInfo {
-  has_model: boolean;
-  model_accuracy: number;
-  train_accuracy: number;
-  total_samples: number;
-  classes: number;
-  memory_count: number;
-  correction_count: number;
-}
-
-interface BookingStats {
-  total_count: number;
-  total_amount: number;
-  by_source: Record<string, number>;
-}
 
 const container = {
   hidden: { opacity: 0 },
@@ -47,8 +31,8 @@ const ACTIONS = [
 ];
 
 export default function DashboardPage() {
-  const info = useApi<ClassifierInfo>("/api/classify/info");
-  const stats = useApi<BookingStats>("/api/bookings/stats");
+  const info = useClassifierInfo();
+  const stats = useBookingStats();
   const isLoading = info.isLoading || stats.isLoading;
   const error = info.error ?? stats.error;
   const retry = () => {
