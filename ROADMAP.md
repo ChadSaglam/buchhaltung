@@ -2,7 +2,7 @@
 
 > One running list. Never duplicated — items move between sections, they don't get re-added.
 > Legend: severity `C`ritical / `H`igh / `M`edium / `L`ow · effort `S` (<1h) / `M` (half day) / `L` (multi-day)
-> IDs: `B-xx` = work item (next free: **B-64**) · `P-xx` = parked (next free: **P-05**)
+> IDs: `B-xx` = work item (next free: **B-65**) · `P-xx` = parked (next free: **P-05**)
 > Cross-product items (SSO, contracts, design tokens) live in `chadev-platform/ROADMAP.md`, not here.
 > Updated: 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 Betrag-Gedächtnis (amount memory). 2026-09-13 — Phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
 > Companion docs: `docs/ADR-002-rls.md` (B-24) · `docs/DEPLOY-CHECKLIST-B36-B37.md` · `docs/BRAINSTORM-2026-09-12.md`.
@@ -31,8 +31,10 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 
 ## ⏭ NEXT — pull from LATER, in this order
 
-1. **Phase 1 of `docs/BRAINSTORM-2026-09-13.md`** — `Document` entity, bulk upload, QR-bill decode; then phase 3 Abgleich
-   (n:1 Sammelaufträge are the 10 remaining "35 %" lines of the real April statement).
+1. ~~Phase 1~~ ✅ B-64 (2026-09-14) → **Phase 3 Abgleich**: `Match` (document ↔ bank line), rule tiers — QRR reference
+   exact · amount + date ±30 d · n:1 Sammelauftrag (subset-sum over open documents) — the Abgleich inbox, every decision
+   a training row. Then phase 4 (idempotent Banana batch) and the "no accountant" list: Monatsabschluss check,
+   MWST-Abrechnung (Formular 200 figures), Rechnungen schreiben (QR), e-mail intake, Jahresabschluss pack.
 2. **B-53** export safety · **B-51** Numeric money · **B-52** idempotency by constraint (all `S`/`M`).
 3. **B-58** UX/a11y batch · **B-59** `response_model` everywhere.
 
@@ -135,6 +137,12 @@ _2026-09-14: the previous NEXT block (B-49, B-44, B-46, B-14, B-16, B-15, B-34) 
 - **B-40** ✅ 2026-09-13 — role ladder wired: `require_editor` on every mutating route, `require_admin` on Kontenplan
   replace, classify delete/upload, scanner config, `import?replace=true`. `tests/test_rbac_routes.py` walks the route
   table (a new mutating route without a role check fails CI) + viewer/editor 403 over HTTP.
+- **B-64** ✅ 2026-09-14 — Phase 1 of the brainstorm: `documents` table (migration `f0a1b2c3d4e5`) — a Rechnung/Beleg with
+  file, read facts (vendor, amount, currency, no./dates, QR IBAN + QRR/SCOR reference), proposed Kontierung, status
+  offen → bezahlt → exportiert (final) / fehler, booking link. `services/qr_bill.py` decodes the Swiss Payments Code from
+  images and PDF pages (zxing-cpp + pypdfium2, QRR mod-10 checked); `services/documents.py`: store → QR (exact) → else
+  vision/OCR → classify; a bad file is a `fehler` row. `POST /api/documents/` (≤ 50 files) + list/summary/get/patch/file.
+  `/dashboard/rechnungen`: bulk drop zone with progress, KPI cards, status filter, optimistic bezahlt↔offen. 30 tests.
 - **B-15** ✅ 2026-09-14 — `/api/scanner/extract` streams SSE when asked (`step` per stage as it happens, then `result`
   / `error` with status + message); JSON otherwise. `ScannerService.extract(on_step=…)` + `extract_events()`.
 - **B-14** ✅ 2026-09-14 — review queue: optimistic approve/reject with rollback + toast, `j/k/a/r` (+ arrows) keyboard
