@@ -4,7 +4,7 @@
 > Legend: severity `C`ritical / `H`igh / `M`edium / `L`ow · effort `S` (<1h) / `M` (half day) / `L` (multi-day)
 > IDs: `B-xx` = work item (next free: **B-64**) · `P-xx` = parked (next free: **P-05**)
 > Cross-product items (SSO, contracts, design tokens) live in `chadev-platform/ROADMAP.md`, not here.
-> Updated: 2026-09-14 — B-63 Betrag-Gedächtnis (amount memory). 2026-09-13 — Phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
+> Updated: 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 Betrag-Gedächtnis (amount memory). 2026-09-13 — Phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
 > Companion docs: `docs/ADR-002-rls.md` (B-24) · `docs/DEPLOY-CHECKLIST-B36-B37.md` · `docs/BRAINSTORM-2026-09-12.md`.
 
 ---
@@ -14,10 +14,10 @@
 | Owner's words | What it means in this repo | Tracks that deliver it |
 |---|---|---|
 | **more professional** | Money that rounds right in every export, correct VAT codes, audit trail, Treuhänder hand-off that is accepted first time | B-01 ✅, B-04 ✅, B-05 ✅, B-09 ✅, B-47 ✅, B-48 ✅, B-51, B-53, B-17, B-22 |
-| **more dynamic** | Scan → classify → book without a reload; live review queue; optimistic booking edits; the learning loop visibly closes | B-45 ✅, B-14, B-15, B-16 |
-| **easier to improve** | No god-files, one type source, tests that catch regressions, jobs outside the API process, prod == compose | B-02 ✅, B-03 ✅, B-08 ✅, B-10 ✅, B-11 ✅, B-13 ✅, B-33 ✅, B-39 ✅, B-41 ✅, B-49, B-59, B-60 |
+| **more dynamic** | Scan → classify → book without a reload; live review queue; optimistic booking edits; the learning loop visibly closes | B-45 ✅, B-14 ✅, B-15 ✅, B-16 ✅ |
+| **easier to improve** | No god-files, one type source, tests that catch regressions, jobs outside the API process, prod == compose | B-02 ✅, B-03 ✅, B-08 ✅, B-10 ✅, B-11 ✅, B-13 ✅, B-33 ✅, B-39 ✅, B-41 ✅, B-49 ✅, B-59, B-60 |
 | **together** (platform) | One login across billing + buchhaltung, paid invoices book themselves, roles mean something | B-36 ✅, B-37 ✅, B-40 ✅, B-52, B-38 🅿️ |
-| **more user-friendly** | Loading/empty/error states everywhere, keyboard-first review, a11y, onboarding, no fake saves | B-18 ✅, B-19 ✅, B-44, B-46, B-50 ✅, B-58, B-20 |
+| **more user-friendly** | Loading/empty/error states everywhere, keyboard-first review, a11y, onboarding, no fake saves | B-18 ✅, B-19 ✅, B-44 ✅, B-46 ✅, B-50 ✅, B-58, B-20 |
 
 Rule: every PR names the B-ID it closes and which north-star column it serves.
 Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a wrong VAT code costs money on every receipt; optimistic UI saves 300 ms.
@@ -29,26 +29,14 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 
 ---
 
-## ⏭ NEXT — make the two promises true (correctness first, then the NOW-items of 09-11)
+## ⏭ NEXT — pull from LATER, in this order
 
-### Correctness (professional)
-- [ ] **B-49** Off the event loop: sklearn `fit`+CV (`/train`, `import?auto_train`, in-API worker), the sync Ollama chain in
-      `ScannerService` (use the existing `*_async` variants, one status probe per request), `smtplib`, `pdfplumber` →
-      `asyncio.to_thread`; compose sets `RUN_WORKER_IN_API=false`. — `H` / `M`
+1. **Phase 1 of `docs/BRAINSTORM-2026-09-13.md`** — `Document` entity, bulk upload, QR-bill decode; then phase 3 Abgleich
+   (n:1 Sammelaufträge are the 10 remaining "35 %" lines of the real April statement).
+2. **B-53** export safety · **B-51** Numeric money · **B-52** idempotency by constraint (all `S`/`M`).
+3. **B-58** UX/a11y batch · **B-59** `response_model` everywhere.
 
-### User-friendly (the 09-11 NOW items, with what the review found)
-- [ ] **B-44** Logout clears SWR cache + notifications store; `useApi` keyed by user id (tenant B sees tenant A's KPIs today). — `H` / `S`
-- [ ] **B-46** Settings: 4 of 6 tabs "save" with a 600 ms sleep and show "Gespeichert". Wire profile/company or hide them;
-      remove the password tab until `/api/auth/password` exists. — `H` / `S`
-- [ ] **B-14** Review queue: optimistic accept/reject with rollback; keyboard `j/k/a/r`. Sketch in `docs/REVIEW-2026-09-12.md` §5.
-      **First** move the global bare-`a` assistant hotkey (`ShortcutsModal.tsx:53`) to `Shift+A`. — `M` / `M`
-- [ ] **B-16** Dashboard KPIs auto-refresh via `useApi(path, { refreshInterval })`. **First** put `SystemChecklist`,
-      `GettingStarted` and the bell poll on the same SWR keys (dashboard load fires `/classify/info` ×4, `/bookings/stats` ×4,
-      `/vision-status` ×3 today). — `L` / `S`
-- [ ] **B-15** Scan progress streamed (NDJSON already used by AI chat) instead of spinner. — `M` / `M`
-- [ ] **B-34** `classifier_models.model_sha256` column + check in `model_blob.unpack()`; "Modell neu trainieren" hint on
-      unsigned blob. Also: derive the blob HMAC key from `SECRET_KEY` (`HMAC(SECRET_KEY, b"model-blob-v1")`) and refuse
-      `pack/unpack` with an `INSECURE_SECRETS` key in every environment. — `L` / `S`
+_2026-09-14: the previous NEXT block (B-49, B-44, B-46, B-14, B-16, B-15, B-34) is done — see ✅ Done._
 
 ---
 
@@ -147,6 +135,21 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 - **B-40** ✅ 2026-09-13 — role ladder wired: `require_editor` on every mutating route, `require_admin` on Kontenplan
   replace, classify delete/upload, scanner config, `import?replace=true`. `tests/test_rbac_routes.py` walks the route
   table (a new mutating route without a role check fails CI) + viewer/editor 403 over HTTP.
+- **B-15** ✅ 2026-09-14 — `/api/scanner/extract` streams SSE when asked (`step` per stage as it happens, then `result`
+  / `error` with status + message); JSON otherwise. `ScannerService.extract(on_step=…)` + `extract_events()`.
+- **B-14** ✅ 2026-09-14 — review queue: optimistic approve/reject with rollback + toast, `j/k/a/r` (+ arrows) keyboard
+  with a visible selection; assistant hotkey moved to `Shift+A`. Page split into hooks/components/helpers (unit-tested).
+- **B-49** ✅ 2026-09-14 — off the event loop: `fit_pipeline()` (pure) via `asyncio.to_thread` for train / import /
+  worker; scanner status + extract on the providers' async members (one cached Ollama probe); pdfplumber, smtplib and
+  the receipt write in threads. `tests/test_event_loop.py` proves a ticker keeps running during training.
+- **B-34** ✅ 2026-09-14 — model blobs signed with `HMAC(SECRET_KEY, "model-blob-v1")`; insecure/short SECRET_KEY refuses
+  to sign or trust in every environment (train → 503 with the fix); `classifier_models.model_sha256` (migration
+  `e8f9a0b1c2d3`) checked on load; `/classify/info.model_trusted` → "Modell neu trainieren" banner. **Retrain once.**
+- **B-16** ✅ 2026-09-14 — `hooks/useSystemData.ts`: one SWR key per system endpoint, polled every 60 s; dashboard KPIs,
+  SystemChecklist, GettingStarted and the bell share them (4×/3× duplicate requests gone). `buildNotifications()` pure.
+- **B-46** ✅ 2026-09-14 — settings save for real: `PATCH /api/auth/me` (display name, any role) and
+  `PATCH /api/auth/me/tenant` (company name, admin+); fake notifications/password tabs removed; appearance has no save.
+- **B-44** ✅ 2026-09-14 — logout clears every SWR key + the notifications store; `useApi` keys are `[path, userId]`.
 - **B-63** ✅ 2026-09-14 — Betrag-Gedächtnis: `training_data.betrag` (migration `d7e8f9a0b1c2`, Banana import fills it);
   `amount_candidate()` classifies a bank line by earlier bookings with the same amount (≥ 2 hits, ≥ 60 % agreeing,
   confidence 0.67 → 0.92), source "Betrag", and carries the tenant's own description ("Cembra Money, Leasing") which the
@@ -300,9 +303,9 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 | 0 Recon | ✅ |
 | 0.5 Risk fixes before platform work | ✅ B-00…B-03 (branch `feat/phase0-risks`) |
 | 1 Platform contract | 1.2 ✅ B-31 · 1.4 ✅ B-26 · 1.6 ✅ tokens imported |
-| 2 Security | ✅ B-06, B-07, B-32, B-40, B-41, B-42, B-43 · open: B-24 (ADR-002), B-25, B-34, B-54, B-55 |
-| 3 Reliability | ✅ B-04, B-05, B-08, B-11, B-33, B-35, B-39, B-47, B-48 · open: B-49, B-51, B-52, B-56, B-57 |
+| 2 Security | ✅ B-06, B-07, B-32, B-34, B-40, B-41, B-42, B-43 · open: B-24 (ADR-002), B-25, B-54, B-55 |
+| 3 Reliability | ✅ B-04, B-05, B-08, B-11, B-33, B-35, B-39, B-47, B-48, B-49, B-63 · open: B-51, B-52, B-56, B-57 |
 | 4 Polish | ✅ B-09, B-13 · open: B-22, B-53, B-61 |
-| 5 UX | ✅ B-18, B-19, B-45, B-50 (+B-21) · NEXT: B-44, B-46, B-14, B-16 · open: B-15, B-17, B-20, B-58, B-59 |
+| 5 UX | ✅ B-14, B-15, B-16, B-18, B-19, B-44, B-45, B-46, B-50 (+B-21) · open: B-17, B-20, B-58, B-59 |
 | 6 Together | ✅ B-36 (SSO + mirroring), B-37 (events) · deploy: `docs/DEPLOY-CHECKLIST-B36-B37.md` · parked: B-38 |
 | 7 DX | ✅ B-12, B-29, B-30 · open: B-60, B-62 |
