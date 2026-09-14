@@ -24,17 +24,19 @@ class ScannerProviderRegistry:
     def custom_ocr_available(self) -> bool:
         return self.get_ocr_provider("custom-ocr").is_available()
 
+    def _ocr_status_entry(self) -> dict:
+        available = self.get_ocr_provider("custom-ocr").is_available()
+        return {
+            "name": "custom-ocr",
+            "provider": "ocr",
+            "kind": "local",
+            "available": available,
+            "working": available,
+            "status_label": "bereit" if available else "Tesseract nicht installiert",
+        }
+
+    async def list_status_models_async(self) -> list[dict]:
+        return [self._ocr_status_entry(), *await self.get_vision_provider("ollama").get_status_models_async()]
+
     def list_status_models(self) -> list[dict]:
-        ocr = self.get_ocr_provider("custom-ocr")
-        available = ocr.is_available()
-        return [
-            {
-                "name": "custom-ocr",
-                "provider": "ocr",
-                "kind": "local",
-                "available": available,
-                "working": available,
-                "status_label": "bereit" if available else "Tesseract nicht installiert",
-            },
-            *self.get_vision_provider("ollama").get_status_models(),
-        ]
+        return [self._ocr_status_entry(), *self.get_vision_provider("ollama").get_status_models()]

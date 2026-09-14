@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import re
 from collections import Counter
@@ -269,6 +270,65 @@ def amount_candidate(rows: list[AmountRow], betrag: float) -> ClassificationResu
         source="Betrag",
         beschreibung_vorschlag=vorschlag,
     )
+
+
+FittedModel = tuple[Pipeline, int, int, float | None, float]  # pipeline, rows, classes, cv_acc, train_acc
+
+
+def fit_pipeline(rows: list[dict[str, str]]) -> FittedModel | None:
+    """Build and fit the TF-IDF + LogisticRegression pipeline; None when < 5 usable rows.
+
+    Pure CPU, no I/O — safe to run in a worker thread.
+    """
+    df = pd.DataFrame(rows)
+    if df.empty:
+        return None
+    df = df[df["Beschreibung"].notna() & (df["Beschreibung"] != "")]
+    df = df[df["KontoSoll"].notna() & (df["KontoSoll"] != "")]
+    if len(df) < 5:
+        return None
+
+    df["text_clean"] = df["Beschreibung"].apply(preprocess)
+    X = df["text_clean"]
+    y = df["KontoSoll"]
+
+    pipeline = Pipeline(
+        [
+            (
+                "features",
+                FeatureUnion(
+                    [
+                        (
+                            "tfidf_char",
+                            TfidfVectorizer(
+                                analyzer="char_wb", ngram_range=(2, 5), max_features=6000, sublinear_tf=True
+                            ),
+                        ),
+                        (
+                            "tfidf_word",
+                            TfidfVectorizer(analyzer="word", ngram_range=(1, 2), max_features=4000, sublinear_tf=True),
+                        ),
+                    ]
+                ),
+            ),
+            ("clf", LogisticRegression(max_iter=1000, C=5.0, class_weight="balanced", solver="lbfgs")),
+        ]
+    )
+
+    min_count = y.value_counts().min()
+    n_folds = min(5, max(2, min_count))
+    cv_acc = None
+    if n_folds >= 2:
+        try:
+            cv = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=42)
+            scores = cross_val_score(pipeline, X, y, cv=cv, scoring="accuracy")
+            cv_acc = float(scores.mean())
+        except Exception:
+            pass
+
+    pipeline.fit(X, y)
+    train_acc = float((pipeline.predict(X) == y).mean())
+    return pipeline, len(df), int(y.nunique()), cv_acc, train_acc
 
 
 def model_row_is_trusted(row: ClassifierModel | None) -> bool:
@@ -561,83 +621,25 @@ class TenantClassifier:
         if len(rows) < 5:
             return {"error": "Zu wenige Daten zum Trainieren (min. 5 Buchungen)"}
 
-        df = pd.DataFrame(rows)
-        df = df[df["Beschreibung"].notna() & (df["Beschreibung"] != "")]
-        df = df[df["KontoSoll"].notna() & (df["KontoSoll"] != "")]
-
-        if len(df) < 5:
+        # sklearn fit + cross-validation are CPU-bound and take seconds on a few
+        # thousand rows; run them in a worker thread so the event loop keeps
+        # serving requests (B-49). Nothing in there touches the session.
+        fitted = await asyncio.to_thread(fit_pipeline, rows)
+        if fitted is None:
             return {"error": "Zu wenige Daten zum Trainieren (min. 5 Buchungen)"}
-
-        df["text_clean"] = df["Beschreibung"].apply(preprocess)
-
-        X = df["text_clean"]
-        y = df["KontoSoll"]
-
-        pipeline = Pipeline(
-            [
-                (
-                    "features",
-                    FeatureUnion(
-                        [
-                            (
-                                "tfidf_char",
-                                TfidfVectorizer(
-                                    analyzer="char_wb",
-                                    ngram_range=(2, 5),
-                                    max_features=6000,
-                                    sublinear_tf=True,
-                                ),
-                            ),
-                            (
-                                "tfidf_word",
-                                TfidfVectorizer(
-                                    analyzer="word",
-                                    ngram_range=(1, 2),
-                                    max_features=4000,
-                                    sublinear_tf=True,
-                                ),
-                            ),
-                        ]
-                    ),
-                ),
-                (
-                    "clf",
-                    LogisticRegression(
-                        max_iter=1000,
-                        C=5.0,
-                        class_weight="balanced",
-                        solver="lbfgs",
-                    ),
-                ),
-            ]
-        )
-
-        min_count = y.value_counts().min()
-        n_folds = min(5, max(2, min_count))
-        cv_acc = None
-        if n_folds >= 2:
-            try:
-                cv = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=42)
-                scores = cross_val_score(pipeline, X, y, cv=cv, scoring="accuracy")
-                cv_acc = float(scores.mean())
-            except Exception:
-                pass
-
-        pipeline.fit(X, y)
-        train_acc = float((pipeline.predict(X) == y).mean())
+        pipeline, n_rows, n_classes, cv_acc, train_acc = fitted
         self._model = pipeline
+        model_blob = pack(pipeline)
 
         import sklearn
-
-        model_blob = pack(pipeline)
 
         result = await self.db.execute(select(ClassifierModel).where(ClassifierModel.tenant_id == self.tenant_id))
         existing = result.scalar_one_or_none()
         if existing:
             existing.model_blob = model_blob
             existing.model_sha256 = sha256_hex(model_blob)
-            existing.total_samples = len(df)
-            existing.num_classes = int(y.nunique())
+            existing.total_samples = n_rows
+            existing.num_classes = n_classes
             existing.cv_accuracy = cv_acc
             existing.train_accuracy = train_acc
             existing.sklearn_version = sklearn.__version__
@@ -647,8 +649,8 @@ class TenantClassifier:
                     tenant_id=self.tenant_id,
                     model_blob=model_blob,
                     model_sha256=sha256_hex(model_blob),
-                    total_samples=len(df),
-                    num_classes=int(y.nunique()),
+                    total_samples=n_rows,
+                    num_classes=n_classes,
                     cv_accuracy=cv_acc,
                     train_accuracy=train_acc,
                     sklearn_version=sklearn.__version__,
@@ -660,15 +662,15 @@ class TenantClassifier:
                 tenant_id=self.tenant_id,
                 cv_accuracy=cv_acc,
                 train_accuracy=train_acc,
-                total_samples=len(df),
-                num_classes=int(y.nunique()),
+                total_samples=n_rows,
+                num_classes=n_classes,
                 sklearn_version=sklearn.__version__,
             )
         )
 
         return {
-            "total_samples": len(df),
-            "classes": int(y.nunique()),
+            "total_samples": n_rows,
+            "classes": n_classes,
             "cv_accuracy": cv_acc,
             "train_accuracy": train_acc,
         }

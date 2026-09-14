@@ -62,7 +62,7 @@ async def test_ocr_first_path_classifies_invoice(db_session):
     ):
         mock_ocr.return_value.is_available.return_value = True
         mock_ocr.return_value.extract_async = AsyncMock(return_value=ocr_result)
-        mock_vision.return_value.is_available.return_value = False
+        mock_vision.return_value.is_available_async = AsyncMock(return_value=False)
 
         response = await service.extract(
             file_name="invoice.png",
@@ -107,8 +107,8 @@ async def test_vision_fallback_when_ocr_empty(db_session):
     ):
         mock_ocr.return_value.is_available.return_value = True
         mock_ocr.return_value.extract_async = AsyncMock(return_value=empty_ocr)
-        mock_vision.return_value.is_available.return_value = True
-        mock_vision.return_value.extract.return_value = vision_result
+        mock_vision.return_value.is_available_async = AsyncMock(return_value=True)
+        mock_vision.return_value.extract_async = AsyncMock(return_value=vision_result)
 
         response = await service.extract(
             file_name="invoice.png",

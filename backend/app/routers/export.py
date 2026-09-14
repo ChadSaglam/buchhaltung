@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+
 import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response
@@ -213,7 +215,7 @@ async def send_email(
     df = await _get_bookings_df(db, user.tenant_id, body.source)
     if df.empty:
         raise HTTPException(404, "Keine Buchungen vorhanden.")
-    ok, msg = send_bookkeeping_email(df, body.to_email, body.subject or None)
+    ok, msg = await asyncio.to_thread(send_bookkeeping_email, df, body.to_email, body.subject or None)
     if not ok:
         raise HTTPException(500, msg)
     return {"message": msg}
@@ -235,7 +237,7 @@ async def send_email_with_rows(request: Request, body: EmailWithRowsRequest, use
     if not body.rows:
         raise HTTPException(404, "Keine Buchungen vorhanden.")
     df = _rows_to_df(body.rows)
-    ok, msg = send_bookkeeping_email(df, body.to_email, body.subject or None)
+    ok, msg = await asyncio.to_thread(send_bookkeeping_email, df, body.to_email, body.subject or None)
     if not ok:
         raise HTTPException(500, msg)
     return {"message": msg}

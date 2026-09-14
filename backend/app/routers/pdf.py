@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import io
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
@@ -30,12 +31,17 @@ async def parse_pdf(
         raise HTTPException(400, "PDF zu gross (max 50MB).")
 
     # Audit copy first (B-09): the statement survives even if parsing fails.
-    source_key = store_receipt(
-        user.tenant_id, filename=file.filename, content_type=file.content_type or "application/pdf", content=content
+    source_key = await asyncio.to_thread(
+        store_receipt,
+        user.tenant_id,
+        filename=file.filename,
+        content_type=file.content_type or "application/pdf",
+        content=content,
     )
 
     try:
-        transactions = extract_transactions_from_pdf(io.BytesIO(content))
+        # pdfplumber is CPU-bound and takes seconds on a long statement (B-49).
+        transactions = await asyncio.to_thread(extract_transactions_from_pdf, io.BytesIO(content))
     except Exception as e:
         raise HTTPException(422, f"PDF konnte nicht gelesen werden: {e}") from e
 

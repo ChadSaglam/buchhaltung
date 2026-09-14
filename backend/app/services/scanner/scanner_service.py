@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from typing import Any
 
 from fastapi import HTTPException
@@ -37,20 +38,23 @@ class ScannerService:
         custom_available = self.registry.custom_ocr_available()
         config = await self.get_or_create_config_model()
 
+        # B-49: every probe below hits the (cached) Ollama status once, on the event loop —
+        # no sync shims spinning up a thread + a second loop per call.
+        vision_ok = await vision.is_available_async()
         best_vision = config.default_ollama_model or await vision.get_best_model_async()
         if custom_available and not config.default_ollama_model:
             best_vision = CUSTOM_MODEL_NAME
 
         return ScannerStatusResponse(
-            ok=vision.is_available() or custom_available,
+            ok=vision_ok or custom_available,
             error=None
-            if (vision.is_available() or custom_available)
+            if (vision_ok or custom_available)
             else "Scanner nicht verfügbar (kein Vision-Modell und keine OCR).",
-            models=self.registry.list_status_models(),
-            vision_models=vision.get_vision_model_names(),
+            models=await self.registry.list_status_models_async(),
+            vision_models=await vision.get_vision_model_names_async(),
             best_vision=best_vision,
             scanner_mode="custom-first" if custom_available else "vision-only",
-            pipeline=vision.get_pipeline(),
+            pipeline=await vision.get_pipeline_async(),
             custom_ocr_available=custom_available,
         )
 
@@ -116,7 +120,9 @@ class ScannerService:
     ) -> ScannerExtractResponse:
         self._validate_upload(content_type=content_type, content=content)
         # Audit copy first (B-09): the document survives even if extraction fails.
-        source_key = store_receipt(self.user.tenant_id, filename=file_name, content_type=content_type, content=content)
+        source_key = await asyncio.to_thread(
+            store_receipt, self.user.tenant_id, filename=file_name, content_type=content_type, content=content
+        )
         scanner_file = ScannerFile(
             filename=file_name,
             content_type=content_type,
@@ -164,8 +170,8 @@ class ScannerService:
                         }
                     )
 
-        if not data and vision.is_available():
-            vision_result = vision.extract(
+        if not data and await vision.is_available_async():
+            vision_result = await vision.extract_async(
                 scanner_file=scanner_file,
                 selected_model=effective_model,
                 preferred_models=["gemma3:12b", "gemma3:4b", "kimi-k2.5:cloud"],
