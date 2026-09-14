@@ -2,7 +2,7 @@
 
 > One running list. Never duplicated — items move between sections, they don't get re-added.
 > Legend: severity `C`ritical / `H`igh / `M`edium / `L`ow · effort `S` (<1h) / `M` (half day) / `L` (multi-day)
-> IDs: `B-xx` = work item (next free: **B-65**) · `P-xx` = parked (next free: **P-05**)
+> IDs: `B-xx` = work item (next free: **B-73**) · `P-xx` = parked (next free: **P-05**)
 > Cross-product items (SSO, contracts, design tokens) live in `chadev-platform/ROADMAP.md`, not here.
 > Updated: 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 Betrag-Gedächtnis (amount memory). 2026-09-13 — Phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
 > Companion docs: `docs/ADR-002-rls.md` (B-24) · `docs/DEPLOY-CHECKLIST-B36-B37.md` · `docs/BRAINSTORM-2026-09-12.md`.
@@ -33,8 +33,8 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 
 1. ~~Phase 1~~ ✅ B-64 (2026-09-14) → **Phase 3 Abgleich**: `Match` (document ↔ bank line), rule tiers — QRR reference
    exact · amount + date ±30 d · n:1 Sammelauftrag (subset-sum over open documents) — the Abgleich inbox, every decision
-   a training row. Then phase 4 (idempotent Banana batch) and the "no accountant" list: Monatsabschluss check,
-   MWST-Abrechnung (Formular 200 figures), Rechnungen schreiben (QR), e-mail intake, Jahresabschluss pack.
+   a training row. Then phase 4 (idempotent Banana batch), then the "Kein Treuhänder nötig" track B-65 → B-72 in
+   that order (Offene Posten → Monatsabschluss → MWST → Rechnungen schreiben → E-Mail → Jahr → Liquidität → Lohn).
 2. **B-53** export safety · **B-51** Numeric money · **B-52** idempotency by constraint (all `S`/`M`).
 3. **B-58** UX/a11y batch · **B-59** `response_model` everywhere.
 
@@ -43,6 +43,28 @@ _2026-09-14: the previous NEXT block (B-49, B-44, B-46, B-14, B-16, B-15, B-34) 
 ---
 
 ## 📋 LATER — by track
+
+### "Kein Treuhänder nötig" — the product track (owner, 2026-09-14; order = impact)
+Target: the Treuhänder signs once a year, nothing in between. Each item is a *flow* inside one of the four surfaces
+(`docs/IA-2026-09-14.md`: Heute · Belege · Bank · Abschluss), not its own page.
+- [ ] **B-65** Offene Posten: overdue list on *Heute*, one-click Mahnung draft (PDF + e-mail text), Debitoren/Kreditoren
+      split, "wer schuldet uns" widget. Builds on B-64 `documents`. — `H` / `M`
+- [ ] **B-66** Monatsabschluss check (*Abschluss › Monat*): bank Schlusssaldo = 1020 Saldo?, unmatched lines, duplicates,
+      bookings without Beleg, open documents past due — red/green checklist, one page, nothing to configure. — `H` / `M`
+- [ ] **B-67** MWST-Abrechnung (*Abschluss › Quartal*): Formular 200 figures (Ziffer 200/205/220–289/302/312/342/400/405/
+      410/415/420) for effektiv *and* Saldosteuersatz, from the bookings' VAT codes; PDF + copy-paste block for ePortal;
+      plausibility warnings (code vs rate, missing Vorsteuer on a 4000). — `H` / `L`
+- [ ] **B-68** Rechnungen schreiben (Debitoren, *Belege › Neu*): Kunde + Positionen → QR-Rechnung PDF (Swiss QR with QRR
+      reference), send by e-mail, booked 1100/3000, paid automatically when the reference shows up in the Kontoauszug
+      (phase 3 match). Closes the loop. — `H` / `L`
+- [ ] **B-69** E-mail intake: per-tenant address `belege+<slug>@…`, attachments → B-64 ingest; sender allow-list;
+      "3 neue Belege per E-Mail" on *Heute*. — `M` / `M`
+- [ ] **B-70** Jahresabschluss pack (*Abschluss › Jahr*): Bilanz + Erfolgsrechnung PDF (KMU Kontenrahmen), Abschreibungs-
+      vorschlag, transitorische Warnungen, Banana export of the year, receipts zip — "nur noch unterschreiben". Folds B-17. — `H` / `L`
+- [ ] **B-71** Steuerrückstellung + Liquidität (*Heute*): "diesen Quartal ~CHF X Steuern zurücklegen", 90-day cash view from
+      open documents + recurring amounts (B-63 memory knows the monthly ones). — `M` / `M`
+- [ ] **B-72** Lohn light: monthly Lohnabrechnung with AHV/IV/EO, ALV, BVG, UVG, QST; Lohnausweis PDF; Sozialversicherungs-
+      Jahresmeldung export. High liability — after B-65…B-70, and validated against a real Treuhänder run. — `M` / `L`
 
 ### Professional
 - [ ] **B-17** Treuhänder export pack: Banana TSV + PDF summary + receipts zip + audit extract, one click — the hero flow
