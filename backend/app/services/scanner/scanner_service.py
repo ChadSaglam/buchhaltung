@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+import json
+import logging
+from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any
 
 from fastapi import HTTPException
@@ -22,6 +25,8 @@ from app.services.ollama_vision import parse_invoice_text
 from app.services.receipts import store_receipt
 from app.services.scanner.base import ScannerFile
 from app.services.scanner.registry import ScannerProviderRegistry
+
+logger = logging.getLogger(__name__)
 
 MAX_FILE_SIZE = 20 * 1024 * 1024
 CUSTOM_MODEL_NAME = "custom-ocr"
@@ -117,12 +122,23 @@ class ScannerService:
         content_type: str,
         content: bytes,
         model: str = "",
+        on_step: Callable[[dict[str, Any]], Awaitable[None]] | None = None,
     ) -> ScannerExtractResponse:
+        """Extract one document. ``on_step`` receives every pipeline step as it happens (B-15)."""
+        steps: list[dict[str, Any]] = []
+
+        async def emit(step: dict[str, Any]) -> None:
+            steps.append(step)
+            if on_step is not None:
+                await on_step(step)
+
         self._validate_upload(content_type=content_type, content=content)
         # Audit copy first (B-09): the document survives even if extraction fails.
+        await emit({"icon": "📤", "label": "Datei wird gespeichert", "status": "active"})
         source_key = await asyncio.to_thread(
             store_receipt, self.user.tenant_id, filename=file_name, content_type=content_type, content=content
         )
+        steps[-1]["status"] = "done"
         scanner_file = ScannerFile(
             filename=file_name,
             content_type=content_type,
@@ -137,7 +153,6 @@ class ScannerService:
         if not status.ok:
             raise HTTPException(503, status.error or "Scanner nicht verfügbar.")
 
-        steps: list[dict[str, Any]] = [{"icon": "📤", "label": "Datei wird verarbeitet", "status": "done"}]
         attempts: list[dict[str, Any]] = []
         providers: list[dict[str, str]] = []
 
@@ -150,8 +165,11 @@ class ScannerService:
         effective_model = (model or config.default_ollama_model or "").strip()
 
         if self._use_custom_first(effective_model):
+            await emit({"icon": "🔎", "label": "OCR (Tesseract) läuft", "status": "active", "provider": "ocr"})
             ocr_result = await ocr.extract_async(scanner_file)
-            steps.extend(item.model_dump() for item in ocr_result.steps)
+            steps[-1]["status"] = "done" if ocr_result.data else "failed"
+            for item in ocr_result.steps:
+                await emit(item.model_dump())
             attempts.extend(item.model_dump() for item in ocr_result.attempts)
             providers.extend(ocr_result.providers)
             if ocr_result.data and ocr_result.data.get("ocr_text"):
@@ -160,7 +178,7 @@ class ScannerService:
                     data = parsed
                     ocr_provider = ocr_result.ocr_provider
                     ocr_worked = True
-                    steps.append(
+                    await emit(
                         {
                             "icon": "📝",
                             "label": "Rechnungsdetails aus OCR-Text extrahiert",
@@ -171,12 +189,23 @@ class ScannerService:
                     )
 
         if not data and await vision.is_available_async():
+            await emit(
+                {
+                    "icon": "🤖",
+                    "label": f"Vision-Modell {effective_model or 'automatisch'} liest die Rechnung",
+                    "status": "active",
+                    "provider": "vision",
+                    "model": effective_model or None,
+                }
+            )
             vision_result = await vision.extract_async(
                 scanner_file=scanner_file,
                 selected_model=effective_model,
                 preferred_models=["gemma3:12b", "gemma3:4b", "kimi-k2.5:cloud"],
             )
-            steps.extend(item.model_dump() for item in vision_result.steps)
+            steps[-1]["status"] = "done" if vision_result.data else "failed"
+            for item in vision_result.steps:
+                await emit(item.model_dump())
             attempts.extend(item.model_dump() for item in vision_result.attempts)
             providers.extend(vision_result.providers)
 
@@ -192,7 +221,7 @@ class ScannerService:
             raise HTTPException(422, "Keine Rechnung erkannt.")
 
         if config.auto_classification_enabled:
-            steps.append(
+            await emit(
                 {
                     "icon": "🧠",
                     "label": "Kontierung wird berechnet",
@@ -201,10 +230,11 @@ class ScannerService:
                 }
             )
             data = await self._classify_invoice(data)
+            steps[-1]["status"] = "done"
 
             best_conf = data.get("classification_confidence") or 0
             best_source = data.get("classification_source") or ""
-            steps.append(
+            await emit(
                 {
                     "icon": "🎯",
                     "label": f"Kontierung: {data.get('kt_soll', '')}/{data.get('kt_haben', '')} ({best_source}, {best_conf:.0%})",
@@ -225,6 +255,34 @@ class ScannerService:
         data["scanner_providers"] = providers
 
         return ScannerExtractResponse(data=ExtractedInvoice(**data))
+
+    async def extract_events(self, **kwargs: Any) -> AsyncIterator[str]:
+        """``extract`` as Server-Sent Events: ``step`` frames while it runs, then ``result`` or ``error`` (B-15)."""
+        queue: asyncio.Queue[tuple[str, dict[str, Any]] | None] = asyncio.Queue()
+
+        async def on_step(step: dict[str, Any]) -> None:
+            await queue.put(("step", step))
+
+        async def run() -> None:
+            try:
+                response = await self.extract(on_step=on_step, **kwargs)
+                await queue.put(("result", response.model_dump(mode="json")))
+            except HTTPException as exc:
+                await queue.put(("error", {"status": exc.status_code, "message": str(exc.detail)}))
+            except Exception:
+                logger.exception("[SCANNER] extract failed while streaming")
+                await queue.put(("error", {"status": 500, "message": "Scanner-Fehler."}))
+            finally:
+                await queue.put(None)
+
+        task = asyncio.create_task(run())
+        try:
+            while (item := await queue.get()) is not None:
+                event, payload = item
+                yield f"event: {event}\ndata: {json.dumps(payload, ensure_ascii=False)}\n\n"
+        finally:
+            if not task.done():
+                task.cancel()
 
     def _validate_upload(self, *, content_type: str, content: bytes) -> None:
         if not content_type or not (content_type.startswith("image") or content_type == "application/pdf"):

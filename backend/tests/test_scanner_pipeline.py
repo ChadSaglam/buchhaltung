@@ -248,3 +248,89 @@ async def test_resolve_ollama_uses_deployment_url_not_tenant_row(db_session):
     with patch.object(ai_assistant.settings, "OLLAMA_CHAT_MODEL", "llama3"):
         base_url, _model = await ai_assistant.resolve_ollama(tenant.id, db_session)
     assert base_url == settings.OLLAMA_BASE_URL.rstrip("/")
+
+
+# ── B-15: pipeline steps streamed as SSE ─────────────────────────────────────
+
+
+def _sse_events(text: str) -> list[tuple[str, dict]]:
+    import json
+
+    out = []
+    for block in text.strip().split("\n\n"):
+        lines = dict(line.split(": ", 1) for line in block.splitlines())
+        out.append((lines["event"], json.loads(lines["data"])))
+    return out
+
+
+@pytest.mark.asyncio
+async def test_extract_events_streams_steps_before_the_result(db_session):
+    tenant = await create_tenant(db_session)
+    user = await create_user(db_session, tenant)
+    service = ScannerService(db_session, user)
+    ocr_result = ProviderExtractionResult(
+        data={"ocr_text": "Acme AG Rechnung CHF 100.00"}, steps=[], attempts=[], providers=[], ocr_provider="custom-ocr"
+    )
+    with (
+        patch.object(service.registry, "get_ocr_provider") as mock_ocr,
+        patch.object(service.registry, "get_vision_provider") as mock_vision,
+        patch(
+            "app.services.scanner.scanner_service.parse_invoice_text",
+            return_value={"vendor": "Acme AG", "total_amount": 100.0, "vat_rate": 8.1},
+        ),
+        patch.object(ScannerService, "get_status", new=AsyncMock(return_value=_ok_status())),
+    ):
+        mock_ocr.return_value.is_available.return_value = True
+        mock_ocr.return_value.extract_async = AsyncMock(return_value=ocr_result)
+        mock_vision.return_value.is_available_async = AsyncMock(return_value=False)
+        frames = [
+            f async for f in service.extract_events(file_name="i.png", content_type="image/png", content=PNG_BYTES)
+        ]
+
+    events = _sse_events("".join(frames))
+    kinds = [e for e, _ in events]
+    assert kinds[-1] == "result"
+    assert kinds.count("step") >= 3 and kinds.index("step") < kinds.index("result")
+    labels = [p["label"] for e, p in events if e == "step"]
+    assert labels[0] == "Datei wird gespeichert"
+    assert any("OCR" in lbl for lbl in labels)
+    assert events[-1][1]["data"]["vendor"] == "Acme AG"
+    assert events[-1][1]["data"]["scanner_steps"][0]["status"] == "done"
+
+
+@pytest.mark.asyncio
+async def test_extract_events_turns_http_errors_into_an_error_frame(db_session):
+    tenant = await create_tenant(db_session)
+    user = await create_user(db_session, tenant)
+    service = ScannerService(db_session, user)
+    frames = [f async for f in service.extract_events(file_name="x.txt", content_type="text/plain", content=b"nope")]
+    events = _sse_events("".join(frames))
+    assert events == [("error", {"status": 400, "message": "Nur Bilder (JPG, PNG, WebP) oder PDF erlaubt."})]
+
+
+@pytest.mark.asyncio
+async def test_extract_endpoint_streams_only_when_asked(client, db_session):
+    from app.schemas.scanner import ExtractedInvoice, ScannerExtractResponse
+    from tests.factories import auth_headers
+
+    tenant = await create_tenant(db_session)
+    user = await create_user(db_session, tenant)
+    headers = auth_headers(user)
+
+    async def fake_extract(self, *, on_step=None, **_kw):
+        if on_step:
+            await on_step({"icon": "x", "label": "eins", "status": "done"})
+        return ScannerExtractResponse(data=ExtractedInvoice(vendor="Acme", total_amount=1.0))
+
+    with patch.object(ScannerService, "extract", new=fake_extract):
+        files = {"file": ("i.png", PNG_BYTES, "image/png")}
+        plain = await client.post("/api/scanner/extract", files=files, headers=headers)
+        assert plain.status_code == 200 and plain.json()["data"]["vendor"] == "Acme"
+
+        streamed = await client.post(
+            "/api/scanner/extract", files=files, headers={**headers, "Accept": "text/event-stream"}
+        )
+    assert streamed.status_code == 200
+    assert streamed.headers["content-type"].startswith("text/event-stream")
+    events = _sse_events(streamed.text)
+    assert [e for e, _ in events] == ["step", "result"]

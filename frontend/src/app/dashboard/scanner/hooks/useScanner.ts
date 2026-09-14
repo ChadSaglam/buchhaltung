@@ -61,9 +61,11 @@ export function useScanner() {
       form.append("file", file);
       if (selectedModel) form.append("model", selectedModel);
       const token = localStorage.getItem("token") || "";
+      // B-15: ask for SSE so every pipeline step lands in the overlay as it happens;
+      // an older backend answers JSON and the branch below still handles it.
       const response = await fetch(`${API_URL}/api/scanner/extract`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}`, Accept: "text/event-stream" },
         body: form,
       });
       if (!response.ok) {
@@ -78,9 +80,15 @@ export function useScanner() {
       };
       if ((response.headers.get("content-type") || "").includes("text/event-stream") && response.body) {
         await readSse(response.body, (type, payload) => {
-          if (type === "step") setPipelineSteps((prev) => [...prev, payload as PipelineStep]);
-          else if (type === "result") accept(payload);
-          else if (type === "error") throw new Error((payload as { message?: string }).message || "Scanner-Fehler");
+          if (type === "step") {
+            const step = payload as PipelineStep;
+            // A new step means the previous "active" one finished (the result carries the final list).
+            setPipelineSteps((prev) => [...prev.map((p) => (p.status === "active" ? { ...p, status: "done" as const } : p)), step]);
+          } else if (type === "result") accept(payload);
+          else if (type === "error") {
+            const err = payload as { status?: number; message?: string };
+            throw toAppError({ response: { status: err.status ?? 500, data: { error: { message: err.message } } } });
+          }
         });
       } else {
         accept(await response.json());

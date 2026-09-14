@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from typing import Any
+
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user, get_db, require_admin, require_editor
@@ -65,9 +68,17 @@ async def extract_invoice_endpoint(
 ) -> ScannerExtractResponse:
     service = ScannerService(db=db, user=user)
     content = await file.read()
-    return await service.extract(
-        file_name=file.filename or "upload",
-        content_type=file.content_type or "",
-        content=content,
-        model=model,
-    )
+    kwargs: dict[str, Any] = {
+        "file_name": file.filename or "upload",
+        "content_type": file.content_type or "",
+        "content": content,
+        "model": model,
+    }
+    # B-15: a client that accepts SSE gets every pipeline step as it happens; others get JSON.
+    if "text/event-stream" in request.headers.get("accept", ""):
+        return StreamingResponse(  # type: ignore[return-value]
+            service.extract_events(**kwargs),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache, no-transform", "X-Accel-Buffering": "no"},
+        )
+    return await service.extract(**kwargs)
