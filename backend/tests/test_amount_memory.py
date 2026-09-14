@@ -149,7 +149,18 @@ async def test_credit_keeps_revenue_default_but_gets_the_customer_name(db_sessio
 
     r = await clf.classify("GUTSCHRIFT", True, 5945.50)
     assert (r.kt_soll, r.kt_haben, r.mwst_code) == ("1020", "3000", "V81")
+    assert r.confidence == 1.0  # agreeing history must not downgrade a sure line
     assert r.beschreibung_vorschlag == "Ammann+Schmit Ag, Ertrag"
+
+
+@pytest.mark.asyncio
+async def test_credit_follows_history_when_it_points_elsewhere(db_session):
+    tenant = await create_tenant(db_session)
+    for _ in range(4):
+        await create_training_row(db_session, tenant, "Kunde X, Debitor", "1100", kt_haben="1020", betrag=999.0)
+    clf = await _clf(db_session, tenant.id)
+    r = await clf.classify("GUTSCHRIFT", True, 999.0)
+    assert (r.source, r.kt_soll, r.kt_haben) == ("Betrag", "1100", "1020")
 
 
 @pytest.mark.asyncio

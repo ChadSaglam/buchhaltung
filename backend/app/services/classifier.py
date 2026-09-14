@@ -414,7 +414,10 @@ class TenantClassifier:
         by_amount = amount_candidate(await self._amount_history(betrag), betrag)
 
         if is_credit:
-            if by_amount and by_amount.confidence >= 0.6:
+            # The revenue default stays at 1.0; the amount memory only overrides it when the
+            # tenant consistently booked this amount elsewhere (e.g. 1100 Debitoren). When it
+            # agrees, it just lends the customer's name — a 67 % on a sure line was a regression.
+            if by_amount and by_amount.confidence >= 0.6 and by_amount.kt_soll != "1020":
                 return by_amount
             pct = 8.10
             return ClassificationResult(
