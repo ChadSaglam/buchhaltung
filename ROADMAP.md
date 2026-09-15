@@ -2,9 +2,9 @@
 
 > One running list. Never duplicated — items move between sections, they don't get re-added.
 > Legend: severity `C`ritical / `H`igh / `M`edium / `L`ow · effort `S` (<1h) / `M` (half day) / `L` (multi-day)
-> IDs: `B-xx` = work item (next free: **B-74**) · `P-xx` = parked (next free: **P-05**)
+> IDs: `B-xx` = work item (next free: **B-76**) · `P-xx` = parked (next free: **P-05**)
 > Cross-product items (SSO, contracts, design tokens) live in `chadev-platform/ROADMAP.md`, not here.
-> Updated: 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 Betrag-Gedächtnis (amount memory). 2026-09-13 — Phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
+> Updated: 2026-09-15 — B-73 Abgleich done, `make check` green (a11y nested-interactive on the drop zones fixed, `.next-e2e` out of ESLint). 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 Betrag-Gedächtnis (amount memory). 2026-09-13 — Phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
 > Companion docs: `docs/ADR-002-rls.md` (B-24) · `docs/DEPLOY-CHECKLIST-B36-B37.md` · `docs/BRAINSTORM-2026-09-12.md`.
 
 ---
@@ -67,6 +67,12 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
       vorschlag, transitorische Warnungen, Banana export of the year, receipts zip — "nur noch unterschreiben". Folds B-17. — `H` / `L`
 - [ ] **B-71** Steuerrückstellung + Liquidität (*Heute*): "diesen Quartal ~CHF X Steuern zurücklegen", 90-day cash view from
       open documents + recurring amounts (B-63 memory knows the monthly ones). — `M` / `M`
+- [ ] **B-74** Dauerbuchungen (*Bank*): the amounts B-63 already recognises monthly (Miete, Leasing, Versicherung) become
+      expected lines — "Cembra 770.60 fehlt diesen Monat" on *Heute*, and the Abgleich proposes them with 1.0 when the
+      amount+date fit even without a document. Feeds B-71 liquidity. — `M` / `S`
+- [ ] **B-75** Kontoauszug ohne Upload: camt.053 pull via bLink/EBICS (UBS, PostFinance, Raiffeisen) or a scheduled
+      mailbox import — the statement arrives by itself, the Abgleich inbox fills on Monday morning. PDF stays the
+      fallback (customers deliver PDFs today). Needs a bank contract per tenant — spike first. — `M` / `L`
 - [ ] **B-72** Lohn light: monthly Lohnabrechnung with AHV/IV/EO, ALV, BVG, UVG, QST; Lohnausweis PDF; Sozialversicherungs-
       Jahresmeldung export. High liability — after B-65…B-70, and validated against a real Treuhänder run. — `M` / `L`
 
@@ -97,7 +103,9 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
       raw `toFixed`; `cursor-pointer` in `Button` base; popovers get `aria-haspopup/expanded` + Esc (`usePopover`);
       `aria-current` in nav, `aria-label` on the 3 `<nav>`s; `w-[28rem]` picker → `min(28rem, calc(100vw-2rem))`;
       emoji → Lucide; amber/emerald accents to ≥ 4.5:1; `InvoiceCard` header → `<button aria-expanded>`; Modell sub-tabs
-      on SWR with skeleton/error; confirm + `loading` on restore/replace-import/DangerZone/"Neue Datei". — `M` / `M`
+      on SWR with skeleton/error; confirm + `loading` on restore/replace-import/DangerZone/"Neue Datei";
+      axe *moderate* leftovers: heading-order on modell/rechnungen/abgleich, landmark-unique on settings. Rule since
+      2026-09-15: every drop zone is `react-dropzone` (`getRootProps/getInputProps`), never a `role=button` div. — `M` / `M`
 - [ ] **B-59** `response_model=` on the dict-returning routers (classify/info, bookings/stats, review/, audit/, stats/learning,
       kontenplan) → `make api-types` → delete the hand-written interfaces (3 shapes for `/classify/info` today). — `M` / `M`
 - [ ] **B-20** Onboarding: first scan guided, sample receipt, Kontenplan import wizard. — `M` / `M`
