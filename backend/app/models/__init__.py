@@ -4,9 +4,11 @@ from app.models.bank_transaction import BankTransaction
 from app.models.base import Base
 from app.models.booking import Booking
 from app.models.classifier_model import ClassifierModel
+from app.models.company_profile import CompanyProfile
 from app.models.correction import Correction
 from app.models.document import Document
 from app.models.export_batch import ExportBatch
+from app.models.invoice_position import InvoicePosition
 from app.models.kontenplan import Kontenplan
 from app.models.match import Match
 from app.models.memory import Memory
@@ -26,9 +28,11 @@ __all__ = [
     "Base",
     "Booking",
     "ClassifierModel",
+    "CompanyProfile",
     "Correction",
     "Document",
     "ExportBatch",
+    "InvoicePosition",
     "Kontenplan",
     "Match",
     "Memory",

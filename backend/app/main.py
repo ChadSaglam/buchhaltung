@@ -82,6 +82,7 @@ from app.routers import (
     offene_posten,
     pdf,
     platform_events,
+    rechnung,
     review,
     scanner,
     scanner_config,
@@ -111,6 +112,7 @@ application.include_router(ai.router)
 application.include_router(documents.router)
 application.include_router(abgleich.router)
 application.include_router(offene_posten.router)
+application.include_router(rechnung.router)
 application.include_router(abschluss.router)
 
 
