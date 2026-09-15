@@ -74,7 +74,14 @@ export default defineConfig({
       timeout: 120_000,
       // NEXT_PUBLIC_* is inlined at build time: the CI build step must export
       // the same value (see .github/workflows/ci.yml).
-      env: { NEXT_PUBLIC_API_URL: API_URL, NEXT_PUBLIC_BILLING_URL: E2E_BILLING_URL },
+      env: {
+        NEXT_PUBLIC_API_URL: API_URL,
+        NEXT_PUBLIC_BILLING_URL: E2E_BILLING_URL,
+        // Local only: a separate build directory means a separate dev-server
+        // lock, so `make check` runs while `make dev` keeps serving :3000.
+        // CI builds into .next and serves that, so it must stay unset there.
+        ...(process.env.CI ? {} : { NEXT_DIST_DIR: ".next-e2e" }),
+      },
     },
   ],
 });

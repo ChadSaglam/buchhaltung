@@ -2,7 +2,7 @@
 
 > One running list. Never duplicated — items move between sections, they don't get re-added.
 > Legend: severity `C`ritical / `H`igh / `M`edium / `L`ow · effort `S` (<1h) / `M` (half day) / `L` (multi-day)
-> IDs: `B-xx` = work item (next free: **B-73**) · `P-xx` = parked (next free: **P-05**)
+> IDs: `B-xx` = work item (next free: **B-74**) · `P-xx` = parked (next free: **P-05**)
 > Cross-product items (SSO, contracts, design tokens) live in `chadev-platform/ROADMAP.md`, not here.
 > Updated: 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 Betrag-Gedächtnis (amount memory). 2026-09-13 — Phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
 > Companion docs: `docs/ADR-002-rls.md` (B-24) · `docs/DEPLOY-CHECKLIST-B36-B37.md` · `docs/BRAINSTORM-2026-09-12.md`.
@@ -31,12 +31,16 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 
 ## ⏭ NEXT — pull from LATER, in this order
 
-1. ~~Phase 1~~ ✅ B-64 (2026-09-14) → **Phase 3 Abgleich**: `Match` (document ↔ bank line), rule tiers — QRR reference
-   exact · amount + date ±30 d · n:1 Sammelauftrag (subset-sum over open documents) — the Abgleich inbox, every decision
-   a training row. Then phase 4 (idempotent Banana batch), then the "Kein Treuhänder nötig" track B-65 → B-72 in
-   that order (Offene Posten → Monatsabschluss → MWST → Rechnungen schreiben → E-Mail → Jahr → Liquidität → Lohn).
-2. **B-53** export safety · **B-51** Numeric money · **B-52** idempotency by constraint (all `S`/`M`).
-3. **B-58** UX/a11y batch · **B-59** `response_model` everywhere.
+1. ~~Phase 1~~ ✅ B-64 · ~~Phase 3 Abgleich~~ ✅ B-73 (2026-09-15) → **Phase 4 Banana batch**: `export_batch` +
+   "alles OK → exportieren", `exported_at`/`export_batch_id` on postings so a re-export never duplicates, cover sheet;
+   plus the 30-minute check whether a Banana extension may call HTTP.
+2. Then the "Kein Treuhänder nötig" track **B-65 → B-72** in that order (Offene Posten → Monatsabschluss → MWST →
+   Rechnungen schreiben → E-Mail-Eingang → Jahresabschluss → Liquidität → Lohn), each inside a surface of
+   `docs/IA-2026-09-14.md`, not as a new menu entry.
+3. The IA migration itself (four surfaces + Mehr, Heute replacing the Dashboard) — do it while B-65/B-66 land,
+   not as a separate rewrite.
+4. **B-53** export safety · **B-51** Numeric money · **B-52** idempotency by constraint (all `S`/`M`).
+5. **B-58** UX/a11y batch · **B-59** `response_model` everywhere.
 
 _2026-09-14: the previous NEXT block (B-49, B-44, B-46, B-14, B-16, B-15, B-34) is done — see ✅ Done._
 
@@ -159,6 +163,18 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 - **B-40** ✅ 2026-09-13 — role ladder wired: `require_editor` on every mutating route, `require_admin` on Kontenplan
   replace, classify delete/upload, scanner config, `import?replace=true`. `tests/test_rbac_routes.py` walks the route
   table (a new mutating route without a role check fails CI) + viewer/editor 403 over HTTP.
+- **B-73** ✅ 2026-09-15 — Phase 3 Abgleich. `bank_transactions` keeps every Kontoauszug line (signed amount, value
+  date, reference, `dedup_key` so a re-upload counts instead of duplicating) and `matches` links document ↔ line n:1
+  with tier/score/reason/part-amount (migration `a1b2c3d4e5f6`). `services/matching.py` is pure: tier 1 QRR/SCOR
+  reference = fact (1.0), tier 2 exact amount inside −5/+40 days lifted by vendor-text similarity, tier 3 Sammelauftrag
+  (2..5 open invoices summing to the line, lower score and "mehrere Kombinationen möglich" when ambiguous); integer
+  Rappen, no document proposed twice, strongest line claims first. `services/abgleich.py` stores proposals and on
+  confirm writes one booking per document on the bank line's date with the document's accounts (VAT half-up), sets the
+  document `bezahlt` and teaches the vendor → account pairing; reject is remembered, `manual` and `ignore` exist.
+  `/dashboard/abgleich`: statement drop zone, KPI cards, proposal cards with the reason sentence, `j/k/a/r`, optimistic
+  decisions, open lines with an invoice picker that shows the difference before booking. Shared `lib/format.ts` +
+  `lib/inbox-keys.ts`. 42 new tests. Real April statement: 28/28 lines parsed, sums equal the PDF's Umsatztotal.
+  Also fixed: the e2e frontend uses `NEXT_DIST_DIR=.next-e2e`, so `make check` no longer collides with `make dev`.
 - **B-64** ✅ 2026-09-14 — Phase 1 of the brainstorm: `documents` table (migration `f0a1b2c3d4e5`) — a Rechnung/Beleg with
   file, read facts (vendor, amount, currency, no./dates, QR IBAN + QRR/SCOR reference), proposed Kontierung, status
   offen → bezahlt → exportiert (final) / fehler, booking link. `services/qr_bill.py` decodes the Swiss Payments Code from
@@ -334,7 +350,7 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 | 0.5 Risk fixes before platform work | ✅ B-00…B-03 (branch `feat/phase0-risks`) |
 | 1 Platform contract | 1.2 ✅ B-31 · 1.4 ✅ B-26 · 1.6 ✅ tokens imported |
 | 2 Security | ✅ B-06, B-07, B-32, B-34, B-40, B-41, B-42, B-43 · open: B-24 (ADR-002), B-25, B-54, B-55 |
-| 3 Reliability | ✅ B-04, B-05, B-08, B-11, B-33, B-35, B-39, B-47, B-48, B-49, B-63 · open: B-51, B-52, B-56, B-57 |
+| 3 Reliability | ✅ B-04, B-05, B-08, B-11, B-33, B-35, B-39, B-47, B-48, B-49, B-63, B-64, B-73 · open: B-51, B-52, B-56, B-57 |
 | 4 Polish | ✅ B-09, B-13 · open: B-22, B-53, B-61 |
 | 5 UX | ✅ B-14, B-15, B-16, B-18, B-19, B-44, B-45, B-46, B-50 (+B-21) · open: B-17, B-20, B-58, B-59 |
 | 6 Together | ✅ B-36 (SSO + mirroring), B-37 (events) · deploy: `docs/DEPLOY-CHECKLIST-B36-B37.md` · parked: B-38 |
