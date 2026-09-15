@@ -1124,6 +1124,85 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/rechnungen/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Rechnungen */
+        get: operations["list_rechnungen_api_rechnungen__get"];
+        put?: never;
+        /**
+         * Create Rechnung
+         * @description Kunde + Positionen → QR-Rechnung, Debitorenbuchung 1100/3000, offener Posten.
+         */
+        post: operations["create_rechnung_api_rechnungen__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/rechnungen/firma": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Firma
+         * @description Our own data. Empty on a fresh tenant — ``fehlt`` says what a QR-Rechnung still needs.
+         */
+        get: operations["firma_api_rechnungen_firma_get"];
+        /** Update Firma */
+        put: operations["update_firma_api_rechnungen_firma_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/rechnungen/{document_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Rechnung */
+        get: operations["get_rechnung_api_rechnungen__document_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/rechnungen/{document_id}/rechnung.html": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Rechnung Page
+         * @description The print-ready invoice with the Zahlteil (Strg/Cmd + P → PDF).
+         */
+        get: operations["rechnung_page_api_rechnungen__document_id__rechnung_html_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/review/": {
         parameters: {
             query?: never;
@@ -1869,6 +1948,149 @@ export interface components {
             /** Item */
             item: string;
         };
+        /**
+         * FirmaProfilOut
+         * @description Plus what the UI needs to say *why* an invoice cannot be written yet.
+         */
+        FirmaProfilOut: {
+            /**
+             * Bereit
+             * @default false
+             */
+            bereit: boolean;
+            /**
+             * Email
+             * @default
+             */
+            email: string;
+            /** Fehlt */
+            fehlt?: string[];
+            /**
+             * Hausnummer
+             * @default
+             */
+            hausnummer: string;
+            /**
+             * Iban
+             * @default
+             */
+            iban: string;
+            /**
+             * Iban Formatiert
+             * @default
+             */
+            iban_formatiert: string;
+            /**
+             * Konto Bank
+             * @default
+             */
+            konto_bank: string;
+            /**
+             * Konto Debitoren
+             * @default
+             */
+            konto_debitoren: string;
+            /**
+             * Konto Ertrag
+             * @default
+             */
+            konto_ertrag: string;
+            /**
+             * Land
+             * @default CH
+             */
+            land: string;
+            /**
+             * Mwst Code
+             * @default
+             */
+            mwst_code: string;
+            /**
+             * Mwst Nr
+             * @default
+             */
+            mwst_nr: string;
+            /**
+             * Mwst Pct
+             * @default
+             */
+            mwst_pct: string;
+            /**
+             * Name
+             * @default
+             */
+            name: string;
+            /**
+             * Ort
+             * @default
+             */
+            ort: string;
+            /**
+             * Plz
+             * @default
+             */
+            plz: string;
+            /**
+             * Qr Iban
+             * @default false
+             */
+            qr_iban: boolean;
+            /**
+             * Referenz Typ
+             * @default
+             */
+            referenz_typ: string;
+            /**
+             * Strasse
+             * @default
+             */
+            strasse: string;
+            /**
+             * Telefon
+             * @default
+             */
+            telefon: string;
+            /**
+             * Zahlungsfrist Tage
+             * @default 30
+             */
+            zahlungsfrist_tage: number;
+        };
+        /** FirmaProfilUpdate */
+        FirmaProfilUpdate: {
+            /** Email */
+            email?: string | null;
+            /** Hausnummer */
+            hausnummer?: string | null;
+            /** Iban */
+            iban?: string | null;
+            /** Konto Bank */
+            konto_bank?: string | null;
+            /** Konto Debitoren */
+            konto_debitoren?: string | null;
+            /** Konto Ertrag */
+            konto_ertrag?: string | null;
+            /** Land */
+            land?: string | null;
+            /** Mwst Code */
+            mwst_code?: string | null;
+            /** Mwst Nr */
+            mwst_nr?: string | null;
+            /** Mwst Pct */
+            mwst_pct?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Ort */
+            ort?: string | null;
+            /** Plz */
+            plz?: string | null;
+            /** Strasse */
+            strasse?: string | null;
+            /** Telefon */
+            telefon?: string | null;
+            /** Zahlungsfrist Tage */
+            zahlungsfrist_tage?: number | null;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -1880,6 +2102,41 @@ export interface components {
             kontenplan: {
                 [key: string]: string;
             };
+        };
+        /** KundeIn */
+        KundeIn: {
+            /**
+             * Email
+             * @default
+             */
+            email: string;
+            /**
+             * Hausnummer
+             * @default
+             */
+            hausnummer: string;
+            /**
+             * Land
+             * @default CH
+             */
+            land: string;
+            /** Name */
+            name: string;
+            /**
+             * Ort
+             * @default
+             */
+            ort: string;
+            /**
+             * Plz
+             * @default
+             */
+            plz: string;
+            /**
+             * Strasse
+             * @default
+             */
+            strasse: string;
         };
         /** LoginRequest */
         LoginRequest: {
@@ -2028,6 +2285,44 @@ export interface components {
             /** Mahnbar */
             mahnbar: boolean;
         };
+        /** PositionIn */
+        PositionIn: {
+            /** Bezeichnung */
+            bezeichnung: string;
+            /**
+             * Einheit
+             * @default
+             */
+            einheit: string;
+            /**
+             * Einzelpreis
+             * @default 0
+             */
+            einzelpreis: number;
+            /**
+             * Menge
+             * @default 1
+             */
+            menge: number;
+        };
+        /** PositionOut */
+        PositionOut: {
+            /**
+             * Betrag
+             * @default 0
+             */
+            betrag: number;
+            /** Bezeichnung */
+            bezeichnung: string;
+            /** Einheit */
+            einheit: string;
+            /** Einzelpreis */
+            einzelpreis: number;
+            /** Menge */
+            menge: number;
+            /** Position */
+            position: number;
+        };
         /** PredictRequest */
         PredictRequest: {
             /** Beschreibung */
@@ -2073,6 +2368,69 @@ export interface components {
             };
             /** Quartale */
             quartale: string[];
+        };
+        /** RechnungCreate */
+        RechnungCreate: {
+            /**
+             * Bemerkung
+             * @default
+             */
+            bemerkung: string;
+            /** Faellig Am */
+            faellig_am?: string | null;
+            kunde: components["schemas"]["KundeIn"];
+            /** Positionen */
+            positionen: components["schemas"]["PositionIn"][];
+            /** Rechnungsdatum */
+            rechnungsdatum?: string | null;
+        };
+        /** RechnungListItem */
+        RechnungListItem: {
+            /** Amount */
+            amount: number | null;
+            /** Due Date */
+            due_date: string | null;
+            /** Id */
+            id: number;
+            /** Invoice Date */
+            invoice_date: string | null;
+            /** Invoice No */
+            invoice_no: string;
+            /** Qr Reference */
+            qr_reference: string;
+            /** Status */
+            status: string;
+            /** Vendor */
+            vendor: string;
+        };
+        /** RechnungListResponse */
+        RechnungListResponse: {
+            /** Count */
+            count: number;
+            /** Items */
+            items: components["schemas"]["RechnungListItem"][];
+            /** Naechste Nummer */
+            naechste_nummer: string;
+        };
+        /** RechnungOut */
+        RechnungOut: {
+            /** Booking Id */
+            booking_id?: number | null;
+            document: components["schemas"]["DocumentOut"];
+            /** Html Url */
+            html_url: string;
+            /** Mwst */
+            mwst: number;
+            /** Netto */
+            netto: number;
+            /** Positionen */
+            positionen: components["schemas"]["PositionOut"][];
+            /** Referenz Formatiert */
+            referenz_formatiert: string;
+            /** Referenz Typ */
+            referenz_typ: string;
+            /** Total */
+            total: number;
         };
         /** RegisterRequest */
         RegisterRequest: {
@@ -4503,6 +4861,185 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    list_rechnungen_api_rechnungen__get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RechnungListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_rechnung_api_rechnungen__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RechnungCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RechnungOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    firma_api_rechnungen_firma_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FirmaProfilOut"];
+                };
+            };
+        };
+    };
+    update_firma_api_rechnungen_firma_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FirmaProfilUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FirmaProfilOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_rechnung_api_rechnungen__document_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RechnungOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rechnung_page_api_rechnungen__document_id__rechnung_html_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

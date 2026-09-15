@@ -1,7 +1,8 @@
 "use client";
 
-import { Receipt, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import { Receipt, AlertTriangle, CheckCircle2, Clock, FilePlus2 } from "lucide-react";
 import { PageHeader } from "@/components/ui/page_header";
+import { ButtonLink } from "@/components/ui/Button";
 import { MetricCard } from "@/components/ui/metric_card";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ErrorState } from "@/components/shared/ErrorState";
@@ -21,7 +22,16 @@ export default function RechnungenPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader icon={Receipt} title="Rechnungen" subtitle="Rechnungen sammeln → offene Posten im Blick → beim Kontoauszug abgleichen" />
+      <PageHeader
+        icon={Receipt}
+        title="Rechnungen"
+        subtitle="Rechnungen sammeln → offene Posten im Blick → beim Kontoauszug abgleichen"
+        action={
+          <ButtonLink href="/dashboard/rechnungen/neu" icon={<FilePlus2 className="h-4 w-4" />}>
+            Rechnung schreiben
+          </ButtonLink>
+        }
+      />
 
       <BulkDropZone onFiles={r.upload} uploading={r.uploading} progress={r.progress} />
 
