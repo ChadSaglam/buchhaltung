@@ -71,7 +71,7 @@ export function mwstVerdict(zuBezahlen: number, guthaben: number): { tone: "dang
   return { tone: "neutral", text: "Nichts zu bezahlen" };
 }
 
-/** Ziffern with no booking behind them are shown but greyed — they need a human. */
+/** Ziffern with no booking behind them are shown with a muted label — they need a human. */
 export function isEmptyZiffer(row: { umsatz?: number | null; steuer?: number | null }): boolean {
   return (row.umsatz ?? 0) === 0 && (row.steuer ?? 0) === 0;
 }

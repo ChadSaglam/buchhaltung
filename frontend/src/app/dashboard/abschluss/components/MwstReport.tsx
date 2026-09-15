@@ -105,10 +105,20 @@ export function MwstReport() {
               {m.report.ziffern.map((row) => {
                 const total = MWST_TOTAL_ZIFFERN.has(row.ziffer);
                 const empty = isEmptyZiffer(row);
+                // Leere Ziffern nur gedämpft beschriften — Text mit opacity fällt
+                // unter die Kontrastschwelle (B-19).
                 return (
-                  <tr key={row.ziffer} className={cn(total && "bg-accent/40", empty && !total && "opacity-60")}>
+                  <tr key={row.ziffer} className={cn(total && "bg-accent/40")}>
                     <td className={cn("px-4 py-2 font-mono text-xs", total && "font-semibold")}>{row.ziffer}</td>
-                    <td className={cn("px-4 py-2 text-foreground", total && "font-semibold")}>{row.label}</td>
+                    <td
+                      className={cn(
+                        "px-4 py-2",
+                        total && "font-semibold",
+                        empty && !total ? "text-muted-foreground" : "text-foreground",
+                      )}
+                    >
+                      {row.label}
+                    </td>
                     <td className="px-4 py-2 text-right font-mono tabular-nums text-muted-foreground">
                       {row.umsatz == null ? "" : formatCHF(row.umsatz)}
                     </td>
