@@ -95,7 +95,12 @@ test-unit: ## Frontend unit tests only (vitest, pure helpers)
 	cd frontend && npm run test
 
 test-e2e: e2e-deps ## Frontend end-to-end tests only
-	cd frontend && npx playwright test
+	# The e2e build writes to .next-e2e (so this runs while `make dev` is up) and Next
+	# rewrites the tracked next-env.d.ts to whatever distDir it last used. Put the
+	# committed .next spelling back, pass or fail, so `git status` stays clean.
+	( cd frontend && npx playwright test ); status=$$?; \
+		$(PY) scripts/restore_next_env.py; \
+		exit $$status
 
 test-backend: dev-deps ## Backend tests only, with coverage
 	$(PY) -m pytest --cov=backend/app --cov-report=term-missing
