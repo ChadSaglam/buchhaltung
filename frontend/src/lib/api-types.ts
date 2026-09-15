@@ -938,6 +938,67 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/offene-posten/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Offene Posten */
+        get: operations["offene_posten_api_offene_posten__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/offene-posten/{document_id}/mahnung": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Mahnung Preview
+         * @description What the next Mahnung would say — a preview, nothing is stored.
+         */
+        get: operations["mahnung_preview_api_offene_posten__document_id__mahnung_get"];
+        put?: never;
+        /**
+         * Record Mahnung
+         * @description The owner sent it — remember the stage so the next one escalates.
+         */
+        post: operations["record_mahnung_api_offene_posten__document_id__mahnung_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/offene-posten/{document_id}/mahnung.html": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Mahnung Page
+         * @description The print-ready letter (Strg/Cmd + P → PDF).
+         */
+        get: operations["mahnung_page_api_offene_posten__document_id__mahnung_html_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/pdf/parse": {
         parameters: {
             query?: never;
@@ -1418,10 +1479,14 @@ export interface components {
             booking_id: number | null;
             /** Classification Confidence */
             classification_confidence: number;
+            /** Contact Email */
+            contact_email: string;
             /** Created At */
             created_at: string | null;
             /** Currency */
             currency: string;
+            /** Direction */
+            direction: string;
             /** Due Date */
             due_date: string | null;
             /** Error */
@@ -1444,6 +1509,10 @@ export interface components {
             kt_haben: string;
             /** Kt Soll */
             kt_soll: string;
+            /** Mahnstufe */
+            mahnstufe: number;
+            /** Mahnung Sent At */
+            mahnung_sent_at: string | null;
             /** Mwst Code */
             mwst_code: string;
             /** Mwst Pct */
@@ -1483,8 +1552,12 @@ export interface components {
         DocumentUpdate: {
             /** Amount */
             amount?: number | null;
+            /** Contact Email */
+            contact_email?: string | null;
             /** Currency */
             currency?: string | null;
+            /** Direction */
+            direction?: ("eingang" | "ausgang") | null;
             /** Due Date */
             due_date?: string | null;
             /** Invoice Date */
@@ -1727,6 +1800,35 @@ export interface components {
             /** Password */
             password: string;
         };
+        /** MahnungDraft */
+        MahnungDraft: {
+            /** Document Id */
+            document_id: number;
+            /** Empfaenger */
+            empfaenger: string;
+            /** Empfaenger Email */
+            empfaenger_email: string;
+            /** Html Url */
+            html_url: string;
+            /**
+             * Recorded
+             * @default false
+             */
+            recorded: boolean;
+            /** Stufe */
+            stufe: number;
+            /** Stufe Label */
+            stufe_label: string;
+            /** Subject */
+            subject: string;
+            /** Text */
+            text: string;
+        };
+        /** MahnungRequest */
+        MahnungRequest: {
+            /** Stufe */
+            stufe?: number | null;
+        };
         /** ManualMatchRequest */
         ManualMatchRequest: {
             /** Document Ids */
@@ -1742,6 +1844,23 @@ export interface components {
             document: components["schemas"]["DocumentOut"];
             /** Match Id */
             match_id: number;
+        };
+        /** OffenePostenResponse */
+        OffenePostenResponse: {
+            debitoren: components["schemas"]["SideOut"];
+            kreditoren: components["schemas"]["SideOut"];
+        };
+        /** OpenItemOut */
+        OpenItemOut: {
+            /** Bucket */
+            bucket: string;
+            /** Days Overdue */
+            days_overdue: number;
+            document: components["schemas"]["DocumentOut"];
+            /** Due Date */
+            due_date: string | null;
+            /** Mahnbar */
+            mahnbar: boolean;
         };
         /** PredictRequest */
         PredictRequest: {
@@ -1902,6 +2021,26 @@ export interface components {
             scanner_mode?: string | null;
             /** Vision Models */
             vision_models?: string[];
+        };
+        /**
+         * SideOut
+         * @description Debitoren (they owe us) or Kreditoren (we owe) — the same shape twice.
+         */
+        SideOut: {
+            /** Buckets */
+            buckets: {
+                [key: string]: number;
+            };
+            /** Count */
+            count: number;
+            /** Items */
+            items: components["schemas"]["OpenItemOut"][];
+            /** Overdue Count */
+            overdue_count: number;
+            /** Overdue Total */
+            overdue_total: number;
+            /** Total */
+            total: number;
         };
         /**
          * SsoRequest
@@ -3852,6 +3991,127 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    offene_posten_api_offene_posten__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OffenePostenResponse"];
+                };
+            };
+        };
+    };
+    mahnung_preview_api_offene_posten__document_id__mahnung_get: {
+        parameters: {
+            query?: {
+                stufe?: number | null;
+            };
+            header?: never;
+            path: {
+                document_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MahnungDraft"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_mahnung_api_offene_posten__document_id__mahnung_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["MahnungRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MahnungDraft"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mahnung_page_api_offene_posten__document_id__mahnung_html_get: {
+        parameters: {
+            query?: {
+                stufe?: number | null;
+            };
+            header?: never;
+            path: {
+                document_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

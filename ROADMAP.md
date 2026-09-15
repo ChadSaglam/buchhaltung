@@ -2,9 +2,9 @@
 
 > One running list. Never duplicated — items move between sections, they don't get re-added.
 > Legend: severity `C`ritical / `H`igh / `M`edium / `L`ow · effort `S` (<1h) / `M` (half day) / `L` (multi-day)
-> IDs: `B-xx` = work item (next free: **B-77**) · `P-xx` = parked (next free: **P-05**)
+> IDs: `B-xx` = work item (next free: **B-78**) · `P-xx` = parked (next free: **P-05**)
 > Cross-product items (SSO, contracts, design tokens) live in `chadev-platform/ROADMAP.md`, not here.
-> Updated: 2026-09-15 — B-76 Banana-Stapel (phase 4) done; B-73 Abgleich done, `make check` green (a11y nested-interactive on the drop zones fixed, `.next-e2e` out of ESLint). 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 Betrag-Gedächtnis (amount memory). 2026-09-13 — Phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
+> Updated: 2026-09-15 — B-65 Offene Posten/Mahnung done (B-77 = echter PDF-Renderer, gebündelt mit B-70); B-76 Banana-Stapel (phase 4) done; B-73 Abgleich done, `make check` green (a11y nested-interactive on the drop zones fixed, `.next-e2e` out of ESLint). 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 Betrag-Gedächtnis (amount memory). 2026-09-13 — Phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
 > Companion docs: `docs/ADR-002-rls.md` (B-24) · `docs/DEPLOY-CHECKLIST-B36-B37.md` · `docs/BRAINSTORM-2026-09-12.md`.
 
 ---
@@ -34,9 +34,9 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 1. ~~Phase 1~~ ✅ B-64 · ~~Phase 3 Abgleich~~ ✅ B-73 · ~~Phase 4 Banana batch~~ ✅ B-76 (all 2026-09-15) →
    the one thing left from phase 4 is the 30-minute check whether a Banana *extension* may call HTTP (level 2 push).
    Until that is answered, the file hand-off is the product.
-2. Then the "Kein Treuhänder nötig" track **B-65 → B-72** in that order (Offene Posten → Monatsabschluss → MWST →
-   Rechnungen schreiben → E-Mail-Eingang → Jahresabschluss → Liquidität → Lohn), each inside a surface of
-   `docs/IA-2026-09-14.md`, not as a new menu entry.
+2. The "Kein Treuhänder nötig" track: ~~B-65 Offene Posten~~ ✅ → **B-66 Monatsabschluss check** → B-67 MWST →
+   B-68 Rechnungen schreiben → B-69 E-Mail-Eingang → B-70 Jahresabschluss → B-71 Liquidität → B-72 Lohn, each inside a
+   surface of `docs/IA-2026-09-14.md`, not as a new menu entry.
 3. The IA migration itself (four surfaces + Mehr, Heute replacing the Dashboard) — do it while B-65/B-66 land,
    not as a separate rewrite.
 4. **B-53** export safety · **B-51** Numeric money · **B-52** idempotency by constraint (all `S`/`M`).
@@ -51,8 +51,6 @@ _2026-09-14: the previous NEXT block (B-49, B-44, B-46, B-14, B-16, B-15, B-34) 
 ### "Kein Treuhänder nötig" — the product track (owner, 2026-09-14; order = impact)
 Target: the Treuhänder signs once a year, nothing in between. Each item is a *flow* inside one of the four surfaces
 (`docs/IA-2026-09-14.md`: Heute · Belege · Bank · Abschluss), not its own page.
-- [ ] **B-65** Offene Posten: overdue list on *Heute*, one-click Mahnung draft (PDF + e-mail text), Debitoren/Kreditoren
-      split, "wer schuldet uns" widget. Builds on B-64 `documents`. — `H` / `M`
 - [ ] **B-66** Monatsabschluss check (*Abschluss › Monat*): bank Schlusssaldo = 1020 Saldo?, unmatched lines, duplicates,
       bookings without Beleg, open documents past due — red/green checklist, one page, nothing to configure. — `H` / `M`
 - [ ] **B-67** MWST-Abrechnung (*Abschluss › Quartal*): Formular 200 figures (Ziffer 200/205/220–289/302/312/342/400/405/
@@ -63,6 +61,9 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
       (phase 3 match). Closes the loop. — `H` / `L`
 - [ ] **B-69** E-mail intake: per-tenant address `belege+<slug>@…`, attachments → B-64 ingest; sender allow-list;
       "3 neue Belege per E-Mail" on *Heute*. — `M` / `M`
+- [ ] **B-77** PDF-Renderer (eine Abhängigkeits-Entscheidung für alle): Mahnung, MWST-Formular, Bilanz/ER und das
+      Deckblatt brauchen echtes PDF. Heute liefert B-65 druckfertiges HTML (Browser → PDF). Kandidaten: fpdf2 (klein,
+      kein C-Build) vs. reportlab (mächtiger). Entscheiden, wenn B-67/B-70 dran sind — nicht vorher. — `M` / `M`
 - [ ] **B-70** Jahresabschluss pack (*Abschluss › Jahr*): Bilanz + Erfolgsrechnung PDF (KMU Kontenrahmen), Abschreibungs-
       vorschlag, transitorische Warnungen, Banana export of the year, receipts zip — "nur noch unterschreiben". Folds B-17. — `H` / `L`
 - [ ] **B-71** Steuerrückstellung + Liquidität (*Heute*): "diesen Quartal ~CHF X Steuern zurücklegen", 90-day cash view from
@@ -171,6 +172,20 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 - **B-40** ✅ 2026-09-13 — role ladder wired: `require_editor` on every mutating route, `require_admin` on Kontenplan
   replace, classify delete/upload, scanner config, `import?replace=true`. `tests/test_rbac_routes.py` walks the route
   table (a new mutating route without a role check fails CI) + viewer/editor 403 over HTTP.
+- **B-65** ✅ 2026-09-15 — Offene Posten + Mahnung. `documents` bekommt eine Richtung (migration `c2d3e4f5a6b7`):
+  `eingang` = Lieferantenrechnung (Kreditor, wir zahlen), `ausgang` = eigene Rechnung (Debitor, Kunde zahlt) — plus
+  `contact_email`, `mahnstufe`, `mahnung_sent_at` und Index `(tenant_id, direction, status)`. `services/offene_posten.py`
+  ist rein rechnend: fehlt ein Fälligkeitsdatum, gilt Rechnungsdatum + 30 Tage netto; `days_overdue` /
+  `aging_bucket` (nicht fällig · 1–30 · 31–60 · 61–90 · über 90) füllen beide Seiten mit Summen, und `build_items`
+  sortiert das Dringendste nach oben. Die Mahnung eskaliert in drei Stufen (Zahlungserinnerung → 1. Mahnung → Letzte
+  Mahnung, dort erst der Hinweis auf Verzugszins nach Art. 104 OR), immer mit 10 Tagen Frist, immer als **Entwurf**:
+  `GET /api/offene-posten/` (beide Seiten), `GET /{id}/mahnung` (Betreff + Text, nichts gespeichert),
+  `GET /{id}/mahnung.html` (druckfertiger A4-Brief, Browser → PDF) und `POST /{id}/mahnung` (`require_editor`) hält
+  fest, dass sie raus ist, damit die nächste eskaliert. Verschickt wird nichts von hier; nur ein Ausgang ist mahnbar
+  (409 sonst). Auf *Heute*: Karte "Wer schuldet uns / Was schulden wir" mit Summen, Aging-Badges, den dringendsten
+  Zeilen und dem Mahnung-Dialog (Text kopieren · Drucken/PDF · als versendet erfassen, Fokus-Falle + Esc). Ein
+  echter PDF-Renderer bleibt eine Entscheidung für B-77/B-70. 17 Backend- und 6 Frontend-Tests; gegen echtes
+  Postgres 16 verifiziert (471 passed).
 - **B-76** ✅ 2026-09-15 — Phase 4 Banana-Stapel: an export is no longer a download but a *Buchungsperiode with a
   status*. `export_batches` (migration `b1c2d3e4f5a6`) records every hand-off — count, total, MwSt total, period,
   filename, sha256 of the rendered file, note — and `bookings.export_batch_id` / `exported_at` stamp what left, so the
@@ -375,6 +390,6 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 | 2 Security | ✅ B-06, B-07, B-32, B-34, B-40, B-41, B-42, B-43 · open: B-24 (ADR-002), B-25, B-54, B-55 |
 | 3 Reliability | ✅ B-04, B-05, B-08, B-11, B-33, B-35, B-39, B-47, B-48, B-49, B-63, B-64, B-73, B-76 · open: B-51, B-52, B-56, B-57 |
 | 4 Polish | ✅ B-09, B-13, B-76 · open: B-22, B-53, B-61 |
-| 5 UX | ✅ B-14, B-15, B-16, B-18, B-19, B-44, B-45, B-46, B-50 (+B-21) · open: B-17, B-20, B-58, B-59 |
+| 5 UX | ✅ B-14, B-15, B-16, B-18, B-19, B-44, B-45, B-46, B-50 (+B-21), B-65 · open: B-17, B-20, B-58, B-59 |
 | 6 Together | ✅ B-36 (SSO + mirroring), B-37 (events) · deploy: `docs/DEPLOY-CHECKLIST-B36-B37.md` · parked: B-38 |
 | 7 DX | ✅ B-12, B-29, B-30 · open: B-60, B-62 |

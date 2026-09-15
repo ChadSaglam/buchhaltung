@@ -78,6 +78,7 @@ from app.routers import (
     export_batch,
     health,
     import_data,
+    offene_posten,
     pdf,
     platform_events,
     review,
@@ -108,6 +109,7 @@ application.include_router(health.router)
 application.include_router(ai.router)
 application.include_router(documents.router)
 application.include_router(abgleich.router)
+application.include_router(offene_posten.router)
 
 
 app = application

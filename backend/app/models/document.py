@@ -24,18 +24,29 @@ DOCUMENT_STATUSES = (STATUS_OFFEN, STATUS_BEZAHLT, STATUS_EXPORTIERT, STATUS_FEH
 KIND_RECHNUNG = "rechnung"
 KIND_BELEG = "beleg"
 
+# Which way the money flows (B-65). Eingang = a supplier invoice we owe
+# (Kreditor); Ausgang = our own invoice a customer owes us (Debitor) — only an
+# Ausgang can be gemahnt.
+DIRECTION_EINGANG = "eingang"
+DIRECTION_AUSGANG = "ausgang"
+DIRECTIONS = (DIRECTION_EINGANG, DIRECTION_AUSGANG)
+
+MAX_MAHNSTUFE = 3
+
 
 class Document(Base):
     __tablename__ = "documents"
     __table_args__ = (
         Index("ix_documents_tenant_status", "tenant_id", "status"),
         Index("ix_documents_tenant_reference", "tenant_id", "qr_reference"),
+        Index("ix_documents_tenant_direction_status", "tenant_id", "direction", "status"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     tenant_id: Mapped[int] = mapped_column(ForeignKey("tenants.id", ondelete="CASCADE"), index=True)
     kind: Mapped[str] = mapped_column(String(20), default=KIND_RECHNUNG)
     status: Mapped[str] = mapped_column(String(20), default=STATUS_OFFEN)
+    direction: Mapped[str] = mapped_column(String(10), default=DIRECTION_EINGANG)
 
     # The file (services/receipts.py key) and what the user uploaded it as.
     file_key: Mapped[str] = mapped_column(String(255))
@@ -62,6 +73,11 @@ class Document(Base):
     mwst_code: Mapped[str] = mapped_column(String(10), default="")
     mwst_pct: Mapped[str] = mapped_column(String(10), default="")
     classification_confidence: Mapped[float] = mapped_column(Float, default=0.0)
+
+    # Offene Posten (B-65): who to remind, and how often it has happened.
+    contact_email: Mapped[str] = mapped_column(String(255), default="")
+    mahnstufe: Mapped[int] = mapped_column(Integer, default=0)
+    mahnung_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     booking_id: Mapped[int | None] = mapped_column(ForeignKey("bookings.id", ondelete="SET NULL"), nullable=True)
     error: Mapped[str] = mapped_column(String(255), default="")

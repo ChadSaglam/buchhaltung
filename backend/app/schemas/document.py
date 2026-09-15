@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.schemas.common import Money
 
 DocumentStatus = Literal["offen", "bezahlt", "exportiert", "fehler"]
+DocumentDirection = Literal["eingang", "ausgang"]
 
 
 class DocumentOut(BaseModel):
@@ -18,6 +19,7 @@ class DocumentOut(BaseModel):
     id: int
     kind: str
     status: str
+    direction: str
     filename: str
     vendor: str
     amount: float | None
@@ -35,6 +37,9 @@ class DocumentOut(BaseModel):
     mwst_code: str
     mwst_pct: str
     classification_confidence: float
+    contact_email: str
+    mahnstufe: int
+    mahnung_sent_at: datetime | None
     booking_id: int | None
     error: str
     created_at: datetime | None
@@ -51,6 +56,8 @@ class DocumentUpdate(BaseModel):
     invoice_date: date | None = None
     due_date: date | None = None
     status: DocumentStatus | None = None
+    direction: DocumentDirection | None = None
+    contact_email: str | None = Field(default=None, max_length=255)
     kt_soll: str | None = Field(default=None, max_length=20)
     kt_haben: str | None = Field(default=None, max_length=20)
     mwst_code: str | None = Field(default=None, max_length=10)
