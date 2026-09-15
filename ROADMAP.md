@@ -2,9 +2,9 @@
 
 > One running list. Never duplicated — items move between sections, they don't get re-added.
 > Legend: severity `C`ritical / `H`igh / `M`edium / `L`ow · effort `S` (<1h) / `M` (half day) / `L` (multi-day)
-> IDs: `B-xx` = work item (next free: **B-78**) · `P-xx` = parked (next free: **P-05**)
+> IDs: `B-xx` = work item (next free: **B-79**) · `P-xx` = parked (next free: **P-05**)
 > Cross-product items (SSO, contracts, design tokens) live in `chadev-platform/ROADMAP.md`, not here.
-> Updated: 2026-09-15 — B-67 MWST-Abrechnung (Formular 200) done; B-66 Monatsabschluss-Check done; B-65 Offene Posten/Mahnung done (B-77 = echter PDF-Renderer, gebündelt mit B-70); B-76 Banana-Stapel (phase 4) done; B-73 Abgleich done, `make check` green (a11y nested-interactive on the drop zones fixed, `.next-e2e` out of ESLint). 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 Betrag-Gedächtnis (amount memory). 2026-09-13 — Phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
+> Updated: 2026-09-15 — B-67 MWST-Abrechnung (Formular 200) done; B-66 Monatsabschluss-Check done; B-65 Offene Posten/Mahnung done (B-77 = echter PDF-Renderer, gebündelt mit B-70); B-76 Banana-Stapel (phase 4) done — und die offene Extension-Frage geklärt: aus einer Banana-Extension ist kein HTTP möglich, der Datei-Hand-off ist damit final (neu: B-78, read-only REST-Spike); B-73 Abgleich done, `make check` green (a11y nested-interactive on the drop zones fixed, `.next-e2e` out of ESLint). 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 Betrag-Gedächtnis (amount memory). 2026-09-13 — Phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
 > Companion docs: `docs/ADR-002-rls.md` (B-24) · `docs/DEPLOY-CHECKLIST-B36-B37.md` · `docs/BRAINSTORM-2026-09-12.md`.
 
 ---
@@ -32,8 +32,17 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 ## ⏭ NEXT — pull from LATER, in this order
 
 1. ~~Phase 1~~ ✅ B-64 · ~~Phase 3 Abgleich~~ ✅ B-73 · ~~Phase 4 Banana batch~~ ✅ B-76 (all 2026-09-15) →
-   the one thing left from phase 4 is the 30-minute check whether a Banana *extension* may call HTTP (level 2 push).
-   Until that is answered, the file hand-off is the product.
+   **phase 4 is closed, 2026-09-15**: a Banana *extension* may **not** call HTTP. Official wording: "For security
+   reasons, Banana Accounting extensions can't connect to external URLs API" (`banana.ch/doc/en/node/4065`), and
+   extensions are "NOT ALLOWED to directly write or read file, web resource, change computer setting or execute
+   programs" (`node/10067`). There is no `Banana.Http` namespace in the API reference (`node/4714`).
+   → **the file hand-off is the product, not a stopgap** — there is no level-2 push to build later; stop reserving
+   design space for it. The HTTP that does exist runs the other way and does not close the loop: the integrated web
+   server (Advanced plan only, `localhost:8081`, `X-Banana-Access-Token`) is **read-only** — "the web server can't be
+   used to write to the accounting file, and Banana Accounting+ can't connect to external URLs" (`node/4867`) — and
+   the V2 *Send Data* API (`POST /v2/doc?show&acstkn=…`, `node/10157`) only creates a **new** file from an embedded
+   base64 AC2 + Document Change, which the user must then *Save As* over the original ("the method does not verify
+   that the data is correct"). The read side is the only part worth a spike → **B-78**.
 2. The "Kein Treuhänder nötig" track: ~~B-65 Offene Posten~~ ✅ · ~~B-66 Monatsabschluss~~ ✅ ·
    ~~B-67 MWST-Abrechnung~~ ✅ → **B-68 Rechnungen schreiben (QR)** → B-69 E-Mail-Eingang → B-70 Jahresabschluss
    (mit B-77 PDF-Entscheid) → B-71 Liquidität → B-72 Lohn, each inside a surface of `docs/IA-2026-09-14.md`,
@@ -70,6 +79,11 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 - [ ] **B-75** Kontoauszug ohne Upload: camt.053 pull via bLink/EBICS (UBS, PostFinance, Raiffeisen) or a scheduled
       mailbox import — the statement arrives by itself, the Abgleich inbox fills on Monday morning. PDF stays the
       fallback (customers deliver PDFs today). Needs a bank contract per tenant — spike first. — `M` / `L`
+- [ ] **B-78** Banana-Daten lesen statt exportieren (Spike, nur sinnvoll wenn ein Kunde den *Advanced*-Plan hat):
+      Bananas integrierter Webserver (`localhost:8081`, RESTful, Token) liefert Tabellen read-only — d.h. `Buchungen`
+      liessen sich ziehen statt als `Buchungen.xls` exportieren zu lassen (Trainingsquelle des Modells, und ein
+      Ist-Abgleich gegen das, was der Kunde wirklich gebucht hat). Läuft nur lokal auf dem Kundenrechner, also
+      Agent/CLI-Frage, kein Server-zu-Server-Call. Schreiben bleibt unmöglich. — `L` / `M`
 - [ ] **B-72** Lohn light: monthly Lohnabrechnung with AHV/IV/EO, ALV, BVG, UVG, QST; Lohnausweis PDF; Sozialversicherungs-
       Jahresmeldung export. High liability — after B-65…B-70, and validated against a real Treuhänder run. — `M` / `L`
 
