@@ -4,7 +4,7 @@
 > Legend: severity `C`ritical / `H`igh / `M`edium / `L`ow · effort `S` (<1h) / `M` (half day) / `L` (multi-day)
 > IDs: `B-xx` = work item (next free: **B-78**) · `P-xx` = parked (next free: **P-05**)
 > Cross-product items (SSO, contracts, design tokens) live in `chadev-platform/ROADMAP.md`, not here.
-> Updated: 2026-09-15 — B-65 Offene Posten/Mahnung done (B-77 = echter PDF-Renderer, gebündelt mit B-70); B-76 Banana-Stapel (phase 4) done; B-73 Abgleich done, `make check` green (a11y nested-interactive on the drop zones fixed, `.next-e2e` out of ESLint). 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 Betrag-Gedächtnis (amount memory). 2026-09-13 — Phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
+> Updated: 2026-09-15 — B-66 Monatsabschluss-Check done; B-65 Offene Posten/Mahnung done (B-77 = echter PDF-Renderer, gebündelt mit B-70); B-76 Banana-Stapel (phase 4) done; B-73 Abgleich done, `make check` green (a11y nested-interactive on the drop zones fixed, `.next-e2e` out of ESLint). 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 Betrag-Gedächtnis (amount memory). 2026-09-13 — Phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
 > Companion docs: `docs/ADR-002-rls.md` (B-24) · `docs/DEPLOY-CHECKLIST-B36-B37.md` · `docs/BRAINSTORM-2026-09-12.md`.
 
 ---
@@ -34,9 +34,10 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 1. ~~Phase 1~~ ✅ B-64 · ~~Phase 3 Abgleich~~ ✅ B-73 · ~~Phase 4 Banana batch~~ ✅ B-76 (all 2026-09-15) →
    the one thing left from phase 4 is the 30-minute check whether a Banana *extension* may call HTTP (level 2 push).
    Until that is answered, the file hand-off is the product.
-2. The "Kein Treuhänder nötig" track: ~~B-65 Offene Posten~~ ✅ → **B-66 Monatsabschluss check** → B-67 MWST →
-   B-68 Rechnungen schreiben → B-69 E-Mail-Eingang → B-70 Jahresabschluss → B-71 Liquidität → B-72 Lohn, each inside a
-   surface of `docs/IA-2026-09-14.md`, not as a new menu entry.
+2. The "Kein Treuhänder nötig" track: ~~B-65 Offene Posten~~ ✅ · ~~B-66 Monatsabschluss~~ ✅ →
+   **B-67 MWST-Abrechnung** → B-68 Rechnungen schreiben → B-69 E-Mail-Eingang → B-70 Jahresabschluss (mit B-77
+   PDF-Entscheid) → B-71 Liquidität → B-72 Lohn, each inside a surface of `docs/IA-2026-09-14.md`, not as a new
+   menu entry.
 3. The IA migration itself (four surfaces + Mehr, Heute replacing the Dashboard) — do it while B-65/B-66 land,
    not as a separate rewrite.
 4. **B-53** export safety · **B-51** Numeric money · **B-52** idempotency by constraint (all `S`/`M`).
@@ -51,8 +52,6 @@ _2026-09-14: the previous NEXT block (B-49, B-44, B-46, B-14, B-16, B-15, B-34) 
 ### "Kein Treuhänder nötig" — the product track (owner, 2026-09-14; order = impact)
 Target: the Treuhänder signs once a year, nothing in between. Each item is a *flow* inside one of the four surfaces
 (`docs/IA-2026-09-14.md`: Heute · Belege · Bank · Abschluss), not its own page.
-- [ ] **B-66** Monatsabschluss check (*Abschluss › Monat*): bank Schlusssaldo = 1020 Saldo?, unmatched lines, duplicates,
-      bookings without Beleg, open documents past due — red/green checklist, one page, nothing to configure. — `H` / `M`
 - [ ] **B-67** MWST-Abrechnung (*Abschluss › Quartal*): Formular 200 figures (Ziffer 200/205/220–289/302/312/342/400/405/
       410/415/420) for effektiv *and* Saldosteuersatz, from the bookings' VAT codes; PDF + copy-paste block for ePortal;
       plausibility warnings (code vs rate, missing Vorsteuer on a 4000). — `H` / `L`
@@ -172,6 +171,18 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 - **B-40** ✅ 2026-09-13 — role ladder wired: `require_editor` on every mutating route, `require_admin` on Kontenplan
   replace, classify delete/upload, scanner config, `import?replace=true`. `tests/test_rbac_routes.py` walks the route
   table (a new mutating route without a role check fails CI) + viewer/editor 403 over HTTP.
+- **B-66** ✅ 2026-09-15 — Monatsabschluss-Check (*Abschluss › Monat*): eine Seite, rot oder grün, nichts zu
+  konfigurieren. Die Geldfrage ist die **Bewegung**, nicht der Saldo — was im Monat durch die Bank ging, muss der
+  1020-Bewegung der Buchungen entsprechen (`signed_bank_effect`: Bank im Soll = Zufluss, im Haben = Abfluss).
+  Ein Saldo-Vergleich bräuchte einen Anfangsbestand, den niemand erfasst hat; die Bewegung braucht nichts und findet
+  dieselben Fehler (fehlende Buchung, falsches Konto, doppelt gebucht) — Differenz unter einem Rappen ist Rundung.
+  Drei Blocker (Differenz Bank ↔ 1020, nicht abgeglichene Bankzeilen, MwSt-Code ≠ Satz) und vier Hinweise
+  (mögliche Doppel, Buchung ohne Beleg mit Verweis auf Art. 958f OR, fällige offene Rechnungen, noch nicht nach
+  Banana exportiert); ignorierte Bankzeilen zählen nirgends mit. `GET /api/abschluss/monate` liefert jeden Monat
+  mit Daten (der Picker braucht keine Einstellung), `GET /api/abschluss/monat[?monat=JJJJ-MM]` den Bericht mit
+  KPIs (Buchungen, Einnahmen, Ausgaben, Bank ↔ 1020) — beide read-only, ein falsches Monatsformat ist ein klarer 400.
+  Auf `/dashboard/abschluss` sitzt der Check über dem Export und teilt dessen Prüflisten-Komponente. 15 Backend-
+  und 3 Frontend-Tests; gegen echtes Postgres 16 verifiziert (486 passed).
 - **B-65** ✅ 2026-09-15 — Offene Posten + Mahnung. `documents` bekommt eine Richtung (migration `c2d3e4f5a6b7`):
   `eingang` = Lieferantenrechnung (Kreditor, wir zahlen), `ausgang` = eigene Rechnung (Debitor, Kunde zahlt) — plus
   `contact_email`, `mahnstufe`, `mahnung_sent_at` und Index `(tenant_id, direction, status)`. `services/offene_posten.py`
@@ -389,7 +400,7 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 | 1 Platform contract | 1.2 ✅ B-31 · 1.4 ✅ B-26 · 1.6 ✅ tokens imported |
 | 2 Security | ✅ B-06, B-07, B-32, B-34, B-40, B-41, B-42, B-43 · open: B-24 (ADR-002), B-25, B-54, B-55 |
 | 3 Reliability | ✅ B-04, B-05, B-08, B-11, B-33, B-35, B-39, B-47, B-48, B-49, B-63, B-64, B-73, B-76 · open: B-51, B-52, B-56, B-57 |
-| 4 Polish | ✅ B-09, B-13, B-76 · open: B-22, B-53, B-61 |
+| 4 Polish | ✅ B-09, B-13, B-66, B-76 · open: B-22, B-53, B-61 |
 | 5 UX | ✅ B-14, B-15, B-16, B-18, B-19, B-44, B-45, B-46, B-50 (+B-21), B-65 · open: B-17, B-20, B-58, B-59 |
 | 6 Together | ✅ B-36 (SSO + mirroring), B-37 (events) · deploy: `docs/DEPLOY-CHECKLIST-B36-B37.md` · parked: B-38 |
 | 7 DX | ✅ B-12, B-29, B-30 · open: B-60, B-62 |

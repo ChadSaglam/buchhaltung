@@ -67,6 +67,7 @@ application.state.limiter = limiter
 
 from app.routers import (
     abgleich,
+    abschluss,
     ai,
     audit,
     auth,
@@ -110,6 +111,7 @@ application.include_router(ai.router)
 application.include_router(documents.router)
 application.include_router(abgleich.router)
 application.include_router(offene_posten.router)
+application.include_router(abschluss.router)
 
 
 app = application

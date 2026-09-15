@@ -4,3 +4,6 @@ export type PreflightResponse = Schemas["PreflightResponse"];
 export type ExportCheck = Schemas["ExportCheck"];
 export type ExportBatchOut = Schemas["ExportBatchOut"];
 export type ExportBatchListResponse = Schemas["ExportBatchListResponse"];
+export type MonthReportResponse = Schemas["MonthReportResponse"];
+export type MonthListResponse = Schemas["MonthListResponse"];
+export type MonthKpis = Schemas["MonthKpisOut"];

@@ -37,3 +37,26 @@ export function exportLabel(exportable: number, ready: boolean): string {
 export function batchSubtitle(count: number, total: number): string {
   return `${count} ${count === 1 ? "Buchung" : "Buchungen"} · ${formatCHF(total)}`;
 }
+
+/** "April 2026" from the key, so the picker reads the same as the report. */
+export function monthLabel(monat: string, labels: Record<string, string>): string {
+  return labels[monat] ?? monat;
+}
+
+/** The one line that says whether the month is closed. */
+export function monthVerdict(blockers: number, warnings: number): { tone: "success" | "danger" | "warning"; text: string } {
+  if (blockers > 0) {
+    return { tone: "danger", text: `${blockers} ${blockers === 1 ? "Punkt" : "Punkte"} blockieren den Abschluss` };
+  }
+  if (warnings > 0) {
+    return { tone: "warning", text: `Abschluss möglich · ${warnings} ${warnings === 1 ? "Hinweis" : "Hinweise"}` };
+  }
+  return { tone: "success", text: "Monat ist sauber abgeschlossen" };
+}
+
+/** The bank-vs-1020 difference in the words the owner needs. */
+export function differenceText(differenz: number): string {
+  if (Math.abs(differenz) < 0.005) return "Bank und Konto 1020 stimmen";
+  const richtung = differenz > 0 ? "mehr auf der Bank als gebucht" : "mehr gebucht als auf der Bank";
+  return `${formatCHF(Math.abs(differenz))} ${richtung}`;
+}

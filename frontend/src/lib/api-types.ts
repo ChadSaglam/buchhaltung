@@ -135,6 +135,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/abschluss/monat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Monat */
+        get: operations["monat_api_abschluss_monat_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/abschluss/monate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Months */
+        get: operations["months_api_abschluss_monate_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ai/chat": {
         parameters: {
             query?: never;
@@ -1845,6 +1879,51 @@ export interface components {
             /** Match Id */
             match_id: number;
         };
+        /** MonthKpisOut */
+        MonthKpisOut: {
+            /** Ausgaben */
+            ausgaben: number;
+            /** Bank Bewegung */
+            bank_bewegung: number;
+            /** Buchungen */
+            buchungen: number;
+            /** Differenz */
+            differenz: number;
+            /** Einnahmen */
+            einnahmen: number;
+            /** Konto 1020 Bewegung */
+            konto_1020_bewegung: number;
+        };
+        /**
+         * MonthListResponse
+         * @description Every month that has data, newest first — the picker needs no configuration.
+         */
+        MonthListResponse: {
+            /** Aktuell */
+            aktuell: string;
+            /** Labels */
+            labels: {
+                [key: string]: string;
+            };
+            /** Monate */
+            monate: string[];
+        };
+        /** MonthReportResponse */
+        MonthReportResponse: {
+            /** Blockers */
+            blockers: number;
+            /** Checks */
+            checks: components["schemas"]["ExportCheck"][];
+            kpis: components["schemas"]["MonthKpisOut"];
+            /** Label */
+            label: string;
+            /** Monat */
+            monat: string;
+            /** Ready */
+            ready: boolean;
+            /** Warnings */
+            warnings: number;
+        };
         /** OffenePostenResponse */
         OffenePostenResponse: {
             debitoren: components["schemas"]["SideOut"];
@@ -2426,6 +2505,58 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    monat_api_abschluss_monat_get: {
+        parameters: {
+            query?: {
+                /** @description JJJJ-MM; leer = neuester Monat mit Daten */
+                monat?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthReportResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    months_api_abschluss_monate_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthListResponse"];
                 };
             };
         };

@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { batchSubtitle, checkCountLabel, checkTone, exportLabel, formatPeriod, sortChecks } from "./helpers";
+import {
+  batchSubtitle,
+  checkCountLabel,
+  checkTone,
+  differenceText,
+  exportLabel,
+  formatPeriod,
+  monthLabel,
+  monthVerdict,
+  sortChecks,
+} from "./helpers";
 import type { ExportCheck } from "./types";
 
 const check = (over: Partial<ExportCheck>): ExportCheck => ({
@@ -62,5 +72,31 @@ describe("exportLabel", () => {
 describe("batchSubtitle", () => {
   it("reads as one line", () => {
     expect(batchSubtitle(2, 1234.5)).toBe("2 Buchungen · CHF 1'234.50");
+  });
+});
+
+describe("monthVerdict", () => {
+  it("blockers win over hints, and clean says so", () => {
+    expect(monthVerdict(2, 3)).toEqual({ tone: "danger", text: "2 Punkte blockieren den Abschluss" });
+    expect(monthVerdict(1, 0).text).toBe("1 Punkt blockieren den Abschluss");
+    expect(monthVerdict(0, 1)).toEqual({ tone: "warning", text: "Abschluss möglich · 1 Hinweis" });
+    expect(monthVerdict(0, 4).text).toBe("Abschluss möglich · 4 Hinweise");
+    expect(monthVerdict(0, 0)).toEqual({ tone: "success", text: "Monat ist sauber abgeschlossen" });
+  });
+});
+
+describe("differenceText", () => {
+  it("names the direction, and rounding is not a difference", () => {
+    expect(differenceText(0)).toBe("Bank und Konto 1020 stimmen");
+    expect(differenceText(0.001)).toBe("Bank und Konto 1020 stimmen");
+    expect(differenceText(-40)).toBe("CHF 40.00 mehr gebucht als auf der Bank");
+    expect(differenceText(40)).toBe("CHF 40.00 mehr auf der Bank als gebucht");
+  });
+});
+
+describe("monthLabel", () => {
+  it("falls back to the key when no label came with it", () => {
+    expect(monthLabel("2026-04", { "2026-04": "April 2026" })).toBe("April 2026");
+    expect(monthLabel("2026-05", {})).toBe("2026-05");
   });
 });
