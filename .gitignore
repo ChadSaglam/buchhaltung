@@ -78,3 +78,4 @@ frontend/CLAUDE.md
 # AI-assistant skills/plugins vendored locally (never commit)
 .claude/
 design-system/
+.pytest-test.db-journal
