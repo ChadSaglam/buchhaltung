@@ -7,7 +7,10 @@ import {
   exportLabel,
   formatPeriod,
   monthLabel,
+  isEmptyZiffer,
+  methodeLabel,
   monthVerdict,
+  mwstVerdict,
   sortChecks,
 } from "./helpers";
 import type { ExportCheck } from "./types";
@@ -98,5 +101,30 @@ describe("monthLabel", () => {
   it("falls back to the key when no label came with it", () => {
     expect(monthLabel("2026-04", { "2026-04": "April 2026" })).toBe("April 2026");
     expect(monthLabel("2026-05", {})).toBe("2026-05");
+  });
+});
+
+describe("mwstVerdict", () => {
+  it("says pay, get back, or nothing", () => {
+    expect(mwstVerdict(593, 0)).toEqual({ tone: "danger", text: "CHF 593.00 zu bezahlen" });
+    expect(mwstVerdict(0, 324)).toEqual({ tone: "success", text: "CHF 324.00 Guthaben" });
+    expect(mwstVerdict(0, 0)).toEqual({ tone: "neutral", text: "Nichts zu bezahlen" });
+  });
+});
+
+describe("isEmptyZiffer", () => {
+  it("is empty only when both sides are zero or absent", () => {
+    expect(isEmptyZiffer({ umsatz: 0, steuer: 0 })).toBe(true);
+    expect(isEmptyZiffer({ umsatz: null, steuer: null })).toBe(true);
+    expect(isEmptyZiffer({ umsatz: 0, steuer: 81 })).toBe(false);
+    expect(isEmptyZiffer({ umsatz: 1000, steuer: null })).toBe(false);
+  });
+});
+
+describe("methodeLabel", () => {
+  it("names the method and the rate when there is one", () => {
+    expect(methodeLabel("effektiv", null)).toBe("Effektive Methode");
+    expect(methodeLabel("saldo", 6.5)).toBe("Saldosteuersatz 6.5 %");
+    expect(methodeLabel("saldo", null)).toBe("Saldosteuersatz");
   });
 });

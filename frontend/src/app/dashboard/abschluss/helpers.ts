@@ -60,3 +60,23 @@ export function differenceText(differenz: number): string {
   const richtung = differenz > 0 ? "mehr auf der Bank als gebucht" : "mehr gebucht als auf der Bank";
   return `${formatCHF(Math.abs(differenz))} ${richtung}`;
 }
+
+/** The Ziffern the form sums up — bold in the table, so the eye finds them. */
+export const MWST_TOTAL_ZIFFERN = new Set(["289", "299", "399", "479", "500", "510"]);
+
+/** The one sentence the owner needs: pay, get back, or nothing. */
+export function mwstVerdict(zuBezahlen: number, guthaben: number): { tone: "danger" | "success" | "neutral"; text: string } {
+  if (zuBezahlen > 0) return { tone: "danger", text: `${formatCHF(zuBezahlen)} zu bezahlen` };
+  if (guthaben > 0) return { tone: "success", text: `${formatCHF(guthaben)} Guthaben` };
+  return { tone: "neutral", text: "Nichts zu bezahlen" };
+}
+
+/** Ziffern with no booking behind them are shown but greyed — they need a human. */
+export function isEmptyZiffer(row: { umsatz?: number | null; steuer?: number | null }): boolean {
+  return (row.umsatz ?? 0) === 0 && (row.steuer ?? 0) === 0;
+}
+
+export function methodeLabel(methode: string, satz: number | null | undefined): string {
+  if (methode === "saldo") return `Saldosteuersatz${satz ? ` ${satz.toFixed(1)} %` : ""}`;
+  return "Effektive Methode";
+}

@@ -13,6 +13,7 @@ import { useAbschluss } from "./hooks/useAbschluss";
 import { exportLabel, formatPeriod } from "./helpers";
 import { ExportChecklist } from "./components/ExportChecklist";
 import { MonthCheck } from "./components/MonthCheck";
+import { MwstReport } from "./components/MwstReport";
 import { BatchList } from "./components/BatchList";
 
 export default function AbschlussPage() {
@@ -61,6 +62,11 @@ export default function AbschlussPage() {
           <section aria-label="Monatsabschluss" className="space-y-3">
             <h2 className="text-sm font-semibold text-foreground">Monat prüfen</h2>
             <MonthCheck />
+          </section>
+
+          <section aria-label="MWST-Abrechnung" className="space-y-3">
+            <h2 className="text-sm font-semibold text-foreground">MWST-Abrechnung</h2>
+            <MwstReport />
           </section>
 
           <section aria-label="Prüfliste" className="space-y-3">

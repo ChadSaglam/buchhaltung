@@ -169,6 +169,63 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/abschluss/mwst": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Mwst
+         * @description Formular 200 aus den Buchungen — ein Entwurf, der vor dem Einreichen geprüft wird.
+         */
+        get: operations["mwst_api_abschluss_mwst_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/abschluss/mwst.txt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Mwst Text
+         * @description Dasselbe als Blatt zum Ausdrucken oder für den Treuhänder.
+         */
+        get: operations["mwst_text_api_abschluss_mwst_txt_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/abschluss/quartale": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Quarters */
+        get: operations["quarters_api_abschluss_quartale_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ai/chat": {
         parameters: {
             query?: never;
@@ -1924,6 +1981,36 @@ export interface components {
             /** Warnings */
             warnings: number;
         };
+        /** MwstReportResponse */
+        MwstReportResponse: {
+            /** Blockers */
+            blockers: number;
+            /** Buchungen */
+            buchungen: number;
+            /** Checks */
+            checks: components["schemas"]["ExportCheck"][];
+            /** Copy Block */
+            copy_block: string;
+            /** Guthaben */
+            guthaben: number;
+            /**
+             * Methode
+             * @enum {string}
+             */
+            methode: "effektiv" | "saldo";
+            /** Quartal */
+            quartal: string;
+            /** Ready */
+            ready: boolean;
+            /** Satz */
+            satz: number | null;
+            /** Zeitraum */
+            zeitraum: string;
+            /** Ziffern */
+            ziffern: components["schemas"]["ZifferOut"][];
+            /** Zu Bezahlen */
+            zu_bezahlen: number;
+        };
         /** OffenePostenResponse */
         OffenePostenResponse: {
             debitoren: components["schemas"]["SideOut"];
@@ -1975,6 +2062,17 @@ export interface components {
         ProfileUpdate: {
             /** Display Name */
             display_name: string;
+        };
+        /** QuarterListResponse */
+        QuarterListResponse: {
+            /** Aktuell */
+            aktuell: string;
+            /** Labels */
+            labels: {
+                [key: string]: string;
+            };
+            /** Quartale */
+            quartale: string[];
         };
         /** RegisterRequest */
         RegisterRequest: {
@@ -2192,6 +2290,19 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** ZifferOut */
+        ZifferOut: {
+            /** Label */
+            label: string;
+            /** Rate */
+            rate: number | null;
+            /** Steuer */
+            steuer: number | null;
+            /** Umsatz */
+            umsatz: number | null;
+            /** Ziffer */
+            ziffer: string;
         };
         /** ScannerConfigResponse */
         app__schemas__scanner__ScannerConfigResponse: {
@@ -2557,6 +2668,95 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MonthListResponse"];
+                };
+            };
+        };
+    };
+    mwst_api_abschluss_mwst_get: {
+        parameters: {
+            query?: {
+                /** @description JJJJ-Qn; leer = neuestes Quartal mit Buchungen */
+                quartal?: string | null;
+                /** @description effektiv | saldo */
+                methode?: string;
+                /** @description Saldosteuersatz in %, nur für methode=saldo */
+                satz?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MwstReportResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mwst_text_api_abschluss_mwst_txt_get: {
+        parameters: {
+            query?: {
+                quartal?: string | null;
+                methode?: string;
+                satz?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    quarters_api_abschluss_quartale_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuarterListResponse"];
                 };
             };
         };

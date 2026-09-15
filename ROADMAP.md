@@ -4,7 +4,7 @@
 > Legend: severity `C`ritical / `H`igh / `M`edium / `L`ow · effort `S` (<1h) / `M` (half day) / `L` (multi-day)
 > IDs: `B-xx` = work item (next free: **B-78**) · `P-xx` = parked (next free: **P-05**)
 > Cross-product items (SSO, contracts, design tokens) live in `chadev-platform/ROADMAP.md`, not here.
-> Updated: 2026-09-15 — B-66 Monatsabschluss-Check done; B-65 Offene Posten/Mahnung done (B-77 = echter PDF-Renderer, gebündelt mit B-70); B-76 Banana-Stapel (phase 4) done; B-73 Abgleich done, `make check` green (a11y nested-interactive on the drop zones fixed, `.next-e2e` out of ESLint). 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 Betrag-Gedächtnis (amount memory). 2026-09-13 — Phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
+> Updated: 2026-09-15 — B-67 MWST-Abrechnung (Formular 200) done; B-66 Monatsabschluss-Check done; B-65 Offene Posten/Mahnung done (B-77 = echter PDF-Renderer, gebündelt mit B-70); B-76 Banana-Stapel (phase 4) done; B-73 Abgleich done, `make check` green (a11y nested-interactive on the drop zones fixed, `.next-e2e` out of ESLint). 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 Betrag-Gedächtnis (amount memory). 2026-09-13 — Phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
 > Companion docs: `docs/ADR-002-rls.md` (B-24) · `docs/DEPLOY-CHECKLIST-B36-B37.md` · `docs/BRAINSTORM-2026-09-12.md`.
 
 ---
@@ -13,7 +13,7 @@
 
 | Owner's words | What it means in this repo | Tracks that deliver it |
 |---|---|---|
-| **more professional** | Money that rounds right in every export, correct VAT codes, audit trail, Treuhänder hand-off that is accepted first time | B-01 ✅, B-04 ✅, B-05 ✅, B-09 ✅, B-47 ✅, B-48 ✅, B-51, B-53, B-17, B-22 |
+| **more professional** | Money that rounds right in every export, correct VAT codes, audit trail, Treuhänder hand-off that is accepted first time | B-01 ✅, B-04 ✅, B-05 ✅, B-09 ✅, B-47 ✅, B-48 ✅, B-67 ✅, B-51, B-53, B-17, B-22 |
 | **more dynamic** | Scan → classify → book without a reload; live review queue; optimistic booking edits; the learning loop visibly closes | B-45 ✅, B-14 ✅, B-15 ✅, B-16 ✅ |
 | **easier to improve** | No god-files, one type source, tests that catch regressions, jobs outside the API process, prod == compose | B-02 ✅, B-03 ✅, B-08 ✅, B-10 ✅, B-11 ✅, B-13 ✅, B-33 ✅, B-39 ✅, B-41 ✅, B-49 ✅, B-59, B-60 |
 | **together** (platform) | One login across billing + buchhaltung, paid invoices book themselves, roles mean something | B-36 ✅, B-37 ✅, B-40 ✅, B-52, B-38 🅿️ |
@@ -34,10 +34,10 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 1. ~~Phase 1~~ ✅ B-64 · ~~Phase 3 Abgleich~~ ✅ B-73 · ~~Phase 4 Banana batch~~ ✅ B-76 (all 2026-09-15) →
    the one thing left from phase 4 is the 30-minute check whether a Banana *extension* may call HTTP (level 2 push).
    Until that is answered, the file hand-off is the product.
-2. The "Kein Treuhänder nötig" track: ~~B-65 Offene Posten~~ ✅ · ~~B-66 Monatsabschluss~~ ✅ →
-   **B-67 MWST-Abrechnung** → B-68 Rechnungen schreiben → B-69 E-Mail-Eingang → B-70 Jahresabschluss (mit B-77
-   PDF-Entscheid) → B-71 Liquidität → B-72 Lohn, each inside a surface of `docs/IA-2026-09-14.md`, not as a new
-   menu entry.
+2. The "Kein Treuhänder nötig" track: ~~B-65 Offene Posten~~ ✅ · ~~B-66 Monatsabschluss~~ ✅ ·
+   ~~B-67 MWST-Abrechnung~~ ✅ → **B-68 Rechnungen schreiben (QR)** → B-69 E-Mail-Eingang → B-70 Jahresabschluss
+   (mit B-77 PDF-Entscheid) → B-71 Liquidität → B-72 Lohn, each inside a surface of `docs/IA-2026-09-14.md`,
+   not as a new menu entry.
 3. The IA migration itself (four surfaces + Mehr, Heute replacing the Dashboard) — do it while B-65/B-66 land,
    not as a separate rewrite.
 4. **B-53** export safety · **B-51** Numeric money · **B-52** idempotency by constraint (all `S`/`M`).
@@ -52,9 +52,6 @@ _2026-09-14: the previous NEXT block (B-49, B-44, B-46, B-14, B-16, B-15, B-34) 
 ### "Kein Treuhänder nötig" — the product track (owner, 2026-09-14; order = impact)
 Target: the Treuhänder signs once a year, nothing in between. Each item is a *flow* inside one of the four surfaces
 (`docs/IA-2026-09-14.md`: Heute · Belege · Bank · Abschluss), not its own page.
-- [ ] **B-67** MWST-Abrechnung (*Abschluss › Quartal*): Formular 200 figures (Ziffer 200/205/220–289/302/312/342/400/405/
-      410/415/420) for effektiv *and* Saldosteuersatz, from the bookings' VAT codes; PDF + copy-paste block for ePortal;
-      plausibility warnings (code vs rate, missing Vorsteuer on a 4000). — `H` / `L`
 - [ ] **B-68** Rechnungen schreiben (Debitoren, *Belege › Neu*): Kunde + Positionen → QR-Rechnung PDF (Swiss QR with QRR
       reference), send by e-mail, booked 1100/3000, paid automatically when the reference shows up in the Kontoauszug
       (phase 3 match). Closes the loop. — `H` / `L`
@@ -171,6 +168,21 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 - **B-40** ✅ 2026-09-13 — role ladder wired: `require_editor` on every mutating route, `require_admin` on Kontenplan
   replace, classify delete/upload, scanner config, `import?replace=true`. `tests/test_rbac_routes.py` walks the route
   table (a new mutating route without a role check fails CI) + viewer/editor 403 over HTTP.
+- **B-67** ✅ 2026-09-15 — MWST-Abrechnung (*Abschluss › Quartal*): Formular 200 aus den Buchungen. Ziffern und
+  Reihenfolge nach dem offiziellen ESTV-Formular ab 01.01.2024 (200 · 205 · 220–280 · 289 · 299 · 302/312/342 mit
+  Umsatz *und* Steuer · 382 · 399 · 400 · 405 · 410 · 415 · 420 · 479 · 500/510) — beim Bauen gegen das
+  Musterformular der ESTV geprüft, nicht aus dem Kopf. Die Seitenzuordnung folgt den Banana-Codes (V… = Umsatz →
+  302/312/342, M… = Vorsteuer Material/DL → 400, I… = Vorsteuer Investitionen → 405); fehlt der Code, entscheiden
+  die Konten (3… im Haben = Umsatz, 4… im Soll = Material, 5…/6… und Anlagen 15…/16…/17… = Investitionen —
+  10…/11… sind kein Aufwand und bleiben ohne Seite, was als Hinweis erscheint). Gutschriften (Erlöskonto im Soll
+  oder negativer Umsatz) laufen in Ziffer 235. Ziffern, die kein Buchungssatz hergibt (Bezugsteuer,
+  Einlageentsteuerung, Korrekturen, Kürzungen), stehen sichtbar auf 0.00 statt geraten zu werden.
+  Saldosteuersatz-Methode: Umsatz × Satz (Satz als Parameter, 0–15 %, die SSS-Ziffer hängt vom Satz ab → 322 ff.),
+  ohne Vorsteuer. Plausibilität: drei Blocker (Code ≠ Satz, Code auf der falschen Seite, unbekannter Satz) und drei
+  Hinweise (Aufwand ohne Vorsteuer — der 4000er-Fall aus der Roadmap —, Umsatz ohne Satz, Buchung ohne Seite).
+  `GET /api/abschluss/quartale`, `GET /api/abschluss/mwst[?quartal=JJJJ-Qn&methode=effektiv|saldo&satz=6.5]` mit
+  Tab-getrenntem Kopierblock fürs ePortal und `GET /api/abschluss/mwst.txt` als Blatt für den Treuhänder; echtes PDF
+  → B-77. 19 Backend- und 3 Frontend-Tests; gegen echtes Postgres 16 verifiziert (505 passed).
 - **B-66** ✅ 2026-09-15 — Monatsabschluss-Check (*Abschluss › Monat*): eine Seite, rot oder grün, nichts zu
   konfigurieren. Die Geldfrage ist die **Bewegung**, nicht der Saldo — was im Monat durch die Bank ging, muss der
   1020-Bewegung der Buchungen entsprechen (`signed_bank_effect`: Bank im Soll = Zufluss, im Haben = Abfluss).
@@ -400,7 +412,7 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 | 1 Platform contract | 1.2 ✅ B-31 · 1.4 ✅ B-26 · 1.6 ✅ tokens imported |
 | 2 Security | ✅ B-06, B-07, B-32, B-34, B-40, B-41, B-42, B-43 · open: B-24 (ADR-002), B-25, B-54, B-55 |
 | 3 Reliability | ✅ B-04, B-05, B-08, B-11, B-33, B-35, B-39, B-47, B-48, B-49, B-63, B-64, B-73, B-76 · open: B-51, B-52, B-56, B-57 |
-| 4 Polish | ✅ B-09, B-13, B-66, B-76 · open: B-22, B-53, B-61 |
+| 4 Polish | ✅ B-09, B-13, B-66, B-67, B-76 · open: B-22, B-53, B-61 |
 | 5 UX | ✅ B-14, B-15, B-16, B-18, B-19, B-44, B-45, B-46, B-50 (+B-21), B-65 · open: B-17, B-20, B-58, B-59 |
 | 6 Together | ✅ B-36 (SSO + mirroring), B-37 (events) · deploy: `docs/DEPLOY-CHECKLIST-B36-B37.md` · parked: B-38 |
 | 7 DX | ✅ B-12, B-29, B-30 · open: B-60, B-62 |
