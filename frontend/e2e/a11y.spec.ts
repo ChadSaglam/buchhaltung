@@ -105,7 +105,7 @@ test("dialogs trap focus, close on Escape and restore focus", async ({ page }) =
   await expect(opener).toBeFocused();
 });
 
-const ROUTES = ["/dashboard", "/dashboard/scanner", "/dashboard/modell", "/dashboard/settings", "/dashboard/rechnungen"];
+const ROUTES = ["/dashboard", "/dashboard/scanner", "/dashboard/modell", "/dashboard/settings", "/dashboard/rechnungen", "/dashboard/abgleich"];
 
 for (const theme of ["light", "dark"] as const) {
   for (const route of ROUTES) {

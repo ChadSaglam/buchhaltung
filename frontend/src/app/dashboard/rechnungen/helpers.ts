@@ -1,3 +1,4 @@
+import { formatCHF, formatDate } from "@/lib/format";
 import type { DocumentOut, DocumentStatus } from "./types";
 
 export const STATUS_LABEL: Record<DocumentStatus, string> = {
@@ -30,21 +31,6 @@ export function sourceLabel(source: string): string {
   }
 }
 
-/** "CHF 1'949.45" — hand-rolled so node, Safari and Chrome agree on the apostrophe. */
-export function formatCHF(amount: number | null | undefined, currency = "CHF"): string {
-  if (amount == null || !Number.isFinite(amount)) return "–";
-  const sign = amount < 0 ? "-" : "";
-  const [int, frac] = Math.abs(amount).toFixed(2).split(".");
-  return `${currency} ${sign}${int.replace(/\B(?=(\d{3})+(?!\d))/g, "'")}.${frac}`;
-}
-
-/** DD.MM.YYYY from an ISO date, "–" when unknown. */
-export function formatDate(iso: string | null | undefined): string {
-  if (!iso) return "–";
-  const [y, m, d] = iso.split("-");
-  return y && m && d ? `${d}.${m}.${y}` : iso;
-}
-
 export function isOverdue(doc: DocumentOut, today = new Date()): boolean {
   if (doc.status !== "offen" || !doc.due_date) return false;
   return new Date(doc.due_date + "T00:00:00") < new Date(today.toDateString());
@@ -64,3 +50,5 @@ export function sortDocuments(docs: DocumentOut[]): DocumentOut[] {
     return b.id - a.id;
   });
 }
+
+export { formatCHF, formatDate };
