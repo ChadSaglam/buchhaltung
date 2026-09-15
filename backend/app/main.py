@@ -66,6 +66,7 @@ install_error_handlers(application)
 application.state.limiter = limiter
 
 from app.routers import (
+    abgleich,
     ai,
     audit,
     auth,
@@ -104,6 +105,7 @@ application.include_router(audit.router)
 application.include_router(health.router)
 application.include_router(ai.router)
 application.include_router(documents.router)
+application.include_router(abgleich.router)
 
 
 app = application

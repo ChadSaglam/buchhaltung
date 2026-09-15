@@ -10,6 +10,131 @@
  */
 
 export interface paths {
+    "/api/abgleich/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Abgleich Inbox
+         * @description Everything the user needs to decide: proposals, then what is left on either side.
+         */
+        get: operations["abgleich_inbox_api_abgleich__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/abgleich/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refresh */
+        post: operations["refresh_api_abgleich_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/abgleich/statements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import Statement
+         * @description Upload a Kontoauszug: every line becomes a bank transaction, then proposals are refreshed.
+         */
+        post: operations["import_statement_api_abgleich_statements_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/abgleich/{transaction_id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm */
+        post: operations["confirm_api_abgleich__transaction_id__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/abgleich/{transaction_id}/ignore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ignore */
+        post: operations["ignore_api_abgleich__transaction_id__ignore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/abgleich/{transaction_id}/manual": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Manual */
+        post: operations["manual_api_abgleich__transaction_id__manual_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/abgleich/{transaction_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject */
+        post: operations["reject_api_abgleich__transaction_id__reject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ai/chat": {
         parameters: {
             query?: never;
@@ -897,6 +1022,44 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AbgleichItem
+         * @description One decision for the user: this bank line settles these documents, for this reason.
+         */
+        AbgleichItem: {
+            /** Documents */
+            documents: components["schemas"]["MatchedDocument"][];
+            /** Is Split */
+            is_split: boolean;
+            /** Reason */
+            reason: string;
+            /** Score */
+            score: number;
+            /** Tier */
+            tier: string;
+            transaction: components["schemas"]["BankTransactionOut"];
+        };
+        /** AbgleichResponse */
+        AbgleichResponse: {
+            /** Items */
+            items: components["schemas"]["AbgleichItem"][];
+            /** Open Documents */
+            open_documents: components["schemas"]["DocumentOut"][];
+            /** Open Transactions */
+            open_transactions: components["schemas"]["BankTransactionOut"][];
+            summary: components["schemas"]["AbgleichSummary"];
+        };
+        /** AbgleichSummary */
+        AbgleichSummary: {
+            /** Exakt */
+            exakt: number;
+            /** Offene Dokumente */
+            offene_dokumente: number;
+            /** Offene Zeilen */
+            offene_zeilen: number;
+            /** Vorschlaege */
+            vorschlaege: number;
+        };
         /** ApproveRequest */
         ApproveRequest: {
             /** Corrected Haben */
@@ -907,6 +1070,31 @@ export interface components {
             corrected_mwst_pct?: string | null;
             /** Corrected Soll */
             corrected_soll?: string | null;
+        };
+        /** BankTransactionOut */
+        BankTransactionOut: {
+            /** Amount */
+            amount: number;
+            /** Booking Id */
+            booking_id: number | null;
+            /** Counterparty */
+            counterparty: string;
+            /** Created At */
+            created_at: string | null;
+            /** Currency */
+            currency: string;
+            /** Description */
+            description: string;
+            /** Id */
+            id: number;
+            /** Reference */
+            reference: string;
+            /** Source */
+            source: string;
+            /** Status */
+            status: string;
+            /** Value Date */
+            value_date: string | null;
         };
         /** BatchRequest */
         BatchRequest: {
@@ -927,6 +1115,11 @@ export interface components {
         };
         /** Body_import_banana_file_api_import_banana_post */
         Body_import_banana_file_api_import_banana_post: {
+            /** File */
+            file: string;
+        };
+        /** Body_import_statement_api_abgleich_statements_post */
+        Body_import_statement_api_abgleich_statements_post: {
             /** File */
             file: string;
         };
@@ -1089,6 +1282,23 @@ export interface components {
              * @default
              */
             original_soll: string;
+        };
+        /** DecisionResponse */
+        DecisionResponse: {
+            /**
+             * Bookings
+             * @default []
+             */
+            bookings: number[];
+            /**
+             * Documents
+             * @default []
+             */
+            documents: number[];
+            /** Status */
+            status: string;
+            /** Transaction Id */
+            transaction_id: number;
         };
         /** DocumentListResponse */
         DocumentListResponse: {
@@ -1364,6 +1574,22 @@ export interface components {
             /** Password */
             password: string;
         };
+        /** ManualMatchRequest */
+        ManualMatchRequest: {
+            /** Document Ids */
+            document_ids: number[];
+        };
+        /**
+         * MatchedDocument
+         * @description A document inside a proposal, with the part of the line that settles it.
+         */
+        MatchedDocument: {
+            /** Amount */
+            amount: number;
+            document: components["schemas"]["DocumentOut"];
+            /** Match Id */
+            match_id: number;
+        };
         /** PredictRequest */
         PredictRequest: {
             /** Beschreibung */
@@ -1514,6 +1740,15 @@ export interface components {
         SsoRequest: {
             /** Token */
             token: string;
+        };
+        /** StatementImportResponse */
+        StatementImportResponse: {
+            /** Duplicates */
+            duplicates: number;
+            /** Imported */
+            imported: number;
+            /** Proposals */
+            proposals: number;
         };
         /**
          * TenantUpdate
@@ -1685,6 +1920,207 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    abgleich_inbox_api_abgleich__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AbgleichResponse"];
+                };
+            };
+        };
+    };
+    refresh_api_abgleich_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AbgleichSummary"];
+                };
+            };
+        };
+    };
+    import_statement_api_abgleich_statements_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_statement_api_abgleich_statements_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementImportResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_api_abgleich__transaction_id__confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transaction_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ignore_api_abgleich__transaction_id__ignore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transaction_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    manual_api_abgleich__transaction_id__manual_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transaction_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManualMatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reject_api_abgleich__transaction_id__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transaction_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     ai_chat_api_ai_chat_post: {
         parameters: {
             query?: never;
