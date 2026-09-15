@@ -1,6 +1,6 @@
 """SQLAlchemy model for bookings."""
 
-from sqlalchemy import Column, Float, ForeignKey, Integer, String
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String
 
 from app.models.base import Base
 
@@ -23,3 +23,6 @@ class Booking(Base):
     source = Column(String, default="")
     # Storage key of the document this booking came from (services/receipts.py); None for manual rows.
     source_key = Column(String(255), nullable=True)
+    # Banana hand-off (phase 4): set once the booking left in a batch, so it never leaves twice.
+    export_batch_id = Column(Integer, ForeignKey("export_batches.id", ondelete="SET NULL"), nullable=True, index=True)
+    exported_at = Column(DateTime(timezone=True), nullable=True)

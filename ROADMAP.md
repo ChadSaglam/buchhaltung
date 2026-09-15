@@ -2,9 +2,9 @@
 
 > One running list. Never duplicated — items move between sections, they don't get re-added.
 > Legend: severity `C`ritical / `H`igh / `M`edium / `L`ow · effort `S` (<1h) / `M` (half day) / `L` (multi-day)
-> IDs: `B-xx` = work item (next free: **B-76**) · `P-xx` = parked (next free: **P-05**)
+> IDs: `B-xx` = work item (next free: **B-77**) · `P-xx` = parked (next free: **P-05**)
 > Cross-product items (SSO, contracts, design tokens) live in `chadev-platform/ROADMAP.md`, not here.
-> Updated: 2026-09-15 — B-73 Abgleich done, `make check` green (a11y nested-interactive on the drop zones fixed, `.next-e2e` out of ESLint). 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 Betrag-Gedächtnis (amount memory). 2026-09-13 — Phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
+> Updated: 2026-09-15 — B-76 Banana-Stapel (phase 4) done; B-73 Abgleich done, `make check` green (a11y nested-interactive on the drop zones fixed, `.next-e2e` out of ESLint). 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 Betrag-Gedächtnis (amount memory). 2026-09-13 — Phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
 > Companion docs: `docs/ADR-002-rls.md` (B-24) · `docs/DEPLOY-CHECKLIST-B36-B37.md` · `docs/BRAINSTORM-2026-09-12.md`.
 
 ---
@@ -31,9 +31,9 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 
 ## ⏭ NEXT — pull from LATER, in this order
 
-1. ~~Phase 1~~ ✅ B-64 · ~~Phase 3 Abgleich~~ ✅ B-73 (2026-09-15) → **Phase 4 Banana batch**: `export_batch` +
-   "alles OK → exportieren", `exported_at`/`export_batch_id` on postings so a re-export never duplicates, cover sheet;
-   plus the 30-minute check whether a Banana extension may call HTTP.
+1. ~~Phase 1~~ ✅ B-64 · ~~Phase 3 Abgleich~~ ✅ B-73 · ~~Phase 4 Banana batch~~ ✅ B-76 (all 2026-09-15) →
+   the one thing left from phase 4 is the 30-minute check whether a Banana *extension* may call HTTP (level 2 push).
+   Until that is answered, the file hand-off is the product.
 2. Then the "Kein Treuhänder nötig" track **B-65 → B-72** in that order (Offene Posten → Monatsabschluss → MWST →
    Rechnungen schreiben → E-Mail-Eingang → Jahresabschluss → Liquidität → Lohn), each inside a surface of
    `docs/IA-2026-09-14.md`, not as a new menu entry.
@@ -171,6 +171,21 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 - **B-40** ✅ 2026-09-13 — role ladder wired: `require_editor` on every mutating route, `require_admin` on Kontenplan
   replace, classify delete/upload, scanner config, `import?replace=true`. `tests/test_rbac_routes.py` walks the route
   table (a new mutating route without a role check fails CI) + viewer/editor 403 over HTTP.
+- **B-76** ✅ 2026-09-15 — Phase 4 Banana-Stapel: an export is no longer a download but a *Buchungsperiode with a
+  status*. `export_batches` (migration `b1c2d3e4f5a6`) records every hand-off — count, total, MwSt total, period,
+  filename, sha256 of the rendered file, note — and `bookings.export_batch_id` / `exported_at` stamp what left, so the
+  next export offers only what is new and a re-download of an old batch renders byte-identical content (the checksum
+  proves it). `services/export_batch.py` first runs a red/green pre-flight in plain German: four blockers (missing
+  Soll/Haben, amount 0.00, unreadable date, VAT code that contradicts its rate via `vat_code_for`) and three warnings
+  (possible duplicate postings, open bank lines, overdue documents) — warnings never block, a blocker refuses the
+  export with 409 and names itself. On export the bookings are stamped, documents whose booking left go to
+  `exportiert` (final), and a plain-text Deckblatt (company, period, totals, per-Sollkonto sums, checksum, the exact
+  Banana import path) travels with the file. `GET/POST /api/export/batches` + `/preflight`, `/{id}`, `/{id}/file`,
+  `/{id}/cover` (`require_editor` on the export itself; viewer may look). `bookings_to_df()` moved into
+  `services/export.py` so the router and the batch render the same columns in the same order. `/dashboard/abschluss`
+  is the first surface of the target IA: three KPI cards, the checklist, one primary action with an inline
+  "Ja, exportieren" confirm, and the batch history with Banana-file and Deckblatt download. 15 backend + 11 frontend
+  tests.
 - **B-73** ✅ 2026-09-15 — Phase 3 Abgleich. `bank_transactions` keeps every Kontoauszug line (signed amount, value
   date, reference, `dedup_key` so a re-upload counts instead of duplicating) and `matches` links document ↔ line n:1
   with tier/score/reason/part-amount (migration `a1b2c3d4e5f6`). `services/matching.py` is pure: tier 1 QRR/SCOR
@@ -358,8 +373,8 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 | 0.5 Risk fixes before platform work | ✅ B-00…B-03 (branch `feat/phase0-risks`) |
 | 1 Platform contract | 1.2 ✅ B-31 · 1.4 ✅ B-26 · 1.6 ✅ tokens imported |
 | 2 Security | ✅ B-06, B-07, B-32, B-34, B-40, B-41, B-42, B-43 · open: B-24 (ADR-002), B-25, B-54, B-55 |
-| 3 Reliability | ✅ B-04, B-05, B-08, B-11, B-33, B-35, B-39, B-47, B-48, B-49, B-63, B-64, B-73 · open: B-51, B-52, B-56, B-57 |
-| 4 Polish | ✅ B-09, B-13 · open: B-22, B-53, B-61 |
+| 3 Reliability | ✅ B-04, B-05, B-08, B-11, B-33, B-35, B-39, B-47, B-48, B-49, B-63, B-64, B-73, B-76 · open: B-51, B-52, B-56, B-57 |
+| 4 Polish | ✅ B-09, B-13, B-76 · open: B-22, B-53, B-61 |
 | 5 UX | ✅ B-14, B-15, B-16, B-18, B-19, B-44, B-45, B-46, B-50 (+B-21) · open: B-17, B-20, B-58, B-59 |
 | 6 Together | ✅ B-36 (SSO + mirroring), B-37 (events) · deploy: `docs/DEPLOY-CHECKLIST-B36-B37.md` · parked: B-38 |
 | 7 DX | ✅ B-12, B-29, B-30 · open: B-60, B-62 |

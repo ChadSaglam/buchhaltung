@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import io
+from collections.abc import Sequence
 from decimal import ROUND_HALF_UP, Decimal
+from typing import Any
 
 import pandas as pd
 from openpyxl import Workbook
@@ -42,6 +44,51 @@ def fmt_swiss(val) -> str:
     if negative:
         result = f"-{result}"
     return result
+
+
+BANANA_DF_COLUMNS = [
+    "Nr",
+    "Datum",
+    "Beleg",
+    "Rechnung",
+    "Beschreibung",
+    "KtSoll",
+    "KtHaben",
+    "Betrag CHF",
+    "MwStUSt-Code",
+    "Art Betrag",
+    "MwSt-%",
+    "Gebuchte MwStUSt CHF",
+    "KS3",
+]
+
+
+def bookings_to_df(bookings: Sequence[Any]) -> pd.DataFrame:
+    """Booking rows → the export frame every writer below expects.
+
+    Duck-typed on purpose: the router hands over ORM rows, the batch service the
+    rows of one batch, and tests plain objects. One mapping, one column order —
+    so the same bookings always render the same file (phase 4 checksum).
+    """
+    rows = [
+        {
+            "Nr": b.id,
+            "Datum": b.datum,
+            "Beleg": b.beleg or "",
+            "Rechnung": b.rechnung or "",
+            "Beschreibung": b.beschreibung or "",
+            "KtSoll": b.kt_soll or "",
+            "KtHaben": b.kt_haben or "",
+            "Betrag CHF": b.betrag or 0,
+            "MwStUSt-Code": b.mwst_code or "",
+            "Art Betrag": "",
+            "MwSt-%": b.mwst_pct or "",
+            "Gebuchte MwStUSt CHF": b.mwst_amount or 0,
+            "KS3": "",
+        }
+        for b in bookings
+    ]
+    return pd.DataFrame(rows, columns=BANANA_DF_COLUMNS)
 
 
 def df_to_styled_excel(df: pd.DataFrame) -> bytes:

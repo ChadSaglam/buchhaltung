@@ -654,6 +654,101 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/export/batches/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Batches */
+        get: operations["list_batches_api_export_batches__get"];
+        put?: never;
+        /**
+         * Create Batch
+         * @description Hand everything reconciled over to Banana — once.
+         */
+        post: operations["create_batch_api_export_batches__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/export/batches/preflight": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Preflight
+         * @description Is everything OK to export? One red/green list, nothing to configure.
+         */
+        get: operations["preflight_api_export_batches_preflight_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/export/batches/{batch_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Batch */
+        get: operations["get_batch_api_export_batches__batch_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/export/batches/{batch_id}/cover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download Cover */
+        get: operations["download_cover_api_export_batches__batch_id__cover_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/export/batches/{batch_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download Batch
+         * @description The same bytes every time — a re-download is not a second hand-off.
+         */
+        get: operations["download_batch_api_export_batches__batch_id__file_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/export/csv": {
         parameters: {
             query?: never;
@@ -1283,6 +1378,14 @@ export interface components {
              */
             original_soll: string;
         };
+        /** CreateBatchRequest */
+        CreateBatchRequest: {
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+        };
         /** DecisionResponse */
         DecisionResponse: {
             /**
@@ -1450,6 +1553,56 @@ export interface components {
              */
             to_email: string;
         };
+        /** ExportBatchListResponse */
+        ExportBatchListResponse: {
+            /** Count */
+            count: number;
+            /** Items */
+            items: components["schemas"]["ExportBatchOut"][];
+        };
+        /** ExportBatchOut */
+        ExportBatchOut: {
+            /** Booking Count */
+            booking_count: number;
+            /** Checksum */
+            checksum: string;
+            /** Created At */
+            created_at: string | null;
+            /** Filename */
+            filename: string;
+            /** Format */
+            format: string;
+            /** Id */
+            id: number;
+            /** Note */
+            note: string;
+            /** Period From */
+            period_from: string | null;
+            /** Period To */
+            period_to: string | null;
+            /** Total Betrag */
+            total_betrag: number;
+            /** Total Mwst */
+            total_mwst: number;
+        };
+        /** ExportCheck */
+        ExportCheck: {
+            /**
+             * Booking Ids
+             * @default []
+             */
+            booking_ids: number[];
+            /** Code */
+            code: string;
+            /** Count */
+            count: number;
+            /** Detail */
+            detail: string;
+            /** Label */
+            label: string;
+            /** Severity */
+            severity: string;
+        };
         /** ExportRequest */
         ExportRequest: {
             /** Rows */
@@ -1599,6 +1752,23 @@ export interface components {
              * @default 100
              */
             betrag: number;
+        };
+        /** PreflightResponse */
+        PreflightResponse: {
+            /** Blockers */
+            blockers: number;
+            /** Checks */
+            checks: components["schemas"]["ExportCheck"][];
+            /** Exportable */
+            exportable: number;
+            /** Period From */
+            period_from: string | null;
+            /** Period To */
+            period_to: string | null;
+            /** Ready */
+            ready: boolean;
+            /** Total */
+            total: number;
         };
         /**
          * ProfileUpdate
@@ -3105,6 +3275,183 @@ export interface operations {
                 "application/json": components["schemas"]["ExportRequest"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_batches_api_export_batches__get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportBatchListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_batch_api_export_batches__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CreateBatchRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportBatchOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preflight_api_export_batches_preflight_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreflightResponse"];
+                };
+            };
+        };
+    };
+    get_batch_api_export_batches__batch_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batch_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportBatchOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_cover_api_export_batches__batch_id__cover_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batch_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_batch_api_export_batches__batch_id__file_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batch_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {

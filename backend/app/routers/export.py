@@ -17,7 +17,7 @@ from app.models.booking import Booking
 from app.models.user import User
 from app.schemas.common import Money
 from app.services.email_sender import is_email_configured, send_bookkeeping_email
-from app.services.export import df_to_banana_tsv, df_to_csv, df_to_styled_excel
+from app.services.export import bookings_to_df, df_to_banana_tsv, df_to_csv, df_to_styled_excel
 
 router = APIRouter(prefix="/api/export", tags=["export"])
 
@@ -71,28 +71,7 @@ async def _get_bookings_df(db: AsyncSession, tenant_id: int, source: str | None 
         query = query.where(Booking.source == source)
     query = query.order_by(Booking.id)
     result = await db.execute(query)
-    bookings = result.scalars().all()
-
-    rows = []
-    for b in bookings:
-        rows.append(
-            {
-                "Nr": b.id,
-                "Datum": b.datum,
-                "Beleg": b.beleg or "",
-                "Rechnung": b.rechnung or "",
-                "Beschreibung": b.beschreibung or "",
-                "KtSoll": b.kt_soll or "",
-                "KtHaben": b.kt_haben or "",
-                "Betrag CHF": b.betrag or 0,
-                "MwStUSt-Code": b.mwst_code or "",
-                "Art Betrag": "",
-                "MwSt-%": b.mwst_pct or "",
-                "Gebuchte MwStUSt CHF": b.mwst_amount or 0,
-                "KS3": "",
-            }
-        )
-    return pd.DataFrame(rows)
+    return bookings_to_df(result.scalars().all())
 
 
 # ── POST routes (accept frontend state data) ──

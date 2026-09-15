@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, FileText, ScanLine, BookOpen, Receipt, CheckCheck,
+  LayoutDashboard, FileText, ScanLine, BookOpen, Receipt, CheckCheck, PackageCheck,
   Brain, GraduationCap, Settings, ListChecks, ScrollText, Sparkles,
   type LucideIcon,
 } from "lucide-react";
@@ -27,6 +27,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Kontoauszug", href: "/dashboard/kontoauszug", icon: FileText, section: "Buchhaltung" },
   { label: "Abgleich", href: "/dashboard/abgleich", icon: CheckCheck, section: "Buchhaltung" },
   { label: "Scanner", href: "/dashboard/scanner", icon: ScanLine, section: "Buchhaltung" },
+  { label: "Abschluss", href: "/dashboard/abschluss", icon: PackageCheck, section: "Buchhaltung" },
   { label: "Kontenplan", href: "/dashboard/kontenplan", icon: BookOpen, section: "AI & Training" },
   { label: "Modell", href: "/dashboard/modell", icon: Brain, section: "AI & Training" },
   { label: "Lernverlauf", href: "/dashboard/lernverlauf", icon: GraduationCap, section: "AI & Training" },

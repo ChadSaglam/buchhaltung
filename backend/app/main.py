@@ -75,6 +75,7 @@ from app.routers import (
     classify_extra,
     documents,
     export,
+    export_batch,
     health,
     import_data,
     pdf,
@@ -95,6 +96,7 @@ application.include_router(classify_extra.router)
 application.include_router(bookings.router)
 application.include_router(kontenplan_router.router)
 application.include_router(export.router)
+application.include_router(export_batch.router)
 application.include_router(scanner.router)
 application.include_router(scanner_config.router)
 application.include_router(pdf.router)

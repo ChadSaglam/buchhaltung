@@ -6,6 +6,7 @@ from app.models.booking import Booking
 from app.models.classifier_model import ClassifierModel
 from app.models.correction import Correction
 from app.models.document import Document
+from app.models.export_batch import ExportBatch
 from app.models.kontenplan import Kontenplan
 from app.models.match import Match
 from app.models.memory import Memory
@@ -27,6 +28,7 @@ __all__ = [
     "ClassifierModel",
     "Correction",
     "Document",
+    "ExportBatch",
     "Kontenplan",
     "Match",
     "Memory",
