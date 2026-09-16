@@ -100,6 +100,7 @@ from app.routers import (
     scanner_config,
     sso,
     stats,
+    usage,
 )
 from app.routers import kontenplan as kontenplan_router
 
@@ -131,6 +132,7 @@ application.include_router(liquiditaet.router)
 application.include_router(dauerbuchungen.router)
 application.include_router(lohn.router)
 application.include_router(onboarding.router)
+application.include_router(usage.router)
 
 
 app = application

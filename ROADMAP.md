@@ -40,8 +40,7 @@ and Heute inbox, B-74, B-24, B-25, B-54 and B-55. What is left of it:_
    configuration and nothing is guessed. The four things still missing are data or a certification, not code —
    Quellensteuer tariff tables, BVG Altersgutschriften, Formular 11, Swissdec ELM. `docs/B-72-LOHN-SPEC.md`.
    **Before any of that: compare one real month against the previous payroll and lift the watermark.**
-3. **B-23** usage limits enforced from `usage_event` — the free/pro ceiling. Billing (R-106 Stripe) means
-   nothing until a plan can actually be exceeded. B-54 already meters storage; this is the enforcement half.
+3. ~~**B-23**~~ ✅ 2026-09-16 — see Done.
 4. ~~**B-27**~~ ✅ 2026-09-16 — see Done. B-26 was never performance — it is the 2026-09-10 tenant-column rename.
 
 <details><summary>What item 1 of the old block settled (Banana, 2026-09-15) — keep, do not re-litigate</summary>
@@ -88,8 +87,8 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
       (4-digit year → `3924` today); tenant-specific supplier names out of `CLASSIFICATION_RULES` into per-tenant
       `KontoDefault`/memory; `save_to_memory` skips empty keys. — `M` / `S`
 - [x] **B-22** ✅ 2026-09-16 — see Done. The UI existed; what was missing was anything to show in it.
-- [ ] **B-23** Usage limits enforced from `usage_event` (plan free/pro) — needed before billing R-106 Stripe means anything;
-      pair with B-54 quotas. — `M` / `M`
+- [x] **B-23** ✅ 2026-09-16 — see Done. The numbers live in `backend/app/core/plans.py` and are the owner's to
+      set; what shipped is the mechanism. Seats are deliberately **not** limited — see that entry.
 
 ### Together / data integrity
 - [ ] **B-57** Worker hardening: `configure_sentry` in `worker.main`, `await gather` on stop, `stop_grace_period: 120s`,
@@ -166,6 +165,24 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 - **a11y** ✅ 2026-09-16 — `EmptyState` and `ErrorState` rendered an `h3` inside sections whose heading was an `h2`,
   which axe reported as 14 `moderate heading-order` findings across the app. Both gained an `as` prop defaulting to
   `h2`. The whole suite is back to zero findings, light and dark.
+- **B-23** ✅ 2026-09-16 — plan limits, enforced. B-54 started counting; this refuses. Three ceilings —
+  Belege/month, Klassifizierungen/month, storage — all read out of `usage_events`, so the number shown to the
+  customer and the number that locks them out cannot drift apart. `GET /api/usage`, a page under *Mehr*, and one
+  row on Heute when a counter goes over 80 %, because a refused upload is a bad way to find out the month is used
+  up.
+  **The numbers are in one file** (`core/plans.py`) and they are a business decision, not a technical one —
+  `ENFORCE_PLAN_LIMITS=false` keeps counting and stops refusing, for the day one of them is set wrong.
+  Three decisions worth the diff. **Seats are not limited**: there are exactly two ways a user is created today —
+  self-registration, which always makes a *new* tenant, and the SSO mirror, which billing has already decided — so
+  a seat limit would be a rule with no way to break it. **A storage quota of 0 still means no quota**, because
+  B-54 documents it as the single-tenant escape hatch and re-introducing a ceiling through the plan table would
+  hit exactly the installation that switched it off. And the batch upload keeps answering 200 with a per-file
+  result, but the result now carries the error **code**, so the UI can tell "wrong file type" from "plan used up"
+  without parsing German.
+  Found on the way, and fixed here: **every receipt without a QR code was being stored twice.** `ingest` stores
+  the file, then hands it to the scanner to read — and the scanner stored it again, under a second key. Two copies
+  on disk, and B-54 charged the tenant for both. `tests/test_plan_limits.py` — 37 tests, including the one that
+  holds the declaration against the code: a limit whose event nobody writes can never fire, and it reviews clean.
 - **B-27** ✅ 2026-09-16 — the query audit. Five places, one shape: a statement that scaled with how much the
   tenant already had. The Banana import ran one `SELECT` per distinct description — 800 round trips inside one
   request, and it got slower the longer a tenant had been a customer (**699 ms → 165 ms** re-importing 800 rows
@@ -651,5 +668,5 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 | 3 Reliability | ✅ B-04, B-05, B-08, B-11, B-33, B-35, B-39, B-47, B-48, B-49, B-63, B-64, B-73, B-76, B-51, B-52 · open: B-56, B-57 |
 | 4 Polish | ✅ B-09, B-13, B-66, B-67, B-76, B-53, B-22 · open: B-61 |
 | 5 UX | ✅ B-14, B-15, B-16, B-18, B-19, B-44, B-45, B-46, B-50 (+B-21), B-58, B-59, B-65, B-71, B-72, B-74, B-79, IA 1–5, B-17, B-20 · open: — |
-| 6 Together | ✅ B-36 (SSO + mirroring), B-37 (events) · deploy: `docs/DEPLOY-CHECKLIST-B36-B37.md` · parked: B-38 |
+| 6 Together | ✅ B-36 (SSO + mirroring), B-37 (events), B-23 (plan limits) · deploy: `docs/DEPLOY-CHECKLIST-B36-B37.md` · parked: B-38 |
 | 7 DX | ✅ B-12, B-29, B-30 · open: B-60, B-62 |

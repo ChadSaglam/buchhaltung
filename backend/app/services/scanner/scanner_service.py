@@ -22,10 +22,12 @@ from app.schemas.scanner import (
 )
 from app.services.classifier import TenantClassifier, calc_mwst, vat_code_for
 from app.services.ollama_vision import parse_invoice_text
+from app.services.plan_limits import PlanLimits
 from app.services.receipts import store_receipt
 from app.services.scanner.base import ScannerFile
 from app.services.scanner.registry import ScannerProviderRegistry
 from app.services.storage_quota import StorageQuota
+from app.services.usage_meter import UsageMeter
 
 logger = logging.getLogger(__name__)
 
@@ -124,8 +126,17 @@ class ScannerService:
         content: bytes,
         model: str = "",
         on_step: Callable[[dict[str, Any]], Awaitable[None]] | None = None,
+        bereits_gespeichert: str | None = None,
     ) -> ScannerExtractResponse:
-        """Extract one document. ``on_step`` receives every pipeline step as it happens (B-15)."""
+        """Extract one document. ``on_step`` receives every pipeline step as it happens (B-15).
+
+        ``bereits_gespeichert`` ist der Schlüssel einer Datei, die der Aufrufer
+        schon abgelegt hat. `DocumentService.ingest` speichert den Beleg selbst
+        (B-09) und ruft dann hier an, wenn kein QR-Code gefunden wurde — ohne
+        diesen Parameter landete **jede Rechnung ohne QR-Code zweimal** im
+        Speicher, unter zwei Schlüsseln, und zählte zweimal gegen die Quote
+        (B-54) und gegen den Beleg-Zähler (B-23).
+        """
         steps: list[dict[str, Any]] = []
 
         async def emit(step: dict[str, Any]) -> None:
@@ -134,16 +145,24 @@ class ScannerService:
                 await on_step(step)
 
         self._validate_upload(content_type=content_type, content=content)
-        # Audit copy first (B-09): the document survives even if extraction fails.
-        # Which is exactly why the quota has to answer before it is written (B-54).
-        quota = StorageQuota(self.user.tenant_id, self.db)
-        await quota.ensure_room_for(len(content))
-        await emit({"icon": "📤", "label": "Datei wird gespeichert", "status": "active"})
-        source_key = await asyncio.to_thread(
-            store_receipt, self.user.tenant_id, filename=file_name, content_type=content_type, content=content
-        )
-        await quota.record(len(content))
-        steps[-1]["status"] = "done"
+        if bereits_gespeichert:
+            source_key = bereits_gespeichert
+            await emit({"icon": "📤", "label": "Datei wird gespeichert", "status": "done"})
+        else:
+            # Audit copy first (B-09): the document survives even if extraction fails.
+            # Which is exactly why the quota has to answer before it is written (B-54).
+            # B-23: derselbe Beleg-Zähler wie beim Upload über Belege — es ist
+            # derselbe Vorgang, nur eine andere Tür.
+            await PlanLimits(self.user.tenant_id, self.db).ensure("belege")
+            quota = StorageQuota(self.user.tenant_id, self.db)
+            await quota.ensure_room_for(len(content))
+            await emit({"icon": "📤", "label": "Datei wird gespeichert", "status": "active"})
+            source_key = await asyncio.to_thread(
+                store_receipt, self.user.tenant_id, filename=file_name, content_type=content_type, content=content
+            )
+            await quota.record(len(content))
+            await UsageMeter(self.user.tenant_id, self.db).record("beleg")
+            steps[-1]["status"] = "done"
         scanner_file = ScannerFile(
             filename=file_name,
             content_type=content_type,

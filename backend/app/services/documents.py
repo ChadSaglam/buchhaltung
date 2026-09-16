@@ -21,10 +21,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.document import KIND_RECHNUNG, STATUS_FEHLER, STATUS_OFFEN, Document
 from app.models.user import User
 from app.services.classifier import TenantClassifier
+from app.services.plan_limits import PlanLimits
 from app.services.qr_bill import QrBill, invoice_number_from_message, read_qr_bill
 from app.services.receipts import store_receipt
 from app.services.scanner.scanner_service import ScannerService
 from app.services.storage_quota import StorageQuota
+from app.services.usage_meter import UsageMeter
 
 logger = logging.getLogger(__name__)
 
@@ -55,13 +57,17 @@ class DocumentService:
         the row is created with status ``fehler`` so the user sees *which* file failed."""
         ScannerService(self.db, self.user)._validate_upload(content_type=content_type, content=content)
         # B-54: the file is kept whether or not it can be read, so the tenant's
-        # quota decides before anything is written.
+        # quota decides before anything is written. B-23 adds the second
+        # ceiling — how many receipts the plan includes this month.
+        limits = PlanLimits(self.user.tenant_id, self.db)
+        await limits.ensure("belege")
         quota = StorageQuota(self.user.tenant_id, self.db)
         await quota.ensure_room_for(len(content))
         file_key = await asyncio.to_thread(
             store_receipt, self.user.tenant_id, filename=filename, content_type=content_type, content=content
         )
         await quota.record(len(content))
+        await UsageMeter(self.user.tenant_id, self.db).record("beleg")
         doc = Document(
             tenant_id=self.user.tenant_id,
             kind=KIND_RECHNUNG,
@@ -95,7 +101,12 @@ class DocumentService:
         else:
             try:
                 extracted = await ScannerService(self.db, self.user).extract(
-                    file_name=filename, content_type=content_type, content=content
+                    file_name=filename,
+                    content_type=content_type,
+                    content=content,
+                    # Der Beleg liegt schon (oben), mit Quote und Zähler. Ohne das
+                    # hier wurde jede Rechnung ohne QR-Code zweimal abgelegt.
+                    bereits_gespeichert=file_key,
                 )
                 data = extracted.data.model_dump()
                 self._apply_extracted(doc, data)

@@ -70,6 +70,12 @@ class Settings(BaseSettings):
     # on purpose (B-09), so without a ceiling one tenant fills the disk — with
     # files the product could not even read. 0 = no quota (single-tenant install).
     MAX_TENANT_STORAGE_MB: int = 5120
+    # B-23: ob die Plan-Grenzen aus `core/plans.py` tatsächlich ablehnen. Aus
+    # heisst: weiter zählen und anzeigen, aber niemanden aussperren — der
+    # Schalter existiert für den Tag, an dem eine Zahl in der Tabelle falsch
+    # gesetzt ist. Der Speicherplatz fällt dann auf MAX_TENANT_STORAGE_MB
+    # zurück, also auf das Verhalten von B-54.
+    ENFORCE_PLAN_LIMITS: bool = True
 
     # Where the rate-limit counters live. Empty = in-process memory, which is
     # correct for one uvicorn process and silently wrong for two: each worker

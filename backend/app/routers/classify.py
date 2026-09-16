@@ -29,6 +29,7 @@ from app.models.user import User
 from app.schemas.classify import ClassifierInfoResponse
 from app.services.classifier import ClassificationResult, TenantClassifier, model_row_is_trusted, preprocess
 from app.services.model_blob import INSECURE_SECRET_DETAIL, InsecureSecretKey, is_trusted, sha256_hex
+from app.services.plan_limits import PlanLimits
 from app.services.review_queue import ReviewQueueService
 from app.services.usage_meter import UsageMeter
 
@@ -90,6 +91,9 @@ async def predict(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_editor),
 ) -> dict[str, Any]:
+    # B-23: ablehnen, bevor das Modell läuft — eine Vorhersage, die verworfen
+    # wird, hat trotzdem gerechnet.
+    await PlanLimits(user.tenant_id, db).ensure("klassifizierungen")
     clf = TenantClassifier(user.tenant_id, db)
     result = await clf.classify(body.beschreibung, False, body.betrag)
 
@@ -394,6 +398,7 @@ async def classify_transaction(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_editor),
 ) -> dict[str, Any]:
+    await PlanLimits(user.tenant_id, db).ensure("klassifizierungen")
     clf = TenantClassifier(user.tenant_id, db)
     result = await clf.classify(body.beschreibung, body.is_credit, body.betrag)
 

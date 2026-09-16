@@ -64,7 +64,14 @@ async def upload_documents(
                 )
             )
         except HTTPException as exc:  # e.g. wrong file type — the other files still go through
-            results.append(DocumentUploadResult(filename=name, ok=False, error=str(exc.detail)))
+            results.append(
+                DocumentUploadResult(
+                    filename=name,
+                    ok=False,
+                    error=str(exc.detail),
+                    code=getattr(exc, "code", "") or f"http_{exc.status_code}",
+                )
+            )
     await db.commit()
     for r in results:
         if r.document is not None:

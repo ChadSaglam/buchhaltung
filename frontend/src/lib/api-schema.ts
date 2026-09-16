@@ -56,3 +56,7 @@ export type AccountCount = Schemas["AccountCount"];
 export type SourceCount = Schemas["SourceCount"];
 export type KontenplanResponse = Schemas["KontenplanResponse"];
 export type KontoDefaultsResponse = Schemas["KontoDefaultsResponse"];
+
+// --- B-23: Verbrauch gegen Plan-Grenzen -------------------------------------
+export type UsageResponse = Schemas["UsageResponse"];
+export type UsageCounter = Schemas["UsageCounter"];

@@ -14,7 +14,7 @@ SELECT that moved inside a loop — not to freeze an exact number.
 from __future__ import annotations
 
 import pytest
-from sqlalchemy import event, select
+from sqlalchemy import select
 
 from app.models.classifier_model import ClassifierModel
 from app.services.classifier import TenantClassifier
@@ -29,31 +29,6 @@ from tests.factories import (
 )
 
 pytestmark = pytest.mark.asyncio
-
-
-class StatementCounter:
-    """Counts the SQL an engine actually sends, by table."""
-
-    def __init__(self) -> None:
-        self.statements: list[str] = []
-
-    def against(self, table: str) -> int:
-        return sum(1 for s in self.statements if table in s.lower())
-
-    def __len__(self) -> int:
-        return len(self.statements)
-
-
-@pytest.fixture
-def counted(engine):
-    counter = StatementCounter()
-
-    def _record(conn, cursor, statement, parameters, context, executemany):
-        counter.statements.append(statement)
-
-    event.listen(engine.sync_engine, "before_cursor_execute", _record)
-    yield counter
-    event.remove(engine.sync_engine, "before_cursor_execute", _record)
 
 
 # --------------------------------------------------------------------------- #

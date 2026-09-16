@@ -127,3 +127,71 @@ describe("Kopfzeile und Ziel", () => {
     expect(istAnker(rows.find((r) => r.id === "review-offen")!)).toBe(false);
   });
 });
+
+// --- B-23: the plan ceiling as an inbox row ---------------------------------
+
+function usageMit(over: Record<string, unknown>) {
+  return {
+    plan: "free",
+    durchgesetzt: true,
+    monat_seit: "2026-09-01T00:00:00+00:00",
+    zaehler: [
+      {
+        key: "belege",
+        label: "Belege pro Monat",
+        benutzt: 10,
+        limit: 100,
+        anteil: 0.1,
+        warnung: false,
+        erreicht: false,
+        periode: "monat",
+        ...over,
+      },
+    ],
+  } as never;
+}
+
+describe("inboxRows — Plan-Grenzen (B-23)", () => {
+  it("says nothing while there is room", () => {
+    const rows = inboxRows({ usage: usageMit({}) });
+    expect(rows.filter((r) => r.id.startsWith("plan-"))).toEqual([]);
+  });
+
+  it("warns before the wall, not after", () => {
+    const rows = inboxRows({ usage: usageMit({ benutzt: 85, anteil: 0.85, warnung: true }) });
+    const row = rows.find((r) => r.id === "plan-belege");
+    expect(row?.tone).toBe("warning");
+    expect(row?.titel).toContain("fast aufgebraucht");
+  });
+
+  it("turns danger once the limit is reached", () => {
+    const rows = inboxRows({ usage: usageMit({ benutzt: 100, anteil: 1, warnung: true, erreicht: true }) });
+    const row = rows.find((r) => r.id === "plan-belege");
+    expect(row?.tone).toBe("danger");
+    expect(row?.href).toBe("/dashboard/abo");
+  });
+
+  it("says so when the limit is not being enforced", () => {
+    const usage = usageMit({ benutzt: 100, anteil: 1, warnung: true, erreicht: true }) as {
+      durchgesetzt: boolean;
+    };
+    usage.durchgesetzt = false;
+    const row = inboxRows({ usage: usage as never }).find((r) => r.id === "plan-belege");
+    expect(row?.satz).toContain("nicht durchgesetzt");
+  });
+
+  it("shows one row, the worst one, not one per counter", () => {
+    const usage = {
+      plan: "free",
+      durchgesetzt: true,
+      monat_seit: "2026-09-01T00:00:00+00:00",
+      zaehler: [
+        { key: "belege", label: "Belege pro Monat", benutzt: 85, limit: 100, anteil: 0.85, warnung: true, erreicht: false, periode: "monat" },
+        { key: "speicher_mb", label: "Speicherplatz (MB)", benutzt: 1024, limit: 1024, anteil: 1, warnung: true, erreicht: true, periode: "bestand" },
+      ],
+    } as never;
+    const plan = inboxRows({ usage }).filter((r) => r.id.startsWith("plan-"));
+    expect(plan).toHaveLength(1);
+    expect(plan[0].id).toBe("plan-speicher_mb");
+  });
+});

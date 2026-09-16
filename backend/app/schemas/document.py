@@ -71,6 +71,12 @@ class DocumentUploadResult(BaseModel):
     ok: bool
     document: DocumentOut | None = None
     error: str | None = None
+    #: Maschinenlesbarer Grund, wenn `ok` falsch ist — z. B. `plan_limit_erreicht`
+    #: (B-23) oder `http_413` (B-54). Der Upload ist ein Stapel: eine abgelehnte
+    #: Datei beendet ihn nicht, und die Antwort bleibt 200. Ohne diesen Code
+    #: müsste die Oberfläche den deutschen Fehlertext parsen, um zwischen
+    #: "falsches Dateiformat" und "Abo aufgebraucht" zu unterscheiden.
+    code: str = ""
 
 
 class DocumentUploadResponse(BaseModel):

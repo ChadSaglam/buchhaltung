@@ -17,6 +17,7 @@
 import type { Schemas } from "@/lib/api-schema";
 import { formatCHF } from "@/lib/format";
 import { kurzdatum } from "@/lib/liquiditaet";
+import { verbrauchText, warnungen } from "@/lib/usage";
 
 export type HeuteTone = "danger" | "warning" | "info";
 
@@ -37,6 +38,7 @@ export interface HeuteSources {
   email?: Schemas["EmailEingangResponse"];
   dauer?: Schemas["DauerbuchungenResponse"];
   liquiditaet?: Schemas["LiquiditaetResponse"];
+  usage?: Schemas["UsageResponse"];
 }
 
 const RANG: Record<HeuteTone, number> = { danger: 0, warning: 1, info: 2 };
@@ -47,7 +49,7 @@ function plural(n: number, eins: string, viele: string): string {
 
 export function inboxRows(sources: HeuteSources): HeuteRow[] {
   const rows: HeuteRow[] = [];
-  const { posten, abgleich, review, email, dauer, liquiditaet } = sources;
+  const { posten, abgleich, review, email, dauer, liquiditaet, usage } = sources;
 
   // Money that is late is the only thing that gets worse by itself.
   const debitoren = posten?.debitoren;
@@ -167,6 +169,21 @@ export function inboxRows(sources: HeuteSources): HeuteRow[] {
       href: "#liquiditaet",
       aktion: "Ansehen",
       tone: "info",
+    });
+  }
+
+  // B-23: the plan ceiling belongs here, not only on its own page. A refused
+  // upload is a bad way to learn that the month is used up, and "fast erreicht"
+  // is exactly the kind of thing Heute exists to say before it bites.
+  const grenze = usage ? warnungen(usage.zaehler)[0] : undefined;
+  if (grenze) {
+    rows.push({
+      id: `plan-${grenze.key}`,
+      titel: grenze.erreicht ? `${grenze.label} aufgebraucht` : `${grenze.label} fast aufgebraucht`,
+      satz: `${verbrauchText(grenze)}${usage?.durchgesetzt === false ? " — wird zurzeit nicht durchgesetzt." : "."}`,
+      href: "/dashboard/abo",
+      aktion: "Ansehen",
+      tone: grenze.erreicht ? "danger" : "warning",
     });
   }
 

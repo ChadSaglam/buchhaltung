@@ -1,6 +1,6 @@
 import {
   BookOpen, Brain, Building2, CheckCheck, FilePlus2, FileText, GraduationCap, Inbox,
-  Landmark, ListChecks, Mail, PackageCheck, Receipt, ScanLine, ScrollText, Settings,
+  Gauge, Landmark, ListChecks, Mail, PackageCheck, Receipt, ScanLine, ScrollText, Settings,
   Sparkles, Sun, Wallet,
   type LucideIcon,
 } from "lucide-react";
@@ -97,6 +97,7 @@ export const MEHR: NavItem[] = [
   { label: "Modell", href: "/dashboard/modell", icon: Brain, section: "Mehr" },
   { label: "Lernverlauf", href: "/dashboard/lernverlauf", icon: GraduationCap, section: "Mehr" },
   { label: "Audit-Protokoll", href: "/dashboard/audit", icon: ScrollText, section: "Mehr" },
+  { label: "Abo & Nutzung", href: "/dashboard/abo", icon: Gauge, section: "Mehr" },
   { label: "Einstellungen", href: "/dashboard/settings", icon: Settings, section: "Mehr" },
 ];
 

@@ -31,6 +31,7 @@ export function Inbox() {
   const email = useApi<Schemas["EmailEingangResponse"]>("/api/email/");
   const dauer = useApi<Schemas["DauerbuchungenResponse"]>("/api/dauerbuchungen/");
   const liquiditaet = useApi<Schemas["LiquiditaetResponse"]>("/api/liquiditaet/");
+  const usage = useApi<Schemas["UsageResponse"]>("/api/usage");
   const review = useReviewQueue();
 
   const isLoading =
@@ -45,6 +46,7 @@ export function Inbox() {
     dauer: dauer.data,
     liquiditaet: liquiditaet.data,
     review: review.data,
+    usage: usage.data,
   });
 
   return (
