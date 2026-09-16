@@ -119,6 +119,37 @@ services:
           devices:
             - capabilities: [gpu]
 
+  # Nightly backup (B-25). Opt-in so nobody gets a surprise volume on a laptop:
+  #   docker compose --profile backup up -d backup
+  # It is the postgres image, so it already has pg_dump and reaches `db` over the
+  # compose network — no docker socket, no host cron, nothing to forget. It also
+  # mounts model_data read-only, because a dump without the receipts restores an
+  # app whose documents all 404.
+  #
+  # `make backup` runs one immediately; `make restore-drill` proves the newest
+  # one restores. See docs/BACKUP.md for retention and the restore procedure.
+  backup:
+    image: postgres:16-alpine
+    profiles: ["backup"]
+    environment:
+      PGHOST: db
+      PGUSER: chadev
+      PGDATABASE: chadev_buchhaltung
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      BACKUP_DIR: /backups
+      FILES_DIR: /data/model_data
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-30}
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+    volumes:
+      - model_data:/data/model_data:ro
+      - ./scripts:/scripts:ro
+      - ${BACKUP_PATH:-./backups}:/backups
+    entrypoint: ["/bin/sh", "/scripts/backup.sh", "loop"]
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
   # Optional LLM gateway (OpenAI-compatible, 352+ providers, auto-fallback).
   # Opt-in: `docker compose --profile gateway up omniroute` → dashboard http://localhost:20128
   # Point a client at http://omniroute:20128/v1 (inside compose) or http://localhost:20128/v1.

@@ -28,7 +28,7 @@
   - [x] `SMTP_PORT`: 465 everywhere (B-43, 2026-09-13).
 - [ ] Env, frontend: `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_BILLING_URL` are **build-time** [frontend/src/lib/platform.ts:8-10]. Pass them as `build.args`/`ARG` (B-62) — a runtime `environment:` entry does nothing; the Apps switcher stays hidden and the API URL falls back to `localhost:8000`.
 - [ ] Migration `a400bdc46480` [alembic/versions/a400bdc46480_*.py:29-45] reviewed: creates `sso_nonces(jti PK, expires_at)`; adds `tenants.platform_tenant_id` (nullable, unique), `users.platform_user_id` (nullable), `users.auth_source NOT NULL DEFAULT 'local'`, unique `(tenant_id, platform_user_id)`. **Additive with server defaults → old image keeps working during rollout.** Downgrade exercised in CI (`test_tenant_migration_is_reversible`).
-- [ ] Backup taken **before** migrating: `pg_dump -Fc` of the DB and a copy of the `model_data` volume (receipts + model blobs). There is no scheduled backup yet (B-25) — do it by hand and record where it went.
+- [ ] Backup taken **before** migrating: `make backup`, then `make restore-drill` to prove it comes back (B-25, `docs/BACKUP.md`). Both the database and the `model_data` volume — a dump without the receipts restores an app whose documents all 404.
 - [ ] Rollback plan agreed (section 5). On-call = Chad; billing side informed of the deploy window.
 
 ## 2. Ordering with billing

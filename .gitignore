@@ -79,3 +79,7 @@ frontend/CLAUDE.md
 .claude/
 design-system/
 .pytest-test.db-journal
+
+# B-25: backups are data, not source. Keep the directory out of git entirely —
+# a dump committed by accident is every tenant's bookkeeping in the history.
+/backups/

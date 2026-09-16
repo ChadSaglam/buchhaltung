@@ -7,7 +7,7 @@ BIN := backend/venv/bin
 FRONTEND_PORT ?= 3000
 BACKEND_PORT  ?= 8000
 
-.PHONY: help setup doctor dev-deps e2e-deps hooks dev stop ports test test-backend test-unit test-e2e lint fix typecheck check api-types migrate migration ai-context status clean docker
+.PHONY: help setup doctor dev-deps e2e-deps hooks dev stop ports test test-backend test-unit test-e2e lint fix typecheck check api-types migrate migration ai-context status clean docker backup backup-list restore-drill
 
 help: ## Show this help
 	@grep -hE '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -122,6 +122,15 @@ check: lint typecheck test ## Everything CI runs, locally
 
 api-types: ## Regenerate frontend types from the FastAPI OpenAPI schema
 	./scripts/gen-api-types.sh
+
+backup: ## Take one backup now (database + receipts) — see docs/BACKUP.md
+	docker compose --profile backup run --rm --entrypoint /bin/sh backup /scripts/backup.sh once
+
+backup-list: ## List the backups that exist, newest last
+	@ls -1 "$${BACKUP_PATH:-./backups}" 2>/dev/null | grep -E '^[0-9]{8}T[0-9]{6}Z$$' || echo "  (none yet — run: make backup)"
+
+restore-drill: ## Restore the newest backup into a scratch database and verify it
+	docker compose --profile backup run --rm --entrypoint /bin/sh backup /scripts/restore-drill.sh
 
 migrate: ## Apply database migrations
 	cd backend && ../$(PY) -m alembic upgrade head
