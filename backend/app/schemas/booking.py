@@ -27,3 +27,10 @@ class BookingResponse(BookingCreate):
 
     class Config:
         from_attributes = True
+
+
+class BookingStatsResponse(BaseModel):
+    total_count: int
+    total_amount: Money
+    #: Rows per `source` ("kontoauszug", "scanner", "billing", … and "unknown").
+    by_source: dict[str, int]

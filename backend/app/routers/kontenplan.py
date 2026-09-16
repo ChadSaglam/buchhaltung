@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.deps import get_current_user, get_db, require_admin
 from app.models.kontenplan import Konto, KontoDefault
 from app.models.user import User
+from app.schemas.kontenplan import KontenplanResponse, KontenplanSaved, KontoDefaultsResponse
 
 router = APIRouter(prefix="/api/kontenplan", tags=["kontenplan"])
 
@@ -18,18 +19,18 @@ class KontenplanUpdate(BaseModel):
     kontenplan: dict[str, str]
 
 
-@router.get("/")
+@router.get("/", response_model=KontenplanResponse)
 async def get_kontenplan(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
     result = await db.execute(select(Konto).where(Konto.tenant_id == user.tenant_id))
     rows = result.scalars().all()
-    plan = {row.konto_nr: row.beschreibung for row in rows}
+    plan = {row.konto_nr: row.beschreibung or "" for row in rows}
     return {"kontenplan": plan}
 
 
-@router.put("/")
+@router.put("/", response_model=KontenplanSaved)
 async def update_kontenplan(
     body: KontenplanUpdate,
     db: AsyncSession = Depends(get_db),
@@ -52,7 +53,7 @@ async def update_kontenplan(
     return {"status": "ok", "count": len(body.kontenplan)}
 
 
-@router.get("/defaults")
+@router.get("/defaults", response_model=KontoDefaultsResponse)
 async def get_defaults(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
@@ -60,9 +61,9 @@ async def get_defaults(
     result = await db.execute(select(KontoDefault).where(KontoDefault.tenant_id == user.tenant_id))
     defaults = {
         row.konto_soll: {
-            "KontoHaben": row.konto_haben,
-            "MwStCode": row.mwst_code,
-            "MwStUStProz": row.mwst_pct,
+            "KontoHaben": row.konto_haben or "",
+            "MwStCode": row.mwst_code or "",
+            "MwStUStProz": row.mwst_pct or "",
         }
         for row in result.scalars().all()
     }

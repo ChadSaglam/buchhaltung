@@ -12,7 +12,7 @@ export function accuracyTextClass(acc: number) {
   return "text-destructive";
 }
 
-export function formatDate(iso: string) {
+export function formatDate(iso: string | null | undefined) {
   if (!iso) return "—";
   return new Date(iso).toLocaleString("de-CH", {
     day: "2-digit", month: "2-digit", year: "numeric",

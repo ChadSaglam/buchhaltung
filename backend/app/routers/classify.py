@@ -18,6 +18,7 @@ from app.models.correction import Correction
 from app.models.kontenplan import Konto, KontoDefault
 from app.models.memory import Memory
 from app.models.user import User
+from app.schemas.classify import ClassifierInfoResponse
 from app.services.classifier import ClassificationResult, TenantClassifier, model_row_is_trusted, preprocess
 from app.services.model_blob import INSECURE_SECRET_DETAIL, InsecureSecretKey, is_trusted, sha256_hex
 from app.services.review_queue import ReviewQueueService
@@ -445,7 +446,7 @@ async def train_model(
     return result
 
 
-@router.get("/info")
+@router.get("/info", response_model=ClassifierInfoResponse)
 async def classifier_info(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),

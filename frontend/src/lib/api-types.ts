@@ -1572,6 +1572,13 @@ export interface components {
             /** Adresse */
             adresse: string;
         };
+        /** AccountCount */
+        AccountCount: {
+            /** Account */
+            account: string;
+            /** Count */
+            count: number;
+        };
         /** ApproveRequest */
         ApproveRequest: {
             /** Corrected Haben */
@@ -1582,6 +1589,32 @@ export interface components {
             corrected_mwst_pct?: string | null;
             /** Corrected Soll */
             corrected_soll?: string | null;
+        };
+        /** AuditEntryOut */
+        AuditEntryOut: {
+            /** Action */
+            action: string;
+            /** Actor User Id */
+            actor_user_id?: number | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Detail */
+            detail?: {
+                [key: string]: unknown;
+            } | null;
+            /** Id */
+            id: number;
+            /** Target Id */
+            target_id?: string | null;
+            /** Target Type */
+            target_type?: string | null;
+        };
+        /** AuditListResponse */
+        AuditListResponse: {
+            /** Count */
+            count: number;
+            /** Items */
+            items: components["schemas"]["AuditEntryOut"][];
         };
         /** BankTransactionOut */
         BankTransactionOut: {
@@ -1710,6 +1743,17 @@ export interface components {
             /** Source Key */
             source_key?: string | null;
         };
+        /** BookingStatsResponse */
+        BookingStatsResponse: {
+            /** By Source */
+            by_source: {
+                [key: string]: number;
+            };
+            /** Total Amount */
+            total_amount: number;
+            /** Total Count */
+            total_count: number;
+        };
         /** BuchungRowExport */
         BuchungRowExport: {
             /** Artbetrag */
@@ -1750,6 +1794,33 @@ export interface components {
         ChatRequest: {
             /** Messages */
             messages: components["schemas"]["ChatMessage"][];
+        };
+        /**
+         * ClassifierInfoResponse
+         * @description What `/api/classify/info` actually returns (B-59).
+         *
+         *     The hand-written frontend interface claimed `sklearn_version`,
+         *     `model_size_kb` and `memory_size_kb`; the endpoint has never sent them.
+         */
+        ClassifierInfoResponse: {
+            /** Classes */
+            classes: number;
+            /** Correction Count */
+            correction_count: number;
+            /** Has Model */
+            has_model: boolean;
+            /** Memory Count */
+            memory_count: number;
+            /** Model Accuracy */
+            model_accuracy: number;
+            /** Model Trusted */
+            model_trusted: boolean;
+            /** Total Samples */
+            total_samples: number;
+            /** Train Accuracy */
+            train_accuracy: number;
+            /** Trained At */
+            trained_at?: string | null;
         };
         /** ClassifyRequest */
         ClassifyRequest: {
@@ -2361,11 +2432,50 @@ export interface components {
             /** Warnings */
             warnings: number;
         };
+        /**
+         * KontenplanResponse
+         * @description Account number → description, as the Kontenplan editor reads it.
+         */
+        KontenplanResponse: {
+            /** Kontenplan */
+            kontenplan: {
+                [key: string]: string;
+            };
+        };
+        /** KontenplanSaved */
+        KontenplanSaved: {
+            /** Count */
+            count: number;
+            /** Status */
+            status: string;
+        };
         /** KontenplanUpdate */
         KontenplanUpdate: {
             /** Kontenplan */
             kontenplan: {
                 [key: string]: string;
+            };
+        };
+        /**
+         * KontoDefaultOut
+         * @description Default counter-account and VAT for one debit account.
+         *
+         *     The keys are the Banana column names the import/export speak, so they stay
+         *     capitalised on the wire.
+         */
+        KontoDefaultOut: {
+            /** Kontohaben */
+            KontoHaben: string;
+            /** Mwstcode */
+            MwStCode: string;
+            /** Mwstustproz */
+            MwStUStProz: string;
+        };
+        /** KontoDefaultsResponse */
+        KontoDefaultsResponse: {
+            /** Defaults */
+            defaults: {
+                [key: string]: components["schemas"]["KontoDefaultOut"];
             };
         };
         /** KontoPosition */
@@ -2411,6 +2521,21 @@ export interface components {
              * @default
              */
             strasse: string;
+        };
+        /** LearningStatsResponse */
+        LearningStatsResponse: {
+            /** Booking Count */
+            booking_count: number;
+            /** Correction Count */
+            correction_count: number;
+            /** Correction Distribution */
+            correction_distribution: components["schemas"]["AccountCount"][];
+            /** Memory Count */
+            memory_count: number;
+            /** Memory Distribution */
+            memory_distribution: components["schemas"]["AccountCount"][];
+            /** Source Distribution */
+            source_distribution: components["schemas"]["SourceCount"][];
         };
         /** LoginRequest */
         LoginRequest: {
@@ -2768,6 +2893,45 @@ export interface components {
              */
             tenant_name: string;
         };
+        /** ReviewActionResponse */
+        ReviewActionResponse: {
+            /** Status */
+            status: string;
+        };
+        /** ReviewItemOut */
+        ReviewItemOut: {
+            /** Beschreibung */
+            beschreibung: string;
+            /** Betrag */
+            betrag: number;
+            /** Confidence */
+            confidence: number;
+            /** Created At */
+            created_at?: string | null;
+            /** Id */
+            id: number;
+            /** Predicted Haben */
+            predicted_haben: string;
+            /** Predicted Mwst Code */
+            predicted_mwst_code: string;
+            /** Predicted Mwst Pct */
+            predicted_mwst_pct: string;
+            /** Predicted Soll */
+            predicted_soll: string;
+            /** Source */
+            source: string;
+            /** Status */
+            status: string;
+        };
+        /** ReviewQueueResponse */
+        ReviewQueueResponse: {
+            /** Count */
+            count: number;
+            /** Items */
+            items: components["schemas"]["ReviewItemOut"][];
+            /** Threshold */
+            threshold: number;
+        };
         /** ScannerAttempt */
         ScannerAttempt: {
             /** Available */
@@ -2892,6 +3056,13 @@ export interface components {
             overdue_total: number;
             /** Total */
             total: number;
+        };
+        /** SourceCount */
+        SourceCount: {
+            /** Count */
+            count: number;
+            /** Source */
+            source: string;
         };
         /**
          * SsoRequest
@@ -3646,9 +3817,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["AuditListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -3882,7 +4051,9 @@ export interface operations {
     create_bookings_api_bookings__post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -3927,7 +4098,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["BookingStatsResponse"];
                 };
             };
         };
@@ -4143,9 +4314,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["ClassifierInfoResponse"];
                 };
             };
         };
@@ -5169,7 +5338,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["KontenplanResponse"];
                 };
             };
         };
@@ -5193,7 +5362,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["KontenplanSaved"];
                 };
             };
             /** @description Validation Error */
@@ -5222,7 +5391,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["KontoDefaultsResponse"];
                 };
             };
         };
@@ -5602,9 +5771,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["ReviewQueueResponse"];
                 };
             };
         };
@@ -5630,9 +5797,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: string;
-                    };
+                    "application/json": components["schemas"]["ReviewActionResponse"];
                 };
             };
             /** @description Validation Error */
@@ -5663,9 +5828,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: string;
-                    };
+                    "application/json": components["schemas"]["ReviewActionResponse"];
                 };
             };
             /** @description Validation Error */
@@ -5853,7 +6016,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["LearningStatsResponse"];
                 };
             };
         };

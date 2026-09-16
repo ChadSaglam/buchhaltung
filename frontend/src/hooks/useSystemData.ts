@@ -1,29 +1,22 @@
 "use client";
 import { useApi } from "@/hooks/useApi";
+import type { BookingStatsResponse, ClassifierInfoResponse, ReviewQueueResponse } from "@/lib/api-schema";
 
 /**
  * The handful of endpoints every dashboard surface reads (KPIs, system
  * checklist, getting-started, the bell). One SWR key each — however many
  * components mount, one request goes out, and one poll keeps them fresh (B-16).
+ *
+ * The response shapes come from the backend schema (B-59), not from hand-written
+ * interfaces that drift.
  */
 export const SYSTEM_POLL_MS = 60_000;
 
-export interface ClassifierInfo {
-  has_model: boolean;
-  model_accuracy: number;
-  train_accuracy: number;
-  total_samples: number;
-  classes: number;
-  memory_count: number;
-  correction_count: number;
-}
+export type ClassifierInfo = ClassifierInfoResponse;
+export type BookingStats = BookingStatsResponse;
+export type ReviewQueue = ReviewQueueResponse;
 
-export interface BookingStats {
-  total_count: number;
-  total_amount: number;
-  by_source: Record<string, number>;
-}
-
+/** `/api/scanner/vision-status` and `/api/ai/status` are still untyped upstream. */
 export interface VisionStatus {
   ok: boolean;
   best_vision?: string | null;
@@ -32,8 +25,6 @@ export interface VisionStatus {
 export interface AiStatus {
   ok: boolean;
 }
-
-export type ReviewQueue = unknown[] | { count?: number };
 
 export const useClassifierInfo = () => useApi<ClassifierInfo>("/api/classify/info", { refreshInterval: SYSTEM_POLL_MS });
 export const useBookingStats = () => useApi<BookingStats>("/api/bookings/stats", { refreshInterval: SYSTEM_POLL_MS });

@@ -3,9 +3,9 @@ import { BarChart3 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { t } from "@/lib/i18n";
-import type { ChartItem, LearningStats } from "../types";
+import type { ChartBar, LearningStats } from "../types";
 
-function HBar({ data, labelKey, title, colorClass }: { data: ChartItem[]; labelKey: "account" | "source"; title: string; colorClass: string }) {
+function HBar({ data, title, colorClass }: { data: ChartBar[]; title: string; colorClass: string }) {
   const max = Math.max(...data.map((d) => d.count), 1);
   return (
     <div>
@@ -16,11 +16,11 @@ function HBar({ data, labelKey, title, colorClass }: { data: ChartItem[]; labelK
         <ul className="space-y-2" aria-label={title}>
           {data.map((item, i) => (
             <li key={i} className="flex items-center gap-3">
-              <span className="text-xs text-muted-foreground w-16 text-right font-mono truncate">{item[labelKey] || "—"}</span>
+              <span className="text-xs text-muted-foreground w-16 text-right font-mono truncate">{item.label}</span>
               <div
                 className="flex-1 bg-muted rounded-full h-5 overflow-hidden"
                 role="meter"
-                aria-label={item[labelKey] || "—"}
+                aria-label={item.label}
                 aria-valuemin={0}
                 aria-valuemax={max}
                 aria-valuenow={item.count}
@@ -36,11 +36,16 @@ function HBar({ data, labelKey, title, colorClass }: { data: ChartItem[]; labelK
   );
 }
 
+/** One histogram is keyed by account, another by source — flatten both to a label. */
+function bars<K extends string>(rows: ({ count: number } & Record<K, string>)[] | undefined, key: K): ChartBar[] {
+  return (rows ?? []).map((row) => ({ label: row[key] || "—", count: row.count }));
+}
+
 export function Charts({ stats }: { stats: LearningStats }) {
   const charts = [
-    { data: stats.memory_distribution ?? [], labelKey: "account" as const, title: t("lernverlauf.memory_dist"), colorClass: "bg-brand-500" },
-    { data: stats.correction_distribution ?? [], labelKey: "account" as const, title: t("lernverlauf.correction_dist"), colorClass: "bg-warning" },
-    { data: stats.source_distribution ?? [], labelKey: "source" as const, title: t("lernverlauf.source_dist"), colorClass: "bg-success", span: true },
+    { data: bars(stats.memory_distribution, "account"), title: t("lernverlauf.memory_dist"), colorClass: "bg-brand-500" },
+    { data: bars(stats.correction_distribution, "account"), title: t("lernverlauf.correction_dist"), colorClass: "bg-warning" },
+    { data: bars(stats.source_distribution, "source"), title: t("lernverlauf.source_dist"), colorClass: "bg-success", span: true },
   ];
   if (charts.every((c) => c.data.length === 0)) {
     return <EmptyState icon={BarChart3} title={t("empty.lernverlauf.charts")} description={t("empty.lernverlauf.charts_desc")} />;
@@ -57,7 +62,7 @@ export function Charts({ stats }: { stats: LearningStats }) {
         >
           <Card>
             <CardContent className="pt-5">
-              <HBar data={chart.data} labelKey={chart.labelKey} title={chart.title} colorClass={chart.colorClass} />
+              <HBar data={chart.data} title={chart.title} colorClass={chart.colorClass} />
             </CardContent>
           </Card>
         </motion.div>

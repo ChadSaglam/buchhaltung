@@ -11,11 +11,12 @@ from app.models.booking import Booking
 from app.models.correction import Correction
 from app.models.memory import Memory
 from app.models.user import User
+from app.schemas.stats import LearningStatsResponse
 
 router = APIRouter(prefix="/api/stats", tags=["stats"])
 
 
-@router.get("/learning")
+@router.get("/learning", response_model=LearningStatsResponse)
 async def learning_stats(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
@@ -31,7 +32,7 @@ async def learning_stats(
         .order_by(func.count().desc())
         .limit(15)
     )
-    memory_distribution = [{"account": row[0], "count": row[1]} for row in mem_by_account.all()]
+    memory_distribution = [{"account": row[0] or "—", "count": row[1]} for row in mem_by_account.all()]
 
     # Corrections by corrected_soll (what accounts get corrected to)
     corr_by_account = await db.execute(
@@ -41,7 +42,7 @@ async def learning_stats(
         .order_by(func.count().desc())
         .limit(15)
     )
-    correction_distribution = [{"account": row[0], "count": row[1]} for row in corr_by_account.all()]
+    correction_distribution = [{"account": row[0] or "—", "count": row[1]} for row in corr_by_account.all()]
 
     # Bookings by source
     bookings_by_source = await db.execute(

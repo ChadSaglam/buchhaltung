@@ -1,18 +1,11 @@
-export interface ModelInfo {
-  has_model: boolean;
-  /** False when a stored model is unsigned/foreign/altered — the classifier ignores it (B-34). */
-  model_trusted?: boolean;
-  model_accuracy: number;
-  train_accuracy: number;
-  total_samples: number;
-  classes: number;
-  memory_count: number;
-  correction_count: number;
-  trained_at: string;
-  sklearn_version: string;
-  model_size_kb: number;
-  memory_size_kb: number;
-}
+import type { ClassifierInfoResponse } from "@/lib/api-schema";
+
+/**
+ * B-59: generated from the backend schema. The hand-written version claimed
+ * `sklearn_version`, `model_size_kb` and `memory_size_kb` — three fields
+ * `/api/classify/info` has never sent, and nothing rendered.
+ */
+export type ModelInfo = ClassifierInfoResponse;
 
 export interface VisionStatus {
   available: boolean;

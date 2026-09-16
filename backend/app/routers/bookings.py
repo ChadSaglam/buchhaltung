@@ -21,6 +21,7 @@ from app.core.deps import get_current_user, get_db, require_editor
 from app.models.booking import Booking
 from app.models.idempotency_key import IdempotencyKey
 from app.models.user import User
+from app.schemas.booking import BookingStatsResponse
 from app.schemas.common import Money
 from app.services.export import round_chf
 from app.services.receipts import content_type_for_key, key_belongs_to_tenant, read_receipt
@@ -159,7 +160,7 @@ async def create_bookings(
     return result
 
 
-@router.get("/stats")
+@router.get("/stats", response_model=BookingStatsResponse)
 async def booking_stats(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),

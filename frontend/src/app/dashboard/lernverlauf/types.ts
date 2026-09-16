@@ -1,3 +1,5 @@
+import type { LearningStatsResponse } from "@/lib/api-schema";
+
 export interface MemoryEntry {
   lookup_key: string;
   kt_soll: string;
@@ -16,19 +18,14 @@ export interface CorrectionEntry {
   created_at: string | null;
 }
 
-export interface ChartItem {
-  account?: string;
-  source?: string;
-  count: number;
-}
+/** B-59: generated from the backend schema — memory/corrections are keyed by
+ *  account, bookings by source, and the API says so. */
+export type LearningStats = LearningStatsResponse;
 
-export interface LearningStats {
-  memory_count: number;
-  correction_count: number;
-  booking_count: number;
-  memory_distribution: ChartItem[];
-  correction_distribution: ChartItem[];
-  source_distribution: ChartItem[];
+/** What a bar chart needs, after the caller has picked which key is the label. */
+export interface ChartBar {
+  label: string;
+  count: number;
 }
 
 export interface LernverlaufData {
