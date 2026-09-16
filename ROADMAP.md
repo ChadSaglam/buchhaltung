@@ -45,8 +45,10 @@ production, because there is no production yet._
    stack**, and the CI smoke job has still never executed.
 2. **Rotate the secrets**, including the Postgres password that was in `scripts/setup.sh` until today and is
    still in the history.
-3. **One real payroll month, by hand**, against the previous provider. Until then the watermark stays and Lohn
-   cannot be given to anyone.
+3. **One real payroll month**, against the previous provider. Until then the watermark stays and Lohn cannot be
+   given to anyone. It is no longer *by hand*: `make lohn-vergleich` writes a template, the numbers from the old
+   payslip go in, and `python scripts/lohn-vergleich.py <datei>` prints the line-by-line difference with the input
+   that would explain each one. `docs/LOHN-VERGLEICH.md`.
 4. **One real Treuhand pack to a real Treuhänder**, and one real VAT quarter compared against what was filed.
 5. **Set the plan numbers** in `backend/app/core/plans.py`. The mechanism is B-23; the numbers are a business
    decision and today they are placeholders.
@@ -190,6 +192,22 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 - **a11y** ✅ 2026-09-16 — `EmptyState` and `ErrorState` rendered an `h3` inside sections whose heading was an `h2`,
   which axe reported as 14 `moderate heading-order` findings across the app. Both gained an `as` prop defaulting to
   `h2`. The whole suite is back to zero findings, light and dark.
+- **Lohn-Vergleich** ✅ 2026-09-16 — the tool that lifts the watermark. Every payslip says «Nicht für die
+  Einreichung» until one real month matches the previous provider to the rappen; that check was a manual
+  squint at two sheets of paper. Now: `make lohn-vergleich` writes a template, the old payslip's numbers go in,
+  and the script prints our line, their line, the difference, **and what produced ours** (`6500.00 × 5.3 %`) —
+  then a finding per deviation naming the input that would explain it.
+  Three refusals are the whole design. **It never adjusts our number to theirs**: the point is to find out
+  whether the engine is right, and a harness that fudges has failed before it runs. **It never guesses whether
+  the rate or the base differs** — one number cannot tell them apart (360.40 is 5.3 % of 6'800 *and* 5.545 % of
+  6'500), so both readings are printed, with a nudge toward whichever is the rounder figure. And **an empty
+  comparison does not pass**: the sentence at the end lifts a watermark, so it needs Brutto, Netto and a
+  counterpart for every line we compute — a line the old payslip does not mention is *unchecked*, not zero.
+  A few rappen are reported as rounding (we round per line, other programs round the total), and a position the
+  old payslip has that our engine does not model is a finding, not something to overwrite.
+  Found while building it: a `Zeile` defaulted to the employee side, so every employer-side finding named the
+  employee's input — you would fix `ktg_satz_an`, run it again, and watch the difference stay. The default is
+  gone and a test asserts it cannot come back. 51 tests.
 - **The first `docker compose up`** ✅ 2026-09-16 — it found a bug in ninety seconds, which is the argument for
   running things rather than reading them. Every image built, every container was created, and then the daemon
   said *"failed to discover GPU vendor from CDI: no known GPU vendor found"* and the whole `up` aborted.

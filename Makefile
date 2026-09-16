@@ -128,6 +128,9 @@ api-types-check: ## Fail if frontend/src/lib/api-types.ts is stale (same check a
 		exit 1; \
 	fi
 
+lohn-vergleich: ## Vorlage für den Lohn-Vergleich (B-72) — siehe docs/LOHN-VERGLEICH.md
+	@python3 scripts/lohn-vergleich.py --vorlage
+
 api-types: ## Regenerate frontend types from the FastAPI OpenAPI schema
 	./scripts/gen-api-types.sh
 
