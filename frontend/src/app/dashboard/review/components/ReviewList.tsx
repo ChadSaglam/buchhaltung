@@ -4,6 +4,7 @@ import { CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
+import { formatCHF } from "@/lib/format";
 import type { ReviewItem } from "../types";
 
 interface Props {
@@ -39,7 +40,7 @@ export function ReviewList({ items, selected, onSelect, onApprove, onReject }: P
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-foreground truncate">{item.beschreibung}</p>
             <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-              <span className="tabular-nums">Betrag: {item.betrag.toFixed(2)}</span>
+              <span className="tabular-nums">Betrag: {formatCHF(item.betrag)}</span>
               <span className="font-mono">
                 {item.predicted_soll} / {item.predicted_haben}
                 {item.predicted_mwst_code ? ` · ${item.predicted_mwst_code}` : ""}

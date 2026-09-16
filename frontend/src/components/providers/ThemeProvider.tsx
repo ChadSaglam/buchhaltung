@@ -17,8 +17,8 @@ const THEME_INIT_SCRIPT = `
     var accents = {
       blue:   ['#2451e6','#3b6cf6','#8eb5ff','#598dff','#3b6cf6','#2451e6','#1d3fc4'],
       violet: ['#7c3aed','#8b5cf6','#c4b5fd','#a78bfa','#8b5cf6','#7c3aed','#6d28d9'],
-      emerald:['#059669','#10b981','#6ee7b7','#34d399','#10b981','#059669','#047857'],
-      amber:  ['#d97706','#f59e0b','#fcd34d','#fbbf24','#f59e0b','#d97706','#b45309'],
+      emerald:['#047857','#10b981','#6ee7b7','#10b981','#059669','#047857','#065f46'],
+      amber:  ['#b45309','#f59e0b','#fcd34d','#f59e0b','#d97706','#b45309','#92400e'],
       rose:   ['#e11d48','#f43f5e','#fda4af','#fb7185','#f43f5e','#e11d48','#be123c']
     };
     // "blue" is the platform brand and lives in the stylesheet (--cd-*).

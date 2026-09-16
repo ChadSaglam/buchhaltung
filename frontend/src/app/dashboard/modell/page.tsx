@@ -27,8 +27,10 @@ export default function ModellPage() {
     dangerConfirm,
     setDangerConfirm,
     handleDangerAction,
+    dangerBusy,
     handleDownload,
     handleUploadBundle,
+    restoring,
   } = useModellActions(fetchInfo);
   const inspect = useModellInspect();
 
@@ -115,7 +117,7 @@ export default function ModellPage() {
       {/* ── Download & Upload ─────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <ExportCard info={info} handleDownload={handleDownload} />
-        <RestoreCard handleUploadBundle={handleUploadBundle} />
+        <RestoreCard handleUploadBundle={handleUploadBundle} restoring={restoring} />
       </div>
 
       {/* ── Pipeline ──────────────────────────────────────────────────── */}
@@ -127,6 +129,7 @@ export default function ModellPage() {
         dangerConfirm={dangerConfirm}
         setDangerConfirm={setDangerConfirm}
         handleDangerAction={handleDangerAction}
+        dangerBusy={dangerBusy}
       />
     </div>
   );

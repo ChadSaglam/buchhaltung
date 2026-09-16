@@ -88,7 +88,15 @@ export default function KontoauszugPage() {
               >
                 {k.saved ? t("kontoauszug.saved") : t("kontoauszug.save")}
               </Button>
-              <Button variant="ghost" icon={<RefreshCw className="h-4 w-4" aria-hidden="true" />} onClick={k.reset}>
+              <Button
+                variant="ghost"
+                icon={<RefreshCw className="h-4 w-4" aria-hidden="true" />}
+                onClick={() => {
+                  // B-58: the parsed rows are gone once this runs, and they are
+                  // edits the user made by hand.
+                  if (k.saved || window.confirm("Neue Datei laden? Die aktuellen Zeilen gehen verloren.")) k.reset();
+                }}
+              >
                 Neue Datei
               </Button>
             </div>

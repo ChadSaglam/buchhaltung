@@ -18,6 +18,14 @@ export function useBananaImport(fetchInfo: () => Promise<void>) {
       toast.error("Nur XLS, XLSX oder CSV Dateien erlaubt");
       return;
     }
+    // B-58: "Bestehende Trainingsdaten ersetzen" deletes every training row.
+    // A checkbox ticked minutes ago is not consent for that.
+    if (replaceData) {
+      const ok = window.confirm(
+        `„${file.name}" importieren und bestehende Trainingsdaten ersetzen?\n\nAlle bisherigen Trainingsbuchungen werden gelöscht. Ohne Häkchen wird stattdessen ergänzt.`,
+      );
+      if (!ok) return;
+    }
     setImporting(true);
     setImportResult(null);
     const formData = new FormData();

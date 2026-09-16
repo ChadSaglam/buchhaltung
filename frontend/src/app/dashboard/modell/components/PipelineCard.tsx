@@ -27,13 +27,15 @@ export function PipelineCard() {
     <Card>
       <CardContent className="pt-5">
         <button
+          type="button"
+          aria-expanded={showHowItWorks}
           onClick={() => setShowHowItWorks(!showHowItWorks)}
-          className="w-full flex items-center justify-between"
+          className="w-full flex cursor-pointer items-center justify-between rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <h3 className="font-semibold text-foreground flex items-center gap-2">
-            <Zap className="w-4 h-4 text-warning" />
+          <h2 className="font-semibold text-foreground flex items-center gap-2">
+            <Zap className="w-4 h-4 text-warning" aria-hidden="true" />
             Klassifizierungs-Pipeline
-          </h3>
+          </h2>
           {showHowItWorks ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
         </button>
 

@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { PageSkeleton } from "@/components/shared/PageSkeleton";
 import type { Booking } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { formatAmount } from "@/lib/format";
 import { t } from "@/lib/i18n";
 
 export function ResultsTable({ results, loading }: { results: Booking[]; loading: boolean }) {
@@ -32,7 +33,7 @@ export function ResultsTable({ results, loading }: { results: Booking[]; loading
                 <td className="px-3 py-2 font-mono text-brand-600 dark:text-brand-300">{b.kt_soll}</td>
                 <td className="px-3 py-2 font-mono text-success">{b.kt_haben}</td>
                 <td className={cn("px-3 py-2 text-right font-mono tabular-nums", (Number(b.betrag) || 0) < 0 ? "text-destructive" : "text-foreground")}>
-                  {(Number(b.betrag) || 0).toFixed(2)}
+                  {formatAmount(Number(b.betrag) || 0)}
                 </td>
               </tr>
             ))}

@@ -15,8 +15,12 @@ const ACCENT_KEY = "accent";
 export const ACCENTS: Record<Accent, { label: string; swatch: string; primary: string; ring: string; b400: string; b500: string; b600: string; b700: string; b300: string }> = {
   blue: { label: "Blau", swatch: "#2451e6", primary: "#2451e6", ring: "#3b6cf6", b300: "#8eb5ff", b400: "#598dff", b500: "#3b6cf6", b600: "#2451e6", b700: "#1d3fc4" },
   violet: { label: "Violett", swatch: "#7c3aed", primary: "#7c3aed", ring: "#8b5cf6", b300: "#c4b5fd", b400: "#a78bfa", b500: "#8b5cf6", b600: "#7c3aed", b700: "#6d28d9" },
-  emerald: { label: "Smaragd", swatch: "#059669", primary: "#059669", ring: "#10b981", b300: "#6ee7b7", b400: "#34d399", b500: "#10b981", b600: "#059669", b700: "#047857" },
-  amber: { label: "Bernstein", swatch: "#d97706", primary: "#d97706", ring: "#f59e0b", b300: "#fcd34d", b400: "#fbbf24", b500: "#f59e0b", b600: "#d97706", b700: "#b45309" },
+  // B-58: the ramps are shifted one step darker. White on the old emerald was
+  // 3.77:1 and on the old amber 3.19:1 — both below WCAG AA's 4.5:1 for the
+  // primary button, and `text-brand-600` failed on a white card for the same
+  // reason. See lib/theme-store.test.ts, which fails if any accent slips back.
+  emerald: { label: "Smaragd", swatch: "#047857", primary: "#047857", ring: "#10b981", b300: "#6ee7b7", b400: "#10b981", b500: "#059669", b600: "#047857", b700: "#065f46" },
+  amber: { label: "Bernstein", swatch: "#b45309", primary: "#b45309", ring: "#f59e0b", b300: "#fcd34d", b400: "#f59e0b", b500: "#d97706", b600: "#b45309", b700: "#92400e" },
   rose: { label: "Rosé", swatch: "#e11d48", primary: "#e11d48", ring: "#f43f5e", b300: "#fda4af", b400: "#fb7185", b500: "#f43f5e", b600: "#e11d48", b700: "#be123c" },
 };
 

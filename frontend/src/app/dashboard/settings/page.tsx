@@ -39,10 +39,14 @@ export default function SettingsPage() {
 
         <motion.div
           key={s.activeTab}
+          role="tabpanel"
+          id={`settings-panel-${s.activeTab}`}
+          aria-labelledby={`settings-tab-${s.activeTab}`}
+          tabIndex={0}
           initial={{ opacity: 0, x: 8 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.2 }}
-          className="flex-1 rounded-xl border border-border bg-card p-6"
+          className="flex-1 rounded-xl border border-border bg-card p-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           {s.loading ? (
             <PageSkeleton rows={3} />

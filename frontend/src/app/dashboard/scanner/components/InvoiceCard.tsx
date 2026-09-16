@@ -79,7 +79,7 @@ export function InvoiceCard({ invoice, index, onUpdate, onAddToBookings, added }
   }, [invoice]);
 
   const confidence = safeInvoice.classification_confidence ?? 0;
-  const classSource = safeInvoice.classification_source ?? "–";
+  const source = sourceIcon(safeInvoice.classification_source ?? "–");
 
   const handleSaveEdit = () => {
     onUpdate(draft);
@@ -228,9 +228,12 @@ export function InvoiceCard({ invoice, index, onUpdate, onAddToBookings, added }
             </AnimatePresence>
           </div>
 
-      <div
-        className="flex cursor-pointer items-center justify-between gap-4 p-4"
+      <button
+        type="button"
+        aria-expanded={expanded}
+        aria-controls={`invoice-detail-${index}`}
         onClick={() => setExpanded(!expanded)}
+        className="flex w-full cursor-pointer items-center justify-between gap-4 p-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
       >
         <div className="flex min-w-0 items-center gap-3">
           <div
@@ -253,19 +256,21 @@ export function InvoiceCard({ invoice, index, onUpdate, onAddToBookings, added }
           {safeInvoice.needs_review && (
             <Badge tone="warning" title={safeInvoice.review_reason ?? undefined}>Prüfen</Badge>
           )}
-          <Badge tone={confidenceTone}>
-            {sourceIcon(classSource)} {(confidence * 100).toFixed(0)}%
+          <Badge tone={confidenceTone} title={`Kontierung ${source.label}`}>
+            <source.Icon className="h-3.5 w-3.5" aria-hidden="true" />
+            <span className="sr-only">Kontierung {source.label}, </span>
+            {(confidence * 100).toFixed(0)}%
           </Badge>
           {expanded ? (
-            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+            <ChevronUp className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
           ) : (
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            <ChevronDown className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
           )}
         </div>
-      </div>
+      </button>
 
       {expanded && (
-        <div className="space-y-4 border-t border-border p-4">
+        <div id={`invoice-detail-${index}`} className="space-y-4 border-t border-border p-4">
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <Field label="Lieferant">
               {editing ? (

@@ -29,6 +29,7 @@ function NavLink({
     <Link
       href={item.href}
       onClick={onNavigate}
+      aria-current={active ? "page" : undefined}
       title={collapsed ? item.label : undefined}
       className={cn(
         "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
@@ -82,7 +83,7 @@ export function SidebarContent({ collapsed, onToggle, onNavigate, showCollapse =
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-4">
+      <nav aria-label="Hauptnavigation" className="flex-1 space-y-6 overflow-y-auto px-3 py-4">
         {Array.from(sections.entries()).map(([section, items]) => (
           <div key={section}>
             {!collapsed && (

@@ -1,7 +1,19 @@
 import { Database } from "lucide-react";
+import { ErrorState } from "@/components/shared/ErrorState";
+import { PageSkeleton } from "@/components/shared/PageSkeleton";
 import type { TrainingData } from "../types";
 
-export function TopClassesTab({ topClasses }: { topClasses: TrainingData[] }) {
+interface Props {
+  topClasses: TrainingData[];
+  loading?: boolean;
+  error?: unknown;
+  onRetry?: () => void;
+}
+
+export function TopClassesTab({ topClasses, loading, error, onRetry }: Props) {
+  if (loading) return <PageSkeleton rows={5} />;
+  if (error) return <ErrorState error={error} onRetry={onRetry} variant="inline" />;
+
   return (
     <div>
       <p className="text-sm text-muted-foreground mb-4">Häufigste Kontoklassen im Trainingsset</p>

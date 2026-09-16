@@ -189,7 +189,7 @@ export function StatusBar({ status, selectedModel, onModelChange, loading }: Sta
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -4, scale: 0.97 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute right-0 top-full z-50 mt-1 w-[28rem] overflow-hidden rounded-xl border border-border bg-card shadow-xl shadow-black/10"
+                  className="absolute right-0 top-full z-50 mt-1 w-[min(28rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border bg-card shadow-xl shadow-black/10"
                 >
                   <div className="border-b border-border px-3 py-2">
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">

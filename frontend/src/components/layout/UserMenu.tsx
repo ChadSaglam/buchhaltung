@@ -1,10 +1,11 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronDown, LogOut, Settings, User as UserIcon } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
+import { usePopover } from "@/hooks/usePopover";
 import { cn } from "@/lib/utils";
 
 function initials(name?: string, email?: string) {
@@ -17,20 +18,12 @@ function initials(name?: string, email?: string) {
 export function UserMenu() {
   const router = useRouter();
   const { user, hydrate, logout } = useAuthStore();
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const pop = usePopover();
+  const { open, close, containerRef, triggerRef, triggerProps, popoverProps } = pop;
 
   useEffect(() => {
     hydrate();
   }, [hydrate]);
-
-  useEffect(() => {
-    const onClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
-  }, []);
 
   const handleLogout = () => {
     logout();
@@ -38,10 +31,12 @@ export function UserMenu() {
   };
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={containerRef} className="relative">
       <button
-        onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 rounded-lg p-1 pr-2 text-sm transition-colors hover:bg-accent"
+        ref={triggerRef}
+        {...triggerProps}
+        aria-label="Kontomenü"
+        className="flex cursor-pointer items-center gap-2 rounded-lg p-1 pr-2 text-sm transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
           {initials(user?.display_name, user?.email)}
@@ -60,6 +55,8 @@ export function UserMenu() {
       <AnimatePresence>
         {open && (
           <motion.div
+            {...popoverProps}
+            aria-label="Kontomenü"
             initial={{ opacity: 0, y: -6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
@@ -73,14 +70,16 @@ export function UserMenu() {
             <div className="p-1.5">
               <Link
                 href="/dashboard/settings"
-                onClick={() => setOpen(false)}
+                role="menuitem"
+                onClick={() => close()}
                 className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground transition-colors hover:bg-accent"
               >
                 <UserIcon className="h-4 w-4 text-muted-foreground" /> Profil
               </Link>
               <Link
                 href="/dashboard/settings"
-                onClick={() => setOpen(false)}
+                role="menuitem"
+                onClick={() => close()}
                 className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground transition-colors hover:bg-accent"
               >
                 <Settings className="h-4 w-4 text-muted-foreground" /> Einstellungen
@@ -88,8 +87,10 @@ export function UserMenu() {
             </div>
             <div className="border-t border-border p-1.5">
               <button
+                type="button"
+                role="menuitem"
                 onClick={handleLogout}
-                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10"
+                className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10"
               >
                 <LogOut className="h-4 w-4" /> Abmelden
               </button>

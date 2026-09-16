@@ -67,7 +67,7 @@ export function TestTab({ testInput, setTestInput, testResult, testLoading, hand
 
           {testResult.top_predictions && testResult.top_predictions.length > 0 && (
             <div>
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-3">Top 5 ML-Vorhersagen</h4>
+              <h2 className="text-xs font-semibold text-muted-foreground uppercase mb-3">Top 5 ML-Vorhersagen</h2>
               <div className="space-y-2">
                 {testResult.top_predictions.map((pred) => (
                   <div key={pred.klass} className="flex items-center gap-3">

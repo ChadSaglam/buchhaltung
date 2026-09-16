@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { formatCHF } from "@/lib/format";
 
 /**
  * Notifications center.
@@ -100,7 +101,7 @@ export function buildNotifications({ review, info, aiStatus, stats }: NotifSourc
       id: `bookings-${stats.total_count}`,
       kind: "booking",
       title: "Buchungen gespeichert",
-      body: `${stats.total_count} Buchungen in der Datenbank (Total CHF ${Number(stats.total_amount ?? 0).toFixed(2)}).`,
+      body: `${stats.total_count} Buchungen in der Datenbank (Total ${formatCHF(stats.total_amount ?? 0)}).`,
       href: "/dashboard/kontoauszug",
       ts: now,
       read: false,

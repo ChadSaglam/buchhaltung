@@ -4,10 +4,15 @@ import type { TabId } from "../types";
 
 export function SettingsTabs({ activeTab, onSelect }: { activeTab: TabId; onSelect: (id: TabId) => void }) {
   return (
-    <nav className="flex md:flex-col gap-1 md:w-56 shrink-0">
+    <div role="tablist" aria-orientation="vertical" aria-label="Einstellungen" className="flex md:flex-col gap-1 md:w-56 shrink-0">
       {TABS.map((tab) => (
         <button
           key={tab.id}
+          type="button"
+          role="tab"
+          id={`settings-tab-${tab.id}`}
+          aria-selected={activeTab === tab.id}
+          aria-controls={`settings-panel-${tab.id}`}
           onClick={() => onSelect(tab.id)}
           className={cn(
             "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-all text-left",
@@ -20,6 +25,6 @@ export function SettingsTabs({ activeTab, onSelect }: { activeTab: TabId; onSele
           {tab.label}
         </button>
       ))}
-    </nav>
+    </div>
   );
 }

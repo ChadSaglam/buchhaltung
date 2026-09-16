@@ -20,7 +20,7 @@ export function BananaImportCard({ fetchInfo }: { fetchInfo: () => Promise<void>
     <Card>
       <CardHeader>
         <div className="flex items-center gap-2">
-          <FileSpreadsheet className="w-5 h-5 text-success" />
+          <FileSpreadsheet className="w-5 h-5 text-success" aria-hidden="true" />
           <CardTitle>Banana Import</CardTitle>
         </div>
         <CardDescription>
@@ -68,7 +68,7 @@ export function BananaImportCard({ fetchInfo }: { fetchInfo: () => Promise<void>
         {importResult && (
           <div className="mt-4 p-4 rounded-xl bg-success/10 border border-success/25">
             <h3 className="font-medium text-success flex items-center gap-2 text-sm">
-              <CheckCircle className="w-4 h-4" /> Import erfolgreich
+              <CheckCircle className="w-4 h-4" aria-hidden="true" /> Import erfolgreich
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
               <div className="text-center">

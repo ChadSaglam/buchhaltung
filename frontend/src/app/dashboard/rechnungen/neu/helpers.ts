@@ -1,11 +1,7 @@
 import type { PositionRow } from "./types";
 
-/** "1'234.50" — the Swiss way, same as the backend prints it. */
-export function chf(value: number): string {
-  const [whole, cents] = Math.abs(value).toFixed(2).split(".");
-  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, "'");
-  return `${value < 0 ? "-" : ""}${grouped}.${cents}`;
-}
+/** "1'234.50" — the Swiss way, same as the backend prints it (B-58: shared). */
+export { formatAmount as chf } from "@/lib/format";
 
 /** Accepts "1'234.50", "1234,50" and " 12 " — what people actually type. */
 export function num(value: string): number {
