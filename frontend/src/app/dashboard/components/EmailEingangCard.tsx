@@ -6,8 +6,8 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { useApi } from "@/hooks/useApi";
 import { MetricCardSkeleton } from "@/components/shared/LoadingSkeleton";
-import type { EmailEingang } from "@/app/dashboard/rechnungen/email/types";
-import { belegeTitel } from "@/app/dashboard/rechnungen/email/helpers";
+import type { EmailEingang } from "@/app/dashboard/belege/email/types";
+import { belegeTitel } from "@/app/dashboard/belege/email/helpers";
 
 /** Heute: "3 neue Belege per E-Mail" — and the one thing that blocks the rest. */
 export function EmailEingangCard() {
@@ -49,7 +49,7 @@ export function EmailEingangCard() {
 
       <div className="mt-4 border-t border-border pt-3">
         <Link
-          href="/dashboard/rechnungen/email"
+          href="/dashboard/belege/email"
           className="inline-flex items-center gap-1.5 text-sm font-medium text-link hover:underline"
         >
           E-Mail-Eingang öffnen

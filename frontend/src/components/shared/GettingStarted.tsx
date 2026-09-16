@@ -46,9 +46,9 @@ export function GettingStarted() {
   const ollamaOk = !!scanner.data?.ok;
 
   const steps: Step[] = [
-    { id: "ollama", label: "AI-Dienst verbinden", desc: "Ollama starten für Scanner & Assistent", href: "/dashboard/scanner", icon: Bot, done: ollamaOk },
-    { id: "import", label: "Erste Buchungen erfassen", desc: "Kontoauszug hochladen oder Beleg scannen", href: "/dashboard/kontoauszug", icon: FileText, done: hasBookings },
-    { id: "scan", label: "Beleg scannen", desc: "Rechnung fotografieren → AI-Kontierung", href: "/dashboard/scanner", icon: ScanLine, done: hasMemory },
+    { id: "ollama", label: "AI-Dienst verbinden", desc: "Ollama starten für Scanner & Assistent", href: "/dashboard/belege/scanner", icon: Bot, done: ollamaOk },
+    { id: "import", label: "Erste Buchungen erfassen", desc: "Kontoauszug hochladen oder Beleg scannen", href: "/dashboard/bank", icon: FileText, done: hasBookings },
+    { id: "scan", label: "Beleg scannen", desc: "Rechnung fotografieren → AI-Kontierung", href: "/dashboard/belege/scanner", icon: ScanLine, done: hasMemory },
     { id: "train", label: "Modell trainieren", desc: "Automatische Kontierung aktivieren", href: "/dashboard/modell", icon: ListChecks, done: hasModel },
   ];
   const visible = !dismissed && !steps.every((x) => x.done);

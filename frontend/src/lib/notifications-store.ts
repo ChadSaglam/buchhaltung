@@ -90,7 +90,7 @@ export function buildNotifications({ review, info, aiStatus, stats }: NotifSourc
       kind: "system",
       title: "Ollama nicht erreichbar",
       body: "Der lokale AI-Dienst ist offline. Scanner und Assistent sind eingeschränkt.",
-      href: "/dashboard/scanner",
+      href: "/dashboard/belege/scanner",
       ts: now,
       read: false,
     });
@@ -102,7 +102,7 @@ export function buildNotifications({ review, info, aiStatus, stats }: NotifSourc
       kind: "booking",
       title: "Buchungen gespeichert",
       body: `${stats.total_count} Buchungen in der Datenbank (Total ${formatCHF(stats.total_amount ?? 0)}).`,
-      href: "/dashboard/kontoauszug",
+      href: "/dashboard/bank",
       ts: now,
       read: false,
     });

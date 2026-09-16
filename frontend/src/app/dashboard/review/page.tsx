@@ -37,7 +37,7 @@ export default function ReviewPage() {
           title={t("review.empty")}
           description={t("empty.review.desc")}
           action={
-            <ButtonLink variant="outline" href="/dashboard/scanner" icon={<ScanLine className="h-4 w-4" aria-hidden="true" />}>
+            <ButtonLink variant="outline" href="/dashboard/belege/scanner" icon={<ScanLine className="h-4 w-4" aria-hidden="true" />}>
               {t("empty.review.action")}
             </ButtonLink>
           }

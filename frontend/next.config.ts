@@ -15,6 +15,24 @@ const nextConfig: NextConfig = {
   // bundle never boots, and anything client-side (AuthGuard's redirect, the ⌘K
   // palette, theme toggle) silently does nothing.
   allowedDevOrigins: ["127.0.0.1", "localhost"],
+  // Step 3 of docs/IA-2026-09-14.md: the pages moved under the surface they
+  // belong to, so their old addresses have to keep working. Temporary (307),
+  // not permanent — a 308 is cached by the browser forever and would outlive
+  // the release these redirects are meant to cover.
+  async redirects() {
+    return [
+      { source: "/dashboard/rechnungen", destination: "/dashboard/belege", permanent: false },
+      { source: "/dashboard/rechnungen/:path*", destination: "/dashboard/belege/:path*", permanent: false },
+      { source: "/dashboard/scanner", destination: "/dashboard/belege/scanner", permanent: false },
+      { source: "/dashboard/scanner/:path*", destination: "/dashboard/belege/scanner/:path*", permanent: false },
+      { source: "/dashboard/kontoauszug", destination: "/dashboard/bank", permanent: false },
+      { source: "/dashboard/kontoauszug/:path*", destination: "/dashboard/bank/:path*", permanent: false },
+      { source: "/dashboard/abgleich", destination: "/dashboard/bank/abgleich", permanent: false },
+      { source: "/dashboard/abgleich/:path*", destination: "/dashboard/bank/abgleich/:path*", permanent: false },
+      { source: "/dashboard/insights", destination: "/dashboard/bank/buchungen", permanent: false },
+      { source: "/dashboard/insights/:path*", destination: "/dashboard/bank/buchungen/:path*", permanent: false },
+    ];
+  },
 };
 
 export default nextConfig;

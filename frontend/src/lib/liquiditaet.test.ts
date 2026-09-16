@@ -8,7 +8,7 @@ import {
   type LiquiditaetResponse,
   type Steuer,
 } from "./liquiditaet";
-import { steuersatzWert } from "@/app/dashboard/rechnungen/firma/hooks/useFirma";
+import { steuersatzWert } from "@/app/dashboard/belege/firma/hooks/useFirma";
 
 function report(overrides: Partial<LiquiditaetResponse> = {}): LiquiditaetResponse {
   return {

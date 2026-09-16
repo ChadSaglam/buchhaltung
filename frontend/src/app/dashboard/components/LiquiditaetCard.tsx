@@ -128,7 +128,7 @@ export function LiquiditaetCard() {
               <p className="mt-1 text-xs text-muted-foreground">{steuer.hinweis}</p>
               <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{steuer.quelle}</p>
               <Link
-                href="/dashboard/rechnungen/firma"
+                href="/dashboard/belege/firma"
                 className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-link hover:underline"
               >
                 Satz hinterlegen <ArrowRight className="h-3 w-3" aria-hidden="true" />

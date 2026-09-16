@@ -43,7 +43,7 @@ export default function InsightsPage() {
           title={t("empty.insights.title")}
           description={t("empty.insights.desc")}
           action={
-            <ButtonLink href="/dashboard/kontoauszug" icon={<FileText className="h-4 w-4" aria-hidden="true" />}>
+            <ButtonLink href="/dashboard/bank" icon={<FileText className="h-4 w-4" aria-hidden="true" />}>
               {t("empty.insights.action")}
             </ButtonLink>
           }

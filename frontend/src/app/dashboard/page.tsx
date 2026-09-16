@@ -28,8 +28,8 @@ const item = {
 };
 
 const ACTIONS = [
-  { title: "Kontoauszug", desc: "PDF hochladen & automatisch kontieren", href: "/dashboard/kontoauszug", icon: FileText, tint: "text-info bg-info/12" },
-  { title: "Rechnung Scanner", desc: "Quittung fotografieren → AI Buchung", href: "/dashboard/scanner", icon: ScanLine, tint: "text-brand-600 dark:text-brand-300 bg-brand-500/12" },
+  { title: "Kontoauszug", desc: "PDF hochladen & automatisch kontieren", href: "/dashboard/bank", icon: FileText, tint: "text-info bg-info/12" },
+  { title: "Rechnung Scanner", desc: "Quittung fotografieren → AI Buchung", href: "/dashboard/belege/scanner", icon: ScanLine, tint: "text-brand-600 dark:text-brand-300 bg-brand-500/12" },
   { title: "Kontenplan", desc: "Kontenplan bearbeiten & Modell trainieren", href: "/dashboard/kontenplan", icon: Settings, tint: "text-success bg-success/12" },
   { title: "Modell Manager", desc: "ML-Modell testen & Gedächtnis verwalten", href: "/dashboard/modell", icon: Cpu, tint: "text-warning bg-warning/15" },
 ];

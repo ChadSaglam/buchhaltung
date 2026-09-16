@@ -55,7 +55,7 @@ export function RechnungFertig({ rechnung, onPrint, onPdf, onSenden, sendenBusy 
             <Button variant="ghost" icon={<Plus className="h-4 w-4" aria-hidden="true" />} onClick={onNeu}>
               Nächste Rechnung
             </Button>
-            <ButtonLink variant="ghost" href="/dashboard/rechnungen">
+            <ButtonLink variant="ghost" href="/dashboard/belege">
               Zur Übersicht
             </ButtonLink>
           </div>

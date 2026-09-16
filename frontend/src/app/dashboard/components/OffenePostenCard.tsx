@@ -136,7 +136,7 @@ export function OffenePostenCard() {
         </div>
         <div className="mt-4 border-t border-border pt-3">
           <Link
-            href="/dashboard/rechnungen"
+            href="/dashboard/belege"
             className="inline-flex items-center gap-1.5 text-sm font-medium text-link hover:underline"
           >
             Alle Rechnungen ansehen

@@ -62,7 +62,7 @@ export default function RechnungSchreibenPage() {
               <ButtonLink
                 variant="secondary"
                 size="sm"
-                href="/dashboard/rechnungen/firma"
+                href="/dashboard/belege/firma"
                 className="mt-4"
                 icon={<Settings2 className="h-4 w-4" />}
               >

@@ -35,20 +35,20 @@ describe("the sidebar", () => {
 describe("surfaceFor", () => {
   it.each([
     ["/dashboard", "Heute"],
-    ["/dashboard/rechnungen", "Belege"],
-    ["/dashboard/scanner", "Belege"],
-    ["/dashboard/rechnungen/neu", "Belege"],
-    ["/dashboard/rechnungen/email", "Belege"],
-    ["/dashboard/kontoauszug", "Bank"],
-    ["/dashboard/abgleich", "Bank"],
-    ["/dashboard/insights", "Bank"],
+    ["/dashboard/belege", "Belege"],
+    ["/dashboard/belege/scanner", "Belege"],
+    ["/dashboard/belege/neu", "Belege"],
+    ["/dashboard/belege/email", "Belege"],
+    ["/dashboard/bank", "Bank"],
+    ["/dashboard/bank/abgleich", "Bank"],
+    ["/dashboard/bank/buchungen", "Bank"],
     ["/dashboard/abschluss", "Abschluss"],
   ])("%s belongs to %s", (path, label) => {
     expect(surfaceFor(path)?.label).toBe(label);
   });
 
   it("does not let Heute swallow every page below it", () => {
-    expect(surfaceFor("/dashboard/kontoauszug")?.label).not.toBe("Heute");
+    expect(surfaceFor("/dashboard/bank")?.label).not.toBe("Heute");
   });
 
   it("returns nothing for a page under Mehr", () => {
@@ -59,14 +59,14 @@ describe("surfaceFor", () => {
 
 describe("tabsFor", () => {
   it("marks the tab the user is on", () => {
-    const { tabs, active } = tabsFor("/dashboard/scanner");
+    const { tabs, active } = tabsFor("/dashboard/belege/scanner");
     expect(tabs.map((t) => t.label)).toEqual(["Rechnungen", "Scanner", "E-Mail-Eingang", "Rechnung schreiben"]);
     expect(active?.label).toBe("Scanner");
   });
 
   it("prefers the longer route when two tabs share a prefix", () => {
-    expect(tabsFor("/dashboard/rechnungen/neu").active?.label).toBe("Rechnung schreiben");
-    expect(tabsFor("/dashboard/rechnungen").active?.label).toBe("Rechnungen");
+    expect(tabsFor("/dashboard/belege/neu").active?.label).toBe("Rechnung schreiben");
+    expect(tabsFor("/dashboard/belege").active?.label).toBe("Rechnungen");
   });
 
   it("shows no tab row where the page brings its own", () => {
@@ -83,14 +83,14 @@ describe("getActiveNavItem", () => {
   it("still resolves every old route, so no bookmark broke", () => {
     for (const href of [
       "/dashboard",
-      "/dashboard/insights",
-      "/dashboard/rechnungen",
-      "/dashboard/rechnungen/neu",
-      "/dashboard/rechnungen/firma",
-      "/dashboard/rechnungen/email",
-      "/dashboard/kontoauszug",
-      "/dashboard/abgleich",
-      "/dashboard/scanner",
+      "/dashboard/bank/buchungen",
+      "/dashboard/belege",
+      "/dashboard/belege/neu",
+      "/dashboard/belege/firma",
+      "/dashboard/belege/email",
+      "/dashboard/bank",
+      "/dashboard/bank/abgleich",
+      "/dashboard/belege/scanner",
       "/dashboard/abschluss",
       "/dashboard/kontenplan",
       "/dashboard/modell",
@@ -104,7 +104,7 @@ describe("getActiveNavItem", () => {
   });
 
   it("falls back to the nearest parent for a page with no entry of its own", () => {
-    expect(getActiveNavItem("/dashboard/rechnungen/123")?.href).toBe("/dashboard/rechnungen");
+    expect(getActiveNavItem("/dashboard/belege/123")?.href).toBe("/dashboard/belege");
   });
 });
 

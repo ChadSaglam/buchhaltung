@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { AlertCircle, Mail, Paperclip, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
-import { versandGrund, versandLabel, type VersandEntwurf } from "@/app/dashboard/rechnungen/versand";
+import { versandGrund, versandLabel, type VersandEntwurf } from "@/app/dashboard/belege/versand";
 
 interface Props {
   draft: VersandEntwurf | null;

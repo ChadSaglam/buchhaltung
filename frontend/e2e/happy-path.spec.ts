@@ -62,7 +62,7 @@ test("register, browse the Kontenplan, book and export", async ({ page, request 
   expect(await created.json()).toEqual([{ id: expect.any(Number), status: "created" }]);
 
   // ── it shows up in the bookings list (Insights search) ───────────────
-  await page.goto("/dashboard/insights");
+  await page.goto("/dashboard/bank/buchungen");
   await page.getByPlaceholder(/Ausgaben über 500/).fill(`Büromaterial ${stamp}`);
   const row = page.getByRole("row", { name: new RegExp(description) });
   await expect(row).toBeVisible();

@@ -13,11 +13,15 @@ import {
  *
  * and **Heute**, where the system says what it needs from the user.
  *
- * This is step 5 of that document's migration path: the sidebar collapses to
- * four entries and a "Mehr" group, and every page that used to be its own menu
- * entry becomes a tab inside the surface it belongs to. The pages themselves
- * have not moved — every old URL still works and is now reachable as a tab, so
- * nothing bookmarked breaks and the file move stays a separate, boring refactor.
+ * The sidebar is four entries and a "Mehr" group, and every page that used to
+ * be its own menu entry is a tab inside the surface it belongs to. Since the
+ * file move (steps 1–3 of the migration path) the route says the same thing as
+ * the sidebar: `/dashboard/belege/scanner` sits under Belege on disk, in the
+ * URL and in the menu, so there is no third place where the IA can drift.
+ *
+ * The old addresses are 307s in `next.config.ts` for one release. They are
+ * deliberately temporary: a 308 is cached by the browser forever and would
+ * outlive the bookmarks it exists to protect.
  *
  * "Einstellungen" is in the account dropdown (UserMenu) as well; it is listed
  * under Mehr so the command palette and the breadcrumbs can resolve it.
@@ -55,25 +59,25 @@ export const SURFACES: Surface[] = [
   },
   {
     label: "Belege",
-    href: "/dashboard/rechnungen",
+    href: "/dashboard/belege",
     icon: Inbox,
     frage: "Was ist reingekommen?",
     tabs: [
-      { label: "Rechnungen", href: "/dashboard/rechnungen", icon: Receipt },
-      { label: "Scanner", href: "/dashboard/scanner", icon: ScanLine },
-      { label: "E-Mail-Eingang", href: "/dashboard/rechnungen/email", icon: Mail },
-      { label: "Rechnung schreiben", href: "/dashboard/rechnungen/neu", icon: FilePlus2 },
+      { label: "Rechnungen", href: "/dashboard/belege", icon: Receipt },
+      { label: "Scanner", href: "/dashboard/belege/scanner", icon: ScanLine },
+      { label: "E-Mail-Eingang", href: "/dashboard/belege/email", icon: Mail },
+      { label: "Rechnung schreiben", href: "/dashboard/belege/neu", icon: FilePlus2 },
     ],
   },
   {
     label: "Bank",
-    href: "/dashboard/kontoauszug",
+    href: "/dashboard/bank",
     icon: Landmark,
     frage: "Was ist passiert?",
     tabs: [
-      { label: "Kontoauszug", href: "/dashboard/kontoauszug", icon: FileText },
-      { label: "Abgleich", href: "/dashboard/abgleich", icon: CheckCheck },
-      { label: "Buchungen", href: "/dashboard/insights", icon: Sparkles },
+      { label: "Kontoauszug", href: "/dashboard/bank", icon: FileText },
+      { label: "Abgleich", href: "/dashboard/bank/abgleich", icon: CheckCheck },
+      { label: "Buchungen", href: "/dashboard/bank/buchungen", icon: Sparkles },
     ],
   },
   {
@@ -98,7 +102,7 @@ export const MEHR: NavItem[] = [
 
 /** Reachable but never its own sidebar entry. */
 const VERSTECKT: NavItem[] = [
-  { label: "Firmenprofil", href: "/dashboard/rechnungen/firma", icon: Building2, section: "Belege" },
+  { label: "Firmenprofil", href: "/dashboard/belege/firma", icon: Building2, section: "Belege" },
 ];
 
 export const NAV_ITEMS: NavItem[] = SURFACES.map(({ label, href, icon }) => ({
@@ -137,7 +141,7 @@ function claim(surface: Surface, pathname: string): number {
 /**
  * The surface a path belongs to — its own href or any of its tabs.
  * The most specific claim wins, so "/dashboard" (Heute) does not swallow
- * "/dashboard/kontoauszug" (Bank).
+ * "/dashboard/bank" (Bank).
  */
 export function surfaceFor(pathname: string): Surface | undefined {
   let best: Surface | undefined;

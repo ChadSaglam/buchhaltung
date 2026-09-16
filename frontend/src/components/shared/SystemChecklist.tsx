@@ -31,10 +31,10 @@ interface CheckItem {
 function buildChecklist(s: SystemStatus): CheckItem[] {
   return [
     { label: "Ollama", ok: s.ollama, detail: s.ollama ? "Verbunden" : "Offline", icon: Server, color: "text-info", href: undefined },
-    { label: "Vision AI", ok: s.vision, detail: s.visionModel || "Kein Modell", icon: Eye, color: "text-brand-600 dark:text-brand-300", href: "/dashboard/scanner" },
+    { label: "Vision AI", ok: s.vision, detail: s.visionModel || "Kein Modell", icon: Eye, color: "text-brand-600 dark:text-brand-300", href: "/dashboard/belege/scanner" },
     { label: "ML-Modell", ok: s.mlModel, detail: s.mlModel ? `${Math.round(s.mlAccuracy * 100)}%` : "Nicht trainiert", icon: Bot, color: "text-brand-600 dark:text-brand-300", href: "/dashboard/modell" },
     { label: "Gedächtnis", ok: s.memoryCount > 0, detail: `${s.memoryCount} Einträge`, icon: Brain, color: "text-success", href: "/dashboard/modell" },
-    { label: "Buchungen", ok: s.bookingCount > 0, detail: `${s.bookingCount} gespeichert`, icon: BookOpen, color: "text-warning", href: "/dashboard/kontoauszug" },
+    { label: "Buchungen", ok: s.bookingCount > 0, detail: `${s.bookingCount} gespeichert`, icon: BookOpen, color: "text-warning", href: "/dashboard/bank" },
   ];
 }
 
