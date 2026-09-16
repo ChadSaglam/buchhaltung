@@ -45,9 +45,7 @@ Pulled from LATER, in the order they pay off:
    `db: [sqlite, postgres]` matrix and a compose smoke job turn "it passed on my machine" back into a statement
    about the product. — `L` / `M`
 2. ~~**B-57 worker hardening**~~ ✅ 2026-09-16 — see Done.
-3. **B-56 parser/classifier hygiene** — the thousands-separator fix (2026-09-16) closed one half of this line; the
-   rest is the anchored date regex and getting tenant-specific supplier names out of the shared
-   `CLASSIFICATION_RULES`. — `M` / `S`
+3. ~~**B-56 parser/classifier hygiene**~~ ✅ 2026-09-16 — see Done.
 4. **B-62 frontend image** — `NEXT_PUBLIC_*` is inlined at *build* time, so the compose image ships with whatever
    the build had. Today that means the Apps switcher never renders in a compose deployment. — `M` / `S`
 5. ~~**B-61 health**~~ ✅ 2026-09-16 — see Done.
@@ -97,9 +95,8 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
       `docs/B-72-LOHN-SPEC.md`.
 - [x] **B-17** ✅ 2026-09-16 — see Done. Original: Banana TSV + PDF summary + receipts zip + audit extract, one click — the hero flow
       (see brainstorm idea A). Validate with two Treuhänder *before* building the PDF. — `M` / `L`
-- [ ] **B-56** Parser/classifier hygiene: `_parse_swiss_number` handles `'`/`’`/`\u202f` and `1234,50`; date regex anchored
-      (4-digit year → `3924` today); tenant-specific supplier names out of `CLASSIFICATION_RULES` into per-tenant
-      `KontoDefault`/memory; `save_to_memory` skips empty keys. — `M` / `S`
+- [x] **B-56** ✅ 2026-09-16 — see Done. The `3924` in this line was real, and the empty-key case turned out to
+      be wider than "empty": `preprocess` leaves punctuation, so `31.12.` reduces to `..`.
 - [x] **B-22** ✅ 2026-09-16 — see Done. The UI existed; what was missing was anything to show in it.
 - [x] **B-23** ✅ 2026-09-16 — see Done. The numbers live in `backend/app/core/plans.py` and are the owner's to
       set; what shipped is the mechanism. Seats are deliberately **not** limited — see that entry.
@@ -178,6 +175,24 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 - **a11y** ✅ 2026-09-16 — `EmptyState` and `ErrorState` rendered an `h3` inside sections whose heading was an `h2`,
   which axe reported as 14 `moderate heading-order` findings across the app. Both gained an `as` prop defaulting to
   `h2`. The whole suite is back to zero findings, light and dark.
+- **B-56** ✅ 2026-09-16 — parser and rule hygiene. Three bugs that share one property: each produces a
+  *plausible* wrong answer, so nothing raises and nothing looks wrong in a list.
+  **The statement date.** `re.compile(r"\d{2}\.\d{2}\.\d{2}").match(...)` was unanchored at the end, so
+  `31.12.2024` matched on its first eight characters and the two-digit-year rule then read `2024` as the year:
+  `1900 + 2024` = **3924**, exactly the number the roadmap line predicted. UBS prints `dd.mm.yy` and other banks
+  print `dd.mm.yyyy`; `parse_statement_date` now takes both, anchored, and rejects a month of 13.
+  **Somebody else's suppliers.** Seven names were in `CLASSIFICATION_RULES`, which every tenant of every
+  deployment shares. The worst was **`"aksoy"` in the payroll rule** — a surname, so any invoice from a supplier of
+  that name was booked to 5000 Lohn for a customer who has never heard of them. Also `iso-trade`, `iso-center`,
+  `dorfgarage`, `feldmann`, `spenglerei` and our own `chadev`. They are gone, `VERBOTENE_KEYWORDS` keeps them out,
+  and the generic trade vocabulary (`benzin`, `werkzeug`, `versicherung`) is untouched — a tenant's own suppliers
+  are already learned per tenant the first time they correct one.
+  **A memory key that identifies nothing.** `save_to_memory` guarded on an empty *description*, not an empty
+  *key* — and `preprocess` strips digits and month names, so `"2024 03"` reduces to `""`. Wider than the line
+  said, too: punctuation survives, so `"31.12."` reduces to `".."`. One such row matches every description that
+  reduces to the same thing and silently classifies a whole class of bank lines. Both the write **and the lookup**
+  now refuse, so a row written before this fix becomes harmless without a migration over every tenant's memory
+  table. 26 tests.
 - **B-57** ✅ 2026-09-16 — the worker runs where nobody is watching. Six things, and the one the line
   understated is the reaper: a worker that is SIGKILLed (OOM, a node going away) never runs its
   `CancelledError` handler, so the row stays `running` **for ever** — and because `enqueue_training` deduplicates
@@ -737,7 +752,7 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 | 0.5 Risk fixes before platform work | ✅ B-00…B-03 (branch `feat/phase0-risks`) |
 | 1 Platform contract | 1.2 ✅ B-31 · 1.4 ✅ B-26 · 1.6 ✅ tokens imported · perf: ✅ B-27, B-28 |
 | 2 Security | ✅ B-06, B-07, B-24, B-25, B-32, B-34, B-40, B-41, B-42, B-43, B-54, B-55 · open: — |
-| 3 Reliability | ✅ B-04, B-05, B-08, B-11, B-33, B-35, B-39, B-47, B-48, B-49, B-63, B-64, B-73, B-76, B-51, B-52, B-57 · open: B-56 |
+| 3 Reliability | ✅ B-04, B-05, B-08, B-11, B-33, B-35, B-39, B-47, B-48, B-49, B-63, B-64, B-73, B-76, B-51, B-52, B-56, B-57 · open: — |
 | 4 Polish | ✅ B-09, B-13, B-66, B-67, B-76, B-53, B-22, B-61 · open: — |
 | 5 UX | ✅ B-14, B-15, B-16, B-18, B-19, B-44, B-45, B-46, B-50 (+B-21), B-58, B-59, B-65, B-71, B-72, B-74, B-79, IA 1–5, B-17, B-20 · open: — |
 | 6 Together | ✅ B-36 (SSO + mirroring), B-37 (events), B-23 (plan limits) · deploy: `docs/DEPLOY-CHECKLIST-B36-B37.md` · parked: B-38 |

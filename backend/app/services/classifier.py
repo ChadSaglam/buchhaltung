@@ -69,9 +69,43 @@ def make_memory_key(text: str) -> str:
     return preprocess(text).strip()
 
 
+def key_ist_brauchbar(key: str) -> bool:
+    """Whether a memory key identifies anything (B-56).
+
+    ``preprocess`` removes digits and month names but not punctuation, so
+    ``"2024 03"`` reduces to ``""`` and ``"31.12."`` to ``".."`` — two "keys"
+    that carry no information and match every other description that reduces to
+    the same thing. One such row silently classifies a whole class of bank lines
+    to whatever it was taught.
+
+    Deliberately a separate check rather than a change to ``make_memory_key``:
+    that function's output is stored, and migration ``4c7e2a91b0d3`` already had
+    to re-derive every key once. Changing it again would invalidate every
+    tenant's memory table.
+    """
+    return any(ch.isalnum() for ch in key)
+
+
 # Swiss VAT rate -> Vorsteuer code (Banana). Current rates first, pre-2024 rates kept
 # for old receipts. The rate printed on the receipt is the truth; codes follow it.
 VAT_CODE_BY_RATE: dict[float, str] = {8.1: "I81", 2.6: "I26", 3.8: "I38", 7.7: "I77", 2.5: "I25", 3.7: "I37"}
+
+
+#: Names that were in `CLASSIFICATION_RULES` and must not come back (B-56).
+#: Each one is a specific company or person, so it classified for tenants who
+#: have no relationship with them at all. `tests/test_parser_hygiene.py` holds
+#: this list against the rules.
+VERBOTENE_KEYWORDS: frozenset[str] = frozenset(
+    {
+        "iso-trade",  # one customer's insulation supplier
+        "iso-center",  # the same
+        "spenglerei",  # one customer's trade, not a supplier category
+        "dorfgarage",  # a named garage
+        "feldmann",  # a surname
+        "aksoy",  # a surname — and it booked to 5000 Lohn
+        "chadev",  # our own company
+    }
+)
 
 
 def vat_code_for(rate: float, current_code: str = "") -> tuple[str, str] | None:
@@ -106,15 +140,24 @@ def calc_mwst(betrag: float, mwst_pct: str) -> float | str:
         return ""
 
 
+#: Keyword rules shared by **every tenant of every deployment** (B-56).
+#:
+#: Which is the whole constraint: a keyword here classifies for a customer who
+#: has never heard of it. So only *generic* trade vocabulary belongs — "benzin",
+#: "werkzeug", "versicherung" — never the name of one customer's supplier.
+#:
+#: Five names were in here and are gone (`VERBOTENE_KEYWORDS` below keeps them
+#: out). The worst was **"aksoy"** in the payroll rule: a surname, which booked
+#: any invoice from a supplier of that name to 5000 Lohn for every tenant in the
+#: world. A tenant's own suppliers are learned per tenant, automatically, the
+#: first time they correct one (`save_to_memory`) — which is both more accurate
+#: and the mechanism that already exists.
 CLASSIFICATION_RULES: list[tuple[list[str], str, str, str, str]] = [
     (
         [
-            "iso-trade",
-            "iso-center",
             "isolier",
             "material",
             "baumate",
-            "spenglerei",
             "werkzeug",
             "schrauben",
             "befestigung",
@@ -134,7 +177,7 @@ CLASSIFICATION_RULES: list[tuple[list[str], str, str, str, str]] = [
     ),
     (["strassenverkehr", "verkehrsamt", "mfk ", "motorfahrzeug"], "6230", "1020", "", ""),
     (
-        ["garage", "auto ", "autoreparatur", "reifenwechsel", "pneu ", "dorfgarage", "feldmann"],
+        ["garage", "auto ", "autoreparatur", "reifenwechsel", "pneu "],
         "6200",
         "1020",
         "I81",
@@ -142,7 +185,7 @@ CLASSIFICATION_RULES: list[tuple[list[str], str, str, str, str]] = [
     ),
     (["autoversicherung", "fahrzeugversicherung"], "6230", "1020", "", ""),
     (["leasing fahrzeug", "autoleasing"], "6260", "1020", "", ""),
-    (["lohn", "gehalt", "salary", "aksoy", "nettolohn"], "5000", "1020", "", ""),
+    (["lohn", "gehalt", "salary", "nettolohn"], "5000", "1020", "", ""),
     (["ahv", "iv ", "eo ", "alv", "fak ", "sozialversicherung"], "5700", "1020", "", ""),
     (["pension", "bvg", "vorsorge", "2. säule"], "5700", "1020", "", ""),
     (["spesen mitarbeiter", "spesenabrechnung", "spesen"], "5800", "1020", "", ""),
@@ -150,7 +193,6 @@ CLASSIFICATION_RULES: list[tuple[list[str], str, str, str, str]] = [
     (["reparatur", "unterhalt", "wartung", "service "], "6100", "1020", "I81", "8.10"),
     (
         [
-            "chadev",
             "software",
             "it-",
             "hosting",
@@ -517,10 +559,14 @@ class TenantClassifier:
             )
 
         key = make_memory_key(beschreibung)
+        # A key with nothing in it is not a key (B-56). `save_to_memory` refuses
+        # to write one now, but a row written before that fix would still match —
+        # so the *lookup* refuses too, and the old row becomes harmless without a
+        # migration over every tenant's memory table.
         result = await self.db.execute(
             select(Memory).where(Memory.tenant_id == self.tenant_id, Memory.lookup_key == key)
         )
-        mem = result.scalar_one_or_none()
+        mem = result.scalar_one_or_none() if key_ist_brauchbar(key) else None
         if mem:
             return ClassificationResult(
                 kt_soll=mem.kt_soll,
@@ -603,9 +649,9 @@ class TenantClassifier:
         mwst_code: str = "",
         mwst_pct: str = "",
     ):
-        if not beschreibung.strip():
-            return
         key = make_memory_key(beschreibung)
+        if not key_ist_brauchbar(key):
+            return
         result = await self.db.execute(
             select(Memory).where(Memory.tenant_id == self.tenant_id, Memory.lookup_key == key)
         )
