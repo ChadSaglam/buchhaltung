@@ -4,7 +4,7 @@
 > Legend: severity `C`ritical / `H`igh / `M`edium / `L`ow · effort `S` (<1h) / `M` (half day) / `L` (multi-day)
 > IDs: `B-xx` = work item (next free: **B-82**) · `P-xx` = parked (next free: **P-05**)
 > Cross-product items (SSO, contracts, design tokens) live in `chadev-platform/ROADMAP.md`, not here.
-> Updated: 2026-09-16 (fifth run) — **Lohn-Vergleich** (the tool that lifts the payslip watermark) and **B-80** the frontend image, built and served before it was believed. Fourth run — the NEXT block emptied: **B-61** health that can fail, **B-57** worker hardening, **B-56** parser hygiene (the `3924` was real), **B-62** (already done — the line was stale), **B-60** CI parity (both databases, a compose smoke job, and a real password out of `scripts/setup.sh`). Earlier that day (third run): **B-27** the query audit (five statements that grew with the tenant), **B-23** plan limits enforced from `usage_events`, **B-72 option C** as far as the law reaches (BVG minimum as a check), **B-20 finished** (the Kontenplan import wizard). Earlier that day (second run): **B-72** payroll (option B with option C's shape), **B-79** invoice e-mail, **B-74** part A, **B-24** row-level security (`app_rw` is `NOSUPERUSER NOBYPASSRLS`), **B-25** backup + restore drill, **B-54**/**B-55**, **B-17** the Treuhänder pack in one zip, **B-20** (sample invoice + checklist; the wizard is still open), **B-51 finished** (the last five money columns), **B-22** the audit log, **B-28** indexes chosen by `EXPLAIN`. Earlier that day (night run): **B-51** money columns are Numeric(12,2), **B-59** `response_model` on the seven endpoints that returned bare dicts (and the hand-written frontend interfaces are gone), **B-58** the UX/a11y batch (one formatter, WCAG-AA accents, `usePopover`, heading order, confirms on destructive actions), **B-71** 90-day liquidity + tax provision on Heute, and **step 5 of the IA migration** (sidebar = four surfaces + Mehr; every old route still resolves). Earlier on 2026-09-16: B-70 Jahresabschluss and B-77 (PDF renderer = fpdf2); B-69 e-mail intake; B-52 idempotency by constraint; B-53 export safety. 2026-09-15 — B-68 write invoices (Swiss QR, debtor booking, reference return); B-67 VAT return (form 200); B-66 month-end check; B-65 open items / reminders; B-76 Banana batch (phase 4) done — and the open extension question answered: an extension may not call HTTP, so the file hand-off is final (new: B-78, read-only REST spike); B-73 Abgleich done, `make check` green. 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 amount memory. 2026-09-13 — phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
+> Updated: 2026-09-16 (fifth run) — **the stack runs**: five healthy services and the whole compose-smoke job, verbatim, plus B-24 verified against the live database. **Lohn-Vergleich** (the tool that lifts the payslip watermark) and **B-80** the frontend image, built and served before it was believed. Fourth run — the NEXT block emptied: **B-61** health that can fail, **B-57** worker hardening, **B-56** parser hygiene (the `3924` was real), **B-62** (already done — the line was stale), **B-60** CI parity (both databases, a compose smoke job, and a real password out of `scripts/setup.sh`). Earlier that day (third run): **B-27** the query audit (five statements that grew with the tenant), **B-23** plan limits enforced from `usage_events`, **B-72 option C** as far as the law reaches (BVG minimum as a check), **B-20 finished** (the Kontenplan import wizard). Earlier that day (second run): **B-72** payroll (option B with option C's shape), **B-79** invoice e-mail, **B-74** part A, **B-24** row-level security (`app_rw` is `NOSUPERUSER NOBYPASSRLS`), **B-25** backup + restore drill, **B-54**/**B-55**, **B-17** the Treuhänder pack in one zip, **B-20** (sample invoice + checklist; the wizard is still open), **B-51 finished** (the last five money columns), **B-22** the audit log, **B-28** indexes chosen by `EXPLAIN`. Earlier that day (night run): **B-51** money columns are Numeric(12,2), **B-59** `response_model` on the seven endpoints that returned bare dicts (and the hand-written frontend interfaces are gone), **B-58** the UX/a11y batch (one formatter, WCAG-AA accents, `usePopover`, heading order, confirms on destructive actions), **B-71** 90-day liquidity + tax provision on Heute, and **step 5 of the IA migration** (sidebar = four surfaces + Mehr; every old route still resolves). Earlier on 2026-09-16: B-70 Jahresabschluss and B-77 (PDF renderer = fpdf2); B-69 e-mail intake; B-52 idempotency by constraint; B-53 export safety. 2026-09-15 — B-68 write invoices (Swiss QR, debtor booking, reference return); B-67 VAT return (form 200); B-66 month-end check; B-65 open items / reminders; B-76 Banana batch (phase 4) done — and the open extension question answered: an extension may not call HTTP, so the file hand-off is final (new: B-78, read-only REST spike); B-73 Abgleich done, `make check` green. 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 amount memory. 2026-09-13 — phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
 > Companion docs: `docs/ADR-002-rls.md` (B-24) · `docs/BACKUP.md` (B-25) · `docs/B-72-LOHN-SPEC.md` (B-72) · `docs/IA-2026-09-14.md` · `docs/DEPLOY-CHECKLIST-B36-B37.md` · `docs/BRAINSTORM-2026-09-12.md`.
 
 ---
@@ -38,11 +38,17 @@ production, because there is no production yet._
 
 **Nothing here is the next thing to do.** What is left in this file is smaller than what is left outside it:
 
-1. **Start it once — and it is one line closer.** The first real `docker compose up` (2026-09-16, on the owner's
-   Mac) built every image, created every container, and then died on `ollama`: an unconditional GPU reservation
-   that compose refuses to honour on a host without one, taking the whole `up` with it. Fixed — Ollama is behind
-   `--profile ai` now and asks for no GPU. **The next `up` is still the first one that has ever reached a running
-   stack**, and the CI smoke job has still never executed.
+1. **Start it on *your* machine.** The stack now runs: on 2026-09-16 a full
+   `docker compose up -d --wait db redis api worker web` came up with **all five services healthy**, and every
+   step of the CI smoke job passed verbatim — both health endpoints, the `/login` page *and* the stylesheet it
+   references, and `python -m app.worker --once` exiting 0. B-24 was verified live at the same time: `app_rw` is
+   `NOSUPERUSER NOBYPASSRLS`, 24 tables with RLS enabled, forced and one policy each, the API connected as
+   `app_rw`, and an `INSERT` with no tenant context was refused with `new row violates row-level security policy`.
+   The first `up` before that died on `ollama`'s unconditional GPU reservation; it is behind `--profile ai` now.
+   **What is still unproven is your machine**, and two things are specific to it: Docker Desktop on arm64 (the
+   images above were built on x86_64), and an existing `pgdata` volume — if one is there, `POSTGRES_PASSWORD`
+   must match what it was created with, or `docker compose down -v` first, which deletes the data. An existing
+   volume also means `docker/db-init/10-app-role.sql` never ran, so `app_rw` has to be created by hand.
 2. **Rotate the secrets**, including the Postgres password that was in `scripts/setup.sh` until today and is
    still in the history.
 3. **One real payroll month**, against the previous provider. Until then the watermark stays and Lohn cannot be
@@ -162,6 +168,21 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 
 ## ✅ Done
 
+- **The stack runs** ✅ 2026-09-16 — not a roadmap item, and the largest thing that happened today. Every
+  compose piece was written blind: B-41 the production compose, B-24 the role split, B-25 the backup profile,
+  B-61 the probes, B-60 the smoke job. None of it had ever run together, and the one attempt died on `ollama`'s
+  GPU reservation before reaching a container. It has now been brought up end to end:
+  `docker compose up -d --wait db redis api worker web` → **five healthy services**, `GET /api/health` and
+  `/api/health/live` 200, `/login` 200 with its stylesheet served, `python -m app.worker --once` exit 0 — which is
+  every step of the `compose-smoke` job, verbatim, so that job is no longer shipping unrun.
+  **B-24 checked against the running database**, which is the first time it has been anything but a test suite:
+  `app_rw` is `rolsuper = f, rolbypassrls = f`; 24 tables have RLS **enabled**, **forced**, one policy each; the
+  API's connections are `app_rw` and only the migration's is the owner; and an `INSERT` as `app_rw` with no tenant
+  context is refused with `new row violates row-level security policy`. Fail-closed, live.
+  It also confirmed the trap `docs/RUNBOOK-RLS-CUTOVER.md` warns about: `chadev` really is `rolsuper = t`, so
+  pointing `DATABASE_URL` back at the owner is not a rollback — production refuses to boot as a superuser.
+  Caveat worth keeping: this ran on x86_64 with a Linux daemon. Docker Desktop on an arm64 Mac is a different
+  build of every image.
 - **B-80** ✅ 2026-09-16 — the frontend image stops shipping its own toolchain. **1.23 GB → 235 MB**, measured by
   building both. It was single-stage, so the published image carried the whole source tree and every devDependency
   `npm ci` installed — typescript, eslint, vitest, Playwright, tailwind, 734 MB of `node_modules` — and ran as

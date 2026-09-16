@@ -11,6 +11,19 @@ pointed at it for 24 h.
 
 Read ADR-002 first. This file assumes it.
 
+**What has been checked against a running stack (2026-09-16).** The compose stack was brought up end to end for
+the first time, and the state below was read off the live database rather than reasoned about:
+
+- `app_rw` is `rolsuper = f, rolbypassrls = f, rolcanlogin = t`. The owner, `chadev`, is `rolsuper = t` — which is
+  section 5's trap, confirmed rather than predicted.
+- 24 tables, all `relrowsecurity = t`, all `relforcerowsecurity = t`, 24 policies. Nothing half-covered.
+- `pg_stat_activity` showed the API's connections as `app_rw` and only the migration's as the owner.
+- As `app_rw` with no tenant context, `INSERT INTO bookings …` was refused with
+  `new row violates row-level security policy for table "bookings"`. Fail-closed, live.
+
+That was a fresh database on x86_64. It tells you the mechanism works; it tells you nothing about a database that
+already has rows in it, which is what section 4 is for.
+
 ---
 
 ## 1. What can go wrong, in two very different flavours
