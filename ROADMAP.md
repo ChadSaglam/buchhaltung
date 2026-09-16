@@ -2,9 +2,9 @@
 
 > One running list. Never duplicated — items move between sections, they don't get re-added.
 > Legend: severity `C`ritical / `H`igh / `M`edium / `L`ow · effort `S` (<1h) / `M` (half day) / `L` (multi-day)
-> IDs: `B-xx` = work item (next free: **B-79**) · `P-xx` = parked (next free: **P-05**)
+> IDs: `B-xx` = work item (next free: **B-80**) · `P-xx` = parked (next free: **P-05**)
 > Cross-product items (SSO, contracts, design tokens) live in `chadev-platform/ROADMAP.md`, not here.
-> Updated: 2026-09-15 — B-68 Rechnungen schreiben (Swiss QR, Debitorenbuchung, Referenz-Rücklauf) done; B-67 MWST-Abrechnung (Formular 200) done; B-66 Monatsabschluss-Check done; B-65 Offene Posten/Mahnung done (B-77 = echter PDF-Renderer, gebündelt mit B-70); B-76 Banana-Stapel (phase 4) done — und die offene Extension-Frage geklärt: aus einer Banana-Extension ist kein HTTP möglich, der Datei-Hand-off ist damit final (neu: B-78, read-only REST-Spike); B-73 Abgleich done, `make check` green (a11y nested-interactive on the drop zones fixed, `.next-e2e` out of ESLint). 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 Betrag-Gedächtnis (amount memory). 2026-09-13 — Phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
+> Updated: 2026-09-16 — B-69 E-Mail-Eingang (ein Postfach, `belege+<slug>@`, Absenderliste, IMAP + Webhook) done; 2026-09-15 — B-68 Rechnungen schreiben (Swiss QR, Debitorenbuchung, Referenz-Rücklauf) done; B-67 MWST-Abrechnung (Formular 200) done; B-66 Monatsabschluss-Check done; B-65 Offene Posten/Mahnung done (B-77 = echter PDF-Renderer, gebündelt mit B-70); B-76 Banana-Stapel (phase 4) done — und die offene Extension-Frage geklärt: aus einer Banana-Extension ist kein HTTP möglich, der Datei-Hand-off ist damit final (neu: B-78, read-only REST-Spike); B-73 Abgleich done, `make check` green (a11y nested-interactive on the drop zones fixed, `.next-e2e` out of ESLint). 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 Betrag-Gedächtnis (amount memory). 2026-09-13 — Phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
 > Companion docs: `docs/ADR-002-rls.md` (B-24) · `docs/DEPLOY-CHECKLIST-B36-B37.md` · `docs/BRAINSTORM-2026-09-12.md`.
 
 ---
@@ -17,7 +17,7 @@
 | **more dynamic** | Scan → classify → book without a reload; live review queue; optimistic booking edits; the learning loop visibly closes | B-45 ✅, B-14 ✅, B-15 ✅, B-16 ✅ |
 | **easier to improve** | No god-files, one type source, tests that catch regressions, jobs outside the API process, prod == compose | B-02 ✅, B-03 ✅, B-08 ✅, B-10 ✅, B-11 ✅, B-13 ✅, B-33 ✅, B-39 ✅, B-41 ✅, B-49 ✅, B-59, B-60 |
 | **together** (platform) | One login across billing + buchhaltung, paid invoices book themselves, roles mean something | B-36 ✅, B-37 ✅, B-40 ✅, B-52, B-38 🅿️ |
-| **more user-friendly** | Loading/empty/error states everywhere, keyboard-first review, a11y, onboarding, no fake saves | B-18 ✅, B-19 ✅, B-44 ✅, B-46 ✅, B-50 ✅, B-58, B-20 |
+| **more user-friendly** | Loading/empty/error states everywhere, keyboard-first review, a11y, onboarding, no fake saves | B-18 ✅, B-19 ✅, B-44 ✅, B-46 ✅, B-50 ✅, B-69 ✅, B-58, B-20 |
 
 Rule: every PR names the B-ID it closes and which north-star column it serves.
 Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a wrong VAT code costs money on every receipt; optimistic UI saves 300 ms.
@@ -44,11 +44,12 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
    base64 AC2 + Document Change, which the user must then *Save As* over the original ("the method does not verify
    that the data is correct"). The read side is the only part worth a spike → **B-78**.
 2. The "Kein Treuhänder nötig" track: ~~B-65 Offene Posten~~ ✅ · ~~B-66 Monatsabschluss~~ ✅ ·
-   ~~B-67 MWST-Abrechnung~~ ✅ · ~~B-68 Rechnungen schreiben (QR)~~ ✅ (2026-09-15) → **B-69 E-Mail-Eingang** →
-   B-70 Jahresabschluss (mit B-77 PDF-Entscheid) → B-71 Liquidität → B-72 Lohn, each inside a surface of
+   ~~B-67 MWST-Abrechnung~~ ✅ · ~~B-68 Rechnungen schreiben (QR)~~ ✅ · ~~B-69 E-Mail-Eingang~~ ✅ (2026-09-15/16)
+   → **B-70 Jahresabschluss** (mit B-77 PDF-Entscheid) → B-71 Liquidität → B-72 Lohn, each inside a surface of
    `docs/IA-2026-09-14.md`, not as a new menu entry.
-   *Die Schleife ist zu*: Rechnung schreiben → Referenz → Kontoauszug → Abgleich bucht die Zahlung. Was an B-68
-   bewusst offen blieb: PDF statt druckfertigem HTML (**B-77**) und der Versand per E-Mail (**B-69**).
+   *Die Schleife ist zu*: Beleg kommt per Mail oder Upload → Abgleich → Abschluss, und umgekehrt Rechnung
+   schreiben → Referenz → Kontoauszug → Abgleich bucht die Zahlung. Offen bleibt der Versand der eigenen
+   Rechnung per E-Mail (braucht B-77 als Anhang) und das echte PDF (**B-77**, gebündelt mit B-70).
 3. The IA migration itself (four surfaces + Mehr, Heute replacing the Dashboard) — do it while B-65/B-66 land,
    not as a separate rewrite.
 4. **B-53** export safety · **B-51** Numeric money · **B-52** idempotency by constraint (all `S`/`M`).
@@ -63,11 +64,13 @@ _2026-09-14: the previous NEXT block (B-49, B-44, B-46, B-14, B-16, B-15, B-34) 
 ### "Kein Treuhänder nötig" — the product track (owner, 2026-09-14; order = impact)
 Target: the Treuhänder signs once a year, nothing in between. Each item is a *flow* inside one of the four surfaces
 (`docs/IA-2026-09-14.md`: Heute · Belege · Bank · Abschluss), not its own page.
-- [ ] **B-69** E-mail intake: per-tenant address `belege+<slug>@…`, attachments → B-64 ingest; sender allow-list;
-      "3 neue Belege per E-Mail" on *Heute*. — `M` / `M`
 - [ ] **B-77** PDF-Renderer (eine Abhängigkeits-Entscheidung für alle): Mahnung, MWST-Formular, Bilanz/ER und das
       Deckblatt brauchen echtes PDF. Heute liefert B-65 druckfertiges HTML (Browser → PDF). Kandidaten: fpdf2 (klein,
       kein C-Build) vs. reportlab (mächtiger). Entscheiden, wenn B-67/B-70 dran sind — nicht vorher. — `M` / `M`
+- [ ] **B-79** Rechnung per E-Mail verschicken (*Rechnungen › Rechnung schreiben*): die eigene QR-Rechnung an den
+      Kunden senden statt sie auszudrucken — Entwurf mit Betreff und Text, Anhang ist das Dokument aus **B-77**,
+      Versand über das bestehende `services/email_sender.py`. Danach zeigt die Rechnung, wann sie rausging (und die
+      Mahnung aus B-65 knüpft daran an). Braucht B-77, sonst hängt ein HTML am Mail. — `M` / `M`
 - [ ] **B-70** Jahresabschluss pack (*Abschluss › Jahr*): Bilanz + Erfolgsrechnung PDF (KMU Kontenrahmen), Abschreibungs-
       vorschlag, transitorische Warnungen, Banana export of the year, receipts zip — "nur noch unterschreiben". Folds B-17. — `H` / `L`
 - [ ] **B-71** Steuerrückstellung + Liquidität (*Heute*): "diesen Quartal ~CHF X Steuern zurücklegen", 90-day cash view from
@@ -181,6 +184,16 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 - **B-40** ✅ 2026-09-13 — role ladder wired: `require_editor` on every mutating route, `require_admin` on Kontenplan
   replace, classify delete/upload, scanner config, `import?replace=true`. `tests/test_rbac_routes.py` walks the route
   table (a new mutating route without a role check fails CI) + viewer/editor 403 over HTTP.
+- **B-69** ✅ 2026-09-16 — E-Mail-Eingang (*Rechnungen › E-Mail-Eingang*): ein Postfach für die ganze Installation,
+  der Mandant steckt in der Adresse (`belege+<slug>@<domain>`, aus `EMAIL_INTAKE_DOMAIN`). Zwei Transporte, ein
+  Kern: `deliver()` nimmt rohes MIME — vom IMAP-Abruf (Worker-Job `email-intake`, nur registriert wenn ein Postfach
+  konfiguriert ist, plus *Jetzt abrufen* von Hand) oder vom Webhook `POST /api/email/inbound` (ohne Secret ein 404,
+  mit falschem Secret ein 401). Anhänge (PDF/Bild) gehen durch den B-64-Ingest, der Rest wird protokolliert statt
+  verschluckt. **Sicher per Default: eine leere Absenderliste lässt nichts durch** — die Adresse ist erratbar, also
+  wird die erste Mail eines neuen Absenders als *abgelehnt* mit Grund festgehalten und ein Klick setzt ihn auf die
+  Liste (ganze Domains als `@lieferant.ch`). `email_messages` ist gleichzeitig Quittung und Dedup (Message-ID je
+  Mandant), `mail_settings` hält Schalter und Liste. Auf *Heute* die Karte „N neue Belege per E-Mail“.
+  Migration `e4f5a6b7c8d9`, 21 Backend- und 4 Frontend-Tests; gegen echtes Postgres 16 verifiziert (547).
 - **B-68** ✅ 2026-09-15 — Rechnungen schreiben (*Rechnungen › Rechnung schreiben*): Kunde + Positionen ergeben eine
   QR-Rechnung, eine Debitorenbuchung `1100/3000` am Rechnungsdatum (MWST genau einmal, mit dem Umsatzcode aus dem
   Firmenprofil) und einen offenen Posten in Richtung *ausgang* — Mahnwesen (B-65) und Offene Posten greifen also ohne
@@ -191,7 +204,8 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
   QR-Rechnung. Neu `company_profiles` (wer wir selber sind: Adresse, IBAN, Debitoren-/Ertrags-/Bankkonto, MWST-Code)
   und `invoice_positions`; der Rechnungskopf bleibt ein `Document`. Die Zahlung kommt mit der Referenz zurück, der
   Abgleich erkennt sie als `referenz`-Treffer und bucht `1020/1100` — ein Test fährt genau diese Strecke.
-  Druckansicht ist HTML mit Zahlteil (Empfangsschein + Zahlteil, A4); echtes PDF bleibt **B-77**, Versand ist **B-69**.
+  Druckansicht ist HTML mit Zahlteil (Empfangsschein + Zahlteil, A4); echtes PDF bleibt **B-77**, der Versand per
+  E-Mail wurde daraus **B-79** (B-69 ist der Eingang, nicht der Ausgang).
   Migration `d3e4f5a6b7c8`, 19 Backend- und 6 Frontend-Tests; gegen echtes Postgres 16 verifiziert.
 - **B-67** ✅ 2026-09-15 — MWST-Abrechnung (*Abschluss › Quartal*): Formular 200 aus den Buchungen. Ziffern und
   Reihenfolge nach dem offiziellen ESTV-Formular ab 01.01.2024 (200 · 205 · 220–280 · 289 · 299 · 302/312/342 mit
