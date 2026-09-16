@@ -4,8 +4,8 @@
 > Legend: severity `C`ritical / `H`igh / `M`edium / `L`ow · effort `S` (<1h) / `M` (half day) / `L` (multi-day)
 > IDs: `B-xx` = work item (next free: **B-80**) · `P-xx` = parked (next free: **P-05**)
 > Cross-product items (SSO, contracts, design tokens) live in `chadev-platform/ROADMAP.md`, not here.
-> Updated: 2026-09-16 — B-70 Jahresabschluss (balance sheet / income statement, depreciation per ESTV A/1995, Treuhänder pack) and B-77 (PDF renderer = fpdf2) done; B-69 e-mail intake (one mailbox, `belege+<slug>@`, allow-list, IMAP + webhook) done; 2026-09-15 — B-68 Rechnungen schreiben (Swiss QR, Debitorenbuchung, Referenz-Rücklauf) done; B-67 MWST-Abrechnung (Formular 200) done; B-66 Monatsabschluss-Check done; B-65 Offene Posten/Mahnung done (B-77 = echter PDF-Renderer, gebündelt mit B-70); B-76 Banana batch (phase 4) done — and the open extension question answered: no HTTP from a Banana extension, so the file hand-off is final (new: B-78, read-only REST spike); B-73 Abgleich done, `make check` green (a11y nested-interactive on the drop zones fixed, `.next-e2e` out of ESLint). 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 Betrag-Gedächtnis (amount memory). 2026-09-13 — Phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
-> Companion docs: `docs/ADR-002-rls.md` (B-24) · `docs/DEPLOY-CHECKLIST-B36-B37.md` · `docs/BRAINSTORM-2026-09-12.md`.
+> Updated: 2026-09-16 (night run) — **B-51** money columns are Numeric(12,2), **B-59** `response_model` on the seven endpoints that returned bare dicts (and the hand-written frontend interfaces are gone), **B-58** the UX/a11y batch (one formatter, WCAG-AA accents, `usePopover`, heading order, confirms on destructive actions), **B-71** 90-day liquidity + tax provision on Heute, and **step 5 of the IA migration** (sidebar = four surfaces + Mehr; every old route still resolves). Earlier on 2026-09-16: B-70 Jahresabschluss and B-77 (PDF renderer = fpdf2); B-69 e-mail intake; B-52 idempotency by constraint; B-53 export safety. 2026-09-15 — B-68 write invoices (Swiss QR, debtor booking, reference return); B-67 VAT return (form 200); B-66 month-end check; B-65 open items / reminders; B-76 Banana batch (phase 4) done — and the open extension question answered: an extension may not call HTTP, so the file hand-off is final (new: B-78, read-only REST spike); B-73 Abgleich done, `make check` green. 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 amount memory. 2026-09-13 — phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
+> Companion docs: `docs/ADR-002-rls.md` (B-24) · `docs/B-72-LOHN-SPEC.md` (B-72) · `docs/IA-2026-09-14.md` · `docs/DEPLOY-CHECKLIST-B36-B37.md` · `docs/BRAINSTORM-2026-09-12.md`.
 
 ---
 
@@ -13,11 +13,11 @@
 
 | Owner's words | What it means in this repo | Tracks that deliver it |
 |---|---|---|
-| **more professional** | Money that rounds right in every export, correct VAT codes, audit trail, Treuhänder hand-off that is accepted first time | B-01 ✅, B-04 ✅, B-05 ✅, B-09 ✅, B-47 ✅, B-48 ✅, B-67 ✅, B-68 ✅, B-70 ✅, B-77 ✅, B-51, B-53, B-17, B-22 |
+| **more professional** | Money that rounds right in every export, correct VAT codes, audit trail, Treuhänder hand-off that is accepted first time | B-01 ✅, B-04 ✅, B-05 ✅, B-09 ✅, B-47 ✅, B-48 ✅, B-67 ✅, B-68 ✅, B-70 ✅, B-77 ✅, B-51 ✅, B-53 ✅, B-17, B-22 |
 | **more dynamic** | Scan → classify → book without a reload; live review queue; optimistic booking edits; the learning loop visibly closes | B-45 ✅, B-14 ✅, B-15 ✅, B-16 ✅ |
-| **easier to improve** | No god-files, one type source, tests that catch regressions, jobs outside the API process, prod == compose | B-02 ✅, B-03 ✅, B-08 ✅, B-10 ✅, B-11 ✅, B-13 ✅, B-33 ✅, B-39 ✅, B-41 ✅, B-49 ✅, B-59, B-60 |
-| **together** (platform) | One login across billing + buchhaltung, paid invoices book themselves, roles mean something | B-36 ✅, B-37 ✅, B-40 ✅, B-52, B-38 🅿️ |
-| **more user-friendly** | Loading/empty/error states everywhere, keyboard-first review, a11y, onboarding, no fake saves | B-18 ✅, B-19 ✅, B-44 ✅, B-46 ✅, B-50 ✅, B-69 ✅, B-58, B-20 |
+| **easier to improve** | No god-files, one type source, tests that catch regressions, jobs outside the API process, prod == compose | B-02 ✅, B-03 ✅, B-08 ✅, B-10 ✅, B-11 ✅, B-13 ✅, B-33 ✅, B-39 ✅, B-41 ✅, B-49 ✅, B-59 ✅, B-60 |
+| **together** (platform) | One login across billing + buchhaltung, paid invoices book themselves, roles mean something | B-36 ✅, B-37 ✅, B-40 ✅, B-52 ✅, B-38 🅿️ |
+| **more user-friendly** | Loading/empty/error states everywhere, keyboard-first review, a11y, onboarding, no fake saves | B-18 ✅, B-19 ✅, B-44 ✅, B-46 ✅, B-50 ✅, B-69 ✅, B-58 ✅, B-20 |
 
 Rule: every PR names the B-ID it closes and which north-star column it serves.
 Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a wrong VAT code costs money on every receipt; optimistic UI saves 300 ms.
@@ -31,29 +31,36 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 
 ## ⏭ NEXT — pull from LATER, in this order
 
-1. ~~Phase 1~~ ✅ B-64 · ~~Phase 3 Abgleich~~ ✅ B-73 · ~~Phase 4 Banana batch~~ ✅ B-76 (all 2026-09-15) →
-   **phase 4 is closed, 2026-09-15**: a Banana *extension* may **not** call HTTP. Official wording: "For security
-   reasons, Banana Accounting extensions can't connect to external URLs API" (`banana.ch/doc/en/node/4065`), and
-   extensions are "NOT ALLOWED to directly write or read file, web resource, change computer setting or execute
-   programs" (`node/10067`). There is no `Banana.Http` namespace in the API reference (`node/4714`).
-   → **the file hand-off is the product, not a stopgap** — there is no level-2 push to build later; stop reserving
-   design space for it. The HTTP that does exist runs the other way and does not close the loop: the integrated web
-   server (Advanced plan only, `localhost:8081`, `X-Banana-Access-Token`) is **read-only** — "the web server can't be
-   used to write to the accounting file, and Banana Accounting+ can't connect to external URLs" (`node/4867`) — and
-   the V2 *Send Data* API (`POST /v2/doc?show&acstkn=…`, `node/10157`) only creates a **new** file from an embedded
-   base64 AC2 + Document Change, which the user must then *Save As* over the original ("the method does not verify
-   that the data is correct"). The read side is the only part worth a spike → **B-78**.
-2. The "no Treuhänder needed" track: ~~B-65 Offene Posten~~ ✅ · ~~B-66 Monatsabschluss~~ ✅ ·
-   ~~B-67 MWST~~ ✅ · ~~B-68 Rechnungen schreiben (QR)~~ ✅ · ~~B-69 E-Mail-Eingang~~ ✅ ·
-   ~~B-70 Jahresabschluss~~ ✅ with ~~B-77 PDF decision~~ ✅ (2026-09-15/16) → **B-71 Liquidität** → B-72 Lohn,
-   each inside a surface of `docs/IA-2026-09-14.md`, not as a new menu entry.
-   *The loop is closed, both ways*: a receipt arrives by mail or upload → Abgleich → Abschluss; and an invoice we
-   write → reference → bank statement → the Abgleich books the payment. Still open: sending our own invoice by
-   e-mail (**B-79**, now unblocked because B-77 exists).
-3. The IA migration itself (four surfaces + Mehr, Heute replacing the Dashboard) — do it while B-65/B-66 land,
-   not as a separate rewrite.
-4. **B-53** export safety · **B-51** Numeric money · **B-52** idempotency by constraint (all `S`/`M`).
-5. **B-58** UX/a11y batch · **B-59** `response_model` everywhere.
+_The 2026-09-16 night run cleared items 2 (B-71), 3 (step 5), 4 and 5 of the previous block. What is left:_
+
+1. **B-72 Lohn light** — payroll. **Deliberately not built unattended** (2026-09-16): the rates change every year,
+   a wrong AHV deduction is the customer's liability, and the roadmap itself says "validated against a real
+   Treuhänder run". `docs/B-72-LOHN-SPEC.md` has the sourced groundwork; the decision is yours.
+2. **B-79** Send our own invoice by e-mail — unblocked since B-77 exists. Draft with subject and body, the PDF as
+   the attachment. The smallest remaining piece of the "no Treuhänder needed" loop.
+3. **Finish the IA migration** — step 5 landed (sidebar = four surfaces + Mehr, old routes still resolve). Left:
+   move the page files under `app/dashboard/{belege,bank}/`, and turn the Heute cards into inbox *rows*
+   (steps 1–4 of `docs/IA-2026-09-14.md`). Pure refactor, do it in one sitting with the app open.
+4. **B-20** Onboarding · **B-17** Treuhänder hand-off · **B-74** Dauerbuchungen (B-71 already recognises them,
+   they just need a place to live on *Bank*).
+5. **B-24** RLS · **B-25** backup/restore · **B-54** upload bounds · **B-55** auth surface — the security block.
+   Nothing here is blocking a customer today, which is exactly why it keeps slipping.
+
+<details><summary>What item 1 of the old block settled (Banana, 2026-09-15) — keep, do not re-litigate</summary>
+
+A Banana *extension* may **not** call HTTP. Official wording: "For security reasons, Banana Accounting extensions
+can't connect to external URLs API" (`banana.ch/doc/en/node/4065`), and extensions are "NOT ALLOWED to directly
+write or read file, web resource, change computer setting or execute programs" (`node/10067`). There is no
+`Banana.Http` namespace in the API reference (`node/4714`).
+→ **the file hand-off is the product, not a stopgap** — there is no level-2 push to build later; stop reserving
+design space for it. The HTTP that does exist runs the other way and does not close the loop: the integrated web
+server (Advanced plan only, `localhost:8081`, `X-Banana-Access-Token`) is **read-only** — "the web server can't be
+used to write to the accounting file, and Banana Accounting+ can't connect to external URLs" (`node/4867`) — and
+the V2 *Send Data* API (`POST /v2/doc?show&acstkn=…`, `node/10157`) only creates a **new** file from an embedded
+base64 AC2 + Document Change, which the user must then *Save As* over the original ("the method does not verify
+that the data is correct"). The read side is the only part worth a spike → **B-78**.
+
+</details>
 
 _2026-09-14: the previous NEXT block (B-49, B-44, B-46, B-14, B-16, B-15, B-34) is done — see ✅ Done._
 
@@ -68,8 +75,6 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
       customer instead of printing it — draft with subject and body, the attachment is the PDF from **B-77**, sent
       through the existing `services/email_sender.py`. The invoice then shows when it went out, and the Mahnung
       (B-65) builds on that. **B-77 is done** — the invoice only has to go through `pdf_render.py`. — `M` / `M`
-- [ ] **B-71** Steuerrückstellung + Liquidität (*Heute*): "diesen Quartal ~CHF X Steuern zurücklegen", 90-day cash view from
-      open documents + recurring amounts (B-63 memory knows the monthly ones). — `M` / `M`
 - [ ] **B-74** Dauerbuchungen (*Bank*): the amounts B-63 already recognises monthly (Miete, Leasing, Versicherung) become
       expected lines — "Cembra 770.60 fehlt diesen Monat" on *Heute*, and the Abgleich proposes them with 1.0 when the
       amount+date fit even without a document. Feeds B-71 liquidity. — `M` / `S`
@@ -82,15 +87,15 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
       source, and a reality check against what the customer actually booked). It runs only on the customer's own
       machine, so this is an agent/CLI question, not a server-to-server call. Writing stays impossible. — `L` / `M`
 - [ ] **B-72** Lohn light: monthly Lohnabrechnung with AHV/IV/EO, ALV, BVG, UVG, QST; Lohnausweis PDF; Sozialversicherungs-
-      Jahresmeldung export. High liability — after B-65…B-70, and validated against a real Treuhänder run. — `M` / `L`
+      Jahresmeldung export. High liability — after B-65…B-70, and validated against a real Treuhänder run.
+      **`docs/B-72-LOHN-SPEC.md`** (2026-09-16): why it was left out of the night run, the sourced 2026 figures
+      (AHV/IV/EO 10.6 %, ALV 2.2 % to CHF 148 200, BVG Eckwerte), and the three options it could be — A journal
+      only, B calculator with owner-entered rates (the B-71 pattern), C full payroll. **Decide A/B/C first.**
+      First step is not code: reproduce one real payslip by hand. — `M` / `L`
 
 ### Professional
 - [ ] **B-17** Treuhänder export pack: Banana TSV + PDF summary + receipts zip + audit extract, one click — the hero flow
       (see brainstorm idea A). Validate with two Treuhänder *before* building the PDF. — `M` / `L`
-- [ ] **B-53** Export safety: neutralise `= + - @` cells in xlsx/csv/tsv (formula injection, verified), escape `\t`/`\n` in
-      Banana TSV text fields, `zfill(2)` dates, blank non-finite amounts. — `M` / `S`
-- [ ] **B-51** Money columns `Float` → `Numeric(12,2)` (bookings, review_queue_items) with `round_chf` before insert;
-      stats summed as Decimal (`0.1+0.2+0.3` is `0.6000000000000001` today). Migration + data copy. — `M` / `M`
 - [ ] **B-56** Parser/classifier hygiene: `_parse_swiss_number` handles `'`/`’`/`\u202f` and `1234,50`; date regex anchored
       (4-digit year → `3924` today); tenant-specific supplier names out of `CLASSIFICATION_RULES` into per-tenant
       `KontoDefault`/memory; `save_to_memory` skips empty keys. — `M` / `S`
@@ -99,23 +104,11 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
       pair with B-54 quotas. — `M` / `M`
 
 ### Together / data integrity
-- [ ] **B-52** Idempotency by constraint: partial unique index `(tenant_id, source_key) WHERE source='billing'` +
-      `IntegrityError → 200 duplicate` (two concurrent `invoice.paid` → two bookings today); approve/reject as
-      `UPDATE … WHERE status='pending'` on rowcount; idempotency key on bulk `POST /api/bookings/`. — `M` / `S`
 - [ ] **B-57** Worker hardening: `configure_sentry` in `worker.main`, `await gather` on stop, `stop_grace_period: 120s`,
       reap `running` jobs older than N min back to `pending`, single-class training → 400 not 500, commit the import
       *before* `auto_train`. — `M` / `S`
 
 ### User-friendly
-- [ ] **B-58** UX/a11y batch (ui-ux-pro-max §1–§3): one `formatCHF()` (`de-CH`, right-aligned amounts) replacing 3 formatters +
-      raw `toFixed`; `cursor-pointer` in `Button` base; popovers get `aria-haspopup/expanded` + Esc (`usePopover`);
-      `aria-current` in nav, `aria-label` on the 3 `<nav>`s; `w-[28rem]` picker → `min(28rem, calc(100vw-2rem))`;
-      emoji → Lucide; amber/emerald accents to ≥ 4.5:1; `InvoiceCard` header → `<button aria-expanded>`; Modell sub-tabs
-      on SWR with skeleton/error; confirm + `loading` on restore/replace-import/DangerZone/"Neue Datei";
-      axe *moderate* leftovers: heading-order on modell/rechnungen/abgleich, landmark-unique on settings. Rule since
-      2026-09-15: every drop zone is `react-dropzone` (`getRootProps/getInputProps`), never a `role=button` div. — `M` / `M`
-- [ ] **B-59** `response_model=` on the dict-returning routers (classify/info, bookings/stats, review/, audit/, stats/learning,
-      kontenplan) → `make api-types` → delete the hand-written interfaces (3 shapes for `/classify/info` today). — `M` / `M`
 - [ ] **B-20** Onboarding: first scan guided, sample receipt, Kontenplan import wizard. — `M` / `M`
 
 ### Security & data
@@ -159,6 +152,53 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 ---
 
 ## ✅ Done
+
+- **IA step 5** ✅ 2026-09-16 — sidebar collapsed from nine entries to the four surfaces of
+  `docs/IA-2026-09-14.md` (Heute · Belege · Bank · Abschluss) plus a "Mehr" group. Every former menu entry is a
+  tab of its surface (`SurfaceTabs`), `lib/navigation.ts` is the registry the sidebar, the mobile bar, the tab row,
+  the breadcrumbs and the palette all read, `/dashboard/belege` and `/dashboard/bank` exist and redirect, Dashboard
+  is called Heute. No page file moved and no URL changed — 23 tests, including a walk asserting all 16 existing
+  routes still resolve. Left for the daylight sitting: the file moves and turning the Heute cards into inbox rows.
+- **B-71** ✅ 2026-09-16 — Liquidität + Steuerrückstellung on *Heute*. `GET /api/liquiditaet/`: bank+cash balance,
+  90 days of expected movements (open debtors in, open creditors out, monthly standing costs out) and the running
+  balance through them — the headline is `tiefster_stand`, because a quarter that ends fine can still have a day
+  with no money. Standing costs are *recognised*, not typed: same `preprocess`d text in ≥3 distinct months, amount
+  stable within 15 %, credit side a cash account (income every month is a customer, not a cost) — this is B-74's
+  input. Tax: profit since 1 January × the owner's rate, minus what is already in 2201, over the quarters left;
+  8900 excluded from the expense side so the estimate does not chase its own tail. No default rate — the effective
+  Swiss rate depends on canton *and* commune, so without one the card shows the published range (11.66 % LU to
+  20.54 % BE, mean 14.43 %; ESTV, Kantonaler Vergleich der Steuerbelastung 2026) and links to the Firmenprofil.
+  New nullable `company_profiles.gewinnsteuer_satz` (migration `b7c8d9e0f1a2`). 28 backend + 13 frontend tests.
+- **B-58** ✅ 2026-09-16 — UX/a11y batch. One formatter (`lib/format.ts` gains `formatAmount`; the scanner's `Intl`
+  copy printed U+2019 instead of an apostrophe, `rechnungen/neu`'s `chf()` was a third — both re-export now, and the
+  five raw `.toFixed(2)` display sites go through it). Contrast: white on emerald was 3.77:1 and on amber 3.19:1;
+  both ramps shift a step darker (5.48:1 / 5.02:1) and `lib/theme-store.test.ts` fails if any accent slips back.
+  New `usePopover()` (aria-haspopup/expanded/controls, Escape closes and restores focus, listeners only while open)
+  on the user menu, the bell and the app switcher. `aria-label` on both `<nav>`s + `aria-current`; the settings
+  sidebar was a third `<nav>` and is now a `tablist`/`tabpanel` pair. `CardTitle` renders `<h2>` (it sat under the
+  page `<h1>` and skipped a level). Modell's Gedächtnis/Top-Konten tabs are SWR readers with skeleton and error
+  instead of a `useEffect` into local state. Confirms + busy locks on restore, replace-import, the danger zone and
+  "Neue Datei". Plus `cursor-pointer` in the Button base, the picker at `min(28rem, 100vw-2rem)`, the InvoiceCard
+  header as a `<button aria-expanded>`, and the 🧠/🤖/📋 source emoji replaced by Lucide icons with real labels.
+- **B-59** ✅ 2026-09-16 — `response_model=` on the seven endpoints that returned a bare `dict`
+  (classify/info, bookings/stats, review/ + approve/reject, audit/, stats/learning, kontenplan/ + defaults), so the
+  OpenAPI document describes them instead of `{}`. Frontend types regenerated and the hand-written interfaces
+  deleted — three had drifted: `ModelInfo` promised `sklearn_version`, `model_size_kb` and `memory_size_kb`, none of
+  which the endpoint has ever sent. The learning histograms keep two shapes (`AccountCount`, `SourceCount`) instead
+  of one with both keys optional. Two nullability bugs fell out of the generated types. 9 contract tests pin both
+  the JSON body and the schema name.
+- **B-51** ✅ 2026-09-16 — money columns `Float` → `Numeric(12,2)`. 0.1+0.2+0.3 summed to 0.6000000000000001 in the
+  database, so every total the API reported was a rounded lie. `app/models/types.py:Chf` is a `TypeDecorator`:
+  Numeric on PostgreSQL, Float on SQLite (no decimal type there), rounding on bind and plain floats on the way out
+  so no service changed. Migration `a6b7c8d9e0f1` converts with `ROUND(col::numeric, 2)`. 6 tests, one of them a raw
+  `SUM(betrag)::text` that must read exactly `"0.60"`.
+- **B-52** ✅ 2026-09-16 — idempotency by constraint, not by `if`: partial unique index
+  `(tenant_id, source_key) WHERE source='billing'`, an `idempotency_keys` table behind an `Idempotency-Key` header on
+  bulk booking creation, `begin_nested()` + `IntegrityError` → replay or 409, and `UPDATE … WHERE status='pending'`
+  + rowcount for review approve/reject. Migration `f5a6b7c8d9e0` de-duplicates first (keeping `MIN(id)`).
+  14 tests, each one the race.
+- **B-53** ✅ 2026-09-16 — export safety: `= + - @` (and `\t`, `\r`, `\n`) neutralised in xlsx/csv/tsv,
+  ISO dates zero-padded, amounts normalised; `=cmd|' /c calc'!A1` is in the tests. 13 tests.
 
 - **B-43** ✅ 2026-09-13 — e-mail export: `EmailStr` single recipient, subject one line ≤ 200 chars, rows ≤ 5000,
   `heavy_limit` on both `/api/export/email*`, every HTML cell `html.escape`d, default SSL context (no `CERT_NONE`),
@@ -459,8 +499,8 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 | 0.5 Risk fixes before platform work | ✅ B-00…B-03 (branch `feat/phase0-risks`) |
 | 1 Platform contract | 1.2 ✅ B-31 · 1.4 ✅ B-26 · 1.6 ✅ tokens imported |
 | 2 Security | ✅ B-06, B-07, B-32, B-34, B-40, B-41, B-42, B-43 · open: B-24 (ADR-002), B-25, B-54, B-55 |
-| 3 Reliability | ✅ B-04, B-05, B-08, B-11, B-33, B-35, B-39, B-47, B-48, B-49, B-63, B-64, B-73, B-76 · open: B-51, B-52, B-56, B-57 |
-| 4 Polish | ✅ B-09, B-13, B-66, B-67, B-76 · open: B-22, B-53, B-61 |
-| 5 UX | ✅ B-14, B-15, B-16, B-18, B-19, B-44, B-45, B-46, B-50 (+B-21), B-65 · open: B-17, B-20, B-58, B-59 |
+| 3 Reliability | ✅ B-04, B-05, B-08, B-11, B-33, B-35, B-39, B-47, B-48, B-49, B-63, B-64, B-73, B-76, B-51, B-52 · open: B-56, B-57 |
+| 4 Polish | ✅ B-09, B-13, B-66, B-67, B-76, B-53 · open: B-22, B-61 |
+| 5 UX | ✅ B-14, B-15, B-16, B-18, B-19, B-44, B-45, B-46, B-50 (+B-21), B-65, B-58, B-59, B-71 · open: B-17, B-20 |
 | 6 Together | ✅ B-36 (SSO + mirroring), B-37 (events) · deploy: `docs/DEPLOY-CHECKLIST-B36-B37.md` · parked: B-38 |
 | 7 DX | ✅ B-12, B-29, B-30 · open: B-60, B-62 |
