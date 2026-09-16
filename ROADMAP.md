@@ -13,7 +13,7 @@
 
 | Owner's words | What it means in this repo | Tracks that deliver it |
 |---|---|---|
-| **more professional** | Money that rounds right in every export, correct VAT codes, audit trail, Treuhänder hand-off that is accepted first time | B-01 ✅, B-04 ✅, B-05 ✅, B-09 ✅, B-47 ✅, B-48 ✅, B-67 ✅, B-68 ✅, B-70 ✅, B-77 ✅, B-51 ✅, B-53 ✅, B-17 ✅, B-22 |
+| **more professional** | Money that rounds right in every export, correct VAT codes, audit trail, Treuhänder hand-off that is accepted first time | B-01 ✅, B-04 ✅, B-05 ✅, B-09 ✅, B-47 ✅, B-48 ✅, B-67 ✅, B-68 ✅, B-70 ✅, B-77 ✅, B-51 ✅, B-53 ✅, B-17 ✅, B-22 ✅ |
 | **more dynamic** | Scan → classify → book without a reload; live review queue; optimistic booking edits; the learning loop visibly closes | B-45 ✅, B-14 ✅, B-15 ✅, B-16 ✅ |
 | **easier to improve** | No god-files, one type source, tests that catch regressions, jobs outside the API process, prod == compose | B-02 ✅, B-03 ✅, B-08 ✅, B-10 ✅, B-11 ✅, B-13 ✅, B-33 ✅, B-39 ✅, B-41 ✅, B-49 ✅, B-59 ✅, B-60 |
 | **together** (platform) | One login across billing + buchhaltung, paid invoices book themselves, roles mean something | B-36 ✅, B-37 ✅, B-40 ✅, B-52 ✅, B-38 🅿️ |
@@ -40,7 +40,7 @@ and Heute inbox, B-74, B-24, B-25, B-54 and B-55. What is left of it:_
    configuration and nothing is guessed. The four things still missing are data or a certification, not code —
    Quellensteuer tariff tables, BVG Altersgutschriften, Formular 11, Swissdec ELM. `docs/B-72-LOHN-SPEC.md`.
    **Before any of that: compare one real month against the previous payroll and lift the watermark.**
-3. **B-22** audit trail completeness · **B-23** observability — what the Treuhänder pack in B-17 will lean on.
+3. **B-23** observability — the other half of what the Treuhänder pack leans on.
 4. **B-26/B-27/B-28** the performance block, when there is enough data for it to matter.
 
 <details><summary>What item 1 of the old block settled (Banana, 2026-09-15) — keep, do not re-litigate</summary>
@@ -86,7 +86,7 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 - [ ] **B-56** Parser/classifier hygiene: `_parse_swiss_number` handles `'`/`’`/`\u202f` and `1234,50`; date regex anchored
       (4-digit year → `3924` today); tenant-specific supplier names out of `CLASSIFICATION_RULES` into per-tenant
       `KontoDefault`/memory; `save_to_memory` skips empty keys. — `M` / `S`
-- [ ] **B-22** Audit log surfaced in UI (model exists: `audit_log.py`). — `M` / `M`
+- [x] **B-22** ✅ 2026-09-16 — see Done. The UI existed; what was missing was anything to show in it.
 - [ ] **B-23** Usage limits enforced from `usage_event` (plan free/pro) — needed before billing R-106 Stripe means anything;
       pair with B-54 quotas. — `M` / `M`
 
@@ -167,6 +167,33 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 - **a11y** ✅ 2026-09-16 — `EmptyState` and `ErrorState` rendered an `h3` inside sections whose heading was an `h2`,
   which axe reported as 14 `moderate heading-order` findings across the app. Both gained an `as` prop defaulting to
   `h2`. The whole suite is back to zero findings, light and dark.
+- **B-22** ✅ 2026-09-16 — the audit log had six actions in it, four added that same week. The UI and the model
+  had existed for months; what was missing was anything worth showing. Since B-17 dumps this table straight into
+  the Treuhänder hand-off as `50-Protokoll.csv`, the pack was shipping an audit extract that was very nearly
+  empty — worse than shipping none, because it looks like an answer. Seventeen actions now: creating bookings,
+  changing the Kontenplan, a bulk import, writing and sending an invoice, a Mahnung, the four Abgleich decisions,
+  both review outcomes, a document's status (only the status — correcting a vendor the OCR misread is not an
+  assertion about money), the export batch with its checksum, and the three Lohn actions. The list lives in
+  `core/audit_actions.py` **with a companion list of what is deliberately not logged**, because a log full of
+  reads is how the useful rows get lost. Three tests hold it: every declared action is emitted somewhere in `app/`,
+  every one is driven through the API by a test, and nothing is emitted that was not declared — plus `audit()`
+  asserting the same at runtime, so a typo fails instead of writing a row nobody will ever query for. 23 tests.
+- **B-51 (finished)** ✅ 2026-09-16 — five money columns were still `Float`: the bank movement, the invoice total
+  that drives Offene Posten and every Mahnung, the two figures on the Treuhänder cover sheet, and the matched
+  amount. Same failure B-51 describes — 0.1 + 0.2 + 0.3 sums to 0.6000000000000001 — just not finished. The
+  migration rounds half-up as it casts (verified on a real Postgres: an existing `0.1+0.2` came out `0.30`).
+  `invoice_positions.einzelpreis` stays `Float` **on purpose** and now says why: 0.125 per unit is a real price,
+  and rounding it on bind would turn 100 × 0.125 = 12.50 into 13.00. A test asserts the whole set at once, so the
+  next money column cannot be added on `Float`.
+- **B-54 (follow-up)** ✅ 2026-09-16 — `usage_events.quantity` counts *bytes* and was `Integer`, so it overflowed
+  at 2.1 GB. SQLite has no fixed-width integers, so only the Postgres CI job could see it — a tenant with a few
+  gigabytes of receipts would have hit it in production, at upload time.
+- **Ein Tausendertrennzeichen** ✅ 2026-09-16 — `fmt_swiss` emitted U+2019 while its own docstring, the frontend
+  and every PDF used U+0027 (fpdf2's core fonts are latin-1, so `latin1()` was quietly rewriting it). The same
+  amount read `1'234.50` on the invoice and `1’234.50` in the e-mail attached to it. Worse: `_parse_swiss_number`
+  stripped only U+2019, so **reading back a statement this product had printed itself returned None**. It now
+  handles both apostrophes, the acute accent, the comma and all three spaces. `latin1(fmt_swiss(x)) == fmt_swiss(x)`
+  is now a test.
 - **B-20** ✅ 2026-09-16 (partly) — the first ten seconds. The checklist opened with "AI-Dienst verbinden":
   a technical prerequisite that produces nothing a new user can see, asked before they have any reason to care,
   in direct contradiction of the IA's own rule 3 ("no settings before value"). Reading a receipt is now step one

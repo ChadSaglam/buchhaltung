@@ -15,6 +15,7 @@ from app.core.uploads import MAX_IMPORT_BYTES, read_upload
 from app.models.memory import Memory
 from app.models.training_data import TrainingRow
 from app.models.user import User
+from app.services.audit_log import audit
 from app.services.classifier import TenantClassifier, make_memory_key
 
 router = APIRouter(prefix="/api/import", tags=["import"])
@@ -261,6 +262,14 @@ async def import_banana_file(
         train_result = await clf.train_from_db()
         result["training"] = train_result
 
+    await audit(
+        db,
+        user,
+        "import.banana",
+        target_type="import",
+        zeilen=result["imported"],
+        gedaechtnis=result["memory_entries"],
+    )
     await db.commit()
     return result
 

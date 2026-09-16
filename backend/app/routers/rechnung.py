@@ -31,7 +31,7 @@ from app.schemas.rechnung import (
     VersandRequest,
 )
 from app.services import rechnung_versand, swiss_qr
-from app.services.audit_log import AuditLogService
+from app.services.audit_log import AuditLogService, audit
 from app.services.email_sender import Attachment, is_email_configured, send_message
 from app.services.rechnung import PositionInput, RechnungService, totals_for
 
@@ -161,6 +161,16 @@ async def create_rechnung(
         bemerkung=body.bemerkung,
     )
     profile = await service.profile()
+    await audit(
+        db,
+        user,
+        "rechnung.create",
+        target_type="document",
+        target_id=doc.id,
+        invoice_no=doc.invoice_no,
+        kunde=body.kunde.name,
+        betrag=float(doc.amount or 0.0),
+    )
     await db.commit()
     # Server-side defaults (created_at/updated_at) are only known after the insert.
     await db.refresh(doc)

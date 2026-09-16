@@ -24,6 +24,7 @@ from app.models.idempotency_key import IdempotencyKey
 from app.models.user import User
 from app.schemas.booking import BookingStatsResponse
 from app.schemas.common import Money
+from app.services.audit_log import audit
 from app.services.export import round_chf
 from app.services.receipts import content_type_for_key, key_belongs_to_tenant, read_receipt
 
@@ -139,6 +140,15 @@ async def create_bookings(
         created.append(booking)
     await db.flush()
     result = [{"id": b.id, "status": "created"} for b in created]
+    await audit(
+        db,
+        user,
+        "booking.create",
+        target_type="booking",
+        target_id=created[0].id if len(created) == 1 else None,
+        anzahl=len(created),
+        total=float(round_chf(sum(float(b.betrag or 0.0) for b in created))),
+    )
 
     if idempotency_key:
         try:

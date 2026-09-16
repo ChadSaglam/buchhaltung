@@ -12,6 +12,7 @@ from app.core.uploads import MAX_KONTENPLAN_ENTRIES, check_count
 from app.models.kontenplan import Konto, KontoDefault
 from app.models.user import User
 from app.schemas.kontenplan import KontenplanResponse, KontenplanSaved, KontoDefaultsResponse
+from app.services.audit_log import audit
 
 router = APIRouter(prefix="/api/kontenplan", tags=["kontenplan"])
 
@@ -53,6 +54,7 @@ async def update_kontenplan(
             )
         )
 
+    await audit(db, user, "kontenplan.update", target_type="kontenplan", konten=len(body.kontenplan))
     await db.commit()
     return {"status": "ok", "count": len(body.kontenplan)}
 

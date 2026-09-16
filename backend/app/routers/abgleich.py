@@ -27,6 +27,7 @@ from app.schemas.abgleich import (
 )
 from app.schemas.document import DocumentOut
 from app.services.abgleich import AbgleichService
+from app.services.audit_log import audit
 from app.services.pdf_parser import extract_transactions_from_pdf
 from app.services.receipts import store_receipt
 from app.services.storage_quota import StorageQuota
@@ -169,6 +170,15 @@ async def confirm(
     service = AbgleichService(db, user)
     group = [m.document_id for m in await service._group(transaction_id)]
     bookings = await service.confirm(transaction_id)
+    await audit(
+        db,
+        user,
+        "abgleich.confirm",
+        target_type="bank_transaction",
+        target_id=transaction_id,
+        dokumente=group,
+        buchungen=[b.id for b in bookings],
+    )
     await db.commit()
     return DecisionResponse(
         transaction_id=transaction_id,
@@ -186,6 +196,7 @@ async def reject(
 ) -> DecisionResponse:
     service = AbgleichService(db, user)
     await service.reject(transaction_id)
+    await audit(db, user, "abgleich.reject", target_type="bank_transaction", target_id=transaction_id)
     await db.commit()
     return DecisionResponse(transaction_id=transaction_id, status="abgelehnt")
 
@@ -199,6 +210,15 @@ async def manual(
 ) -> DecisionResponse:
     service = AbgleichService(db, user)
     bookings = await service.manual(transaction_id, body.document_ids)
+    await audit(
+        db,
+        user,
+        "abgleich.manual",
+        target_type="bank_transaction",
+        target_id=transaction_id,
+        dokumente=body.document_ids,
+        buchungen=[b.id for b in bookings],
+    )
     await db.commit()
     return DecisionResponse(
         transaction_id=transaction_id,
@@ -216,5 +236,6 @@ async def ignore(
 ) -> DecisionResponse:
     service = AbgleichService(db, user)
     tx = await service.ignore_transaction(transaction_id)
+    await audit(db, user, "abgleich.ignore", target_type="bank_transaction", target_id=tx.id)
     await db.commit()
     return DecisionResponse(transaction_id=tx.id, status="ignoriert")

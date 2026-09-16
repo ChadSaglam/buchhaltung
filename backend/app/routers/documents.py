@@ -28,6 +28,7 @@ from app.schemas.document import (
     DocumentUploadResponse,
     DocumentUploadResult,
 )
+from app.services.audit_log import audit
 from app.services.documents import DocumentService
 from app.services.receipts import content_type_for_key, read_receipt
 
@@ -153,6 +154,18 @@ async def update_document(
         setattr(doc, field, value)
     if changes and doc.status == STATUS_FEHLER and "status" not in changes:
         doc.status, doc.error = STATUS_OFFEN, ""  # a manual correction makes a failed row usable
+    if "status" in changes:
+        # Only the status: offen ↔ bezahlt is an assertion about money, the rest
+        # is correcting what was read off the page and the row itself is the record.
+        await audit(
+            db,
+            user,
+            "document.status",
+            target_type="document",
+            target_id=document_id,
+            status=doc.status,
+            betrag=float(doc.amount or 0.0),
+        )
     await db.commit()
     await db.refresh(doc)
     return DocumentOut.model_validate(doc)

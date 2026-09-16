@@ -16,6 +16,7 @@ from app.schemas.export_batch import (
     ExportCheck,
     PreflightResponse,
 )
+from app.services.audit_log import audit
 from app.services.export_batch import ExportBatchService
 from app.services.treuhand_pack import PackTooLarge, TreuhandPackService
 
@@ -69,6 +70,16 @@ async def create_batch(
     """Hand everything reconciled over to Banana — once."""
     service = ExportBatchService(db, user)
     batch = await service.create(note=(body.note if body else ""))
+    await audit(
+        db,
+        user,
+        "export.batch",
+        target_type="export_batch",
+        target_id=batch.id,
+        buchungen=batch.booking_count,
+        total=float(batch.total_betrag or 0.0),
+        pruefsumme=batch.checksum,
+    )
     await db.commit()
     return ExportBatchOut.model_validate(batch)
 

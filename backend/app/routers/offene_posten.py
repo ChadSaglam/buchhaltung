@@ -21,6 +21,7 @@ from app.schemas.offene_posten import (
     OpenItemOut,
     SideOut,
 )
+from app.services.audit_log import audit
 from app.services.offene_posten import (
     OffenePostenService,
     Side,
@@ -130,5 +131,14 @@ async def record_mahnung(
     """The owner sent it — remember the stage so the next one escalates."""
     service = OffenePostenService(db, user)
     doc, level, company = await service.record_mahnung(document_id, body.stufe if body else None)
+    await audit(
+        db,
+        user,
+        "mahnung.record",
+        target_type="document",
+        target_id=document_id,
+        stufe=level,
+        betrag=float(doc.amount or 0.0),
+    )
     await db.commit()
     return _draft(doc, level, company, recorded=True)
