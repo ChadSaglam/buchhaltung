@@ -132,6 +132,11 @@ worker role would then be on every request connection, defeating the point. Prem
        `app_rw NOSUPERUSER NOBYPASSRLS` with DML grants and default privileges.
 7. [x] `tests/test_rls.py` — 10 PG-only tests plus 10 that run everywhere.
 8. [ ] Canary: deploy one replica, watch for empty-list regressions for 24 h, then flip all.
+       Written up as a procedure in `docs/RUNBOOK-RLS-CUTOVER.md` (2026-09-16), with one correction to
+       this line: there are no replicas — production is one compose stack — so the staged lever is
+       `FORCE`, not the number of instances. It also names the trap: production refuses to boot as a
+       superuser, so the obvious rollback (point `DATABASE_URL` back at the owner) does not work unless a
+       fallback role is created **before** the cutover.
 
 ## What implementation changed about the plan
 
