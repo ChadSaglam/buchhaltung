@@ -100,8 +100,23 @@ def storage_uri() -> str:
 limiter = Limiter(key_func=tenant_or_ip, default_limits=[default_limit], storage_uri=storage_uri())
 
 
+#: Paths the default limit never applies to (B-61). A liveness or readiness probe
+#: runs every few seconds from every instance and every load balancer; sharing the
+#: 200/minute bucket with real traffic means a busy minute answers a probe with 429,
+#: and every orchestrator reads 429 as "unhealthy" and takes the instance out.
+#: These endpoints do no work worth protecting: `/live` touches nothing, the
+#: readiness check is one bounded `SELECT 1`.
+EXEMPT_PATHS = ("/api/health",)
+
+
+def is_exempt(path: str) -> bool:
+    return any(path == p or path.startswith(p + "/") for p in EXEMPT_PATHS)
+
+
 async def enforce_default_limit(request: Request) -> None:
     """App-level dependency: apply the default limit unless the route carries its own."""
+    if is_exempt(request.url.path):
+        return
     # `endpoint` is put into the scope by the router once the route is matched;
     # slowapi uses it to skip routes that are decorated with their own limit.
     limiter._check_request_limit(request, request.scope.get("endpoint"), in_middleware=True)

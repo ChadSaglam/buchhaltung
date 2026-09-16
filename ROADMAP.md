@@ -52,7 +52,7 @@ Pulled from LATER, in the order they pay off:
    `CLASSIFICATION_RULES`. — `M` / `S`
 4. **B-62 frontend image** — `NEXT_PUBLIC_*` is inlined at *build* time, so the compose image ships with whatever
    the build had. Today that means the Apps switcher never renders in a compose deployment. — `M` / `S`
-5. **B-61 health** — 503 on `degraded`, and a cheap `SELECT 1` in production, which is skipped entirely today. — `L` / `S`
+5. ~~**B-61 health**~~ ✅ 2026-09-16 — see Done.
 
 Not tasks, decisions: **B-75** (bank pull — needs a contract per tenant, spike first), **B-78** (the read-only
 Banana REST spike, only worth it for a customer on the Advanced plan), and the **B-24 canary** — ADR-002 asks for
@@ -120,8 +120,8 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 - [x] **B-25** ✅ 2026-09-16 — see Done. `docs/BACKUP.md`.
 - [x] **B-54** ✅ 2026-09-16 — see Done.
 - [x] **B-55** ✅ 2026-09-16 — see Done.
-- [ ] **B-61** Health: 503 on `degraded`, cheap `SELECT 1` in production (skipped entirely today), `/api/health/detail`
-      gated in prod, health exempt from the default limit. — `L` / `S`
+- [x] **B-61** ✅ 2026-09-16 — see Done. One addition to what this line asked for: liveness and readiness are
+      now separate endpoints, because a liveness probe that asks the database restarts every container at once.
 
 ### DX / CI
 - [ ] **B-60** CI parity: backend matrix `db: [sqlite, postgres]` (up/down migration + subprocess-worker tests never run
@@ -181,6 +181,20 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 - **a11y** ✅ 2026-09-16 — `EmptyState` and `ErrorState` rendered an `h3` inside sections whose heading was an `h2`,
   which axe reported as 14 `moderate heading-order` findings across the app. Both gained an `as` prop defaulting to
   `h2`. The whole suite is back to zero findings, light and dark.
+- **B-61** ✅ 2026-09-16 — health that can fail. In production `GET /api/health` answered a flat
+  `{"status": "ok"}` **without touching anything**, so an instance whose database was gone kept taking traffic and
+  no load balancer could tell. It now runs one bounded `SELECT 1` and answers **503** when it cannot — in every
+  environment, production included, where the body still says only status and version.
+  One thing the roadmap line did not ask for and the change needs: **liveness and readiness are different
+  questions**, so they are different endpoints. `GET /api/health/live` touches nothing and always answers — a
+  liveness probe that asks the database restarts every container at the same moment the database hiccups, which is
+  the opposite of what it is for. `/api/health` is the readiness probe and the one compose gates the worker on.
+  Two more decisions. **Only a required dependency makes an instance unhealthy**: Ollama is optional by design
+  (B-20 put it last on the checklist and said so), so `/detail` reports it as broken without going 503 — being
+  pulled out of the load balancer because the AI service is asleep is a worse outage than the one it reports.
+  And **`/detail` is admin-only in production**, because naming the upstream and the exception class is exactly
+  what makes it useful and exactly why it does not belong on the open internet. All three are exempt from the
+  default rate limit: probes poll every few seconds, and every orchestrator reads a 429 as "unhealthy". 17 tests.
 - **B-20 (finished)** ✅ 2026-09-16 — the Kontenplan import wizard, the last third. A new customer's chart of
   accounts arrives as a file from their Treuhänder or their old program; without this it gets typed in.
   The reason it is a wizard and not a button is one line of existing code: `PUT /api/kontenplan/` **replaces the
@@ -709,7 +723,7 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 | 1 Platform contract | 1.2 ✅ B-31 · 1.4 ✅ B-26 · 1.6 ✅ tokens imported · perf: ✅ B-27, B-28 |
 | 2 Security | ✅ B-06, B-07, B-24, B-25, B-32, B-34, B-40, B-41, B-42, B-43, B-54, B-55 · open: — |
 | 3 Reliability | ✅ B-04, B-05, B-08, B-11, B-33, B-35, B-39, B-47, B-48, B-49, B-63, B-64, B-73, B-76, B-51, B-52 · open: B-56, B-57 |
-| 4 Polish | ✅ B-09, B-13, B-66, B-67, B-76, B-53, B-22 · open: B-61 |
+| 4 Polish | ✅ B-09, B-13, B-66, B-67, B-76, B-53, B-22, B-61 · open: — |
 | 5 UX | ✅ B-14, B-15, B-16, B-18, B-19, B-44, B-45, B-46, B-50 (+B-21), B-58, B-59, B-65, B-71, B-72, B-74, B-79, IA 1–5, B-17, B-20 · open: — |
 | 6 Together | ✅ B-36 (SSO + mirroring), B-37 (events), B-23 (plan limits) · deploy: `docs/DEPLOY-CHECKLIST-B36-B37.md` · parked: B-38 |
 | 7 DX | ✅ B-12, B-29, B-30 · open: B-60, B-62 |

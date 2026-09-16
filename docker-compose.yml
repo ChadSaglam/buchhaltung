@@ -59,6 +59,10 @@ services:
     volumes:
       - model_data:/app/data
     healthcheck:
+      # B-61: readiness, not liveness — this gates the worker's start, and a
+      # worker that boots before the database is reachable just crashes.
+      # `/api/health` answers 503 when it cannot reach the database, and
+      # urlopen raises on 503, which is what compose reads as unhealthy.
       test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/api/health', timeout=3)"]
       interval: 10s
       timeout: 5s
