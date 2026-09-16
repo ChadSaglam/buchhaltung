@@ -8,7 +8,7 @@ renderer is one dependency decision for every document — B-77).
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user, get_db, require_editor
@@ -184,3 +184,21 @@ async def rechnung_page(
     page = await service.html(document_id)
     await db.commit()
     return HTMLResponse(page)
+
+
+@router.get("/{document_id}/rechnung.pdf")
+async def rechnung_pdf(
+    document_id: int,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> Response:
+    """The invoice as a file, Zahlteil included — the thing you can actually send."""
+    service = RechnungService(db, user)
+    doc, _rows = await service.own_invoice(document_id)
+    content = await service.pdf(document_id)
+    await db.commit()
+    return Response(
+        content=content,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'inline; filename="{service.dateiname(doc)}"'},
+    )

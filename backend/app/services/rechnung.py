@@ -328,6 +328,28 @@ class RechnungService:
         doc, positions, profile, payload = await self.payload(document_id)
         return invoice_html(doc, positions, profile, payload)
 
+    async def pdf(self, document_id: int) -> bytes:
+        """The file a customer gets. `html()` stays the browser preview (B-79)."""
+        from app.services.rechnung_pdf import invoice_pdf
+
+        doc, positions, profile, payload = await self.payload(document_id)
+        totals = _raw(doc).get("totals") or {}
+        return invoice_pdf(
+            doc,
+            positions,
+            profile,
+            payload,
+            kunde=_kunde_from(doc),
+            reference=swiss_qr.format_reference(doc.qr_reference, _reference_type(doc)),
+            netto=float(totals.get("netto") or doc.amount or 0.0),
+            mwst=float(totals.get("mwst") or 0.0),
+        )
+
+    def dateiname(self, doc: Document) -> str:
+        """`Rechnung-2026-0001.pdf` — what the customer sees in their inbox."""
+        nummer = (doc.invoice_no or str(doc.id)).replace("/", "-").replace(" ", "-")
+        return f"Rechnung-{nummer}.pdf"
+
 
 def _raw(doc: Document) -> dict:
     try:

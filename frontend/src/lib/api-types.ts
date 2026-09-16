@@ -1377,6 +1377,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/rechnungen/{document_id}/rechnung.pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Rechnung Pdf
+         * @description The invoice as a file, Zahlteil included — the thing you can actually send.
+         */
+        get: operations["rechnung_pdf_api_rechnungen__document_id__rechnung_pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/review/": {
         parameters: {
             query?: never;
@@ -5917,6 +5937,37 @@ export interface operations {
                 };
                 content: {
                     "text/html": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rechnung_pdf_api_rechnungen__document_id__rechnung_pdf_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

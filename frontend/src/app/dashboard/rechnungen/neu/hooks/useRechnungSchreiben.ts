@@ -66,20 +66,28 @@ export function useRechnungSchreiben() {
     setBemerkung("");
   }, []);
 
-  /** The print view is an authenticated endpoint — open it with the token attached. */
-  const druckansicht = useCallback(async () => {
-    if (!rechnung) return;
-    try {
-      const { data } = await api.get<Blob>(`/api/rechnungen/${rechnung.document.id}/rechnung.html`, {
-        responseType: "blob",
-      });
-      const url = URL.createObjectURL(new Blob([data], { type: "text/html" }));
-      window.open(url, "_blank", "noopener");
-      setTimeout(() => URL.revokeObjectURL(url), 60_000);
-    } catch (e) {
-      toast.error(errorMessage(e));
-    }
-  }, [rechnung]);
+  /** Both views are authenticated endpoints — fetch with the token, then open the blob. */
+  const oeffnen = useCallback(
+    async (suffix: "html" | "pdf", mime: string) => {
+      if (!rechnung) return;
+      try {
+        const { data } = await api.get<Blob>(`/api/rechnungen/${rechnung.document.id}/rechnung.${suffix}`, {
+          responseType: "blob",
+        });
+        const url = URL.createObjectURL(new Blob([data], { type: mime }));
+        window.open(url, "_blank", "noopener");
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      } catch (e) {
+        toast.error(errorMessage(e));
+      }
+    },
+    [rechnung],
+  );
+
+  /** The browser preview. */
+  const druckansicht = useCallback(() => oeffnen("html", "text/html"), [oeffnen]);
+  /** The file you send a customer — Zahlteil included (B-77). */
+  const pdf = useCallback(() => oeffnen("pdf", "application/pdf"), [oeffnen]);
 
   return {
     apiBase: API_BASE,
@@ -98,6 +106,7 @@ export function useRechnungSchreiben() {
     summe,
     fehlt,
     saving,
+    pdf,
     speichern,
     rechnung,
     neueRechnung,

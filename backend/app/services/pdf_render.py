@@ -76,9 +76,14 @@ class Meta:
     title: str
     subtitle: str = ""
     company: str = ""
+    #: Second letterhead line — the sender's address, under the company name.
+    company_address: str = ""
     period: str = ""
     footer: str = ""
     extra: list[tuple[str, str]] = field(default_factory=list)
+    #: Off for documents whose bottom belongs to something else — the Swiss
+    #: QR-bill payment part is a fixed template and nothing may sit in it.
+    page_numbers: bool = True
 
 
 def _fpdf_class():
@@ -87,23 +92,27 @@ def _fpdf_class():
     class _Doc(FPDF):
         """FPDF mit fester Fusszeile — so steht sie auf *jeder* Seite, auch auf Seite 3."""
 
-        def __init__(self, footer_text: str = "") -> None:
+        def __init__(self, footer_text: str = "", page_numbers: bool = True) -> None:
             super().__init__(orientation="P", unit="mm", format="A4")
             self.footer_text = footer_text
+            self.page_numbers = page_numbers
 
         def footer(self) -> None:
+            if not self.page_numbers and not self.footer_text:
+                return
             self.set_y(-15)
             self.set_font("Helvetica", "", 8)
             self.set_text_color(120, 120, 120)
             self.cell(CONTENT_WIDTH / 2, 5, latin1(self.footer_text))
-            self.cell(CONTENT_WIDTH / 2, 5, latin1(f"Seite {self.page_no()} / {{nb}}"), align="R")
+            if self.page_numbers:
+                self.cell(CONTENT_WIDTH / 2, 5, latin1(f"Seite {self.page_no()} / {{nb}}"), align="R")
             self.set_text_color(0, 0, 0)
 
     return _Doc
 
 
-def _Fpdf(footer_text: str = ""):
-    return _fpdf_class()(footer_text)
+def _Fpdf(footer_text: str = "", page_numbers: bool = True):
+    return _fpdf_class()(footer_text, page_numbers)
 
 
 class PdfDoc:
@@ -111,7 +120,7 @@ class PdfDoc:
 
     def __init__(self, meta: Meta) -> None:
         self.meta = meta
-        self.pdf = _Fpdf(meta.footer)
+        self.pdf = _Fpdf(meta.footer, meta.page_numbers)
         self.pdf.set_auto_page_break(auto=True, margin=20)
         self.pdf.set_margins(MARGIN, MARGIN, MARGIN)
         self.pdf.set_title(latin1(meta.title))
@@ -127,6 +136,11 @@ class PdfDoc:
         if self.meta.company:
             pdf.set_font("Helvetica", "B", 10)
             pdf.cell(0, 5, latin1(self.meta.company), new_x="LMARGIN", new_y="NEXT")
+        if self.meta.company_address:
+            pdf.set_font("Helvetica", "", 9)
+            pdf.set_text_color(90, 90, 90)
+            pdf.cell(0, 4.5, latin1(self.meta.company_address), new_x="LMARGIN", new_y="NEXT")
+            pdf.set_text_color(0, 0, 0)
         pdf.set_font("Helvetica", "B", 16)
         pdf.cell(0, 9, latin1(self.meta.title), new_x="LMARGIN", new_y="NEXT")
         if self.meta.subtitle:

@@ -1,18 +1,20 @@
-import { CheckCircle2, Printer, Plus } from "lucide-react";
+import { CheckCircle2, FileDown, Printer, Plus } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { chf } from "../helpers";
 import type { RechnungOut } from "../types";
 
-export function RechnungFertig({ rechnung, onPrint, onNeu }: {
+export function RechnungFertig({ rechnung, onPrint, onPdf, onNeu }: {
   rechnung: RechnungOut;
   onPrint: () => void;
+  /** The PDF with the Zahlteil — the file you actually send (B-77). */
+  onPdf: () => void;
   onNeu: () => void;
 }) {
   const doc = rechnung.document;
   return (
     <section aria-labelledby="fertig-titel" className="rounded-xl border border-success/30 bg-success/5 p-6">
       <div className="flex items-start gap-3">
-        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success" />
+        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success" aria-hidden="true" />
         <div className="min-w-0">
           <h2 id="fertig-titel" className="text-base font-semibold text-foreground">
             Rechnung {doc.invoice_no} über CHF {chf(rechnung.total)}
@@ -33,10 +35,13 @@ export function RechnungFertig({ rechnung, onPrint, onNeu }: {
             </div>
           </dl>
           <div className="mt-5 flex flex-wrap gap-2">
-            <Button variant="primary" icon={<Printer className="h-4 w-4" />} onClick={onPrint}>
-              Rechnung drucken
+            <Button variant="primary" icon={<FileDown className="h-4 w-4" aria-hidden="true" />} onClick={onPdf}>
+              PDF öffnen
             </Button>
-            <Button variant="secondary" icon={<Plus className="h-4 w-4" />} onClick={onNeu}>
+            <Button variant="secondary" icon={<Printer className="h-4 w-4" aria-hidden="true" />} onClick={onPrint}>
+              Druckvorschau
+            </Button>
+            <Button variant="ghost" icon={<Plus className="h-4 w-4" aria-hidden="true" />} onClick={onNeu}>
               Nächste Rechnung
             </Button>
             <ButtonLink variant="ghost" href="/dashboard/rechnungen">

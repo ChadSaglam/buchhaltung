@@ -39,7 +39,7 @@ export default function RechnungSchreibenPage() {
       ) : r.error ? (
         <ErrorState error={r.error} onRetry={r.retry} />
       ) : r.rechnung ? (
-        <RechnungFertig rechnung={r.rechnung} onPrint={r.druckansicht} onNeu={r.neueRechnung} />
+        <RechnungFertig rechnung={r.rechnung} onPrint={r.druckansicht} onPdf={r.pdf} onNeu={r.neueRechnung} />
       ) : (
         <>
           {!r.firma?.bereit && (

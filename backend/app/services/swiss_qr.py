@@ -197,23 +197,35 @@ def build_payload(
     return "\n".join(lines)
 
 
+def qr_matrix(payload: str) -> list[bytearray]:
+    """The QR square as rows of 0/1 modules — the source both renderers draw from.
+
+    Kept separate from :func:`qr_svg` because the PDF renderer (B-77) draws the
+    modules as vector rectangles rather than parsing SVG: a QR-bill a bank
+    scanner rejects because it was rasterised is worse than no QR at all.
+    """
+    import segno
+
+    code = segno.make(payload, error="m", mode="byte", encoding="utf-8")
+    return [bytearray(row) for row in code.matrix]
+
+
+def cross_geometry(modules: int) -> tuple[float, float, float, float, float]:
+    """Swiss cross placement in module units: (side, offset, border, bar_long, bar_short)."""
+    cross = modules * CROSS_RATIO
+    return cross, (modules - cross) / 2, cross * 0.06, cross * 0.62, cross * 0.19
+
+
 def qr_svg(payload: str, *, size_mm: float = 46.0) -> str:
     """The QR square as inline SVG, with the Swiss cross in the middle.
 
     Inline rather than a data URI so the browser prints it as vectors — a QR-bill
     that a bank scanner rejects because it was rasterised is worse than no QR at all.
     """
-    import segno
-
-    code = segno.make(payload, error="m", mode="byte", encoding="utf-8")
-    matrix = [bytearray(row) for row in code.matrix]
+    matrix = qr_matrix(payload)
     modules = len(matrix)
     dark = "".join(f"M{x} {y}h1v1h-1z" for y, row in enumerate(matrix) for x, value in enumerate(row) if value)
-    cross = modules * CROSS_RATIO
-    offset = (modules - cross) / 2
-    border = cross * 0.06
-    bar_long = cross * 0.62
-    bar_short = cross * 0.19
+    cross, offset, border, bar_long, bar_short = cross_geometry(modules)
     return (
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {modules} {modules}" '
         f'width="{size_mm}mm" height="{size_mm}mm" shape-rendering="crispEdges" '
