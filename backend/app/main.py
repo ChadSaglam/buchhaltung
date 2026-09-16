@@ -91,6 +91,7 @@ from app.routers import (
     liquiditaet,
     lohn,
     offene_posten,
+    onboarding,
     pdf,
     platform_events,
     rechnung,
@@ -129,6 +130,7 @@ application.include_router(abschluss.router)
 application.include_router(liquiditaet.router)
 application.include_router(dauerbuchungen.router)
 application.include_router(lohn.router)
+application.include_router(onboarding.router)
 
 
 app = application

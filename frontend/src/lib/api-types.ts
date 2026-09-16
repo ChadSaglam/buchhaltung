@@ -1508,6 +1508,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/onboarding/beispiel-rechnung.pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Beispiel Rechnung
+         * @description A Swiss QR invoice to try the product with, for somebody who has none.
+         *
+         *     Authenticated, even though it holds no tenant data: B-55 spent real effort
+         *     narrowing the unauthenticated surface, and a first-run helper is not a reason
+         *     to widen it again. It touches no database — the file is generated from
+         *     constants.
+         */
+        get: operations["beispiel_rechnung_api_onboarding_beispiel_rechnung_pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/pdf/parse": {
         parameters: {
             query?: never;
@@ -7041,6 +7066,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    beispiel_rechnung_api_onboarding_beispiel_rechnung_pdf_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };

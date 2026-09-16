@@ -253,8 +253,14 @@ def invoice_pdf(
     reference: str,
     netto: float,
     mwst: float,
+    watermark: str = "",
 ) -> bytes:
-    """Brief oben, Zahlteil unten — die Datei, die der Kunde bekommt."""
+    """Brief oben, Zahlteil unten — die Datei, die der Kunde bekommt.
+
+    ``watermark`` ist leer für echte Rechnungen. Die Beispielrechnung (B-20)
+    setzt ihn, damit niemand sie für eine Forderung hält — der Zahlteil zeichnet
+    seinen eigenen weissen Grund, der QR-Code bleibt also lesbar.
+    """
     brutto = float(doc.amount or 0.0)
     currency = (doc.currency or "CHF").upper()
     try:
@@ -286,6 +292,7 @@ def invoice_pdf(
             # gehört der SIX-Vorlage.
             footer="",
             page_numbers=False,
+            watermark=watermark,
         )
     )
     pdf = document.pdf

@@ -17,7 +17,7 @@
 | **more dynamic** | Scan → classify → book without a reload; live review queue; optimistic booking edits; the learning loop visibly closes | B-45 ✅, B-14 ✅, B-15 ✅, B-16 ✅ |
 | **easier to improve** | No god-files, one type source, tests that catch regressions, jobs outside the API process, prod == compose | B-02 ✅, B-03 ✅, B-08 ✅, B-10 ✅, B-11 ✅, B-13 ✅, B-33 ✅, B-39 ✅, B-41 ✅, B-49 ✅, B-59 ✅, B-60 |
 | **together** (platform) | One login across billing + buchhaltung, paid invoices book themselves, roles mean something | B-36 ✅, B-37 ✅, B-40 ✅, B-52 ✅, B-38 🅿️ |
-| **more user-friendly** | Loading/empty/error states everywhere, keyboard-first review, a11y, onboarding, no fake saves | B-18 ✅, B-19 ✅, B-44 ✅, B-46 ✅, B-50 ✅, B-69 ✅, B-58 ✅, B-20 |
+| **more user-friendly** | Loading/empty/error states everywhere, keyboard-first review, a11y, onboarding, no fake saves | B-18 ✅, B-19 ✅, B-44 ✅, B-46 ✅, B-50 ✅, B-69 ✅, B-58 ✅, B-20 ✅ |
 
 Rule: every PR names the B-ID it closes and which north-star column it serves.
 Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a wrong VAT code costs money on every receipt; optimistic UI saves 300 ms.
@@ -34,8 +34,8 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 _The 2026-09-16 run cleared the whole previous block: B-72 (option B built, see below), B-79, the IA file move
 and Heute inbox, B-74, B-24, B-25, B-54 and B-55. What is left of it:_
 
-1. **B-20** Onboarding — first scan guided, sample receipt, Kontenplan import wizard. Now the last thing between a
-   new tenant and their first correct booking: everything it would walk somebody through exists and works.
+1. **B-20 rest** — the Kontenplan import wizard. The two cheap halves shipped (sample invoice, checklist
+   reordered); a wizard is a screen that does not exist yet and wants a sketch before code.
 2. **B-72 → option C**, when it is worth it. What shipped is option B with C's shape: the rates are per-tenant
    configuration and nothing is guessed. The four things still missing are data or a certification, not code —
    Quellensteuer tariff tables, BVG Altersgutschriften, Formular 11, Swissdec ELM. `docs/B-72-LOHN-SPEC.md`.
@@ -96,7 +96,8 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
       *before* `auto_train`. — `M` / `S`
 
 ### User-friendly
-- [ ] **B-20** Onboarding: first scan guided, sample receipt, Kontenplan import wizard. — `M` / `M`
+- [x] **B-20** ✅ 2026-09-16 — see Done (sample receipt + the checklist reordered). The Kontenplan import
+      wizard is deliberately still open — see that entry.
 
 ### Security & data
 - [x] **B-24** ✅ 2026-09-16 — see Done. ADR-002 is now *Accepted and implemented*.
@@ -166,6 +167,19 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 - **a11y** ✅ 2026-09-16 — `EmptyState` and `ErrorState` rendered an `h3` inside sections whose heading was an `h2`,
   which axe reported as 14 `moderate heading-order` findings across the app. Both gained an `as` prop defaulting to
   `h2`. The whole suite is back to zero findings, light and dark.
+- **B-20** ✅ 2026-09-16 (partly) — the first ten seconds. The checklist opened with "AI-Dienst verbinden":
+  a technical prerequisite that produces nothing a new user can see, asked before they have any reason to care,
+  in direct contradiction of the IA's own rule 3 ("no settings before value"). Reading a receipt is now step one
+  and Ollama is last, marked optional — a Swiss QR bill is decoded exactly, with no model involved at all.
+  Step one also answers the most ordinary first-run problem: **they do not have a Swiss invoice on the laptop they
+  signed up on.** `GET /api/onboarding/beispiel-rechnung.pdf` generates a complete, scannable QR-Rechnung from
+  fictional data, through the same renderer real invoices use — and the test that matters decodes it with the
+  product's own `qr_bill.read_qr_bill`, because a sample the reader cannot parse would teach a new user the
+  fallback path instead of the real one. It is a download, not a seeded row: writing demo documents into a real
+  tenant would mean inventing a way to remove them again. It carries a "Beispiel" watermark (the Zahlteil draws
+  its own white ground, so the QR stays readable) and the SIX documentation's example IBAN. 10 tests.
+  **Still open: the Kontenplan import wizard** — a screen that does not exist yet, and the kind of thing to sketch
+  before building.
 - **B-17** ✅ 2026-09-16 — the Treuhänder hand-off, in one file. `GET /api/export/batches/{id}/pack.zip`:
   cover sheet as a PDF, the Banana import **byte-identical to the batch**, the receipts numbered to match the
   bookings (`30-Belege/047-Migros.pdf`), the same rows as a readable CSV, and the audit trail for the period.
@@ -583,6 +597,6 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 | 2 Security | ✅ B-06, B-07, B-24, B-25, B-32, B-34, B-40, B-41, B-42, B-43, B-54, B-55 · open: — |
 | 3 Reliability | ✅ B-04, B-05, B-08, B-11, B-33, B-35, B-39, B-47, B-48, B-49, B-63, B-64, B-73, B-76, B-51, B-52 · open: B-56, B-57 |
 | 4 Polish | ✅ B-09, B-13, B-66, B-67, B-76, B-53 · open: B-22, B-61 |
-| 5 UX | ✅ B-14, B-15, B-16, B-18, B-19, B-44, B-45, B-46, B-50 (+B-21), B-58, B-59, B-65, B-71, B-72, B-74, B-79, IA 1–5 · open: B-20 |
+| 5 UX | ✅ B-14, B-15, B-16, B-18, B-19, B-44, B-45, B-46, B-50 (+B-21), B-58, B-59, B-65, B-71, B-72, B-74, B-79, IA 1–5, B-17, B-20 · open: — |
 | 6 Together | ✅ B-36 (SSO + mirroring), B-37 (events) · deploy: `docs/DEPLOY-CHECKLIST-B36-B37.md` · parked: B-38 |
 | 7 DX | ✅ B-12, B-29, B-30 · open: B-60, B-62 |
