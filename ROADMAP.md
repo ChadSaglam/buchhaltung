@@ -4,7 +4,7 @@
 > Legend: severity `C`ritical / `H`igh / `M`edium / `L`ow · effort `S` (<1h) / `M` (half day) / `L` (multi-day)
 > IDs: `B-xx` = work item (next free: **B-80**) · `P-xx` = parked (next free: **P-05**)
 > Cross-product items (SSO, contracts, design tokens) live in `chadev-platform/ROADMAP.md`, not here.
-> Updated: 2026-09-16 — B-70 Jahresabschluss (Bilanz/ER, Abschreibungen nach ESTV A/1995, Treuhänder-Paket) und B-77 (PDF-Renderer = fpdf2) done; B-69 E-Mail-Eingang (ein Postfach, `belege+<slug>@`, Absenderliste, IMAP + Webhook) done; 2026-09-15 — B-68 Rechnungen schreiben (Swiss QR, Debitorenbuchung, Referenz-Rücklauf) done; B-67 MWST-Abrechnung (Formular 200) done; B-66 Monatsabschluss-Check done; B-65 Offene Posten/Mahnung done (B-77 = echter PDF-Renderer, gebündelt mit B-70); B-76 Banana-Stapel (phase 4) done — und die offene Extension-Frage geklärt: aus einer Banana-Extension ist kein HTTP möglich, der Datei-Hand-off ist damit final (neu: B-78, read-only REST-Spike); B-73 Abgleich done, `make check` green (a11y nested-interactive on the drop zones fixed, `.next-e2e` out of ESLint). 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 Betrag-Gedächtnis (amount memory). 2026-09-13 — Phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
+> Updated: 2026-09-16 — B-70 Jahresabschluss (balance sheet / income statement, depreciation per ESTV A/1995, Treuhänder pack) and B-77 (PDF renderer = fpdf2) done; B-69 e-mail intake (one mailbox, `belege+<slug>@`, allow-list, IMAP + webhook) done; 2026-09-15 — B-68 Rechnungen schreiben (Swiss QR, Debitorenbuchung, Referenz-Rücklauf) done; B-67 MWST-Abrechnung (Formular 200) done; B-66 Monatsabschluss-Check done; B-65 Offene Posten/Mahnung done (B-77 = echter PDF-Renderer, gebündelt mit B-70); B-76 Banana batch (phase 4) done — and the open extension question answered: no HTTP from a Banana extension, so the file hand-off is final (new: B-78, read-only REST spike); B-73 Abgleich done, `make check` green (a11y nested-interactive on the drop zones fixed, `.next-e2e` out of ESLint). 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 Betrag-Gedächtnis (amount memory). 2026-09-13 — Phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
 > Companion docs: `docs/ADR-002-rls.md` (B-24) · `docs/DEPLOY-CHECKLIST-B36-B37.md` · `docs/BRAINSTORM-2026-09-12.md`.
 
 ---
@@ -43,13 +43,13 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
    the V2 *Send Data* API (`POST /v2/doc?show&acstkn=…`, `node/10157`) only creates a **new** file from an embedded
    base64 AC2 + Document Change, which the user must then *Save As* over the original ("the method does not verify
    that the data is correct"). The read side is the only part worth a spike → **B-78**.
-2. The "Kein Treuhänder nötig" track: ~~B-65 Offene Posten~~ ✅ · ~~B-66 Monatsabschluss~~ ✅ ·
+2. The "no Treuhänder needed" track: ~~B-65 Offene Posten~~ ✅ · ~~B-66 Monatsabschluss~~ ✅ ·
    ~~B-67 MWST~~ ✅ · ~~B-68 Rechnungen schreiben (QR)~~ ✅ · ~~B-69 E-Mail-Eingang~~ ✅ ·
-   ~~B-70 Jahresabschluss~~ ✅ mit ~~B-77 PDF-Entscheid~~ ✅ (2026-09-15/16) → **B-71 Liquidität** → B-72 Lohn,
+   ~~B-70 Jahresabschluss~~ ✅ with ~~B-77 PDF decision~~ ✅ (2026-09-15/16) → **B-71 Liquidität** → B-72 Lohn,
    each inside a surface of `docs/IA-2026-09-14.md`, not as a new menu entry.
-   *Die Schleife ist zu*: Beleg kommt per Mail oder Upload → Abgleich → Abschluss, und umgekehrt Rechnung
-   schreiben → Referenz → Kontoauszug → Abgleich bucht die Zahlung. Offen bleibt der Versand der eigenen
-   Rechnung per E-Mail (braucht B-77 als Anhang) und das echte PDF (**B-77**, gebündelt mit B-70).
+   *The loop is closed, both ways*: a receipt arrives by mail or upload → Abgleich → Abschluss; and an invoice we
+   write → reference → bank statement → the Abgleich books the payment. Still open: sending our own invoice by
+   e-mail (**B-79**, now unblocked because B-77 exists).
 3. The IA migration itself (four surfaces + Mehr, Heute replacing the Dashboard) — do it while B-65/B-66 land,
    not as a separate rewrite.
 4. **B-53** export safety · **B-51** Numeric money · **B-52** idempotency by constraint (all `S`/`M`).
@@ -64,10 +64,10 @@ _2026-09-14: the previous NEXT block (B-49, B-44, B-46, B-14, B-16, B-15, B-34) 
 ### "Kein Treuhänder nötig" — the product track (owner, 2026-09-14; order = impact)
 Target: the Treuhänder signs once a year, nothing in between. Each item is a *flow* inside one of the four surfaces
 (`docs/IA-2026-09-14.md`: Heute · Belege · Bank · Abschluss), not its own page.
-- [ ] **B-79** Rechnung per E-Mail verschicken (*Rechnungen › Rechnung schreiben*): die eigene QR-Rechnung an den
-      Kunden senden statt sie auszudrucken — Entwurf mit Betreff und Text, Anhang ist das Dokument aus **B-77**,
-      Versand über das bestehende `services/email_sender.py`. Danach zeigt die Rechnung, wann sie rausging (und die
-      Mahnung aus B-65 knüpft daran an). **B-77 ist da** — die Rechnung muss nur noch durch `pdf_render.py`. — `M` / `M`
+- [ ] **B-79** Send the invoice by e-mail (*Rechnungen › Rechnung schreiben*): send our own QR invoice to the
+      customer instead of printing it — draft with subject and body, the attachment is the PDF from **B-77**, sent
+      through the existing `services/email_sender.py`. The invoice then shows when it went out, and the Mahnung
+      (B-65) builds on that. **B-77 is done** — the invoice only has to go through `pdf_render.py`. — `M` / `M`
 - [ ] **B-71** Steuerrückstellung + Liquidität (*Heute*): "diesen Quartal ~CHF X Steuern zurücklegen", 90-day cash view from
       open documents + recurring amounts (B-63 memory knows the monthly ones). — `M` / `M`
 - [ ] **B-74** Dauerbuchungen (*Bank*): the amounts B-63 already recognises monthly (Miete, Leasing, Versicherung) become
@@ -76,11 +76,11 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 - [ ] **B-75** Kontoauszug ohne Upload: camt.053 pull via bLink/EBICS (UBS, PostFinance, Raiffeisen) or a scheduled
       mailbox import — the statement arrives by itself, the Abgleich inbox fills on Monday morning. PDF stays the
       fallback (customers deliver PDFs today). Needs a bank contract per tenant — spike first. — `M` / `L`
-- [ ] **B-78** Banana-Daten lesen statt exportieren (Spike, nur sinnvoll wenn ein Kunde den *Advanced*-Plan hat):
-      Bananas integrierter Webserver (`localhost:8081`, RESTful, Token) liefert Tabellen read-only — d.h. `Buchungen`
-      liessen sich ziehen statt als `Buchungen.xls` exportieren zu lassen (Trainingsquelle des Modells, und ein
-      Ist-Abgleich gegen das, was der Kunde wirklich gebucht hat). Läuft nur lokal auf dem Kundenrechner, also
-      Agent/CLI-Frage, kein Server-zu-Server-Call. Schreiben bleibt unmöglich. — `L` / `M`
+- [ ] **B-78** Read Banana data instead of exporting it (spike; only worth it for a customer on the *Advanced*
+      plan): Banana's integrated web server (`localhost:8081`, RESTful, token) serves tables read-only — so
+      `Buchungen` could be pulled instead of asking the customer to export `Buchungen.xls` (the model's training
+      source, and a reality check against what the customer actually booked). It runs only on the customer's own
+      machine, so this is an agent/CLI question, not a server-to-server call. Writing stays impossible. — `L` / `M`
 - [ ] **B-72** Lohn light: monthly Lohnabrechnung with AHV/IV/EO, ALV, BVG, UVG, QST; Lohnausweis PDF; Sozialversicherungs-
       Jahresmeldung export. High liability — after B-65…B-70, and validated against a real Treuhänder run. — `M` / `L`
 
@@ -179,44 +179,43 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 - **B-40** ✅ 2026-09-13 — role ladder wired: `require_editor` on every mutating route, `require_admin` on Kontenplan
   replace, classify delete/upload, scanner config, `import?replace=true`. `tests/test_rbac_routes.py` walks the route
   table (a new mutating route without a role check fails CI) + viewer/editor 403 over HTTP.
-- **B-70 + B-77** ✅ 2026-09-16 — Jahresabschluss (*Abschluss › Jahr*) und der **eine PDF-Renderer**.
-  **B-77 entschieden: fpdf2** — reines Python, kein C-Build, kein Wheel-Theater im Image; reportlab kann mehr, aber
-  gedruckt werden Text und Tabellen, die Mehrleistung hätten wir mit Installationsaufwand bezahlt.
-  `services/pdf_render.py` ist bewusst dumm (A4, eine Schrift, Titel, Tabellen, Summenzeilen, Fusszeile mit
-  Seitenzahl) und kennt keine Buchhaltung — damit taugt er für jedes Dokument; Mahnung (B-65), MWST (B-67) und
-  Rechnung (B-68) können nachziehen, wenn sie dran sind.
-  **B-70** rechnet die Bilanz per 31.12. kumuliert aus allen Buchungen bis zum Stichtag, die Erfolgsrechnung nur aus
-  dem Jahr, und schlägt Abschreibungen vor. Zwei Dinge stehen bewusst so im Code: *ohne Eröffnungsbilanz geht die
-  Bilanz nicht auf* — das System bucht ab dem ersten Beleg, Anfangsbestände hat niemand getippt, also wird die
-  Differenz ausgewiesen und erklärt statt als Kundenfehler verkauft (Hinweis, kein Blocker); und die
-  **Abschreibungssätze stammen aus dem ESTV-Merkblatt A/1995** (degressiv vom Buchwert: Mobiliar 25 %, Maschinen
-  30 %, Büromaschinen/EDV/Fahrzeuge 40 %, Werkzeuge 45 %, Geschäftshaus 4 %; linear wäre die Hälfte). Wo das
-  Merkblatt nichts sagt — Patente 1700 — gibt es *keinen* Vorschlag, sondern einen Hinweis.
-  `/api/abschluss/jahre · /jahr · /jahr.pdf · /jahr.zip`; das ZIP enthält PDF, Banana-Datei, Prüfliste und alle
-  Belege des Jahres. Keine Migration. 14 neue Tests; gegen echtes Postgres 16 verifiziert (561).
-- **B-69** ✅ 2026-09-16 — E-Mail-Eingang (*Rechnungen › E-Mail-Eingang*): ein Postfach für die ganze Installation,
-  der Mandant steckt in der Adresse (`belege+<slug>@<domain>`, aus `EMAIL_INTAKE_DOMAIN`). Zwei Transporte, ein
-  Kern: `deliver()` nimmt rohes MIME — vom IMAP-Abruf (Worker-Job `email-intake`, nur registriert wenn ein Postfach
-  konfiguriert ist, plus *Jetzt abrufen* von Hand) oder vom Webhook `POST /api/email/inbound` (ohne Secret ein 404,
-  mit falschem Secret ein 401). Anhänge (PDF/Bild) gehen durch den B-64-Ingest, der Rest wird protokolliert statt
-  verschluckt. **Sicher per Default: eine leere Absenderliste lässt nichts durch** — die Adresse ist erratbar, also
-  wird die erste Mail eines neuen Absenders als *abgelehnt* mit Grund festgehalten und ein Klick setzt ihn auf die
-  Liste (ganze Domains als `@lieferant.ch`). `email_messages` ist gleichzeitig Quittung und Dedup (Message-ID je
-  Mandant), `mail_settings` hält Schalter und Liste. Auf *Heute* die Karte „N neue Belege per E-Mail“.
-  Migration `e4f5a6b7c8d9`, 21 Backend- und 4 Frontend-Tests; gegen echtes Postgres 16 verifiziert (547).
-- **B-68** ✅ 2026-09-15 — Rechnungen schreiben (*Rechnungen › Rechnung schreiben*): Kunde + Positionen ergeben eine
-  QR-Rechnung, eine Debitorenbuchung `1100/3000` am Rechnungsdatum (MWST genau einmal, mit dem Umsatzcode aus dem
-  Firmenprofil) und einen offenen Posten in Richtung *ausgang* — Mahnwesen (B-65) und Offene Posten greifen also ohne
-  eine Zeile Zusatz. `services/swiss_qr.py` schreibt, was `services/qr_bill.py` bisher nur gelesen hat: QRR
-  (27 Stellen, Mod-10 rekursiv) auf einer QR-IBAN, SCOR (ISO 11649, Mod-97) auf einer normalen IBAN, NON ohne IBAN,
-  dazu der SPC-Payload und das QR-Quadrat als Vektor-SVG mit Schweizerkreuz (segno, neu eine Laufzeit-Abhängigkeit).
-  Der Test, der zählt: der Payload geht durch unseren *eigenen* Leser zurück — was die Bank-App scannt, parst als
-  QR-Rechnung. Neu `company_profiles` (wer wir selber sind: Adresse, IBAN, Debitoren-/Ertrags-/Bankkonto, MWST-Code)
-  und `invoice_positions`; der Rechnungskopf bleibt ein `Document`. Die Zahlung kommt mit der Referenz zurück, der
-  Abgleich erkennt sie als `referenz`-Treffer und bucht `1020/1100` — ein Test fährt genau diese Strecke.
-  Druckansicht ist HTML mit Zahlteil (Empfangsschein + Zahlteil, A4); echtes PDF bleibt **B-77**, der Versand per
-  E-Mail wurde daraus **B-79** (B-69 ist der Eingang, nicht der Ausgang).
-  Migration `d3e4f5a6b7c8`, 19 Backend- und 6 Frontend-Tests; gegen echtes Postgres 16 verifiziert.
+- **B-70 + B-77** ✅ 2026-09-16 — Jahresabschluss (*Abschluss › Jahr*) and the **one PDF renderer**.
+  **B-77 decided: fpdf2** — pure Python, no C build, no wheel theatre in the image; reportlab can do more, but what
+  we print is text and tables, and the extra power would have been paid for in installation pain.
+  `services/pdf_render.py` is deliberately dumb (A4, one font, title, tables, total rows, footer with page numbers)
+  and knows no accounting — which is what makes it usable for every document; Mahnung (B-65), MWST (B-67) and the
+  invoice (B-68) can move over when they are next touched.
+  **B-70** computes the balance sheet at 31.12. cumulatively from every booking up to that date, the income
+  statement from the year only, and proposes depreciation. Two things are deliberate in the code: *without an
+  opening balance the balance sheet does not add up* — this system books from the first receipt, nobody typed in
+  opening balances, so the difference is shown and explained instead of being sold as the customer's mistake
+  (a hint, not a blocker); and the **depreciation rates come from ESTV Merkblatt A/1995** (declining balance:
+  furniture 25 %, machines 30 %, office machines/IT/vehicles 40 %, tools 45 %, commercial building 4 %; straight
+  line is half). Where the leaflet says nothing — patents on 1700 — there is *no* proposal, only a note.
+  `/api/abschluss/jahre · /jahr · /jahr.pdf · /jahr.zip`; the ZIP holds the PDF, the Banana file, the checklist and
+  every receipt of the year. No migration. 14 new tests; verified against real Postgres 16 (561).
+- **B-69** ✅ 2026-09-16 — E-mail intake (*Rechnungen › E-Mail-Eingang*): one mailbox for the whole deployment, the
+  tenant sits in the address (`belege+<slug>@<domain>`, from `EMAIL_INTAKE_DOMAIN`). Two transports, one core:
+  `deliver()` takes raw MIME — from the IMAP poll (worker job `email-intake`, registered only when a mailbox is
+  configured, plus a manual *Jetzt abrufen*) or from the webhook `POST /api/email/inbound` (404 without a secret, 401
+  with a wrong one). Attachments (PDF/image) go through the B-64 ingest, everything else is logged instead of
+  swallowed. **Safe by default: an empty allow-list lets nothing through** — the address is guessable, so the first
+  mail from a new sender is recorded as *abgelehnt* with the reason and one click puts them on the list (whole
+  domains as `@lieferant.ch`). `email_messages` is both receipt and dedup (message-id per tenant), `mail_settings`
+  holds the switch and the list. On *Heute*: the card "N neue Belege per E-Mail".
+  Migration `e4f5a6b7c8d9`, 21 backend and 4 frontend tests; verified against real Postgres 16 (547).
+- **B-68** ✅ 2026-09-15 — Write invoices (*Rechnungen › Rechnung schreiben*): customer + line items produce a QR
+  invoice, a debtor booking `1100/3000` on the invoice date (VAT exactly once, with the sales code from the company
+  profile) and an open item in direction *ausgang* — so dunning (B-65) and Offene Posten work without a line of
+  extra code. `services/swiss_qr.py` writes what `services/qr_bill.py` could only read: QRR (27 digits, recursive
+  mod-10) on a QR-IBAN, SCOR (ISO 11649, mod-97) on a normal IBAN, NON without one, plus the SPC payload and the QR
+  square as vector SVG with the Swiss cross (segno, now a runtime dependency). The test that matters: the payload
+  round-trips through our *own* reader — what a banking app scans parses as a QR bill. New `company_profiles` (who we
+  are: address, IBAN, debtor/revenue/bank account, VAT code) and `invoice_positions`; the invoice header stays a
+  `Document`. The payment comes back carrying the reference, the Abgleich recognises it as a `referenz` hit and books
+  `1020/1100` — one test drives exactly that route. The print view is HTML with the payment part (Empfangsschein +
+  Zahlteil, A4); a real PDF arrived later with **B-77**, sending it is **B-79**.
+  Migration `d3e4f5a6b7c8`, 19 backend and 6 frontend tests; verified against real Postgres 16.
 - **B-67** ✅ 2026-09-15 — MWST-Abrechnung (*Abschluss › Quartal*): Formular 200 aus den Buchungen. Ziffern und
   Reihenfolge nach dem offiziellen ESTV-Formular ab 01.01.2024 (200 · 205 · 220–280 · 289 · 299 · 302/312/342 mit
   Umsatz *und* Steuer · 382 · 399 · 400 · 405 · 410 · 415 · 420 · 479 · 500/510) — beim Bauen gegen das
