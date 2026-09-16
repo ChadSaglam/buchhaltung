@@ -217,12 +217,24 @@ jobs:
         run: docker compose build api worker web
       - name: Start the stack
         # Not ollama: nothing here needs a model, and the image is gigabytes.
-        # `--wait` honours the api healthcheck, which is B-61's readiness probe.
-        run: docker compose up -d --wait db redis api worker
+        # `--wait` honours the healthchecks — B-61's readiness probe on the API,
+        # and B-80's on the web service, which is the only thing that can tell a
+        # standalone bundle that boots from one that also serves its own CSS.
+        run: docker compose up -d --wait db redis api worker web
       - name: The API says it is ready
         run: |
           curl --fail --silent --show-error http://127.0.0.1:8000/api/health
           curl --fail --silent --show-error http://127.0.0.1:8000/api/health/live
+      - name: The web image serves the app, styles and all
+        # B-80: the runtime stage copies `.next/standalone` and `.next/static`
+        # separately. Forgetting the second one still gives a container that
+        # boots and answers 200 — with an unstyled page. So the asset the page
+        # asks for is fetched too, not just the page.
+        run: |
+          curl --fail --silent --show-error http://127.0.0.1:3000/login -o /tmp/login.html
+          asset=$(grep -o '/_next/static/[^"]*\.css' /tmp/login.html | head -1)
+          test -n "$asset" || { echo "no stylesheet on /login"; exit 1; }
+          curl --fail --silent --show-error "http://127.0.0.1:3000$asset" -o /dev/null
       - name: The worker runs a pass and exits 0
         run: docker compose run --rm --entrypoint "" worker python -m app.worker --once
       - name: Logs, if anything above failed

@@ -73,7 +73,12 @@ export default defineConfig({
       // prevent client effects (e.g. the AuthGuard redirect) from committing,
       // so a prod build gives a faithful, deterministic run. Locally we keep
       // the dev server for fast iteration.
-      command: process.env.CI ? `npm run start -- -p ${E2E_PORT}` : `npm run dev -- -p ${E2E_PORT}`,
+      // B-80: `next start` is unsupported with output: "standalone", so CI serves
+      // the standalone bundle the image serves — same server, same two copied
+      // directories (scripts/serve-standalone.sh).
+      command: process.env.CI
+        ? `bash ../scripts/serve-standalone.sh ${E2E_PORT}`
+        : `npm run dev -- -p ${E2E_PORT}`,
       url: `http://127.0.0.1:${E2E_PORT}`,
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,

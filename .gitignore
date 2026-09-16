@@ -21,8 +21,10 @@ backend/ml_models/
 backend/data/
 
 # Build
-.next/
-.next-e2e/
+# Every NEXT_DIST_DIR, not only the two we name: `make check` builds into
+# .next-e2e/, and a one-off verification build leaves its own behind —
+# which is how 1265 files from a .next-sa/ once made it into a commit.
+.next*/
 out/
 dist/
 *.egg-info/

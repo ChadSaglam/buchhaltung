@@ -1,5 +1,8 @@
 node_modules/
-.next/
+# `.next/` alone missed `.next-e2e/` and every other NEXT_DIST_DIR a local run
+# leaves behind; a stale one in the context is minutes of upload and a build
+# cache that is not the image's own.
+.next*/
 out/
 .env.local
 .env.production
@@ -9,3 +12,7 @@ e2e/
 *.test.ts
 *.test.tsx
 tsconfig.tsbuildinfo
+Dockerfile
+.dockerignore
+.DS_Store
+.vscode/

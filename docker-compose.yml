@@ -11,6 +11,16 @@ services:
         NEXT_PUBLIC_BILLING_URL: ${BILLING_URL:-}
     ports:
       - "3000:3000"
+    # B-80: the image serves Next's standalone bundle, so "the container is up"
+    # and "the app answers" are no longer the same statement — a missing
+    # `.next/static` copy boots fine and renders an unstyled page. /login is
+    # public; a probe that needs a session would report its own 401 as an outage.
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/login"]
+      interval: 15s
+      timeout: 5s
+      start_period: 20s
+      retries: 5
     depends_on:
       - api
 

@@ -190,3 +190,49 @@ async def test_the_setup_script_carries_no_password():
     echte = [t for t in treffer if "$" not in t and t not in ("CHANGE_ME", "")]
 
     assert echte == [], f"a literal password in scripts/setup.sh: {echte}"
+
+
+# --------------------------------------------------------------------------- #
+# What the smoke job has to do now that the image is standalone (B-80)
+# --------------------------------------------------------------------------- #
+
+
+async def test_the_smoke_job_starts_the_frontend_image_it_just_built(workflow):
+    """Building the image proved it compiles. It did not prove it runs — and
+    `output: "standalone"` moved the runtime from `next start` to a bundle that
+    is assembled by two separate COPY lines."""
+    steps = _steps(workflow["jobs"]["compose-smoke"])
+    starten = re.search(r"docker compose up[^\n]*", steps)
+
+    assert starten, "the smoke job never starts the stack"
+    assert re.search(r"\bweb\b", starten.group(0)), f"the web image is built and never run: {starten.group(0)}"
+
+
+async def test_the_smoke_job_fetches_an_asset_not_only_a_page(workflow):
+    """A runtime stage that forgets `.next/static` boots, answers 200 on /login,
+    and renders it without a single stylesheet. Only asking for the asset the
+    page references tells the two apart."""
+    steps = _steps(workflow["jobs"]["compose-smoke"])
+
+    assert "/_next/static/" in steps, "nothing in the smoke job would notice an unstyled page"
+
+
+async def test_the_e2e_server_is_the_one_production_runs(workflow):
+    """Next refuses to support `next start` with output: "standalone" — it warns
+    and serves anyway today. CI running on that warning is a failure waiting for
+    a Next upgrade, so playwright.config.ts starts the standalone bundle."""
+    konfiguration = (ROOT / "frontend" / "playwright.config.ts").read_text(encoding="utf-8")
+
+    assert "serve-standalone.sh" in konfiguration
+    assert "npm run start" not in konfiguration
+
+
+async def test_the_serve_script_copies_what_the_dockerfile_copies():
+    """Two places assemble the same bundle. If they drift, CI passes against a
+    layout the image does not have."""
+    skript = (ROOT / "scripts" / "serve-standalone.sh").read_text(encoding="utf-8")
+    dockerfile = (ROOT / "frontend" / "Dockerfile").read_text(encoding="utf-8")
+
+    for teil in ("standalone", "static"):
+        assert teil in skript, f"the serve script does not place {teil}"
+        assert teil in dockerfile, f"the image does not copy {teil}"

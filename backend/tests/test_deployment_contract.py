@@ -102,7 +102,7 @@ async def test_the_base_image_is_pinned_to_a_major(dockerfile):
 async def test_the_build_context_excludes_what_must_not_be_copied():
     ignored = (FRONTEND_DOCKERFILE.parent / ".dockerignore").read_text(encoding="utf-8").split()
 
-    for eintrag in ("node_modules/", ".next/", ".env.local"):
+    for eintrag in ("node_modules/", ".next*/", ".env.local"):
         assert eintrag in ignored, f"{eintrag} would be copied into the image"
 
 
@@ -218,3 +218,130 @@ async def test_make_check_verifies_the_generated_types():
     ziel = next(line for line in makefile.splitlines() if line.startswith("check:"))
 
     assert "api-types-check" in ziel, f"`make check` does not check the API types: {ziel}"
+
+
+# --------------------------------------------------------------------------- #
+# The frontend image, second pass (B-80)
+# --------------------------------------------------------------------------- #
+
+NEXT_CONFIG = ROOT / "frontend" / "next.config.ts"
+
+
+def _stages(dockerfile: str) -> list[tuple[str, list[str]]]:
+    """[(stage name or "", its lines)], in file order."""
+    stufen: list[tuple[str, list[str]]] = []
+    for zeile in dockerfile.splitlines():
+        kopf = re.match(r"^FROM\s+\S+(?:\s+AS\s+(\S+))?\s*$", zeile, re.I)
+        if kopf:
+            stufen.append((kopf.group(1) or "", []))
+        elif stufen:
+            stufen[-1][1].append(zeile)
+    return stufen
+
+
+@pytest.fixture(scope="module")
+def runtime_stage(dockerfile) -> list[str]:
+    stufen = _stages(dockerfile)
+    assert stufen, "the frontend Dockerfile has no FROM"
+    return stufen[-1][1]
+
+
+async def test_the_image_is_multi_stage(dockerfile):
+    """Single-stage means the published image carries the source tree and every
+    devDependency `npm ci` installed — typescript, eslint, vitest, Playwright."""
+    assert len(_stages(dockerfile)) >= 2, "the frontend image is still single-stage"
+
+
+async def test_the_last_stage_installs_nothing_and_builds_nothing(runtime_stage):
+    """Anything the runtime stage installs, it also ships."""
+    verboten = [z for z in runtime_stage if re.match(r"^RUN\s+(npm|yarn|pnpm|apk|apt)", z.strip(), re.I)]
+
+    assert verboten == [], f"the runtime stage installs at build time: {verboten}"
+
+
+async def test_the_last_stage_only_copies_what_the_server_needs(runtime_stage):
+    """A `COPY . .` or a `COPY --from=build /app .` in the runtime stage undoes
+    the whole point of splitting the build in two."""
+    quellen = []
+    for zeile in runtime_stage:
+        treffer = re.match(r"^COPY\s+(?:--\S+\s+)*(\S+)\s+(\S+)\s*$", zeile.strip(), re.I)
+        if treffer:
+            quellen.append(treffer.group(1))
+
+    assert quellen, "the runtime stage copies nothing — there is no application in it"
+    for quelle in quellen:
+        assert quelle not in (".", "./"), f"the runtime stage copies a whole tree: {quelle}"
+        assert "/.next/standalone" in quelle or "/.next/static" in quelle or "/public" in quelle, (
+            f"the runtime stage copies something outside the standalone bundle: {quelle}"
+        )
+
+
+async def test_the_static_assets_are_copied_next_to_the_server(dockerfile):
+    """`output: "standalone"` deliberately leaves `.next/static` out, because Next
+    expects a CDN to serve it. There is no CDN here, so the container that forgets
+    this line boots, answers 200, and renders an unstyled page."""
+    assert re.search(r"COPY\s+--from=\S+.*/\.next/static\s", dockerfile), (
+        "the image never copies .next/static; the app would render without CSS or JS"
+    )
+
+
+async def test_the_container_does_not_run_as_root(runtime_stage):
+    benutzer = [z.split(maxsplit=1)[1].strip() for z in runtime_stage if z.strip().upper().startswith("USER ")]
+
+    assert benutzer, "the runtime stage never drops root"
+    assert benutzer[-1] != "root", "the runtime stage explicitly switches back to root"
+
+
+async def test_the_command_is_the_standalone_server(dockerfile):
+    """`next start` is not part of the standalone output — the bundle ships its
+    own `server.js`, and a CMD that calls `npm start` fails at container start."""
+    befehl = re.findall(r"^CMD\s+(.+)$", dockerfile, re.M)[-1]
+
+    assert "server.js" in befehl, f"the image does not start the standalone server: {befehl}"
+    assert "npm" not in befehl, f"npm is not in the runtime stage: {befehl}"
+
+
+async def test_the_build_is_told_to_emit_a_standalone_bundle():
+    """Without this, `.next/standalone` does not exist and the COPY above fails —
+    at build time, which is the good case. This test is the cheap case."""
+    konfiguration = NEXT_CONFIG.read_text(encoding="utf-8")
+
+    assert re.search(r'output:\s*"standalone"', konfiguration), (
+        'frontend/next.config.ts must set output: "standalone" or the image has nothing to copy'
+    )
+
+
+async def test_the_image_says_when_it_is_ready(dockerfile):
+    assert "HEALTHCHECK" in dockerfile, "the frontend image reports no health"
+
+
+async def test_compose_waits_for_the_web_service_too(compose):
+    """The API got one in B-61; the web service booting into a blank page was
+    still indistinguishable from a healthy one."""
+    assert "healthcheck" in compose["services"]["web"]
+
+
+async def test_the_healthcheck_asks_for_a_page_that_needs_no_session(compose, dockerfile):
+    """`/dashboard` answers 401 without a cookie, and a probe that reads its own
+    401 as an outage restarts a container that is working perfectly."""
+    probe = " ".join(compose["services"]["web"]["healthcheck"]["test"])
+    im_image = dockerfile[dockerfile.index("HEALTHCHECK") :]
+
+    for ort in (probe, im_image):
+        assert "/login" in ort, f"the health probe does not ask for a public page: {ort}"
+        assert "/dashboard" not in ort, f"the health probe asks for a page behind the session: {ort}"
+
+
+async def test_every_build_directory_is_out_of_the_image_context():
+    """`.next/` alone does not match `.next-e2e/` or a one-off verification
+    build's directory, and both are hundreds of megabytes of stale cache."""
+    ignoriert = (FRONTEND_DOCKERFILE.parent / ".dockerignore").read_text(encoding="utf-8").split()
+
+    assert ".next*/" in ignoriert, "only the default dist dir is excluded from the build context"
+
+
+async def test_every_build_directory_is_out_of_git():
+    """1265 files from a `.next-sa/` once reached a commit this way."""
+    for datei in (ROOT / ".gitignore", ROOT / "frontend" / ".gitignore"):
+        muster = datei.read_text(encoding="utf-8").split()
+        assert ".next*/" in muster, f"{datei.relative_to(ROOT)} does not ignore every NEXT_DIST_DIR"

@@ -4,7 +4,7 @@
 > Legend: severity `C`ritical / `H`igh / `M`edium / `L`ow · effort `S` (<1h) / `M` (half day) / `L` (multi-day)
 > IDs: `B-xx` = work item (next free: **B-82**) · `P-xx` = parked (next free: **P-05**)
 > Cross-product items (SSO, contracts, design tokens) live in `chadev-platform/ROADMAP.md`, not here.
-> Updated: 2026-09-16 (fourth run) — the NEXT block emptied: **B-61** health that can fail, **B-57** worker hardening, **B-56** parser hygiene (the `3924` was real), **B-62** (already done — the line was stale), **B-60** CI parity (both databases, a compose smoke job, and a real password out of `scripts/setup.sh`). Earlier that day (third run): **B-27** the query audit (five statements that grew with the tenant), **B-23** plan limits enforced from `usage_events`, **B-72 option C** as far as the law reaches (BVG minimum as a check), **B-20 finished** (the Kontenplan import wizard). Earlier that day (second run): **B-72** payroll (option B with option C's shape), **B-79** invoice e-mail, **B-74** part A, **B-24** row-level security (`app_rw` is `NOSUPERUSER NOBYPASSRLS`), **B-25** backup + restore drill, **B-54**/**B-55**, **B-17** the Treuhänder pack in one zip, **B-20** (sample invoice + checklist; the wizard is still open), **B-51 finished** (the last five money columns), **B-22** the audit log, **B-28** indexes chosen by `EXPLAIN`. Earlier that day (night run): **B-51** money columns are Numeric(12,2), **B-59** `response_model` on the seven endpoints that returned bare dicts (and the hand-written frontend interfaces are gone), **B-58** the UX/a11y batch (one formatter, WCAG-AA accents, `usePopover`, heading order, confirms on destructive actions), **B-71** 90-day liquidity + tax provision on Heute, and **step 5 of the IA migration** (sidebar = four surfaces + Mehr; every old route still resolves). Earlier on 2026-09-16: B-70 Jahresabschluss and B-77 (PDF renderer = fpdf2); B-69 e-mail intake; B-52 idempotency by constraint; B-53 export safety. 2026-09-15 — B-68 write invoices (Swiss QR, debtor booking, reference return); B-67 VAT return (form 200); B-66 month-end check; B-65 open items / reminders; B-76 Banana batch (phase 4) done — and the open extension question answered: an extension may not call HTTP, so the file hand-off is final (new: B-78, read-only REST spike); B-73 Abgleich done, `make check` green. 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 amount memory. 2026-09-13 — phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
+> Updated: 2026-09-16 (fifth run) — **Lohn-Vergleich** (the tool that lifts the payslip watermark) and **B-80** the frontend image, built and served before it was believed. Fourth run — the NEXT block emptied: **B-61** health that can fail, **B-57** worker hardening, **B-56** parser hygiene (the `3924` was real), **B-62** (already done — the line was stale), **B-60** CI parity (both databases, a compose smoke job, and a real password out of `scripts/setup.sh`). Earlier that day (third run): **B-27** the query audit (five statements that grew with the tenant), **B-23** plan limits enforced from `usage_events`, **B-72 option C** as far as the law reaches (BVG minimum as a check), **B-20 finished** (the Kontenplan import wizard). Earlier that day (second run): **B-72** payroll (option B with option C's shape), **B-79** invoice e-mail, **B-74** part A, **B-24** row-level security (`app_rw` is `NOSUPERUSER NOBYPASSRLS`), **B-25** backup + restore drill, **B-54**/**B-55**, **B-17** the Treuhänder pack in one zip, **B-20** (sample invoice + checklist; the wizard is still open), **B-51 finished** (the last five money columns), **B-22** the audit log, **B-28** indexes chosen by `EXPLAIN`. Earlier that day (night run): **B-51** money columns are Numeric(12,2), **B-59** `response_model` on the seven endpoints that returned bare dicts (and the hand-written frontend interfaces are gone), **B-58** the UX/a11y batch (one formatter, WCAG-AA accents, `usePopover`, heading order, confirms on destructive actions), **B-71** 90-day liquidity + tax provision on Heute, and **step 5 of the IA migration** (sidebar = four surfaces + Mehr; every old route still resolves). Earlier on 2026-09-16: B-70 Jahresabschluss and B-77 (PDF renderer = fpdf2); B-69 e-mail intake; B-52 idempotency by constraint; B-53 export safety. 2026-09-15 — B-68 write invoices (Swiss QR, debtor booking, reference return); B-67 VAT return (form 200); B-66 month-end check; B-65 open items / reminders; B-76 Banana batch (phase 4) done — and the open extension question answered: an extension may not call HTTP, so the file hand-off is final (new: B-78, read-only REST spike); B-73 Abgleich done, `make check` green. 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 amount memory. 2026-09-13 — phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
 > Companion docs: `docs/ADR-002-rls.md` (B-24) · `docs/BACKUP.md` (B-25) · `docs/B-72-LOHN-SPEC.md` (B-72) · `docs/IA-2026-09-14.md` · `docs/DEPLOY-CHECKLIST-B36-B37.md` · `docs/BRAINSTORM-2026-09-12.md`.
 
 ---
@@ -55,13 +55,16 @@ production, because there is no production yet._
 
 Then, and only then, the code that is left:
 
-- **B-80** the frontend image, second pass — must be *built* before it is believed.
 - **B-81** a runtime lockfile — must be *installed* before it is believed.
 - **B-72 → option C**, the three gaps that are bought or certified: Quellensteuer tariff tables, Formular 11,
   Swissdec ELM. `docs/B-72-LOHN-SPEC.md`.
+- **B-74 part B** — standing orders as Abgleich proposals. **Decide before coding:**
+  `docs/ADR-003-standing-orders-in-abgleich.md` asks three questions; the recommendation is option C.
 - **B-75** bank pull (needs a contract per tenant, spike first) and **B-78** the read-only Banana REST spike.
-- The **B-24 canary**: ADR-002 asks for one replica watched for 24 h before RLS is flipped everywhere. A
-  deployment step, not a commit.
+- The **B-24 cutover**: `docs/RUNBOOK-RLS-CUTOVER.md`. A deployment step, not a commit — but read section 5
+  first: the obvious rollback (point `DATABASE_URL` back at the owner) does **not** work, because production
+  refuses to boot as a superuser and the compose image makes `POSTGRES_USER` one. The fallback role has to exist
+  before the switch, not during the incident.
 
 <details><summary>What item 1 of the old block settled (Banana, 2026-09-15) — keep, do not re-litigate</summary>
 
@@ -136,11 +139,9 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
       installing the lock and Dependabot bumping it. Left out of B-60 on purpose: a lockfile generated without
       being installed and tested end-to-end is a guess, and the container this was written in cannot run the
       compose stack to prove it. — `M` / `M`
-- [ ] **B-80** Frontend image, second pass: it is single-stage, so the published image carries the source tree and
-      every devDependency `npm ci` installed. Multi-stage with `output: "standalone"`, a non-root user and a
-      healthcheck. **Must be built once before it is believed** — there is no Docker daemon in the container this
-      was written in, and an unbuilt Dockerfile is exactly the kind of plausible-looking change this project keeps
-      finding in production. — `M` / `M`
+- [x] **B-80** ✅ 2026-09-16 — see Done. It was built and run (1.23 GB → 235 MB), and building it is what found
+      the two failure modes the line could not have named: `.next/static` living outside the standalone bundle,
+      and `next start` being unsupported with it.
 
 ### Performance
 - [x] **B-27** ✅ 2026-09-16 — see Done. One correction to what this line proposed: the months in the assistant
@@ -161,6 +162,28 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 
 ## ✅ Done
 
+- **B-80** ✅ 2026-09-16 — the frontend image stops shipping its own toolchain. **1.23 GB → 235 MB**, measured by
+  building both. It was single-stage, so the published image carried the whole source tree and every devDependency
+  `npm ci` installed — typescript, eslint, vitest, Playwright, tailwind, 734 MB of `node_modules` — and ran as
+  **root**. Now three stages, and the runtime one copies two directories out of Next's `output: "standalone"`
+  bundle. `/app` in the finished image contains four entries: `.next`, `node_modules`, `package.json`, `server.js`.
+  It runs as `node` (uid 1000) and has a `HEALTHCHECK`; compose has one for `web` now too.
+  This line said **"must be built once before it is believed"**. It was built, with a real daemon, and building it
+  is what found the two things that were not guessable. First: `.next/static` is deliberately *not* inside the
+  standalone bundle — Next expects a CDN to serve it — so an image that copies only `standalone` starts fine,
+  answers 200 on `/login`, and renders without a single stylesheet. The image healthcheck and the CI smoke job
+  therefore fetch the stylesheet the page asks for, not just the page. Second: `next start` **is not supported**
+  with standalone output. Next says so and serves anyway, which is worse than failing — CI was about to run on a
+  warning. `scripts/serve-standalone.sh` now assembles the same two directories the Dockerfile does, and
+  Playwright's CI server runs it, so the e2e suite and the image are the same server.
+  Proof, in the container that used to have no daemon: `docker build` → `docker run` → `docker inspect` reports
+  **healthy after 10 s**, `id` is `uid=1000(node)`, `/login` 200, its CSS chunk 200 at 70 411 bytes,
+  `/dashboard/scanner` → 307, `NEXT_PUBLIC_API_URL` inlined into three chunks at build time, and typescript,
+  eslint, vitest, Playwright and tailwind all absent from `node_modules`. The compose-smoke job now starts `web`
+  and asks it the same two questions. 16 new tests (`test_deployment_contract.py`, `test_ci_contract.py`).
+  Left open on purpose: **B-81**, the runtime lockfile.
+  Also fixed here, because it cost an hour: `.gitignore` matched `.next/` and `.next-e2e/` by name, so a one-off
+  build directory swept 1265 files into a commit. It is `.next*/` now, in both files.
 - **B-55** ✅ 2026-09-16 — the unauthenticated edge. Sign-in, sign-up and the SSO hand-off get their own per-IP
   bucket (`RATE_LIMIT_AUTH`, default 10/minute) far below the general limit — they are the only unauthenticated
   write paths. New passwords are 12–128 characters; **login** keeps `min_length=1` on purpose, because an existing
@@ -188,7 +211,10 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
   with three days' grace on the usual day. "Cembra 770.60 fehlt diesen Monat" is now a row on Heute rather than
   something you notice at the year-end close. Deliberately part A only: the Abgleich-proposal half is a separate
   change, because every proposal today pairs a transaction with a *document* and a standing order has none.
-  18 backend tests, 10 frontend.
+  18 backend tests, 10 frontend. **Part B is now written up rather than guessed at:**
+  `docs/ADR-003-standing-orders-in-abgleich.md` — three options, what each costs, and the three questions only
+  the owner can answer. It is a decision, not a typing task; `Match.document_id` being nullable would quietly
+  disarm `uq_matches_pair` and put a second branch through `confirm()`.
 - **a11y** ✅ 2026-09-16 — `EmptyState` and `ErrorState` rendered an `h3` inside sections whose heading was an `h2`,
   which axe reported as 14 `moderate heading-order` findings across the app. Both gained an `as` prop defaulting to
   `h2`. The whole suite is back to zero findings, light and dark.
@@ -841,4 +867,4 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 | 4 Polish | ✅ B-09, B-13, B-66, B-67, B-76, B-53, B-22, B-61 · open: — |
 | 5 UX | ✅ B-14, B-15, B-16, B-18, B-19, B-44, B-45, B-46, B-50 (+B-21), B-58, B-59, B-65, B-71, B-72, B-74, B-79, IA 1–5, B-17, B-20 · open: — |
 | 6 Together | ✅ B-36 (SSO + mirroring), B-37 (events), B-23 (plan limits) · deploy: `docs/DEPLOY-CHECKLIST-B36-B37.md` · parked: B-38 |
-| 7 DX | ✅ B-12, B-29, B-30, B-60, B-62 · open: B-80, B-81 |
+| 7 DX | ✅ B-12, B-29, B-30, B-60, B-62, B-80 · open: B-81 |

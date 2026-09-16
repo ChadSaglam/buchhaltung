@@ -7,6 +7,11 @@ const nextConfig: NextConfig = {
   // `make dev` (:3000) was running. The e2e server sets NEXT_DIST_DIR=.next-e2e
   // and gets its own lock, its own cache, and no fight with the dev server.
   distDir: process.env.NEXT_DIST_DIR || ".next",
+  // B-80: the image copies `.next/standalone` — a server plus only the modules
+  // the trace actually reached — instead of the source tree and every
+  // devDependency `npm ci` installed. `next start` is not in that bundle; the
+  // runtime stage runs `node server.js`, which is what standalone emits.
+  output: "standalone",
   turbopack: {
     root: path.join(__dirname),
   },
