@@ -18,7 +18,7 @@ from app.schemas.jahresabschluss import (
     AbschreibungOut,
     GruppeOut,
     JahrReportResponse,
-    PositionOut,
+    KontoPosition,
     YearListResponse,
 )
 from app.schemas.monatsabschluss import MonthKpisOut, MonthListResponse, MonthReportResponse
@@ -137,7 +137,7 @@ def _gruppe(gruppe: Gruppe) -> GruppeOut:
     return GruppeOut(
         key=gruppe.key,
         label=gruppe.label,
-        positionen=[PositionOut(konto=p.konto, bezeichnung=p.bezeichnung, saldo=p.saldo) for p in gruppe.positionen],
+        positionen=[KontoPosition(konto=p.konto, bezeichnung=p.bezeichnung, saldo=p.saldo) for p in gruppe.positionen],
         total=gruppe.total,
     )
 

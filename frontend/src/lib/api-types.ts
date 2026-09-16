@@ -135,6 +135,83 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/abschluss/jahr": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Jahr
+         * @description Bilanz, Erfolgsrechnung, Abschreibungsvorschlag und Prüfliste eines Jahres.
+         */
+        get: operations["jahr_api_abschluss_jahr_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/abschluss/jahr.pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Jahr Pdf
+         * @description Der Abschluss als PDF — das, was der Treuhänder unterschreibt.
+         */
+        get: operations["jahr_pdf_api_abschluss_jahr_pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/abschluss/jahr.zip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Jahr Paket
+         * @description PDF, Banana-Datei, Prüfliste und alle Belege des Jahres in einem ZIP.
+         */
+        get: operations["jahr_paket_api_abschluss_jahr_zip_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/abschluss/jahre": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Years */
+        get: operations["years_api_abschluss_jahre_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/abschluss/monat": {
         parameters: {
             query?: never;
@@ -1473,6 +1550,23 @@ export interface components {
              */
             hinweis: string;
         };
+        /** AbschreibungOut */
+        AbschreibungOut: {
+            /** Betrag */
+            betrag: number;
+            /** Bezeichnung */
+            bezeichnung: string;
+            /** Buchwert */
+            buchwert: number;
+            /** Konto */
+            konto: string;
+            /** Kt Soll */
+            kt_soll: string;
+            /** Quelle */
+            quelle: string;
+            /** Satz */
+            satz: number;
+        };
         /** AbsenderRequest */
         AbsenderRequest: {
             /** Adresse */
@@ -2214,10 +2308,58 @@ export interface components {
             /** Zahlungsfrist Tage */
             zahlungsfrist_tage?: number | null;
         };
+        /** GruppeOut */
+        GruppeOut: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Positionen */
+            positionen: components["schemas"]["KontoPosition"][];
+            /** Total */
+            total: number;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** JahrReportResponse */
+        JahrReportResponse: {
+            /** Abschreibungen */
+            abschreibungen: components["schemas"]["AbschreibungOut"][];
+            /** Abschreibungen Total */
+            abschreibungen_total: number;
+            aktiven: components["schemas"]["GruppeOut"];
+            /** Aufwand */
+            aufwand: components["schemas"]["GruppeOut"][];
+            /** Aufwand Total */
+            aufwand_total: number;
+            /** Bilanz Differenz */
+            bilanz_differenz: number;
+            /** Blockers */
+            blockers: number;
+            /** Buchungen */
+            buchungen: number;
+            /** Checks */
+            checks: components["schemas"]["ExportCheck"][];
+            /** Ertrag */
+            ertrag: components["schemas"]["GruppeOut"][];
+            /** Ertrag Total */
+            ertrag_total: number;
+            /** Gewinn */
+            gewinn: number;
+            /** Jahr */
+            jahr: number;
+            /** Paket Url */
+            paket_url: string;
+            passiven: components["schemas"]["GruppeOut"];
+            /** Pdf Url */
+            pdf_url: string;
+            /** Ready */
+            ready: boolean;
+            /** Warnings */
+            warnings: number;
         };
         /** KontenplanUpdate */
         KontenplanUpdate: {
@@ -2225,6 +2367,15 @@ export interface components {
             kontenplan: {
                 [key: string]: string;
             };
+        };
+        /** KontoPosition */
+        KontoPosition: {
+            /** Bezeichnung */
+            bezeichnung: string;
+            /** Konto */
+            konto: string;
+            /** Saldo */
+            saldo: number;
         };
         /** KundeIn */
         KundeIn: {
@@ -2814,6 +2965,13 @@ export interface components {
             /** Error Type */
             type: string;
         };
+        /** YearListResponse */
+        YearListResponse: {
+            /** Aktuell */
+            aktuell: number;
+            /** Jahre */
+            jahre?: number[];
+        };
         /** ZifferOut */
         ZifferOut: {
             /** Label */
@@ -3139,6 +3297,120 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    jahr_api_abschluss_jahr_get: {
+        parameters: {
+            query?: {
+                /** @description Vierstellig, z. B. 2026 */
+                jahr?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JahrReportResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    jahr_pdf_api_abschluss_jahr_pdf_get: {
+        parameters: {
+            query?: {
+                jahr?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    jahr_paket_api_abschluss_jahr_zip_get: {
+        parameters: {
+            query?: {
+                jahr?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    years_api_abschluss_jahre_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["YearListResponse"];
                 };
             };
         };

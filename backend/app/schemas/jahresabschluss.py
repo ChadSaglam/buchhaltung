@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from app.schemas.export_batch import ExportCheck
 
 
-class PositionOut(BaseModel):
+class KontoPosition(BaseModel):
     konto: str
     bezeichnung: str
     saldo: float
@@ -16,7 +16,7 @@ class PositionOut(BaseModel):
 class GruppeOut(BaseModel):
     key: str
     label: str
-    positionen: list[PositionOut]
+    positionen: list[KontoPosition]
     total: float
 
 
