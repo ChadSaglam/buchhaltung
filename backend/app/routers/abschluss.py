@@ -1,7 +1,8 @@
-"""Abschluss — /api/abschluss (B-66 Monatsabschluss-Check).
+"""Abschluss — /api/abschluss (B-66 Monat, B-67 MWST, B-70 Jahr).
 
-Read-only: the month either closes or it names what is missing. Nothing here
-changes data, so there is nothing to approve.
+Read-only: eine Periode schliesst, oder sie sagt, was fehlt. Nichts hier ändert
+Daten, also gibt es nichts zu bestätigen. Das Jahr kommt zusätzlich als PDF
+(B-77, fpdf2) und als ZIP-Paket für den Treuhänder.
 """
 
 from __future__ import annotations
@@ -13,8 +14,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.deps import get_current_user, get_db
 from app.models.user import User
 from app.schemas.export_batch import ExportCheck
+from app.schemas.jahresabschluss import (
+    AbschreibungOut,
+    GruppeOut,
+    JahrReportResponse,
+    PositionOut,
+    YearListResponse,
+)
 from app.schemas.monatsabschluss import MonthKpisOut, MonthListResponse, MonthReportResponse
 from app.schemas.mwst import MwstReportResponse, QuarterListResponse, ZifferOut
+from app.services.jahresabschluss import Gruppe, JahresabschlussService, JahrReport, parse_year
 from app.services.monatsabschluss import MonatsabschlussService, default_month, month_label
 from app.services.mwst import (
     METHODE_EFFEKTIV,
@@ -118,4 +127,113 @@ async def mwst_text(
         content=render_text(report),
         media_type="text/plain; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="mwst_{report.quartal}.txt"'},
+    )
+
+
+# ── Jahr (B-70) ──────────────────────────────────────────────────────────────
+
+
+def _gruppe(gruppe: Gruppe) -> GruppeOut:
+    return GruppeOut(
+        key=gruppe.key,
+        label=gruppe.label,
+        positionen=[PositionOut(konto=p.konto, bezeichnung=p.bezeichnung, saldo=p.saldo) for p in gruppe.positionen],
+        total=gruppe.total,
+    )
+
+
+def _jahr_response(report: JahrReport) -> JahrReportResponse:
+    return JahrReportResponse(
+        jahr=report.jahr,
+        aktiven=_gruppe(report.aktiven),
+        passiven=_gruppe(report.passiven),
+        ertrag=[_gruppe(g) for g in report.ertrag],
+        aufwand=[_gruppe(g) for g in report.aufwand],
+        ertrag_total=report.ertrag_total,
+        aufwand_total=report.aufwand_total,
+        gewinn=report.gewinn,
+        bilanz_differenz=report.bilanz_differenz,
+        abschreibungen=[
+            AbschreibungOut(
+                konto=a.konto,
+                bezeichnung=a.bezeichnung,
+                buchwert=a.buchwert,
+                satz=a.satz,
+                betrag=a.betrag,
+                quelle=a.quelle,
+                kt_soll=a.kt_soll,
+            )
+            for a in report.abschreibungen
+        ],
+        abschreibungen_total=round(sum(a.betrag for a in report.abschreibungen), 2),
+        checks=[
+            ExportCheck(
+                code=c.code,
+                label=c.label,
+                detail=c.detail,
+                severity=c.severity,
+                count=c.count,
+                booking_ids=c.booking_ids,
+            )
+            for c in report.checks
+        ],
+        blockers=report.blockers,
+        warnings=report.warnings,
+        ready=report.ready,
+        buchungen=report.buchungen,
+        pdf_url=f"/api/abschluss/jahr.pdf?jahr={report.jahr}",
+        paket_url=f"/api/abschluss/jahr.zip?jahr={report.jahr}",
+    )
+
+
+@router.get("/jahre", response_model=YearListResponse)
+async def years(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> YearListResponse:
+    from datetime import UTC, datetime
+
+    jahre = await JahresabschlussService(db, user).years()
+    return YearListResponse(jahre=jahre, aktuell=jahre[0] if jahre else datetime.now(UTC).year)
+
+
+@router.get("/jahr", response_model=JahrReportResponse)
+async def jahr(
+    jahr: int | None = Query(default=None, description="Vierstellig, z. B. 2026"),
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> JahrReportResponse:
+    """Bilanz, Erfolgsrechnung, Abschreibungsvorschlag und Prüfliste eines Jahres."""
+    service = JahresabschlussService(db, user)
+    report = await service.report(parse_year(jahr, 0) if jahr is not None else None)
+    return _jahr_response(report)
+
+
+@router.get("/jahr.pdf")
+async def jahr_pdf(
+    jahr: int | None = Query(default=None),
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> Response:
+    """Der Abschluss als PDF — das, was der Treuhänder unterschreibt."""
+    report, content = await JahresabschlussService(db, user).pdf(parse_year(jahr, 0) if jahr is not None else None)
+    return Response(
+        content=content,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'inline; filename="jahresabschluss-{report.jahr}.pdf"'},
+    )
+
+
+@router.get("/jahr.zip")
+async def jahr_paket(
+    jahr: int | None = Query(default=None),
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> Response:
+    """PDF, Banana-Datei, Prüfliste und alle Belege des Jahres in einem ZIP."""
+    report, content = await JahresabschlussService(db, user).paket(parse_year(jahr, 0) if jahr is not None else None)
+    return Response(
+        content=content,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="jahresabschluss-{report.jahr}.zip"'},
     )

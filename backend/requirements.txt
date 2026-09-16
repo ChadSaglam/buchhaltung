@@ -29,3 +29,6 @@ pytest-env>=1.1.5
 zxing-cpp>=2.2.0
 # Renders the QR square on invoices we write ourselves (services/swiss_qr.py) — pure Python.
 segno>=1.6
+# The one PDF renderer for every document (B-77): Bilanz/ER, Mahnung, Rechnung.
+# Pure Python, no C build — that is why it won over reportlab.
+fpdf2>=2.7
