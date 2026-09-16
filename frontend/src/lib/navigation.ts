@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, FileText, ScanLine, BookOpen, Receipt, CheckCheck, PackageCheck,
-  Brain, GraduationCap, Settings, ListChecks, ScrollText, Sparkles, FilePlus2, Building2,
+  Brain, GraduationCap, Settings, ListChecks, ScrollText, Sparkles, FilePlus2, Building2, Mail,
   type LucideIcon,
 } from "lucide-react";
 
@@ -43,6 +43,7 @@ export const EXTRA_NAV_ITEMS: NavItem[] = [
   { label: "Einstellungen", href: "/dashboard/settings", icon: Settings, section: "System" },
   { label: "Rechnung schreiben", href: "/dashboard/rechnungen/neu", icon: FilePlus2, section: "Buchhaltung" },
   { label: "Firmenprofil", href: "/dashboard/rechnungen/firma", icon: Building2, section: "Buchhaltung" },
+  { label: "E-Mail-Eingang", href: "/dashboard/rechnungen/email", icon: Mail, section: "Buchhaltung" },
 ];
 
 /** All navigable pages (sidebar + extras) — used by palette, breadcrumbs, topbar. */

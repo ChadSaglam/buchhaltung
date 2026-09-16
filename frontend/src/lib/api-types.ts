@@ -727,6 +727,83 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/email/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Email Eingang
+         * @description Address, rules and what the mailbox did lately.
+         */
+        get: operations["email_eingang_api_email__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/email/abrufen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Fetch Now
+         * @description Fetch the mailbox now instead of waiting for the scheduler.
+         */
+        post: operations["fetch_now_api_email_abrufen_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/email/absender": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Allow Sender
+         * @description One click on a rejected message: this sender may deliver from now on.
+         */
+        post: operations["allow_sender_api_email_absender_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/email/einstellungen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Settings */
+        put: operations["update_settings_api_email_einstellungen_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/export/banana": {
         parameters: {
             query?: never;
@@ -1386,6 +1463,21 @@ export interface components {
             /** Vorschlaege */
             vorschlaege: number;
         };
+        /** AbrufResponse */
+        AbrufResponse: {
+            /** Geholt */
+            geholt: number;
+            /**
+             * Hinweis
+             * @default
+             */
+            hinweis: string;
+        };
+        /** AbsenderRequest */
+        AbsenderRequest: {
+            /** Adresse */
+            adresse: string;
+        };
         /** ApproveRequest */
         ApproveRequest: {
             /** Corrected Haben */
@@ -1765,6 +1857,37 @@ export interface components {
             filename: string;
             /** Ok */
             ok: boolean;
+        };
+        /** EmailEingangResponse */
+        EmailEingangResponse: {
+            /** Abgelehnt */
+            abgelehnt: number;
+            /** Belege 24H */
+            belege_24h: number;
+            einstellungen: components["schemas"]["MailSettingsOut"];
+            /** Nachrichten */
+            nachrichten: components["schemas"]["EmailMessageOut"][];
+        };
+        /** EmailMessageOut */
+        EmailMessageOut: {
+            /** Attachment Count */
+            attachment_count: number;
+            /** Created At */
+            created_at: string | null;
+            /** Document Count */
+            document_count: number;
+            /** From Addr */
+            from_addr: string;
+            /** Id */
+            id: number;
+            /** Reason */
+            reason: string;
+            /** Sent At */
+            sent_at: string | null;
+            /** Status */
+            status: string;
+            /** Subject */
+            subject: string;
         };
         /** EmailRequest */
         EmailRequest: {
@@ -2176,6 +2299,48 @@ export interface components {
         MahnungRequest: {
             /** Stufe */
             stufe?: number | null;
+        };
+        /** MailSettingsOut */
+        MailSettingsOut: {
+            /** Absender */
+            absender?: string[];
+            /**
+             * Adresse
+             * @default
+             */
+            adresse: string;
+            /**
+             * Aktiv
+             * @default true
+             */
+            aktiv: boolean;
+            /**
+             * Allow List
+             * @default
+             */
+            allow_list: string;
+            /**
+             * Bereit
+             * @default false
+             */
+            bereit: boolean;
+            /**
+             * Imap
+             * @default false
+             */
+            imap: boolean;
+            /**
+             * Webhook
+             * @default false
+             */
+            webhook: boolean;
+        };
+        /** MailSettingsUpdate */
+        MailSettingsUpdate: {
+            /** Aktiv */
+            aktiv?: boolean | null;
+            /** Allow List */
+            allow_list?: string | null;
         };
         /** ManualMatchRequest */
         ManualMatchRequest: {
@@ -4047,6 +4212,112 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    email_eingang_api_email__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailEingangResponse"];
+                };
+            };
+        };
+    };
+    fetch_now_api_email_abrufen_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AbrufResponse"];
+                };
+            };
+        };
+    };
+    allow_sender_api_email_absender_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AbsenderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailSettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_settings_api_email_einstellungen_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MailSettingsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailSettingsOut"];
                 };
             };
             /** @description Validation Error */

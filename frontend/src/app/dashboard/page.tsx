@@ -13,6 +13,7 @@ import { SystemChecklist } from "@/components/shared/SystemChecklist";
 import { GettingStarted } from "@/components/shared/GettingStarted";
 import { useBookingStats, useClassifierInfo } from "@/hooks/useSystemData";
 import { OffenePostenCard } from "./components/OffenePostenCard";
+import { EmailEingangCard } from "./components/EmailEingangCard";
 import { cn } from "@/lib/utils";
 
 const container = {
@@ -110,6 +111,11 @@ export default function DashboardPage() {
           <div>
             <h2 className="mb-4 text-base font-semibold text-foreground">Offene Posten</h2>
             <OffenePostenCard />
+          </div>
+
+          <div>
+            <h2 className="mb-4 text-base font-semibold text-foreground">Posteingang</h2>
+            <EmailEingangCard />
           </div>
 
           <div>
