@@ -114,6 +114,23 @@ export default function FirmaPage() {
               <SettingsInput label="MWST-Satz" value={f.entwurf.mwst_pct} onChange={(v) => f.setFeld("mwst_pct", v)} />
             </SettingsField>
           </section>
+
+          <section aria-labelledby="steuer-titel" className="rounded-xl border border-border bg-card p-6">
+            <h2 id="steuer-titel" className="mb-2 text-base font-semibold text-foreground">Gewinnsteuer</h2>
+            <p className="mb-2 text-sm text-muted-foreground">
+              Für die Steuerrückstellung auf <em>Heute</em>. Die effektive Belastung (Bund, Kanton, Gemeinde)
+              lag 2026 zwischen 11.66 % (Luzern) und 20.54 % (Bern), im Mittel 14.43 % — den Satz für Ihre
+              Gemeinde nennt Ihr Treuhänder. Leer lassen heisst: es wird nichts geschätzt.
+            </p>
+            <SettingsField label="Gewinnsteuersatz (%)" description="Effektiv, inkl. Bundessteuer — z. B. 14.43">
+              <SettingsInput
+                label="Gewinnsteuersatz in Prozent"
+                value={f.entwurf.gewinnsteuer_satz}
+                onChange={(v) => f.setFeld("gewinnsteuer_satz", v)}
+                placeholder="14.43"
+              />
+            </SettingsField>
+          </section>
         </>
       )}
     </div>

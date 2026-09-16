@@ -31,6 +31,8 @@ class FirmaProfil(BaseModel):
     konto_bank: str = ""
     mwst_code: str = ""
     mwst_pct: str = ""
+    #: B-71 — effective corporate income tax rate in percent; None = not set.
+    gewinnsteuer_satz: float | None = None
 
 
 class FirmaProfilOut(FirmaProfil):
@@ -60,6 +62,8 @@ class FirmaProfilUpdate(BaseModel):
     konto_bank: str | None = Field(default=None, max_length=20)
     mwst_code: str | None = Field(default=None, max_length=10)
     mwst_pct: str | None = Field(default=None, max_length=10)
+    # B-71: null removes the rate again; 60 is well past any Swiss rate, so it is a typo.
+    gewinnsteuer_satz: float | None = Field(default=None, ge=0, le=60)
 
 
 class PositionIn(BaseModel):

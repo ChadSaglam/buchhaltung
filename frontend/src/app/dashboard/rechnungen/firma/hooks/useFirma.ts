@@ -16,12 +16,22 @@ const FELDER: FirmaFeld[] = [
   "konto_debitoren", "konto_ertrag", "konto_bank", "mwst_code", "mwst_pct",
 ];
 
-type Entwurf = Record<FirmaFeld, string> & { zahlungsfrist_tage: string };
+type Entwurf = Record<FirmaFeld, string> & { zahlungsfrist_tage: string; gewinnsteuer_satz: string };
 
 const LEER = {
   ...(Object.fromEntries(FELDER.map((f) => [f, ""])) as Record<FirmaFeld, string>),
   zahlungsfrist_tage: "30",
+  gewinnsteuer_satz: "",
 };
+
+/** "14.43" / "14,43" → 14.43; anything else (including "") → null = no rate (B-71). */
+export function steuersatzWert(raw: string): number | null {
+  const cleaned = (raw ?? "").replace(",", ".").trim();
+  if (!cleaned) return null;
+  const parsed = Number.parseFloat(cleaned);
+  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 60) return null;
+  return Math.round(parsed * 100) / 100;
+}
 
 export function useFirma() {
   const firma = useApi<FirmaProfil>("/api/rechnungen/firma");
@@ -35,10 +45,11 @@ export function useFirma() {
     setEntwurf({
       ...(Object.fromEntries(FELDER.map((f) => [f, String(data[f] ?? "")])) as Record<FirmaFeld, string>),
       zahlungsfrist_tage: String(data.zahlungsfrist_tage ?? 30),
+      gewinnsteuer_satz: data.gewinnsteuer_satz == null ? "" : String(data.gewinnsteuer_satz),
     });
   }, [firma.data]);
 
-  const setFeld = useCallback((field: FirmaFeld | "zahlungsfrist_tage", value: string) => {
+  const setFeld = useCallback((field: FirmaFeld | "zahlungsfrist_tage" | "gewinnsteuer_satz", value: string) => {
     setSaved(false);
     setEntwurf((current) => ({ ...current, [field]: value }));
   }, []);
@@ -49,6 +60,8 @@ export function useFirma() {
       const body: Record<string, unknown> = Object.fromEntries(FELDER.map((f) => [f, entwurf[f]]));
       const frist = Number.parseInt(entwurf.zahlungsfrist_tage, 10);
       body.zahlungsfrist_tage = Number.isFinite(frist) ? Math.max(0, Math.min(365, frist)) : 30;
+      // null is meaningful here: it clears the rate, and the estimate goes away.
+      body.gewinnsteuer_satz = steuersatzWert(entwurf.gewinnsteuer_satz);
       const { data } = await api.put<FirmaProfil>("/api/rechnungen/firma", body);
       await firma.mutate(data, { revalidate: false });
       setSaved(true);

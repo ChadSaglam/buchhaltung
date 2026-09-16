@@ -14,6 +14,7 @@ import { GettingStarted } from "@/components/shared/GettingStarted";
 import { useBookingStats, useClassifierInfo } from "@/hooks/useSystemData";
 import { OffenePostenCard } from "./components/OffenePostenCard";
 import { EmailEingangCard } from "./components/EmailEingangCard";
+import { LiquiditaetCard } from "./components/LiquiditaetCard";
 import { cn } from "@/lib/utils";
 
 const container = {
@@ -107,6 +108,11 @@ export default function DashboardPage() {
               </>
             )}
           </motion.div>
+
+          <div>
+            <h2 className="mb-4 text-base font-semibold text-foreground">Geld und Steuern</h2>
+            <LiquiditaetCard />
+          </div>
 
           <div>
             <h2 className="mb-4 text-base font-semibold text-foreground">Offene Posten</h2>

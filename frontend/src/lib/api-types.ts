@@ -1183,6 +1183,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/liquiditaet/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Liquiditaet
+         * @description 90-day cash view plus what to set aside for tax.
+         */
+        get: operations["liquiditaet_api_liquiditaet__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/offene-posten/": {
         parameters: {
             query?: never;
@@ -1874,6 +1894,19 @@ export interface components {
              */
             note: string;
         };
+        /** DauerbuchungOut */
+        DauerbuchungOut: {
+            /** Betrag */
+            betrag: number;
+            /** Konto */
+            konto: string;
+            /** Label */
+            label: string;
+            /** Letzter Monat */
+            letzter_monat: string;
+            /** Monate */
+            monate: number;
+        };
         /** DecisionResponse */
         DecisionResponse: {
             /**
@@ -2253,6 +2286,8 @@ export interface components {
             email: string;
             /** Fehlt */
             fehlt?: string[];
+            /** Gewinnsteuer Satz */
+            gewinnsteuer_satz?: number | null;
             /**
              * Hausnummer
              * @default
@@ -2348,6 +2383,8 @@ export interface components {
         FirmaProfilUpdate: {
             /** Email */
             email?: string | null;
+            /** Gewinnsteuer Satz */
+            gewinnsteuer_satz?: number | null;
             /** Hausnummer */
             hausnummer?: string | null;
             /** Iban */
@@ -2537,6 +2574,55 @@ export interface components {
             /** Source Distribution */
             source_distribution: components["schemas"]["SourceCount"][];
         };
+        /** LiquiditaetResponse */
+        LiquiditaetResponse: {
+            /** Ausgang */
+            ausgang: number;
+            /**
+             * Bis
+             * Format: date
+             */
+            bis: string;
+            /**
+             * Dauerbuchungen
+             * @default []
+             */
+            dauerbuchungen: components["schemas"]["DauerbuchungOut"][];
+            /** Eingang */
+            eingang: number;
+            /**
+             * Monate
+             * @default []
+             */
+            monate: components["schemas"]["MonatOut"][];
+            /**
+             * Positionen
+             * @default []
+             */
+            positionen: components["schemas"]["app__schemas__liquiditaet__PositionOut"][];
+            /** Prognose */
+            prognose: number;
+            /** Stand Heute */
+            stand_heute: number;
+            steuer?: components["schemas"]["SteuerOut"] | null;
+            /**
+             * Stichtag
+             * Format: date
+             */
+            stichtag: string;
+            /**
+             * Tiefster Am
+             * Format: date
+             */
+            tiefster_am: string;
+            /** Tiefster Stand */
+            tiefster_stand: number;
+            /**
+             * Warnungen
+             * @default []
+             */
+            warnungen: string[];
+        };
         /** LoginRequest */
         LoginRequest: {
             /**
@@ -2633,6 +2719,19 @@ export interface components {
             document: components["schemas"]["DocumentOut"];
             /** Match Id */
             match_id: number;
+        };
+        /** MonatOut */
+        MonatOut: {
+            /** Ausgang */
+            ausgang: number;
+            /** Eingang */
+            eingang: number;
+            /** Label */
+            label: string;
+            /** Saldo Ende */
+            saldo_ende: number;
+            /** Schluessel */
+            schluessel: string;
         };
         /** MonthKpisOut */
         MonthKpisOut: {
@@ -2746,24 +2845,6 @@ export interface components {
              */
             menge: number;
         };
-        /** PositionOut */
-        PositionOut: {
-            /**
-             * Betrag
-             * @default 0
-             */
-            betrag: number;
-            /** Bezeichnung */
-            bezeichnung: string;
-            /** Einheit */
-            einheit: string;
-            /** Einzelpreis */
-            einzelpreis: number;
-            /** Menge */
-            menge: number;
-            /** Position */
-            position: number;
-        };
         /** PredictRequest */
         PredictRequest: {
             /** Beschreibung */
@@ -2865,7 +2946,7 @@ export interface components {
             /** Netto */
             netto: number;
             /** Positionen */
-            positionen: components["schemas"]["PositionOut"][];
+            positionen: components["schemas"]["app__schemas__rechnung__PositionOut"][];
             /** Referenz Formatiert */
             referenz_formatiert: string;
             /** Referenz Typ */
@@ -3081,6 +3162,40 @@ export interface components {
             /** Proposals */
             proposals: number;
         };
+        /** SteuerOut */
+        SteuerOut: {
+            /** Aufwand */
+            aufwand: number;
+            /** Ertrag */
+            ertrag: number;
+            /** Gewinn */
+            gewinn: number;
+            /**
+             * Hinweis
+             * @default
+             */
+            hinweis: string;
+            /** Jahr */
+            jahr: number;
+            /** Offen */
+            offen?: number | null;
+            /** Pro Quartal */
+            pro_quartal?: number | null;
+            /**
+             * Quelle
+             * @default
+             */
+            quelle: string;
+            /** Rueckstellung Soll */
+            rueckstellung_soll?: number | null;
+            /** Satz */
+            satz?: number | null;
+            /**
+             * Schon Zurueckgestellt
+             * @default 0
+             */
+            schon_zurueckgestellt: number;
+        };
         /**
          * TenantUpdate
          * @description Tenant-wide: the company name (admin and up).
@@ -3155,6 +3270,45 @@ export interface components {
             umsatz: number | null;
             /** Ziffer */
             ziffer: string;
+        };
+        /** PositionOut */
+        app__schemas__liquiditaet__PositionOut: {
+            /** Betrag */
+            betrag: number;
+            /**
+             * Datum
+             * Format: date
+             */
+            datum: string;
+            /** Document Id */
+            document_id?: number | null;
+            /** Label */
+            label: string;
+            /** Quelle */
+            quelle: string;
+            /**
+             * Ueberfaellig
+             * @default false
+             */
+            ueberfaellig: boolean;
+        };
+        /** PositionOut */
+        app__schemas__rechnung__PositionOut: {
+            /**
+             * Betrag
+             * @default 0
+             */
+            betrag: number;
+            /** Bezeichnung */
+            bezeichnung: string;
+            /** Einheit */
+            einheit: string;
+            /** Einzelpreis */
+            einzelpreis: number;
+            /** Menge */
+            menge: number;
+            /** Position */
+            position: number;
         };
         /** ScannerConfigResponse */
         app__schemas__scanner__ScannerConfigResponse: {
@@ -5392,6 +5546,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["KontoDefaultsResponse"];
+                };
+            };
+        };
+    };
+    liquiditaet_api_liquiditaet__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LiquiditaetResponse"];
                 };
             };
         };

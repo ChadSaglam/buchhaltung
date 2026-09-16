@@ -105,11 +105,18 @@ class RechnungService:
             await self.db.flush()
         return profile
 
+    #: Nullable columns a PUT may set back to "not given" (B-71). Every other
+    #: field keeps its value when null arrives, so a partial update cannot blank it.
+    CLEARABLE = frozenset({"gewinnsteuer_satz"})
+
     async def update_profile(self, data: dict) -> CompanyProfile:
         profile = await self.profile()
         for field, value in data.items():
-            if value is not None and hasattr(profile, field):
-                setattr(profile, field, value)
+            if not hasattr(profile, field):
+                continue
+            if value is None and field not in self.CLEARABLE:
+                continue
+            setattr(profile, field, value)
         if profile.iban and not swiss_qr.is_valid_iban(profile.iban):
             raise HTTPException(400, "Diese IBAN ist keine gültige Schweizer oder Liechtensteiner IBAN.")
         profile.iban = swiss_qr.normalize_iban(profile.iban)
