@@ -8,6 +8,7 @@ from sqlalchemy import DateTime, Float, ForeignKey, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
+from app.models.types import Chf
 
 
 class ReviewQueueItem(Base):
@@ -17,7 +18,7 @@ class ReviewQueueItem(Base):
     tenant_id: Mapped[int] = mapped_column(ForeignKey("tenants.id", ondelete="CASCADE"), index=True, nullable=False)
 
     beschreibung: Mapped[str] = mapped_column(Text, nullable=False)
-    betrag: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    betrag: Mapped[float] = mapped_column(Chf, default=0.0, nullable=False)
 
     predicted_soll: Mapped[str] = mapped_column(String(20), default="", nullable=False)
     predicted_haben: Mapped[str] = mapped_column(String(20), default="", nullable=False)

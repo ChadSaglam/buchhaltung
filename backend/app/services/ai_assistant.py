@@ -103,7 +103,7 @@ async def build_context(tenant_id: int, db: AsyncSession) -> dict[str, Any]:
     # Stats
     total_count = await db.scalar(select(func.count()).select_from(Booking).where(Booking.tenant_id == tenant_id))
     total_amount = await db.scalar(
-        select(func.coalesce(func.sum(Booking.betrag), 0.0)).where(Booking.tenant_id == tenant_id)
+        select(func.coalesce(func.sum(Booking.betrag), 0)).where(Booking.tenant_id == tenant_id)
     )
 
     # Recent bookings (bounded)

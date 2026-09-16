@@ -22,6 +22,7 @@ from app.models.booking import Booking
 from app.models.idempotency_key import IdempotencyKey
 from app.models.user import User
 from app.schemas.common import Money
+from app.services.export import round_chf
 from app.services.receipts import content_type_for_key, key_belongs_to_tenant, read_receipt
 
 router = APIRouter(prefix="/api/bookings", tags=["bookings"])
@@ -168,8 +169,9 @@ async def booking_stats(
     )
     total_count = total_result.scalar() or 0
 
+    # B-51: PostgreSQL sums the Numeric column exactly; round once, hand out a float.
     sum_result = await db.execute(select(func.sum(Booking.betrag)).where(Booking.tenant_id == user.tenant_id))
-    total_amount = sum_result.scalar() or 0
+    total_amount = float(round_chf(sum_result.scalar() or 0))
 
     source_result = await db.execute(
         select(Booking.source, func.count()).where(Booking.tenant_id == user.tenant_id).group_by(Booking.source)

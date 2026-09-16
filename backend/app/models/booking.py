@@ -1,8 +1,9 @@
 """SQLAlchemy model for bookings."""
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Index, Integer, String, text
+from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, String, text
 
 from app.models.base import Base
+from app.models.types import Chf
 
 
 class Booking(Base):
@@ -30,10 +31,10 @@ class Booking(Base):
     beschreibung = Column(String, default="")
     kt_soll = Column(String, default="")
     kt_haben = Column(String, default="")
-    betrag = Column(Float, default=0)
+    betrag = Column(Chf, default=0)
     mwst_code = Column(String, default="")
     mwst_pct = Column(String, default="")
-    mwst_amount = Column(Float, default=0)
+    mwst_amount = Column(Chf, default=0)
     source = Column(String, default="")
     # Storage key of the document this booking came from (services/receipts.py); None for manual rows.
     source_key = Column(String(255), nullable=True)
