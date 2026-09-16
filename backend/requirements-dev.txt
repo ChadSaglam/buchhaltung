@@ -7,3 +7,7 @@ pytest-cov>=6.0
 pytest-env>=1.1.5
 pre-commit>=4.0
 # segno moved to requirements.txt with B-68 (invoices we write need it at runtime).
+# Read by tests/test_deployment_contract.py (B-62). It arrives transitively via
+# pre-commit today; a test that depends on somebody else's dependency is a test
+# that breaks on an unrelated upgrade.
+PyYAML>=6.0

@@ -2,7 +2,7 @@
 
 > One running list. Never duplicated — items move between sections, they don't get re-added.
 > Legend: severity `C`ritical / `H`igh / `M`edium / `L`ow · effort `S` (<1h) / `M` (half day) / `L` (multi-day)
-> IDs: `B-xx` = work item (next free: **B-80**) · `P-xx` = parked (next free: **P-05**)
+> IDs: `B-xx` = work item (next free: **B-81**) · `P-xx` = parked (next free: **P-05**)
 > Cross-product items (SSO, contracts, design tokens) live in `chadev-platform/ROADMAP.md`, not here.
 > Updated: 2026-09-16 (third run) — **B-27** the query audit (five statements that grew with the tenant), **B-23** plan limits enforced from `usage_events`, **B-72 option C** as far as the law reaches (BVG minimum as a check), **B-20 finished** (the Kontenplan import wizard). Earlier that day (second run): **B-72** payroll (option B with option C's shape), **B-79** invoice e-mail, **B-74** part A, **B-24** row-level security (`app_rw` is `NOSUPERUSER NOBYPASSRLS`), **B-25** backup + restore drill, **B-54**/**B-55**, **B-17** the Treuhänder pack in one zip, **B-20** (sample invoice + checklist; the wizard is still open), **B-51 finished** (the last five money columns), **B-22** the audit log, **B-28** indexes chosen by `EXPLAIN`. Earlier that day (night run): **B-51** money columns are Numeric(12,2), **B-59** `response_model` on the seven endpoints that returned bare dicts (and the hand-written frontend interfaces are gone), **B-58** the UX/a11y batch (one formatter, WCAG-AA accents, `usePopover`, heading order, confirms on destructive actions), **B-71** 90-day liquidity + tax provision on Heute, and **step 5 of the IA migration** (sidebar = four surfaces + Mehr; every old route still resolves). Earlier on 2026-09-16: B-70 Jahresabschluss and B-77 (PDF renderer = fpdf2); B-69 e-mail intake; B-52 idempotency by constraint; B-53 export safety. 2026-09-15 — B-68 write invoices (Swiss QR, debtor booking, reference return); B-67 VAT return (form 200); B-66 month-end check; B-65 open items / reminders; B-76 Banana batch (phase 4) done — and the open extension question answered: an extension may not call HTTP, so the file hand-off is final (new: B-78, read-only REST spike); B-73 Abgleich done, `make check` green. 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 amount memory. 2026-09-13 — phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
 > Companion docs: `docs/ADR-002-rls.md` (B-24) · `docs/BACKUP.md` (B-25) · `docs/B-72-LOHN-SPEC.md` (B-72) · `docs/IA-2026-09-14.md` · `docs/DEPLOY-CHECKLIST-B36-B37.md` · `docs/BRAINSTORM-2026-09-12.md`.
@@ -46,8 +46,8 @@ Pulled from LATER, in the order they pay off:
    about the product. — `L` / `M`
 2. ~~**B-57 worker hardening**~~ ✅ 2026-09-16 — see Done.
 3. ~~**B-56 parser/classifier hygiene**~~ ✅ 2026-09-16 — see Done.
-4. **B-62 frontend image** — `NEXT_PUBLIC_*` is inlined at *build* time, so the compose image ships with whatever
-   the build had. Today that means the Apps switcher never renders in a compose deployment. — `M` / `S`
+4. ~~**B-62 frontend image**~~ ✅ 2026-09-16 — see Done. It was **already fixed**, by B-41, and the line had
+   been describing finished work since. What shipped today is the test that keeps it fixed.
 5. ~~**B-61 health**~~ ✅ 2026-09-16 — see Done.
 
 Not tasks, decisions: **B-75** (bank pull — needs a contract per tenant, spike first), **B-78** (the read-only
@@ -122,8 +122,13 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
       locally, SQLite suite never in CI; `921d958b8530` + `now()` defaults break on SQLite), `compose-smoke` job
       (`up --wait`, curl health, `worker --once`), build the frontend image, Settings ↔ `.env.example` test (7 keys missing),
       pin runtime deps (lockfile) and ruff in `requirements-dev.txt`, remove the DB password from `scripts/setup.sh:21`. — `L` / `M`
-- [ ] **B-62** Frontend image: `ARG`/`ENV NEXT_PUBLIC_API_URL NEXT_PUBLIC_BILLING_URL` before `npm run build` + compose
-      `build.args` (runtime env is ignored — Apps switcher never renders in the compose image), `node:22-alpine`, `npm ci`. — `M` / `S`
+- [x] **B-62** ✅ 2026-09-16 — see Done. Every item of this line was already true (B-41 did it); the line was
+      stale. A leaner image is its own item now — **B-80**.
+- [ ] **B-80** Frontend image, second pass: it is single-stage, so the published image carries the source tree and
+      every devDependency `npm ci` installed. Multi-stage with `output: "standalone"`, a non-root user and a
+      healthcheck. **Must be built once before it is believed** — there is no Docker daemon in the container this
+      was written in, and an unbuilt Dockerfile is exactly the kind of plausible-looking change this project keeps
+      finding in production. — `M` / `M`
 
 ### Performance
 - [x] **B-27** ✅ 2026-09-16 — see Done. One correction to what this line proposed: the months in the assistant
@@ -175,6 +180,21 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 - **a11y** ✅ 2026-09-16 — `EmptyState` and `ErrorState` rendered an `h3` inside sections whose heading was an `h2`,
   which axe reported as 14 `moderate heading-order` findings across the app. Both gained an `as` prop defaulting to
   `h2`. The whole suite is back to zero findings, light and dark.
+- **B-62** ✅ 2026-09-16 — **already done, and the roadmap did not know.** Every item this line asked for —
+  `ARG`/`ENV` before `npm run build`, compose `build.args`, `node:22-alpine`, `npm ci` — went in with B-41 and the
+  line has been describing finished work ever since. That is the third stale line found this week, which is the
+  actual lesson: a list nobody holds against the code drifts in both directions.
+  So what shipped is the guard. `tests/test_deployment_contract.py` holds the frontend Dockerfile, compose and the
+  two `.env.example`s against each other — no daemon needed, because a test that needs one is a test that gets
+  skipped. The one worth the file on its own: **no `NEXT_PUBLIC_*` may appear in any service's `environment:`**.
+  Next inlines those at *build* time, so a runtime value does nothing at all — no error, no warning, the feature
+  simply never appears. That is exactly how the Apps switcher went missing from the compose image.
+  It also closes the **Settings ↔ `.env.example`** half of B-60, and the roadmap's count was exact: **7 settings
+  had no documentation anywhere**. Five are now written down — the three Ollama timeouts and, the load-bearing
+  one, `MIGRATION_DATABASE_URL`, which B-24 makes production refuse to boot without. The other three are internal
+  and say so in `NICHT_DOKUMENTIERT`, with a second test that fails when an entry outlives its setting.
+  `PyYAML` moved into `requirements-dev.txt`: it arrives transitively through pre-commit today, and a test that
+  depends on somebody else's dependency breaks on an unrelated upgrade. 13 tests.
 - **B-56** ✅ 2026-09-16 — parser and rule hygiene. Three bugs that share one property: each produces a
   *plausible* wrong answer, so nothing raises and nothing looks wrong in a list.
   **The statement date.** `re.compile(r"\d{2}\.\d{2}\.\d{2}").match(...)` was unanchored at the end, so
@@ -756,4 +776,4 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 | 4 Polish | ✅ B-09, B-13, B-66, B-67, B-76, B-53, B-22, B-61 · open: — |
 | 5 UX | ✅ B-14, B-15, B-16, B-18, B-19, B-44, B-45, B-46, B-50 (+B-21), B-58, B-59, B-65, B-71, B-72, B-74, B-79, IA 1–5, B-17, B-20 · open: — |
 | 6 Together | ✅ B-36 (SSO + mirroring), B-37 (events), B-23 (plan limits) · deploy: `docs/DEPLOY-CHECKLIST-B36-B37.md` · parked: B-38 |
-| 7 DX | ✅ B-12, B-29, B-30 · open: B-60, B-62 |
+| 7 DX | ✅ B-12, B-29, B-30, B-62 · open: B-60, B-80 |
