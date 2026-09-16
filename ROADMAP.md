@@ -4,7 +4,7 @@
 > Legend: severity `C`ritical / `H`igh / `M`edium / `L`ow · effort `S` (<1h) / `M` (half day) / `L` (multi-day)
 > IDs: `B-xx` = work item (next free: **B-80**) · `P-xx` = parked (next free: **P-05**)
 > Cross-product items (SSO, contracts, design tokens) live in `chadev-platform/ROADMAP.md`, not here.
-> Updated: 2026-09-16 (second run) — **B-72** payroll (option B with option C's shape), **B-79** invoice e-mail, **B-74** part A, **B-24** row-level security (`app_rw` is `NOSUPERUSER NOBYPASSRLS`), **B-25** backup + restore drill, **B-54**/**B-55**, **B-17** the Treuhänder pack in one zip, **B-20** (sample invoice + checklist; the wizard is still open), **B-51 finished** (the last five money columns), **B-22** the audit log, **B-28** indexes chosen by `EXPLAIN`. Earlier that day (night run): **B-51** money columns are Numeric(12,2), **B-59** `response_model` on the seven endpoints that returned bare dicts (and the hand-written frontend interfaces are gone), **B-58** the UX/a11y batch (one formatter, WCAG-AA accents, `usePopover`, heading order, confirms on destructive actions), **B-71** 90-day liquidity + tax provision on Heute, and **step 5 of the IA migration** (sidebar = four surfaces + Mehr; every old route still resolves). Earlier on 2026-09-16: B-70 Jahresabschluss and B-77 (PDF renderer = fpdf2); B-69 e-mail intake; B-52 idempotency by constraint; B-53 export safety. 2026-09-15 — B-68 write invoices (Swiss QR, debtor booking, reference return); B-67 VAT return (form 200); B-66 month-end check; B-65 open items / reminders; B-76 Banana batch (phase 4) done — and the open extension question answered: an extension may not call HTTP, so the file hand-off is final (new: B-78, read-only REST spike); B-73 Abgleich done, `make check` green. 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 amount memory. 2026-09-13 — phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
+> Updated: 2026-09-16 (third run) — **B-27** the query audit (five statements that grew with the tenant), **B-23** plan limits enforced from `usage_events`, **B-72 option C** as far as the law reaches (BVG minimum as a check), **B-20 finished** (the Kontenplan import wizard). Earlier that day (second run): **B-72** payroll (option B with option C's shape), **B-79** invoice e-mail, **B-74** part A, **B-24** row-level security (`app_rw` is `NOSUPERUSER NOBYPASSRLS`), **B-25** backup + restore drill, **B-54**/**B-55**, **B-17** the Treuhänder pack in one zip, **B-20** (sample invoice + checklist; the wizard is still open), **B-51 finished** (the last five money columns), **B-22** the audit log, **B-28** indexes chosen by `EXPLAIN`. Earlier that day (night run): **B-51** money columns are Numeric(12,2), **B-59** `response_model` on the seven endpoints that returned bare dicts (and the hand-written frontend interfaces are gone), **B-58** the UX/a11y batch (one formatter, WCAG-AA accents, `usePopover`, heading order, confirms on destructive actions), **B-71** 90-day liquidity + tax provision on Heute, and **step 5 of the IA migration** (sidebar = four surfaces + Mehr; every old route still resolves). Earlier on 2026-09-16: B-70 Jahresabschluss and B-77 (PDF renderer = fpdf2); B-69 e-mail intake; B-52 idempotency by constraint; B-53 export safety. 2026-09-15 — B-68 write invoices (Swiss QR, debtor booking, reference return); B-67 VAT return (form 200); B-66 month-end check; B-65 open items / reminders; B-76 Banana batch (phase 4) done — and the open extension question answered: an extension may not call HTTP, so the file hand-off is final (new: B-78, read-only REST spike); B-73 Abgleich done, `make check` green. 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 amount memory. 2026-09-13 — phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
 > Companion docs: `docs/ADR-002-rls.md` (B-24) · `docs/BACKUP.md` (B-25) · `docs/B-72-LOHN-SPEC.md` (B-72) · `docs/IA-2026-09-14.md` · `docs/DEPLOY-CHECKLIST-B36-B37.md` · `docs/BRAINSTORM-2026-09-12.md`.
 
 ---
@@ -31,17 +31,32 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 
 ## ⏭ NEXT — pull from LATER, in this order
 
-_The 2026-09-16 run cleared the whole previous block: B-72 (option B built, see below), B-79, the IA file move
-and Heute inbox, B-74, B-24, B-25, B-54 and B-55. What is left of it:_
+_The previous block is cleared: **B-20** (the Kontenplan wizard), **B-23**, **B-27**, and the part of
+**B-72 → option C** that is law rather than purchased data. What is left of that block is not code:
+option C still wants Quellensteuer tariff tables, Formular 11 and Swissdec ELM, and none of the three can
+be written — they are bought, or certified. **Before any of them: compare one real payroll month against the
+previous provider and lift the watermark.** `docs/B-72-LOHN-SPEC.md`._
 
-1. ~~**B-20 rest**~~ ✅ 2026-09-16 — the Kontenplan import wizard. See Done.
-2. **B-72 → option C**, when it is worth it. Three of the four gaps are left, and all three are data or a
-   certification, not code: Quellensteuer tariff tables, Formular 11, Swissdec ELM. The fourth — BVG — is closed
-   as far as the law allows: the amount still comes from the pension fund, but the *legal minimum* is checked
-   against it (2026-09-16, see Done). `docs/B-72-LOHN-SPEC.md`.
-   **Before any of that: compare one real month against the previous payroll and lift the watermark.**
-3. ~~**B-23**~~ ✅ 2026-09-16 — see Done.
-4. ~~**B-27**~~ ✅ 2026-09-16 — see Done. B-26 was never performance — it is the 2026-09-10 tenant-column rename.
+Pulled from LATER, in the order they pay off:
+
+1. **B-60 CI parity** — the one with evidence behind it. Four defects this week were invisible to the local suite
+   and visible in CI, or the other way round: `usage_events.quantity` overflowing int32 (SQLite has no fixed-width
+   integers), the migration round trip, the subprocess-worker tests, the Settings ↔ `.env.example` drift. A
+   `db: [sqlite, postgres]` matrix and a compose smoke job turn "it passed on my machine" back into a statement
+   about the product. — `L` / `M`
+2. **B-57 worker hardening** — the jobs run outside the API process now (B-33), which means a crash there is
+   invisible from the outside. `configure_sentry` in `worker.main`, `stop_grace_period`, reaping `running` jobs
+   back to `pending`. — `M` / `S`
+3. **B-56 parser/classifier hygiene** — the thousands-separator fix (2026-09-16) closed one half of this line; the
+   rest is the anchored date regex and getting tenant-specific supplier names out of the shared
+   `CLASSIFICATION_RULES`. — `M` / `S`
+4. **B-62 frontend image** — `NEXT_PUBLIC_*` is inlined at *build* time, so the compose image ships with whatever
+   the build had. Today that means the Apps switcher never renders in a compose deployment. — `M` / `S`
+5. **B-61 health** — 503 on `degraded`, and a cheap `SELECT 1` in production, which is skipped entirely today. — `L` / `S`
+
+Not tasks, decisions: **B-75** (bank pull — needs a contract per tenant, spike first), **B-78** (the read-only
+Banana REST spike, only worth it for a customer on the Advanced plan), and the **B-24 canary** — ADR-002 asks for
+one replica watched for 24 h before RLS is flipped everywhere, and that is a deployment step, not a commit.
 
 <details><summary>What item 1 of the old block settled (Banana, 2026-09-15) — keep, do not re-litigate</summary>
 
