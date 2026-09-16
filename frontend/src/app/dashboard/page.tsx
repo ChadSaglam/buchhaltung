@@ -46,9 +46,9 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-xl font-bold tracking-tight text-foreground">Dashboard</h1>
+        <h1 className="text-xl font-bold tracking-tight text-foreground">Heute</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Selbstlernende Schweizer Buchhaltung — Übersicht
+          Was muss ich tun? — alles, was gerade auf Sie wartet
         </p>
       </div>
 
