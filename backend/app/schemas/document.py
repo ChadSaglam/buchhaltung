@@ -40,6 +40,8 @@ class DocumentOut(BaseModel):
     contact_email: str
     mahnstufe: int
     mahnung_sent_at: datetime | None
+    #: B-79 — when our own invoice went to the customer; null = written, not sent.
+    sent_at: datetime | None = None
     booking_id: int | None
     error: str
     created_at: datetime | None

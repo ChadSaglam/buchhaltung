@@ -79,6 +79,10 @@ class Document(Base):
     mahnstufe: Mapped[int] = mapped_column(Integer, default=0)
     mahnung_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
+    # B-79: when our own invoice actually went to the customer. None = never sent,
+    # which is also the difference between "written" and "out the door".
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
     booking_id: Mapped[int | None] = mapped_column(ForeignKey("bookings.id", ondelete="SET NULL"), nullable=True)
     error: Mapped[str] = mapped_column(String(255), default="")
     uploaded_by: Mapped[int | None] = mapped_column(Integer, nullable=True)

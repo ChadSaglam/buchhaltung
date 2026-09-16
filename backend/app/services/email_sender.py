@@ -7,6 +7,7 @@ import html
 import logging
 import smtplib
 import ssl
+from dataclasses import dataclass
 from datetime import datetime
 from email import encoders
 from email.mime.base import MIMEBase
@@ -40,6 +41,79 @@ def _cell(value) -> str:
 def is_email_configured() -> bool:
     cfg = _load_smtp_config()
     return bool(cfg["host"] and cfg["user"] and cfg["password"])
+
+
+@dataclass
+class Attachment:
+    """One file on a message: what it is called, its bytes, and its media type."""
+
+    filename: str
+    content: bytes
+    media_type: str = "application/octet-stream"
+
+
+def _deliver(msg: MIMEMultipart, cfg: dict, to_email: str) -> tuple[bool, str]:
+    """The one place this app talks SMTP. Every sender goes through here.
+
+    The default SSL context verifies the certificate and the hostname (B-43):
+    a mail server with a broken certificate is a configuration problem, not
+    something to paper over.
+    """
+    try:
+        context = ssl.create_default_context()
+        if cfg["port"] == 465:
+            with smtplib.SMTP_SSL(cfg["host"], cfg["port"], context=context, timeout=30) as server:
+                server.login(cfg["user"], cfg["password"])
+                server.send_message(msg)
+        else:
+            with smtplib.SMTP(cfg["host"], cfg["port"], timeout=30) as server:
+                server.starttls(context=context)
+                server.login(cfg["user"], cfg["password"])
+                server.send_message(msg)
+        return True, f"E-Mail gesendet an {to_email}"
+    except smtplib.SMTPAuthenticationError:
+        return False, "SMTP Anmeldung fehlgeschlagen. Zugangsdaten in .env prüfen."
+    except (smtplib.SMTPException, OSError) as e:
+        # The upstream message can carry the server banner and the credentials
+        # it rejected — log it, never echo it (B-42).
+        logger.warning("[MAIL] send failed: %s", e)
+        return False, "E-Mail konnte nicht gesendet werden. SMTP-Konfiguration prüfen."
+
+
+def send_message(
+    *,
+    to_email: str,
+    subject: str,
+    text: str,
+    attachments: list[Attachment] | None = None,
+    reply_to: str = "",
+) -> tuple[bool, str]:
+    """A plain-text message with files attached (B-79).
+
+    Plain text on purpose: an invoice mail that arrives as a wall of styled
+    HTML looks like marketing, and the document itself is the attachment.
+    """
+    cfg = _load_smtp_config()
+    if not cfg["host"] or not cfg["user"]:
+        return False, "E-Mail nicht konfiguriert."
+
+    msg = MIMEMultipart("mixed")
+    msg["From"] = cfg["from_email"] or cfg["user"]
+    msg["To"] = to_email
+    msg["Subject"] = subject
+    if reply_to:
+        msg["Reply-To"] = reply_to
+    msg.attach(MIMEText(text, "plain", "utf-8"))
+
+    for item in attachments or []:
+        main, _, sub = item.media_type.partition("/")
+        part = MIMEBase(main or "application", sub or "octet-stream")
+        part.set_payload(item.content)
+        encoders.encode_base64(part)
+        part.add_header("Content-Disposition", "attachment", filename=item.filename)
+        msg.attach(part)
+
+    return _deliver(msg, cfg, to_email)
 
 
 def _build_html_body(df: pd.DataFrame, today: str, timestamp: str) -> str:
@@ -244,25 +318,4 @@ def send_bookkeeping_email(
     except Exception:
         pass  # Excel optional — don't fail the email
 
-    # Send
-    try:
-        # Default context = certificate and hostname verified (B-43). A mail server
-        # with a broken certificate is a configuration problem, not something to hide.
-        context = ssl.create_default_context()
-
-        if cfg["port"] == 465:
-            with smtplib.SMTP_SSL(cfg["host"], cfg["port"], context=context, timeout=30) as server:
-                server.login(cfg["user"], cfg["password"])
-                server.send_message(msg)
-        else:
-            with smtplib.SMTP(cfg["host"], cfg["port"], timeout=30) as server:
-                server.starttls(context=context)
-                server.login(cfg["user"], cfg["password"])
-                server.send_message(msg)
-
-        return True, f"E-Mail gesendet an {to_email}"
-    except smtplib.SMTPAuthenticationError:
-        return False, "SMTP Anmeldung fehlgeschlagen. Zugangsdaten in .env prüfen."
-    except (smtplib.SMTPException, OSError) as e:
-        logger.warning("[MAIL] send failed: %s", e)
-        return False, "E-Mail konnte nicht gesendet werden. SMTP-Konfiguration prüfen."
+    return _deliver(msg, cfg, to_email)

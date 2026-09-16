@@ -1,4 +1,4 @@
-import { CheckCircle2, ExternalLink, QrCode, RotateCcw } from "lucide-react";
+import { CheckCircle2, ExternalLink, Mail, MailCheck, QrCode, RotateCcw } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -7,11 +7,20 @@ import { errorMessage } from "@/lib/errors";
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
 import { STATUS_LABEL, STATUS_TONE, formatCHF, formatDate, isOverdue, sourceLabel } from "../helpers";
+import { gesendetLabel } from "../versand";
 import type { DocumentOut, DocumentStatus } from "../types";
 
 interface Props {
   items: DocumentOut[];
   onStatus: (doc: DocumentOut, status: DocumentStatus) => void;
+  /** Open the mail preview for one of our own invoices (B-79). */
+  onSenden?: (doc: DocumentOut) => void;
+  sendenLoadingId?: number | null;
+}
+
+/** Only an invoice we wrote ourselves can be mailed to a customer. */
+function istEigeneRechnung(doc: DocumentOut): boolean {
+  return doc.direction === "ausgang";
 }
 
 const COLS = ["Lieferant", "Nr.", "Datum", "Fällig", "Betrag", "Konto", "Quelle", "Status", ""];
@@ -28,7 +37,7 @@ async function openFile(doc: DocumentOut) {
   }
 }
 
-export function DocumentTable({ items, onStatus }: Props) {
+export function DocumentTable({ items, onStatus, onSenden, sendenLoadingId }: Props) {
   return (
     <Card>
       <div className="overflow-x-auto">
@@ -71,7 +80,15 @@ export function DocumentTable({ items, onStatus }: Props) {
                     </span>
                   </td>
                   <td className="px-3 py-2">
-                    <Badge tone={STATUS_TONE[status] ?? "neutral"} dot>{overdue ? "Überfällig" : STATUS_LABEL[status] ?? d.status}</Badge>
+                    <div className="flex flex-wrap items-center gap-1">
+                      <Badge tone={STATUS_TONE[status] ?? "neutral"} dot>{overdue ? "Überfällig" : STATUS_LABEL[status] ?? d.status}</Badge>
+                      {d.sent_at && (
+                        <span title={gesendetLabel(d.sent_at)} className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                          <MailCheck className="h-3.5 w-3.5 text-success" aria-hidden="true" />
+                          <span className="sr-only">{gesendetLabel(d.sent_at)}</span>
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap">
                     <div className="flex items-center justify-end gap-1">
@@ -83,6 +100,18 @@ export function DocumentTable({ items, onStatus }: Props) {
                       {status === "bezahlt" && (
                         <Button size="xs" variant="ghost" onClick={() => onStatus(d, "offen")} icon={<RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />} aria-label={`${d.vendor || d.filename} wieder öffnen`}>
                           Offen
+                        </Button>
+                      )}
+                      {onSenden && istEigeneRechnung(d) && (
+                        <Button
+                          size="xs"
+                          variant="ghost"
+                          loading={sendenLoadingId === d.id}
+                          onClick={() => onSenden(d)}
+                          icon={<Mail className="h-3.5 w-3.5" aria-hidden="true" />}
+                          aria-label={`Rechnung ${d.invoice_no || d.filename} per E-Mail senden`}
+                        >
+                          {d.sent_at ? "Erneut" : "Senden"}
                         </Button>
                       )}
                       <button

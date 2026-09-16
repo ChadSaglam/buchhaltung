@@ -7,7 +7,9 @@ renderer is one dependency decision for every document — B-77).
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from datetime import UTC, datetime
+
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import HTMLResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -24,8 +26,13 @@ from app.schemas.rechnung import (
     RechnungListItem,
     RechnungListResponse,
     RechnungOut,
+    VersandEntwurfOut,
+    VersandErgebnis,
+    VersandRequest,
 )
-from app.services import swiss_qr
+from app.services import rechnung_versand, swiss_qr
+from app.services.audit_log import AuditLogService
+from app.services.email_sender import Attachment, is_email_configured, send_message
 from app.services.rechnung import PositionInput, RechnungService, totals_for
 
 router = APIRouter(prefix="/api/rechnungen", tags=["rechnungen"])
@@ -201,4 +208,81 @@ async def rechnung_pdf(
         content=content,
         media_type="application/pdf",
         headers={"Content-Disposition": f'inline; filename="{service.dateiname(doc)}"'},
+    )
+
+
+async def _versand_entwurf(service: RechnungService, document_id: int) -> rechnung_versand.VersandEntwurf:
+    """Everything the mail needs, assembled once for both the preview and the send."""
+    doc, profile, reference, kunde_name = await service.versand_kontext(document_id)
+    return rechnung_versand.entwurf(
+        doc,
+        profile,
+        dateiname=service.dateiname(doc),
+        reference=reference,
+        kunde_name=kunde_name,
+        mail_konfiguriert=is_email_configured(),
+    )
+
+
+@router.get("/{document_id}/versand", response_model=VersandEntwurfOut)
+async def versand_entwurf(
+    document_id: int,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> VersandEntwurfOut:
+    """What the customer would receive. Nothing is sent and nothing is stored (B-79)."""
+    draft = await _versand_entwurf(RechnungService(db, user), document_id)
+    return VersandEntwurfOut.model_validate(draft)
+
+
+@router.post("/{document_id}/versand", response_model=VersandErgebnis)
+async def versand_senden(
+    document_id: int,
+    body: VersandRequest,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_editor),
+) -> VersandErgebnis:
+    """Send the invoice with the PDF attached, and remember that it went out."""
+    service = RechnungService(db, user)
+    draft = await _versand_entwurf(service, document_id)
+
+    empfaenger = (body.empfaenger or draft.empfaenger).strip()
+    if not rechnung_versand.valid_email(empfaenger):
+        raise HTTPException(400, "Keine gültige E-Mail-Adresse für diesen Kunden.")
+    if not is_email_configured():
+        raise HTTPException(
+            503, "E-Mail ist auf diesem Server nicht konfiguriert (SMTP_HOST, SMTP_USER, SMTP_PASSWORD)."
+        )
+
+    doc, _rows = await service.own_invoice(document_id)
+    pdf = await service.pdf(document_id)
+
+    ok, message = send_message(
+        to_email=empfaenger,
+        subject=(body.subject or draft.subject).strip() or draft.subject,
+        text=body.text or draft.text,
+        attachments=[Attachment(filename=draft.dateiname, content=pdf, media_type="application/pdf")],
+        reply_to=draft.reply_to,
+    )
+    if not ok:
+        # `message` is already the sanitised text from email_sender (B-42).
+        raise HTTPException(502, message)
+
+    doc.sent_at = datetime.now(UTC)
+    doc.contact_email = empfaenger
+    await AuditLogService(user.tenant_id, db).record(
+        action="rechnung.versand",
+        actor_user_id=user.id,
+        target_type="document",
+        target_id=document_id,
+        detail={"empfaenger": empfaenger, "invoice_no": doc.invoice_no},
+    )
+    await db.commit()
+    await db.refresh(doc)
+
+    return VersandErgebnis(
+        document_id=document_id,
+        empfaenger=empfaenger,
+        gesendet_am=doc.sent_at,
+        dateiname=draft.dateiname,
     )

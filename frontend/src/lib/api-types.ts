@@ -1417,6 +1417,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/rechnungen/{document_id}/versand": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Versand Entwurf
+         * @description What the customer would receive. Nothing is sent and nothing is stored (B-79).
+         */
+        get: operations["versand_entwurf_api_rechnungen__document_id__versand_get"];
+        put?: never;
+        /**
+         * Versand Senden
+         * @description Send the invoice with the PDF attached, and remember that it went out.
+         */
+        post: operations["versand_senden_api_rechnungen__document_id__versand_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/review/": {
         parameters: {
             query?: never;
@@ -2023,6 +2047,8 @@ export interface components {
             qr_message: string;
             /** Qr Reference */
             qr_reference: string;
+            /** Sent At */
+            sent_at?: string | null;
             /** Status */
             status: string;
             /** Updated At */
@@ -3290,6 +3316,65 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /**
+         * VersandEntwurfOut
+         * @description What the invoice mail would say, before it is sent (B-79).
+         */
+        VersandEntwurfOut: {
+            /**
+             * Bereit
+             * @default false
+             */
+            bereit: boolean;
+            /** Dateiname */
+            dateiname: string;
+            /** Document Id */
+            document_id: number;
+            /** Empfaenger */
+            empfaenger: string;
+            /** Fehlt */
+            fehlt?: string[];
+            /**
+             * Reply To
+             * @default
+             */
+            reply_to: string;
+            /**
+             * Schon Gesendet Am
+             * @default
+             */
+            schon_gesendet_am: string;
+            /** Subject */
+            subject: string;
+            /** Text */
+            text: string;
+        };
+        /** VersandErgebnis */
+        VersandErgebnis: {
+            /** Dateiname */
+            dateiname: string;
+            /** Document Id */
+            document_id: number;
+            /** Empfaenger */
+            empfaenger: string;
+            /**
+             * Gesendet Am
+             * Format: date-time
+             */
+            gesendet_am: string;
+        };
+        /**
+         * VersandRequest
+         * @description Overrides the owner made in the preview. Every field is optional.
+         */
+        VersandRequest: {
+            /** Empfaenger */
+            empfaenger?: string | null;
+            /** Subject */
+            subject?: string | null;
+            /** Text */
+            text?: string | null;
         };
         /** YearListResponse */
         YearListResponse: {
@@ -6021,6 +6106,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    versand_entwurf_api_rechnungen__document_id__versand_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersandEntwurfOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    versand_senden_api_rechnungen__document_id__versand_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VersandRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersandErgebnis"];
                 };
             };
             /** @description Validation Error */

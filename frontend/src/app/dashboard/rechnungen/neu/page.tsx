@@ -9,9 +9,12 @@ import { useRechnungSchreiben } from "./hooks/useRechnungSchreiben";
 import { KundeFelder } from "./components/KundeFelder";
 import { PositionenEditor } from "./components/PositionenEditor";
 import { RechnungFertig } from "./components/RechnungFertig";
+import { VersandDialog } from "@/app/dashboard/components/VersandDialog";
+import { useVersand } from "../hooks/useVersand";
 
 export default function RechnungSchreibenPage() {
   const r = useRechnungSchreiben();
+  const versand = useVersand();
 
   return (
     <div className="space-y-6">
@@ -39,7 +42,14 @@ export default function RechnungSchreibenPage() {
       ) : r.error ? (
         <ErrorState error={r.error} onRetry={r.retry} />
       ) : r.rechnung ? (
-        <RechnungFertig rechnung={r.rechnung} onPrint={r.druckansicht} onPdf={r.pdf} onNeu={r.neueRechnung} />
+        <RechnungFertig
+          rechnung={r.rechnung}
+          onPrint={r.druckansicht}
+          onPdf={r.pdf}
+          onSenden={() => versand.oeffnen(r.rechnung!.document.id)}
+          sendenBusy={versand.loadingId === r.rechnung.document.id}
+          onNeu={r.neueRechnung}
+        />
       ) : (
         <>
           {!r.firma?.bereit && (
@@ -90,6 +100,13 @@ export default function RechnungSchreibenPage() {
           </section>
         </>
       )}
+
+      <VersandDialog
+        draft={versand.draft}
+        sending={versand.sending}
+        onClose={versand.schliessen}
+        onSend={versand.senden}
+      />
     </div>
   );
 }

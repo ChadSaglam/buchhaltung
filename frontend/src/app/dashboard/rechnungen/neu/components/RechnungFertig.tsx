@@ -1,13 +1,16 @@
-import { CheckCircle2, FileDown, Printer, Plus } from "lucide-react";
+import { CheckCircle2, FileDown, Mail, Printer, Plus } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { chf } from "../helpers";
 import type { RechnungOut } from "../types";
 
-export function RechnungFertig({ rechnung, onPrint, onPdf, onNeu }: {
+export function RechnungFertig({ rechnung, onPrint, onPdf, onSenden, sendenBusy = false, onNeu }: {
   rechnung: RechnungOut;
   onPrint: () => void;
   /** The PDF with the Zahlteil — the file you actually send (B-77). */
   onPdf: () => void;
+  /** Open the mail preview (B-79); nothing goes out until the owner says so. */
+  onSenden: () => void;
+  sendenBusy?: boolean;
   onNeu: () => void;
 }) {
   const doc = rechnung.document;
@@ -35,10 +38,18 @@ export function RechnungFertig({ rechnung, onPrint, onPdf, onNeu }: {
             </div>
           </dl>
           <div className="mt-5 flex flex-wrap gap-2">
-            <Button variant="primary" icon={<FileDown className="h-4 w-4" aria-hidden="true" />} onClick={onPdf}>
+            <Button
+              variant="primary"
+              icon={<Mail className="h-4 w-4" aria-hidden="true" />}
+              loading={sendenBusy}
+              onClick={onSenden}
+            >
+              Per E-Mail senden
+            </Button>
+            <Button variant="secondary" icon={<FileDown className="h-4 w-4" aria-hidden="true" />} onClick={onPdf}>
               PDF öffnen
             </Button>
-            <Button variant="secondary" icon={<Printer className="h-4 w-4" aria-hidden="true" />} onClick={onPrint}>
+            <Button variant="ghost" icon={<Printer className="h-4 w-4" aria-hidden="true" />} onClick={onPrint}>
               Druckvorschau
             </Button>
             <Button variant="ghost" icon={<Plus className="h-4 w-4" aria-hidden="true" />} onClick={onNeu}>

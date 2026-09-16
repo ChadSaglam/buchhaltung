@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -131,3 +131,36 @@ class RechnungListResponse(BaseModel):
     items: list[RechnungListItem]
     count: int
     naechste_nummer: str
+
+
+class VersandEntwurfOut(BaseModel):
+    """What the invoice mail would say, before it is sent (B-79)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    document_id: int
+    empfaenger: str
+    subject: str
+    text: str
+    dateiname: str
+    reply_to: str = ""
+    #: False when something is missing — then POST refuses rather than guessing.
+    bereit: bool = False
+    fehlt: list[str] = Field(default_factory=list)
+    #: Filled when this invoice already went out once.
+    schon_gesendet_am: str = ""
+
+
+class VersandRequest(BaseModel):
+    """Overrides the owner made in the preview. Every field is optional."""
+
+    empfaenger: str | None = Field(default=None, max_length=255)
+    subject: str | None = Field(default=None, max_length=200)
+    text: str | None = Field(default=None, max_length=20_000)
+
+
+class VersandErgebnis(BaseModel):
+    document_id: int
+    empfaenger: str
+    gesendet_am: datetime
+    dateiname: str

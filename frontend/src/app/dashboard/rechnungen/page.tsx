@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils";
 import { useRechnungen } from "./hooks/useRechnungen";
 import { BulkDropZone } from "./components/BulkDropZone";
 import { DocumentTable } from "./components/DocumentTable";
+import { VersandDialog } from "@/app/dashboard/components/VersandDialog";
+import { useVersand } from "./hooks/useVersand";
 import { STATUS_LABEL, formatCHF } from "./helpers";
 import type { DocumentStatus } from "./types";
 
@@ -18,6 +20,7 @@ const FILTERS: (DocumentStatus | "alle")[] = ["alle", "offen", "bezahlt", "expor
 
 export default function RechnungenPage() {
   const r = useRechnungen();
+  const versand = useVersand(() => r.retry());
   const s = r.summary;
 
   return (
@@ -68,10 +71,22 @@ export default function RechnungenPage() {
           {r.items.length === 0 ? (
             <EmptyState icon={Receipt} title="Noch keine Rechnungen" description="Lege Rechnungen oben ab — QR-Rechnungen werden sofort exakt erfasst." />
           ) : (
-            <DocumentTable items={r.items} onStatus={r.setStatus} />
+            <DocumentTable
+              items={r.items}
+              onStatus={r.setStatus}
+              onSenden={(doc) => versand.oeffnen(doc.id)}
+              sendenLoadingId={versand.loadingId}
+            />
           )}
         </>
       )}
+
+      <VersandDialog
+        draft={versand.draft}
+        sending={versand.sending}
+        onClose={versand.schliessen}
+        onSend={versand.senden}
+      />
     </div>
   );
 }

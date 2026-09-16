@@ -345,6 +345,13 @@ class RechnungService:
             mwst=float(totals.get("mwst") or 0.0),
         )
 
+    async def versand_kontext(self, document_id: int) -> tuple[Document, CompanyProfile, str, str]:
+        """(document, profile, formatted reference, customer name) — what a mail needs (B-79)."""
+        doc, _positions = await self.own_invoice(document_id)
+        profile = await self.profile()
+        reference = swiss_qr.format_reference(doc.qr_reference, _reference_type(doc))
+        return doc, profile, reference, _kunde_from(doc).name
+
     def dateiname(self, doc: Document) -> str:
         """`Rechnung-2026-0001.pdf` — what the customer sees in their inbox."""
         nummer = (doc.invoice_no or str(doc.id)).replace("/", "-").replace(" ", "-")
