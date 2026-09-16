@@ -7,7 +7,7 @@ BIN := backend/venv/bin
 FRONTEND_PORT ?= 3000
 BACKEND_PORT  ?= 8000
 
-.PHONY: help setup doctor dev-deps e2e-deps hooks dev stop ports test test-backend test-unit test-e2e lint fix typecheck check api-types migrate migration ai-context status clean docker backup backup-list restore-drill
+.PHONY: help setup lock doctor dev-deps e2e-deps hooks dev stop ports test test-backend test-unit test-e2e lint fix typecheck check api-types migrate migration ai-context status clean docker backup backup-list restore-drill
 
 help: ## Show this help
 	@grep -hE '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -25,6 +25,22 @@ setup: ## Install backend + frontend dependencies
 	cd frontend && npm install
 	@$(MAKE) --no-print-directory e2e-deps
 	@$(MAKE) --no-print-directory hooks
+
+lock: ## Recompile backend/requirements.txt from backend/requirements.in (B-81)
+	@# pip-compile resolves for the interpreter it runs on, and it is not a small
+	@# difference: compiling this file on 3.11 pins numpy 2.4.6, on 3.13 numpy 2.5.3.
+	@# A lock built on the wrong Python installs a tree the image never runs.
+	@want=$$(grep -E '^[[:space:]]*PYTHON_VERSION:' .github/workflows/ci.yml | head -1 | tr -d '\042 ' | cut -d: -f2); \
+	have=$$($(PY) -c 'import sys;print("%d.%d"%sys.version_info[:2])'); \
+	if [ "$$want" != "$$have" ]; then \
+		echo "backend/venv is Python $$have; CI and the images run $$want."; \
+		echo "Recreate the venv with python$$want, or the lock will pin the wrong tree."; \
+		exit 1; \
+	fi
+	@$(PIP) install -q pip-tools
+	@cd backend && $(CURDIR)/$(PY) -m piptools compile --quiet --no-strip-extras \
+		--output-file=requirements.txt requirements.in
+	@echo "→ backend/requirements.txt: $$(grep -c '^[a-zA-Z]' backend/requirements.txt) pinned packages"
 
 doctor: ## Show which interpreters and tools this repo is actually using
 	@echo "  repo python   : $$($(PY) --version 2>&1)  ($(PY))"

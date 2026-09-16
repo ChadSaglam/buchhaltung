@@ -4,7 +4,7 @@
 > Legend: severity `C`ritical / `H`igh / `M`edium / `L`ow · effort `S` (<1h) / `M` (half day) / `L` (multi-day)
 > IDs: `B-xx` = work item (next free: **B-82**) · `P-xx` = parked (next free: **P-05**)
 > Cross-product items (SSO, contracts, design tokens) live in `chadev-platform/ROADMAP.md`, not here.
-> Updated: 2026-09-16 (fifth run) — **the stack runs**: five healthy services and the whole compose-smoke job, verbatim, plus B-24 verified against the live database. **Lohn-Vergleich** (the tool that lifts the payslip watermark) and **B-80** the frontend image, built and served before it was believed. Fourth run — the NEXT block emptied: **B-61** health that can fail, **B-57** worker hardening, **B-56** parser hygiene (the `3924` was real), **B-62** (already done — the line was stale), **B-60** CI parity (both databases, a compose smoke job, and a real password out of `scripts/setup.sh`). Earlier that day (third run): **B-27** the query audit (five statements that grew with the tenant), **B-23** plan limits enforced from `usage_events`, **B-72 option C** as far as the law reaches (BVG minimum as a check), **B-20 finished** (the Kontenplan import wizard). Earlier that day (second run): **B-72** payroll (option B with option C's shape), **B-79** invoice e-mail, **B-74** part A, **B-24** row-level security (`app_rw` is `NOSUPERUSER NOBYPASSRLS`), **B-25** backup + restore drill, **B-54**/**B-55**, **B-17** the Treuhänder pack in one zip, **B-20** (sample invoice + checklist; the wizard is still open), **B-51 finished** (the last five money columns), **B-22** the audit log, **B-28** indexes chosen by `EXPLAIN`. Earlier that day (night run): **B-51** money columns are Numeric(12,2), **B-59** `response_model` on the seven endpoints that returned bare dicts (and the hand-written frontend interfaces are gone), **B-58** the UX/a11y batch (one formatter, WCAG-AA accents, `usePopover`, heading order, confirms on destructive actions), **B-71** 90-day liquidity + tax provision on Heute, and **step 5 of the IA migration** (sidebar = four surfaces + Mehr; every old route still resolves). Earlier on 2026-09-16: B-70 Jahresabschluss and B-77 (PDF renderer = fpdf2); B-69 e-mail intake; B-52 idempotency by constraint; B-53 export safety. 2026-09-15 — B-68 write invoices (Swiss QR, debtor booking, reference return); B-67 VAT return (form 200); B-66 month-end check; B-65 open items / reminders; B-76 Banana batch (phase 4) done — and the open extension question answered: an extension may not call HTTP, so the file hand-off is final (new: B-78, read-only REST spike); B-73 Abgleich done, `make check` green. 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 amount memory. 2026-09-13 — phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
+> Updated: 2026-09-16 (fifth run) — **B-81** the runtime lockfile, and **the stack runs**: five healthy services and the whole compose-smoke job, verbatim, plus B-24 verified against the live database. **Lohn-Vergleich** (the tool that lifts the payslip watermark) and **B-80** the frontend image, built and served before it was believed. Fourth run — the NEXT block emptied: **B-61** health that can fail, **B-57** worker hardening, **B-56** parser hygiene (the `3924` was real), **B-62** (already done — the line was stale), **B-60** CI parity (both databases, a compose smoke job, and a real password out of `scripts/setup.sh`). Earlier that day (third run): **B-27** the query audit (five statements that grew with the tenant), **B-23** plan limits enforced from `usage_events`, **B-72 option C** as far as the law reaches (BVG minimum as a check), **B-20 finished** (the Kontenplan import wizard). Earlier that day (second run): **B-72** payroll (option B with option C's shape), **B-79** invoice e-mail, **B-74** part A, **B-24** row-level security (`app_rw` is `NOSUPERUSER NOBYPASSRLS`), **B-25** backup + restore drill, **B-54**/**B-55**, **B-17** the Treuhänder pack in one zip, **B-20** (sample invoice + checklist; the wizard is still open), **B-51 finished** (the last five money columns), **B-22** the audit log, **B-28** indexes chosen by `EXPLAIN`. Earlier that day (night run): **B-51** money columns are Numeric(12,2), **B-59** `response_model` on the seven endpoints that returned bare dicts (and the hand-written frontend interfaces are gone), **B-58** the UX/a11y batch (one formatter, WCAG-AA accents, `usePopover`, heading order, confirms on destructive actions), **B-71** 90-day liquidity + tax provision on Heute, and **step 5 of the IA migration** (sidebar = four surfaces + Mehr; every old route still resolves). Earlier on 2026-09-16: B-70 Jahresabschluss and B-77 (PDF renderer = fpdf2); B-69 e-mail intake; B-52 idempotency by constraint; B-53 export safety. 2026-09-15 — B-68 write invoices (Swiss QR, debtor booking, reference return); B-67 VAT return (form 200); B-66 month-end check; B-65 open items / reminders; B-76 Banana batch (phase 4) done — and the open extension question answered: an extension may not call HTTP, so the file hand-off is final (new: B-78, read-only REST spike); B-73 Abgleich done, `make check` green. 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 amount memory. 2026-09-13 — phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
 > Companion docs: `docs/ADR-002-rls.md` (B-24) · `docs/BACKUP.md` (B-25) · `docs/B-72-LOHN-SPEC.md` (B-72) · `docs/IA-2026-09-14.md` · `docs/DEPLOY-CHECKLIST-B36-B37.md` · `docs/BRAINSTORM-2026-09-12.md`.
 
 ---
@@ -61,7 +61,6 @@ production, because there is no production yet._
 
 Then, and only then, the code that is left:
 
-- **B-81** a runtime lockfile — must be *installed* before it is believed.
 - **B-72 → option C**, the three gaps that are bought or certified: Quellensteuer tariff tables, Formular 11,
   Swissdec ELM. `docs/B-72-LOHN-SPEC.md`.
 - **B-74 part B** — standing orders as Abgleich proposals. **Decide before coding:**
@@ -136,15 +135,15 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
       now separate endpoints, because a liveness probe that asks the database restarts every container at once.
 
 ### DX / CI
-- [x] **B-60** ✅ 2026-09-16 — see Done. Two things left over, both deliberate: the runtime **lockfile** (B-81),
-      and the fact that the compose-smoke job is the one thing here that could not be run before shipping.
+- [x] **B-60** ✅ 2026-09-16 — see Done. Both of the things it left over are closed now: the runtime lockfile
+      is **B-81**, and the compose-smoke job — the one part that shipped without ever being run — has since been
+      run end to end, every step, on a real daemon.
 - [x] **B-62** ✅ 2026-09-16 — see Done. Every item of this line was already true (B-41 did it); the line was
       stale. A leaner image is its own item now — **B-80**.
-- [ ] **B-81** Runtime lockfile: `backend/requirements.txt` is all `>=`, so two installs a month apart resolve
-      different trees and "it worked yesterday" has no answer. `pip-compile` into a `requirements.lock`, with CI
-      installing the lock and Dependabot bumping it. Left out of B-60 on purpose: a lockfile generated without
-      being installed and tested end-to-end is a guess, and the container this was written in cannot run the
-      compose stack to prove it. — `M` / `M`
+- [x] **B-81** ✅ 2026-09-16 — see Done. One deviation from what this line asked for: the compiled file is
+      `requirements.txt` and the input is `requirements.in`, not the other way round. Dependabot's pip ecosystem
+      finds a pip-compile pair by that convention and by the generated header; a file called `requirements.lock`
+      is one it never opens, and a lock nothing bumps is a lock that rots.
 - [x] **B-80** ✅ 2026-09-16 — see Done. It was built and run (1.23 GB → 235 MB), and building it is what found
       the two failure modes the line could not have named: `.next/static` living outside the standalone bundle,
       and `next start` being unsupported with it.
@@ -168,6 +167,27 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 
 ## ✅ Done
 
+- **B-81** ✅ 2026-09-16 — the runtime lockfile, installed before it was believed. `backend/requirements.txt`
+  was 40 lines of `>=`, so two builds a month apart resolved different trees and "it worked yesterday" had no
+  answer. It is now the **compiled** file — 83 pinned packages — and `backend/requirements.in` is the input you
+  edit. `make lock` recompiles. Nothing else had to change: CI, `backend/Dockerfile`, `scripts/setup.sh`,
+  `make setup` and `pip-audit` all already read `requirements.txt`, and all of them now read the pinned tree.
+  **The naming is the opposite of what the roadmap line asked for, on purpose.** Dependabot's pip ecosystem finds
+  a pip-compile pair by the `.in` → `.txt` convention and by the generated header; a file called
+  `requirements.lock` is one it never opens. A lock nothing bumps is a lock that rots until an upgrade is a week
+  of work, so the convention wins over the name.
+  **The thing that would have shipped silently:** pip-compile resolves for the interpreter it runs on. Compiled
+  on 3.11 this file pins `numpy 2.4.6` and `scipy 1.17.1`; on 3.13 — which is what CI and both images run — it
+  pins `numpy 2.5.3` and `scipy 1.18.1`. The first version of this lock was built on 3.11 and looked perfectly
+  correct. `make lock` now refuses to run unless the venv's Python matches `PYTHON_VERSION` in the workflow, and
+  a test holds the lock's own header against that same value.
+  Proof, end to end: a clean 3.13 venv installed from the lock ran the suite at **1168 passed / 20 skipped**;
+  `docker compose build api worker` installed it (`Collecting aiosqlite==0.22.1`, not a range); the stack came up
+  healthy; and `pip freeze` inside the running API container is **83 packages, zero missing, zero mismatched,
+  zero extra** against the lock. 9 new tests, including the one that matters — a package added to
+  `requirements.in` without running `make lock` fails the suite.
+  Not locked, deliberately: `requirements-dev.txt`. It is the toolchain, ruff is already pinned to the version
+  pre-commit installs, and a second lock would be a second thing to bump for no deployment risk.
 - **The stack runs** ✅ 2026-09-16 — not a roadmap item, and the largest thing that happened today. Every
   compose piece was written blind: B-41 the production compose, B-24 the role split, B-25 the backup profile,
   B-61 the probes, B-60 the smoke job. None of it had ever run together, and the one attempt died on `ollama`'s
@@ -202,7 +222,6 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
   `/dashboard/scanner` → 307, `NEXT_PUBLIC_API_URL` inlined into three chunks at build time, and typescript,
   eslint, vitest, Playwright and tailwind all absent from `node_modules`. The compose-smoke job now starts `web`
   and asks it the same two questions. 16 new tests (`test_deployment_contract.py`, `test_ci_contract.py`).
-  Left open on purpose: **B-81**, the runtime lockfile.
   Also fixed here, because it cost an hour: `.gitignore` matched `.next/` and `.next-e2e/` by name, so a one-off
   build directory swept 1265 files into a commit. It is `.next*/` now, in both files.
 - **B-55** ✅ 2026-09-16 — the unauthenticated edge. Sign-in, sign-up and the SSO hand-off get their own per-IP
@@ -888,4 +907,4 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 | 4 Polish | ✅ B-09, B-13, B-66, B-67, B-76, B-53, B-22, B-61 · open: — |
 | 5 UX | ✅ B-14, B-15, B-16, B-18, B-19, B-44, B-45, B-46, B-50 (+B-21), B-58, B-59, B-65, B-71, B-72, B-74, B-79, IA 1–5, B-17, B-20 · open: — |
 | 6 Together | ✅ B-36 (SSO + mirroring), B-37 (events), B-23 (plan limits) · deploy: `docs/DEPLOY-CHECKLIST-B36-B37.md` · parked: B-38 |
-| 7 DX | ✅ B-12, B-29, B-30, B-60, B-62, B-80 · open: B-81 |
+| 7 DX | ✅ B-12, B-29, B-30, B-60, B-62, B-80, B-81 · open: — |

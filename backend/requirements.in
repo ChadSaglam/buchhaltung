@@ -1,0 +1,44 @@
+# The input, not the install (B-81). One line per thing we actually import, with
+# a floor rather than a pin, so an upgrade is a decision instead of an accident.
+#
+# `make lock` compiles this into requirements.txt — the resolved tree that CI
+# installs, the images ship and pip-audit reads. Never edit that file by hand,
+# and never `pip install` this one directly: it is the ranges, not the answer.
+fastapi>=0.115.6
+uvicorn[standard]>=0.34.0
+sqlalchemy[asyncio]>=2.0.36
+asyncpg>=0.30.0
+psycopg2-binary>=2.9.10
+alembic>=1.14.1
+pydantic>=2.10.4
+pydantic-settings>=2.7.1
+python-jose[cryptography]>=3.3.0
+bcrypt>=4.0.0
+python-multipart>=0.0.19
+scikit-learn>=1.6.1
+pandas>=2.2.3
+openpyxl>=3.1.5
+requests>=2.32.3
+python-dotenv>=1.0.1
+email-validator>=2.1.0
+pdfplumber>=0.11.0
+xlrd>=2.0.1
+# Safe parser for user-uploaded Banana XML exports (entity expansion / XXE) — routers/import_data.py.
+defusedxml>=0.7.1
+aiosqlite>=0.20.0
+httpx==0.28.1
+slowapi==0.1.10
+# B-55: shared rate-limit counters. Optional at runtime — without REDIS_URL the
+# limiter stays in process memory — but compose already runs redis, and with more
+# than one uvicorn worker in-memory buckets hand out the quota once per worker.
+redis>=5.0
+sentry-sdk==2.62.0
+# Only imported when STORAGE_BACKEND=s3 (app/services/storage.py); local storage needs no AWS libs.
+boto3>=1.34
+pytest-env>=1.1.5
+zxing-cpp>=2.2.0
+# Renders the QR square on invoices we write ourselves (services/swiss_qr.py) — pure Python.
+segno>=1.6
+# The one PDF renderer for every document (B-77): Bilanz/ER, Mahnung, Rechnung.
+# Pure Python, no C build — that is why it won over reportlab.
+fpdf2>=2.7
