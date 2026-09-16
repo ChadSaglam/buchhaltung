@@ -17,4 +17,6 @@ class TrainingRow(Base):
     mwst_code: Mapped[str] = mapped_column(String(10), default="")
     mwst_pct: Mapped[str] = mapped_column(String(10), default="")
     # Gross amount of the imported booking; feeds the amount memory (None for old rows).
+    # A feature for the classifier, not an accounting figure — nothing is summed
+    # or reported from it, so it stays `Float` (B-51).
     betrag: Mapped[float | None] = mapped_column(Float, nullable=True)

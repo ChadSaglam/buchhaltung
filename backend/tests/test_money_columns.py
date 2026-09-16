@@ -91,3 +91,102 @@ async def test_the_export_still_sees_plain_floats(client, db_session, actor):
     response = await client.get("/api/export/csv", headers=headers)
     assert response.status_code == 200
     assert "1234.5" in response.text or "1234.50" in response.text
+
+
+# --- the five B-51 missed (2026-09-16) ------------------------------------
+#
+# B-51 converted `bookings` and `review_queue_items` and stopped. These carry the
+# same kind of number and stayed on `Float` for a day: the bank movement itself,
+# the invoice total that drives Offene Posten and every Mahnung, the two figures
+# printed on the Treuhänder cover sheet next to a checksum, and the matched
+# amount. A test per column, because the model is the only place this is visible.
+
+
+def test_every_accounting_amount_is_a_chf_column():
+    from app.models.bank_transaction import BankTransaction
+    from app.models.booking import Booking
+    from app.models.document import Document
+    from app.models.export_batch import ExportBatch
+    from app.models.match import Match
+    from app.models.review_queue import ReviewQueueItem
+
+    geld = [
+        (Booking, "betrag"),
+        (Booking, "mwst_amount"),
+        (ReviewQueueItem, "betrag"),
+        (BankTransaction, "amount"),
+        (Document, "amount"),
+        (ExportBatch, "total_betrag"),
+        (ExportBatch, "total_mwst"),
+        (Match, "amount"),
+    ]
+    falsch = [
+        f"{model.__tablename__}.{column}"
+        for model, column in geld
+        if not isinstance(model.__table__.c[column].type, Chf)
+    ]
+    assert not falsch, f"these hold francs and are not Chf columns: {falsch}"
+
+
+def test_a_unit_price_is_not_forced_to_two_decimals():
+    """`invoice_position.einzelpreis` stays Float on purpose.
+
+    0.125 per unit is a real price. Rounding it on bind would turn 100 × 0.125
+    = 12.50 into 100 × 0.13 = 13.00 — the line total is what gets rounded, once.
+    """
+    from app.models.invoice_position import InvoicePosition
+
+    assert not isinstance(InvoicePosition.__table__.c["einzelpreis"].type, Chf)
+
+
+@pytest.mark.skipif(_IS_SQLITE, reason="exact decimal arithmetic is a PostgreSQL property")
+async def test_a_third_decimal_never_reaches_a_document_amount(db_session, actor):
+    from app.models.document import Document
+
+    tenant, _user, _headers = actor
+    doc = Document(tenant_id=tenant.id, file_key="k", filename="f.pdf", amount=12.345)
+    db_session.add(doc)
+    await db_session.flush()
+    stored = await db_session.scalar(text("SELECT amount::text FROM documents WHERE id = :i").bindparams(i=doc.id))
+    assert stored == "12.35"  # half-up, and exactly two decimals
+
+
+@pytest.mark.skipif(_IS_SQLITE, reason="exact decimal arithmetic is a PostgreSQL property")
+async def test_batch_totals_add_without_binary_drift(db_session, actor):
+    from app.models.export_batch import ExportBatch
+
+    tenant, _user, _headers = actor
+    for amount in (0.1, 0.2, 0.3):
+        db_session.add(ExportBatch(tenant_id=tenant.id, total_betrag=amount, total_mwst=0))
+    await db_session.flush()
+    exact = await db_session.scalar(
+        text("SELECT SUM(total_betrag)::text FROM export_batches WHERE tenant_id = :t").bindparams(t=tenant.id)
+    )
+    # This number is printed on the sheet that goes to the Treuhänder.
+    assert exact == "0.60"
+
+
+async def test_none_still_means_none_on_a_nullable_amount(db_session, actor):
+    from app.models.document import Document
+
+    tenant, _user, _headers = actor
+    doc = Document(tenant_id=tenant.id, file_key="k", filename="f.pdf", amount=None)
+    db_session.add(doc)
+    await db_session.flush()
+    await db_session.refresh(doc)
+    assert doc.amount is None
+
+
+async def test_python_still_gets_plain_floats_back(db_session, actor):
+    """`Chf` hands back `float`, so no service had to change. A `Decimal`
+    leaking out is how `unsupported operand type` shows up in production only."""
+    from app.models.bank_transaction import BankTransaction
+
+    tenant, _user, _headers = actor
+    tx = BankTransaction(tenant_id=tenant.id, amount=19.99)
+    db_session.add(tx)
+    await db_session.flush()
+    await db_session.refresh(tx)
+    assert isinstance(tx.amount, float)
+    assert tx.amount == 19.99
+    assert not isinstance(tx.amount, Decimal)

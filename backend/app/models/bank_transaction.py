@@ -8,10 +8,11 @@ from __future__ import annotations
 
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, Float, ForeignKey, Index, Integer, String, Text, func
+from sqlalchemy import Date, DateTime, ForeignKey, Index, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
+from app.models.types import Chf
 
 TX_STATUS_OFFEN = "offen"
 TX_STATUS_ZUGEORDNET = "zugeordnet"
@@ -37,7 +38,7 @@ class BankTransaction(Base):
     booking_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     description: Mapped[str] = mapped_column(Text, default="")
     # Signed: negative = Belastung (money out), positive = Gutschrift (money in).
-    amount: Mapped[float] = mapped_column(Float, default=0.0)
+    amount: Mapped[float] = mapped_column(Chf, default=0.0)
     currency: Mapped[str] = mapped_column(String(3), default="CHF")
     # QRR/SCOR reference when the statement carries one (camt.053 always does, PDF rarely).
     reference: Mapped[str] = mapped_column(String(27), default="")

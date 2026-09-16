@@ -10,10 +10,11 @@ from __future__ import annotations
 
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, Float, ForeignKey, Index, Integer, String, func
+from sqlalchemy import Date, DateTime, ForeignKey, Index, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
+from app.models.types import Chf
 
 FORMAT_BANANA = "banana"
 
@@ -28,8 +29,8 @@ class ExportBatch(Base):
     filename: Mapped[str] = mapped_column(String(255), default="")
 
     booking_count: Mapped[int] = mapped_column(Integer, default=0)
-    total_betrag: Mapped[float] = mapped_column(Float, default=0.0)
-    total_mwst: Mapped[float] = mapped_column(Float, default=0.0)
+    total_betrag: Mapped[float] = mapped_column(Chf, default=0.0)
+    total_mwst: Mapped[float] = mapped_column(Chf, default=0.0)
     period_from: Mapped[date | None] = mapped_column(Date, nullable=True)
     period_to: Mapped[date | None] = mapped_column(Date, nullable=True)
 

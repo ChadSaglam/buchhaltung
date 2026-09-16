@@ -13,6 +13,7 @@ from sqlalchemy import DateTime, Float, ForeignKey, Index, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
+from app.models.types import Chf
 
 MATCH_VORGESCHLAGEN = "vorgeschlagen"
 MATCH_BESTAETIGT = "bestaetigt"
@@ -46,7 +47,7 @@ class Match(Base):
     score: Mapped[float] = mapped_column(Float, default=0.0)
     reason: Mapped[str] = mapped_column(String(255), default="")
     # Part of this transaction that settles this document (a Sammelauftrag splits).
-    amount: Mapped[float] = mapped_column(Float, default=0.0)
+    amount: Mapped[float] = mapped_column(Chf, default=0.0)
 
     decided_by: Mapped[int | None] = mapped_column(Integer, nullable=True)
     decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

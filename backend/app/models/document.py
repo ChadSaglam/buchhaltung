@@ -14,6 +14,7 @@ from sqlalchemy import Date, DateTime, Float, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
+from app.models.types import Chf
 
 STATUS_OFFEN = "offen"
 STATUS_BEZAHLT = "bezahlt"
@@ -54,7 +55,7 @@ class Document(Base):
 
     # What was read from it.
     vendor: Mapped[str] = mapped_column(String(255), default="")
-    amount: Mapped[float | None] = mapped_column(Float, nullable=True)
+    amount: Mapped[float | None] = mapped_column(Chf, nullable=True)
     currency: Mapped[str] = mapped_column(String(3), default="CHF")
     invoice_no: Mapped[str] = mapped_column(String(100), default="")
     invoice_date: Mapped[date | None] = mapped_column(Date, nullable=True)
