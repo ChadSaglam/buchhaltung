@@ -37,6 +37,12 @@ AMOUNT_MIN_HITS = 2
 AMOUNT_MIN_SHARE = 0.6
 AMOUNT_MAX_CONFIDENCE = 0.92
 
+ZU_WENIG_DATEN = "Zu wenige Daten zum Trainieren (min. 5 Buchungen)"
+EIN_EINZIGES_KONTO = (
+    "Alle Buchungen gehen auf dasselbe Konto ({konto}). "
+    "Das Modell lernt erst, wenn mindestens zwei verschiedene Konten vorkommen."
+)
+
 
 _MONTH_RE = re.compile(
     r"\b(?:januar|februar|märz|maerz|april|mai|juni|juli|august|september|oktober|november|dezember"
@@ -275,18 +281,34 @@ def amount_candidate(rows: list[AmountRow], betrag: float) -> ClassificationResu
 FittedModel = tuple[Pipeline, int, int, float | None, float]  # pipeline, rows, classes, cv_acc, train_acc
 
 
-def fit_pipeline(rows: list[dict[str, str]]) -> FittedModel | None:
-    """Build and fit the TF-IDF + LogisticRegression pipeline; None when < 5 usable rows.
+class TrainingDatenFehlen(ValueError):
+    """The training set cannot produce a model, and it is the data's fault, not ours.
 
+    Separate from an ordinary exception because the difference decides the status
+    code: this is a 400 the user can act on ("book a second kind of expense"),
+    everything else is a 500 (B-57).
+    """
+
+
+def fit_pipeline(rows: list[dict[str, str]]) -> FittedModel:
+    """Build and fit the TF-IDF + LogisticRegression pipeline.
+
+    Raises :class:`TrainingDatenFehlen` when the rows cannot train anything.
     Pure CPU, no I/O — safe to run in a worker thread.
     """
     df = pd.DataFrame(rows)
     if df.empty:
-        return None
+        raise TrainingDatenFehlen(ZU_WENIG_DATEN)
     df = df[df["Beschreibung"].notna() & (df["Beschreibung"] != "")]
     df = df[df["KontoSoll"].notna() & (df["KontoSoll"] != "")]
     if len(df) < 5:
-        return None
+        raise TrainingDatenFehlen(ZU_WENIG_DATEN)
+    if df["KontoSoll"].nunique() < 2:
+        # scikit-learn raises "This solver needs samples of at least 2 classes"
+        # from inside `fit`, which reached the user as a 500. A new tenant whose
+        # first receipts all go to one account hits this on their first retrain —
+        # it is the most ordinary state there is, not a server fault.
+        raise TrainingDatenFehlen(EIN_EINZIGES_KONTO.format(konto=df["KontoSoll"].iloc[0]))
 
     df["text_clean"] = df["Beschreibung"].apply(preprocess)
     X = df["text_clean"]
@@ -685,14 +707,15 @@ class TenantClassifier:
             rows.append({"Beschreibung": c.beschreibung, "KontoSoll": c.corrected_soll})
 
         if len(rows) < 5:
-            return {"error": "Zu wenige Daten zum Trainieren (min. 5 Buchungen)"}
+            return {"error": ZU_WENIG_DATEN}
 
         # sklearn fit + cross-validation are CPU-bound and take seconds on a few
         # thousand rows; run them in a worker thread so the event loop keeps
         # serving requests (B-49). Nothing in there touches the session.
-        fitted = await asyncio.to_thread(fit_pipeline, rows)
-        if fitted is None:
-            return {"error": "Zu wenige Daten zum Trainieren (min. 5 Buchungen)"}
+        try:
+            fitted = await asyncio.to_thread(fit_pipeline, rows)
+        except TrainingDatenFehlen as exc:
+            return {"error": str(exc)}
         pipeline, n_rows, n_classes, cv_acc, train_acc = fitted
         self._model = pipeline
         model_blob = pack(pipeline)

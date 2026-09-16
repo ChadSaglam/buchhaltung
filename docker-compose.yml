@@ -94,6 +94,11 @@ services:
     volumes:
       - model_data:/app/data
     restart: unless-stopped
+    # B-57: docker's default is 10 s between SIGTERM and SIGKILL. A retrain in
+    # flight needs longer than that to unwind and hand its job back to the queue,
+    # and a job killed mid-flight stays `running` until the reaper finds it
+    # (15 minutes later) — during which that tenant does not retrain at all.
+    stop_grace_period: 120s
 
   db:
     image: postgres:16-alpine

@@ -14,9 +14,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import select, update
+from sqlalchemy import or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.tenant_context import tenant_scope
@@ -30,6 +30,20 @@ from app.models.training_job import (
 from app.services.classifier import TenantClassifier
 
 logger = logging.getLogger(__name__)
+
+#: After how long a `running` job is assumed dead and handed back (B-57).
+#:
+#: A worker that is SIGKILLed — OOM, a node going away, a `docker kill` — never
+#: runs its `CancelledError` handler, so the row stays `running` for ever. And
+#: because `enqueue_training` deduplicates per tenant on a *pending* row, that
+#: tenant's retrains then queue behind a job nobody will ever finish: the
+#: classifier silently stops learning and nothing reports it.
+#:
+#: Generous on purpose. Training is seconds on a normal tenant, so 15 minutes
+#: only ever catches a job that is genuinely gone. If it did fire on a live job
+#: the cost is a duplicate retrain, not a wrong one — training overwrites the
+#: model blob and is idempotent.
+STALE_AFTER = timedelta(minutes=15)
 
 
 async def enqueue_training(session: AsyncSession, tenant_id: int) -> bool:
@@ -52,6 +66,7 @@ class TrainingWorker:
 
     async def run_once(self) -> int:
         """Claim and run every pending job. Returns the number of jobs processed."""
+        await self.reap_stale()
         processed = 0
         while True:
             job_id = await self._claim_next()
@@ -59,6 +74,26 @@ class TrainingWorker:
                 return processed
             await self._run(job_id)
             processed += 1
+
+    async def reap_stale(self, *, now: datetime | None = None) -> int:
+        """Hand jobs back that a dead worker left `running`. Returns how many."""
+        grenze = (now or datetime.now(UTC)) - STALE_AFTER
+        async with self._session_factory() as session:
+            result = await session.execute(
+                update(TrainingJob)
+                .where(
+                    TrainingJob.status == STATUS_RUNNING,
+                    # `started_at` is set in the same statement as the claim, but a
+                    # row from before that column existed could be NULL — treat it
+                    # as stale rather than as immortal.
+                    or_(TrainingJob.started_at < grenze, TrainingJob.started_at.is_(None)),
+                )
+                .values(status=STATUS_PENDING, started_at=None)
+            )
+            await session.commit()
+        if result.rowcount:
+            logger.warning("[TRAIN] handed %s stale running job(s) back to the queue", result.rowcount)
+        return int(result.rowcount or 0)
 
     async def _claim_next(self) -> int | None:
         async with self._session_factory() as session:

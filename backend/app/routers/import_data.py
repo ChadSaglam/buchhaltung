@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import logging
 import math
 import re
 
@@ -18,6 +19,7 @@ from app.models.user import User
 from app.services.audit_log import audit
 from app.services.classifier import TenantClassifier, make_memory_key
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/import", tags=["import"])
 
 
@@ -270,11 +272,6 @@ async def import_banana_file(
 
     result = {"imported": len(training_objects), "memory_entries": len(memory_objects) + len(seen_keys)}
 
-    if auto_train:
-        clf = TenantClassifier(tid, db)
-        train_result = await clf.train_from_db()
-        result["training"] = train_result
-
     await audit(
         db,
         user,
@@ -283,7 +280,21 @@ async def import_banana_file(
         zeilen=result["imported"],
         gedaechtnis=result["memory_entries"],
     )
+    # B-57: **commit the import before training.** Training is the long, failing
+    # part — it loads pandas, fits a model and writes a signed blob — and until
+    # now a failure in it rolled back the import that had already succeeded. The
+    # user re-uploaded a 2'000-line file to fix a problem in a different feature.
     await db.commit()
+
+    if auto_train:
+        try:
+            result["training"] = await TenantClassifier(tid, db).train_from_db()
+            await db.commit()
+        except Exception as exc:  # the rows are safe; say what happened and move on
+            await db.rollback()
+            logger.exception("[IMPORT] tenant=%s: training after import failed", tid)
+            result["training"] = {"error": f"{type(exc).__name__}: {exc}"[:500]}
+
     return result
 
 

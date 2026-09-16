@@ -44,9 +44,7 @@ Pulled from LATER, in the order they pay off:
    integers), the migration round trip, the subprocess-worker tests, the Settings ↔ `.env.example` drift. A
    `db: [sqlite, postgres]` matrix and a compose smoke job turn "it passed on my machine" back into a statement
    about the product. — `L` / `M`
-2. **B-57 worker hardening** — the jobs run outside the API process now (B-33), which means a crash there is
-   invisible from the outside. `configure_sentry` in `worker.main`, `stop_grace_period`, reaping `running` jobs
-   back to `pending`. — `M` / `S`
+2. ~~**B-57 worker hardening**~~ ✅ 2026-09-16 — see Done.
 3. **B-56 parser/classifier hygiene** — the thousands-separator fix (2026-09-16) closed one half of this line; the
    rest is the anchored date regex and getting tenant-specific supplier names out of the shared
    `CLASSIFICATION_RULES`. — `M` / `S`
@@ -107,9 +105,8 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
       set; what shipped is the mechanism. Seats are deliberately **not** limited — see that entry.
 
 ### Together / data integrity
-- [ ] **B-57** Worker hardening: `configure_sentry` in `worker.main`, `await gather` on stop, `stop_grace_period: 120s`,
-      reap `running` jobs older than N min back to `pending`, single-class training → 400 not 500, commit the import
-      *before* `auto_train`. — `M` / `S`
+- [x] **B-57** ✅ 2026-09-16 — see Done. All six, and the reaper turned out to matter more than the line
+      suggested: dedup is on a *pending* row, so one stuck `running` job stopped a tenant learning for good.
 
 ### User-friendly
 - [x] **B-20** ✅ 2026-09-16 — complete: sample receipt, the checklist reordered, and the Kontenplan import
@@ -181,6 +178,24 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 - **a11y** ✅ 2026-09-16 — `EmptyState` and `ErrorState` rendered an `h3` inside sections whose heading was an `h2`,
   which axe reported as 14 `moderate heading-order` findings across the app. Both gained an `as` prop defaulting to
   `h2`. The whole suite is back to zero findings, light and dark.
+- **B-57** ✅ 2026-09-16 — the worker runs where nobody is watching. Six things, and the one the line
+  understated is the reaper: a worker that is SIGKILLed (OOM, a node going away) never runs its
+  `CancelledError` handler, so the row stays `running` **for ever** — and because `enqueue_training` deduplicates
+  per tenant, that tenant's retrains then queue behind a job nobody will finish. The classifier silently stops
+  learning and nothing reports it. `reap_stale()` runs before every claim; 15 minutes, generous on purpose,
+  because a false positive costs a duplicate retrain and training is idempotent.
+  **Cancelling is a request, not an event.** `stop_all()` cancelled its tasks and exited without awaiting them, so
+  the handler that hands a half-finished job back never ran. It now waits, with a budget **per shutdown rather
+  than per task** — a container being killed must not be held open task-by-task past its grace period — and
+  compose gives the worker `stop_grace_period: 120s` instead of docker's default 10.
+  **`configure_sentry` in `worker.main`**: the API has had error tracking since B-33 and the worker never did, so
+  since B-08 a crash in the one process nobody watches was invisible — the queue just stopped moving.
+  **A single account is a 400, not a 500.** `fit_pipeline` raises a typed `TrainingDatenFehlen`; scikit-learn's
+  "this solver needs samples of at least 2 classes" used to reach the user as a server error, on what is the most
+  ordinary state a new tenant can be in.
+  **The import commits before it trains.** Training is the long, failing part, and a failure in it used to roll
+  back an import that had already succeeded — the user re-uploaded a 2'000-line file to fix a different feature.
+  19 tests.
 - **B-61** ✅ 2026-09-16 — health that can fail. In production `GET /api/health` answered a flat
   `{"status": "ok"}` **without touching anything**, so an instance whose database was gone kept taking traffic and
   no load balancer could tell. It now runs one bounded `SELECT 1` and answers **503** when it cannot — in every
@@ -722,7 +737,7 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 | 0.5 Risk fixes before platform work | ✅ B-00…B-03 (branch `feat/phase0-risks`) |
 | 1 Platform contract | 1.2 ✅ B-31 · 1.4 ✅ B-26 · 1.6 ✅ tokens imported · perf: ✅ B-27, B-28 |
 | 2 Security | ✅ B-06, B-07, B-24, B-25, B-32, B-34, B-40, B-41, B-42, B-43, B-54, B-55 · open: — |
-| 3 Reliability | ✅ B-04, B-05, B-08, B-11, B-33, B-35, B-39, B-47, B-48, B-49, B-63, B-64, B-73, B-76, B-51, B-52 · open: B-56, B-57 |
+| 3 Reliability | ✅ B-04, B-05, B-08, B-11, B-33, B-35, B-39, B-47, B-48, B-49, B-63, B-64, B-73, B-76, B-51, B-52, B-57 · open: B-56 |
 | 4 Polish | ✅ B-09, B-13, B-66, B-67, B-76, B-53, B-22, B-61 · open: — |
 | 5 UX | ✅ B-14, B-15, B-16, B-18, B-19, B-44, B-45, B-46, B-50 (+B-21), B-58, B-59, B-65, B-71, B-72, B-74, B-79, IA 1–5, B-17, B-20 · open: — |
 | 6 Together | ✅ B-36 (SSO + mirroring), B-37 (events), B-23 (plan limits) · deploy: `docs/DEPLOY-CHECKLIST-B36-B37.md` · parked: B-38 |

@@ -26,6 +26,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.config import settings
 from app.core.logging_config import configure_logging
+from app.core.sentry import configure_sentry
 from app.services.email_intake import imap_configured, poll_mailbox
 from app.services.scheduler import CronScheduler
 from app.services.training_worker import TrainingWorker
@@ -68,7 +69,7 @@ class BackgroundJobs:
         await self.scheduler.run_all_once()
 
     async def stop(self) -> None:
-        self.scheduler.stop_all()
+        await self.scheduler.stop_all()
 
 
 async def run(*, once: bool, session_factory: async_sessionmaker[AsyncSession] | None = None) -> None:
@@ -105,6 +106,10 @@ def main(argv: list[str] | None = None, session_factory: async_sessionmaker[Asyn
     args = parse_args(argv)
     load_dotenv()
     configure_logging(settings.LOG_LEVEL)
+    # B-57: the API has had Sentry since B-33; the worker has not. Since B-08 the
+    # jobs run in their own container, so until now a crash in the one process
+    # nobody is watching was invisible — the queue simply stopped moving.
+    configure_sentry(settings.SENTRY_DSN, settings.ENVIRONMENT)
     asyncio.run(run(once=args.once, session_factory=session_factory))
     return 0
 

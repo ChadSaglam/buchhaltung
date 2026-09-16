@@ -348,9 +348,15 @@ def test_every_place_that_opens_its_own_session_is_accounted_for():
         ("app/services/training_worker.py", "_run"),
         # hands a job back to the queue; touches training_jobs only
         ("app/services/training_worker.py", "_release"),
+        # B-57: hands jobs a dead worker left `running` back to the queue.
+        # training_jobs only, and cross-tenant on purpose — a reaper that could
+        # only see one tenant's stuck jobs would be no reaper at all.
+        ("app/services/training_worker.py", "reap_stale"),
         # reads alembic_version and probes connectivity; no tenant-scoped table
         ("app/routers/health.py", "_check_db"),
         ("app/routers/health.py", "_database_status"),
+        # B-61: the readiness probe's one bounded `SELECT 1`; no tenant-scoped table
+        ("app/routers/health.py", "_database_reachable"),
     }
     pattern = re.compile(r"async with (?:self\._session_factory|async_session)\(\)")
     found: set[tuple[str, str]] = set()

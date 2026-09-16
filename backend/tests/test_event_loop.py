@@ -7,15 +7,19 @@ from unittest.mock import patch
 
 import pytest
 
-from app.services.classifier import TenantClassifier, fit_pipeline
+from app.services.classifier import TenantClassifier, TrainingDatenFehlen, fit_pipeline
 from app.services.scanner import vision_ollama
 from app.services.scanner.scanner_service import ScannerService
 from tests.factories import create_tenant, create_training_row, create_user
 
 
 def test_fit_pipeline_is_pure_and_needs_five_rows():
-    assert fit_pipeline([]) is None
-    assert fit_pipeline([{"Beschreibung": "a", "KontoSoll": "4000"}] * 4) is None
+    # B-57: it now says *why* it cannot train, because "too few rows" and "one
+    # single account" are different problems with different answers.
+    with pytest.raises(TrainingDatenFehlen):
+        fit_pipeline([])
+    with pytest.raises(TrainingDatenFehlen):
+        fit_pipeline([{"Beschreibung": "a", "KontoSoll": "4000"}] * 4)
     rows = [{"Beschreibung": f"Lieferant {i}", "KontoSoll": "4000" if i % 2 else "6500"} for i in range(10)]
     pipeline, n_rows, n_classes, _cv, train_acc = fit_pipeline(rows)
     assert (n_rows, n_classes) == (10, 2)
