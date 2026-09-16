@@ -424,3 +424,96 @@ def test_smtp_config_comes_from_settings(monkeypatch):
     monkeypatch.setattr(settings, "SMTP_PASSWORD", "p")
     assert email_sender.is_email_configured() is True
     assert email_sender._load_smtp_config()["host"] == "smtp.example.ch"
+
+
+# ── B-53: these files land in Excel, so they are written defensively ─────────
+
+
+def _one(**overrides) -> pd.DataFrame:
+    """One booking row as a frame — the shortest way to test a single cell."""
+    return _df(_row(**overrides))
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        ("=SUM(A1:A9)", "'=SUM(A1:A9)"),
+        ("+1+1", "'+1+1"),
+        ("-2+3", "'-2+3"),
+        ("@SUM(1)", "'@SUM(1)"),
+        ("\tcmd", "'\tcmd"),
+        ("Migros Zürich", "Migros Zürich"),
+        ("", ""),
+    ],
+)
+def test_neutralise_quotes_only_what_excel_would_run(value, expected):
+    from app.services.export import neutralise
+
+    assert neutralise(value) == expected
+
+
+def test_neutralise_leaves_numbers_alone():
+    from app.services.export import neutralise
+
+    assert neutralise(-5.0) == -5.0
+    assert neutralise(None) is None
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        ("5.9.2026", "2026-09-05"),
+        ("05.09.2026", "2026-09-05"),
+        ("2026-09-05", "2026-09-05"),
+        ("", ""),
+        ("keine Ahnung", "keine Ahnung"),
+    ],
+)
+def test_iso_date_pads_to_two_digits(value, expected):
+    from app.services.export import iso_date
+
+    assert iso_date(value) == expected
+
+
+def test_banana_tsv_pads_single_digit_dates():
+    df = _one(Datum="5.9.2026")
+    row = df_to_banana_tsv(df).split("\n")[1]
+    assert row.split("\t")[0] == "2026-09-05"
+
+
+def test_banana_tsv_keeps_every_row_on_one_line():
+    """A tab or a newline in a description would shift every column after it."""
+    df = _one(Beschreibung="Zeile1\nZeile2\tSpalte")
+    tsv = df_to_banana_tsv(df)
+    assert len(tsv.split("\n")) == 2
+    assert tsv.split("\n")[1].split("\t")[1] == "Zeile1 Zeile2 Spalte"
+
+
+def test_banana_tsv_neutralises_a_formula_description():
+    df = _one(Beschreibung="=cmd|' /c calc'!A1")
+    assert df_to_banana_tsv(df).split("\n")[1].split("\t")[1].startswith("'=")
+
+
+def test_banana_tsv_blanks_a_non_finite_amount():
+    df = _one(**{"Betrag CHF": float("nan")})
+    assert df_to_banana_tsv(df).split("\n")[1].split("\t")[4] == ""
+    df = _one(**{"Betrag CHF": float("inf")})
+    assert df_to_banana_tsv(df).split("\n")[1].split("\t")[4] == ""
+
+
+def test_csv_neutralises_formula_cells():
+    csv = df_to_csv(_one(Beschreibung="=1+1"))
+    assert "'=1+1" in csv
+
+
+def test_excel_never_writes_a_formula_from_user_text():
+    wb = load_workbook(io.BytesIO(df_to_styled_excel(_one(Beschreibung="=SUM(A1:A9)"))))
+    cell = wb.active.cell(row=2, column=5)
+    assert cell.data_type == "s"
+    assert str(cell.value).startswith("'=")
+
+
+def test_excel_blanks_a_non_finite_amount():
+    wb = load_workbook(io.BytesIO(df_to_styled_excel(_one(**{"Betrag CHF": float("nan")}))))
+    value = wb.active.cell(row=2, column=8).value
+    assert value is None or not isinstance(value, float) or value != value
