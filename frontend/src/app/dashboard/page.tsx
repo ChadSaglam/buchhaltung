@@ -15,6 +15,7 @@ import { useBookingStats, useClassifierInfo } from "@/hooks/useSystemData";
 import { OffenePostenCard } from "./components/OffenePostenCard";
 import { EmailEingangCard } from "./components/EmailEingangCard";
 import { LiquiditaetCard } from "./components/LiquiditaetCard";
+import { DauerbuchungenCard } from "./components/DauerbuchungenCard";
 import { cn } from "@/lib/utils";
 
 const container = {
@@ -111,7 +112,10 @@ export default function DashboardPage() {
 
           <div>
             <h2 className="mb-4 text-base font-semibold text-foreground">Geld und Steuern</h2>
-            <LiquiditaetCard />
+            <div className="space-y-4">
+              <LiquiditaetCard />
+              <DauerbuchungenCard />
+            </div>
           </div>
 
           <div>

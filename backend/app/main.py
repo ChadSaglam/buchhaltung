@@ -79,6 +79,7 @@ from app.routers import (
     bookings,
     classify,
     classify_extra,
+    dauerbuchungen,
     documents,
     email_intake,
     export,
@@ -123,6 +124,7 @@ application.include_router(rechnung.router)
 application.include_router(email_intake.router)
 application.include_router(abschluss.router)
 application.include_router(liquiditaet.router)
+application.include_router(dauerbuchungen.router)
 
 
 app = application

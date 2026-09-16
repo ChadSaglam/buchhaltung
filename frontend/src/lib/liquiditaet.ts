@@ -10,7 +10,7 @@ import { formatCHF } from "@/lib/format";
 
 export type LiquiditaetResponse = Schemas["LiquiditaetResponse"];
 export type LiquiditaetPosition = Schemas["app__schemas__liquiditaet__PositionOut"];
-export type Dauerbuchung = Schemas["DauerbuchungOut"];
+export type Dauerbuchung = Schemas["app__schemas__liquiditaet__DauerbuchungOut"];
 export type Steuer = Schemas["SteuerOut"];
 export type Monat = Schemas["MonatOut"];
 

@@ -23,8 +23,6 @@ Die Ehrlichkeiten (wie in ``jahresabschluss.py``):
 from __future__ import annotations
 
 import logging
-import re
-from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
 
@@ -39,7 +37,7 @@ from app.models.document import (
     Document,
 )
 from app.models.user import User
-from app.services.classifier import preprocess
+from app.services.dauerbuchungen import Dauerbuchung, erkennen, monatsschluessel
 from app.services.documents import parse_date
 from app.services.export import round_chf as _round_chf
 from app.services.offene_posten import DEFAULT_TERMS_DAYS, effective_due_date, today_utc
@@ -81,31 +79,9 @@ GEWINNSTEUER_QUELLE = (
     "Quelle: ESTV, Kantonaler Vergleich der Steuerbelastung 2026."
 )
 
-# Eine Zahlung gilt als monatlich wiederkehrend, wenn sie in so vielen
-# verschiedenen Monaten auftaucht …
-DAUER_MIN_MONATE = 3
-# … und der Betrag um höchstens so viel schwankt (Versicherungsprämien ändern).
-DAUER_TOLERANZ = 0.15
-# So weit wird zurückgeschaut.
-DAUER_FENSTER_MONATE = 12
-
-_ZAHL_RE = re.compile(r"\d")
-
 
 def _liquide(konto: str) -> bool:
     return (konto or "").startswith(LIQUIDE_PRAEFIXE)
-
-
-def _monatsschluessel(d: date) -> str:
-    return f"{d.year:04d}-{d.month:02d}"
-
-
-def _median(values: list[float]) -> float:
-    ordered = sorted(values)
-    mid = len(ordered) // 2
-    if len(ordered) % 2:
-        return ordered[mid]
-    return (ordered[mid - 1] + ordered[mid]) / 2
 
 
 @dataclass
@@ -118,17 +94,6 @@ class Position:
     quelle: str  # debitor | kreditor | dauerbuchung
     document_id: int | None = None
     ueberfaellig: bool = False
-
-
-@dataclass
-class Dauerbuchung:
-    """Ein Betrag, der jeden Monat gleich abgeht — aus den Buchungen erkannt."""
-
-    label: str
-    betrag: float
-    monate: int
-    letzter_monat: str
-    konto: str
 
 
 @dataclass
@@ -230,58 +195,12 @@ class LiquiditaetService:
                 saldo -= betrag
         return chf(saldo)
 
-    # --- Dauerbuchungen ----------------------------------------------------
+    # --- Dauerbuchungen (B-74 owns the detection) ---------------------------
 
     @staticmethod
     def dauerbuchungen(bookings: list[Booking], heute: date) -> list[Dauerbuchung]:
-        """Beträge, die in mindestens ``DAUER_MIN_MONATE`` Monaten gleich abgingen.
-
-        Der Schlüssel ist der normalisierte Text (``preprocess``: ohne Monatsnamen
-        und ohne Ziffern), damit "Miete Januar" und "Miete Februar" dieselbe
-        Zahlung sind. Erkannt wird nur, was Geld *kostet* — eine Einnahme, die
-        jeden Monat kommt, ist ein Kunde und keine Dauerbuchung.
-        """
-        fenster_ab = heute - timedelta(days=31 * DAUER_FENSTER_MONATE)
-        gruppen: dict[str, list[tuple[str, float, str, str]]] = defaultdict(list)
-
-        for b in bookings:
-            betrag = float(b.betrag or 0)
-            if betrag <= 0 or not _liquide(b.kt_haben):
-                continue  # kein Abgang vom Konto
-            d = parse_date(b.datum)
-            if d is None or d < fenster_ab or d > heute:
-                continue
-            key = preprocess(b.beschreibung or "")
-            if len(key) < 3:
-                continue
-            gruppen[key].append((_monatsschluessel(d), betrag, (b.beschreibung or "").strip(), b.kt_soll or ""))
-
-        erkannt: list[Dauerbuchung] = []
-        for eintraege in gruppen.values():
-            monate = {m for m, _b, _t, _k in eintraege}
-            if len(monate) < DAUER_MIN_MONATE:
-                continue
-            betraege = [b for _m, b, _t, _k in eintraege]
-            mitte = _median(betraege)
-            if mitte <= 0:
-                continue
-            # Ein Betrag, der wild schwankt, ist keine Dauerbuchung.
-            if any(abs(b - mitte) / mitte > DAUER_TOLERANZ for b in betraege):
-                continue
-            label = max((t for _m, _b, t, _k in eintraege), key=len)
-            konto = next((k for _m, _b, _t, k in eintraege if k), "")
-            erkannt.append(
-                Dauerbuchung(
-                    label=_ZAHL_RE.sub("", label).strip(" -–—.,") or label,
-                    betrag=chf(mitte),
-                    monate=len(monate),
-                    letzter_monat=max(monate),
-                    konto=konto,
-                )
-            )
-
-        erkannt.sort(key=lambda d: d.betrag, reverse=True)
-        return erkannt
+        """The recurring outgoings — recognised by `services/dauerbuchungen.py` (B-74)."""
+        return erkennen(bookings, heute)
 
     @staticmethod
     def dauer_positionen(dauer: list[Dauerbuchung], heute: date, bis: date) -> list[Position]:
@@ -454,7 +373,7 @@ class LiquiditaetService:
             laufend = chf(laufend + p.betrag)
             if laufend < tiefster:
                 tiefster, tiefster_am = laufend, p.datum
-            key = _monatsschluessel(p.datum)
+            key = monatsschluessel(p.datum)
             monat = pro_monat.get(key)
             if monat is None:
                 monat = Monat(schluessel=key, label=monatslabel(p.datum), eingang=0.0, ausgang=0.0, saldo_ende=laufend)

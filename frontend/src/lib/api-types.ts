@@ -731,6 +731,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/dauerbuchungen/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Dauerbuchungen
+         * @description What goes out every month, and which of it has not gone out yet.
+         */
+        get: operations["dauerbuchungen_api_dauerbuchungen__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/documents/": {
         parameters: {
             query?: never;
@@ -1958,18 +1978,35 @@ export interface components {
              */
             note: string;
         };
-        /** DauerbuchungOut */
-        DauerbuchungOut: {
-            /** Betrag */
-            betrag: number;
-            /** Konto */
-            konto: string;
-            /** Label */
-            label: string;
-            /** Letzter Monat */
-            letzter_monat: string;
-            /** Monate */
-            monate: number;
+        /** DauerbuchungenResponse */
+        DauerbuchungenResponse: {
+            /**
+             * Eintraege
+             * @default []
+             */
+            eintraege: components["schemas"]["app__schemas__dauerbuchungen__DauerbuchungOut"][];
+            /**
+             * Fehlen
+             * @default []
+             */
+            fehlen: components["schemas"]["app__schemas__dauerbuchungen__DauerbuchungOut"][];
+            /** Monat */
+            monat: string;
+            /**
+             * Monatstotal
+             * @default 0
+             */
+            monatstotal: number;
+            /**
+             * Offen Total
+             * @default 0
+             */
+            offen_total: number;
+            /**
+             * Stichtag
+             * Format: date
+             */
+            stichtag: string;
         };
         /** DecisionResponse */
         DecisionResponse: {
@@ -2653,7 +2690,7 @@ export interface components {
              * Dauerbuchungen
              * @default []
              */
-            dauerbuchungen: components["schemas"]["DauerbuchungOut"][];
+            dauerbuchungen: components["schemas"]["app__schemas__liquiditaet__DauerbuchungOut"][];
             /** Eingang */
             eingang: number;
             /**
@@ -3032,7 +3069,10 @@ export interface components {
              * Format: email
              */
             email: string;
-            /** Password */
+            /**
+             * Password
+             * @description Mindestens 12 Zeichen.
+             */
             password: string;
             /**
              * Tenant Name
@@ -3395,6 +3435,48 @@ export interface components {
             umsatz: number | null;
             /** Ziffer */
             ziffer: string;
+        };
+        /** DauerbuchungOut */
+        app__schemas__dauerbuchungen__DauerbuchungOut: {
+            /** Betrag */
+            betrag: number;
+            /** Faellig Am */
+            faellig_am?: string | null;
+            /** Konto */
+            konto: string;
+            /** Label */
+            label: string;
+            /** Letzter Monat */
+            letzter_monat: string;
+            /** Monate */
+            monate: number;
+            /**
+             * Schluessel
+             * @default
+             */
+            schluessel: string;
+            /** Status */
+            status: string;
+            /** Tag */
+            tag: number;
+            /**
+             * Tage Ueberfaellig
+             * @default 0
+             */
+            tage_ueberfaellig: number;
+        };
+        /** DauerbuchungOut */
+        app__schemas__liquiditaet__DauerbuchungOut: {
+            /** Betrag */
+            betrag: number;
+            /** Konto */
+            konto: string;
+            /** Label */
+            label: string;
+            /** Letzter Monat */
+            letzter_monat: string;
+            /** Monate */
+            monate: number;
         };
         /** PositionOut */
         app__schemas__liquiditaet__PositionOut: {
@@ -4759,6 +4841,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dauerbuchungen_api_dauerbuchungen__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DauerbuchungenResponse"];
                 };
             };
         };
