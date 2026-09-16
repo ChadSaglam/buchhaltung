@@ -1,12 +1,26 @@
 """SQLAlchemy model for bookings."""
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Index, Integer, String, text
 
 from app.models.base import Base
 
 
 class Booking(Base):
     __tablename__ = "bookings"
+    # B-52: two concurrent `invoice.paid` deliveries used to create two bookings,
+    # because the check was a SELECT and the race sat between it and the INSERT.
+    # The database decides now; the service turns the IntegrityError into
+    # "duplicate". Partial, so ordinary bookings may repeat a source_key.
+    __table_args__ = (
+        Index(
+            "uq_bookings_billing_source_key",
+            "tenant_id",
+            "source_key",
+            unique=True,
+            postgresql_where=text("source = 'billing'"),
+            sqlite_where=text("source = 'billing'"),
+        ),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)

@@ -9,6 +9,7 @@ from app.models.correction import Correction
 from app.models.document import Document
 from app.models.email_message import EmailMessage
 from app.models.export_batch import ExportBatch
+from app.models.idempotency_key import IdempotencyKey
 from app.models.invoice_position import InvoicePosition
 from app.models.kontenplan import Kontenplan
 from app.models.mail_settings import MailSettings
@@ -35,6 +36,7 @@ __all__ = [
     "Document",
     "EmailMessage",
     "ExportBatch",
+    "IdempotencyKey",
     "InvoicePosition",
     "Kontenplan",
     "MailSettings",
