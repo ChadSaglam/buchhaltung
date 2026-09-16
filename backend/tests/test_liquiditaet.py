@@ -98,10 +98,13 @@ async def test_a_monthly_amount_is_recognised_without_being_typed(db_session, ac
     tenant, user, _headers = actor
     for month in (3, 4, 5):
         await create_booking(
-            db_session, tenant,
+            db_session,
+            tenant,
             datum=_swiss(date(2026, month, 1)),
             beschreibung=f"Miete Büro {month}/2026",
-            kt_soll="6000", kt_haben="1020", betrag=1800.0,
+            kt_soll="6000",
+            kt_haben="1020",
+            betrag=1800.0,
         )
 
     service = LiquiditaetService(db_session, user)
@@ -116,10 +119,13 @@ async def test_two_months_is_not_a_pattern(db_session, actor):
     tenant, user, _headers = actor
     for month in (4, 5):
         await create_booking(
-            db_session, tenant,
+            db_session,
+            tenant,
             datum=_swiss(date(2026, month, 1)),
             beschreibung="Leasing Fahrzeug",
-            kt_soll="6200", kt_haben="1020", betrag=770.6,
+            kt_soll="6200",
+            kt_haben="1020",
+            betrag=770.6,
         )
 
     service = LiquiditaetService(db_session, user)
@@ -131,10 +137,13 @@ async def test_an_amount_that_swings_is_not_a_standing_order(db_session, actor):
     tenant, user, _headers = actor
     for month, betrag in ((3, 120.0), (4, 480.0), (5, 95.0)):
         await create_booking(
-            db_session, tenant,
+            db_session,
+            tenant,
             datum=_swiss(date(2026, month, 7)),
             beschreibung="Einkauf Material",
-            kt_soll="4000", kt_haben="1020", betrag=betrag,
+            kt_soll="4000",
+            kt_haben="1020",
+            betrag=betrag,
         )
 
     service = LiquiditaetService(db_session, user)
@@ -145,10 +154,13 @@ async def test_income_every_month_is_a_customer_not_a_standing_cost(db_session, 
     tenant, user, _headers = actor
     for month in (3, 4, 5):
         await create_booking(
-            db_session, tenant,
+            db_session,
+            tenant,
             datum=_swiss(date(2026, month, 2)),
             beschreibung="Abo Kunde Meier",
-            kt_soll="1020", kt_haben="3000", betrag=500.0,
+            kt_soll="1020",
+            kt_haben="3000",
+            betrag=500.0,
         )
 
     service = LiquiditaetService(db_session, user)
@@ -159,10 +171,13 @@ async def test_a_standing_cost_is_projected_over_the_window(db_session, actor):
     tenant, user, _headers = actor
     for month in (3, 4, 5):
         await create_booking(
-            db_session, tenant,
+            db_session,
+            tenant,
             datum=_swiss(date(2026, month, 1)),
             beschreibung="Versicherung",
-            kt_soll="6300", kt_haben="1020", betrag=200.0,
+            kt_soll="6300",
+            kt_haben="1020",
+            betrag=200.0,
         )
 
     service = LiquiditaetService(db_session, user)
@@ -217,7 +232,9 @@ async def test_an_invoice_due_after_the_window_stays_out(db_session, actor):
 
 async def test_without_a_rate_nothing_is_estimated(db_session, actor):
     tenant, user, _headers = actor
-    await create_booking(db_session, tenant, datum=_swiss(date(2026, 3, 1)), kt_soll="1020", kt_haben="3000", betrag=80_000.0)
+    await create_booking(
+        db_session, tenant, datum=_swiss(date(2026, 3, 1)), kt_soll="1020", kt_haben="3000", betrag=80_000.0
+    )
 
     service = LiquiditaetService(db_session, user)
     steuer = service.steuer(await service._bookings(), HEUTE, None)
@@ -236,8 +253,12 @@ async def test_the_quoted_range_is_the_one_estv_publishes():
 
 async def test_the_provision_is_profit_times_the_rate_the_owner_entered(db_session, actor):
     tenant, user, _headers = actor
-    await create_booking(db_session, tenant, datum=_swiss(date(2026, 2, 1)), kt_soll="1020", kt_haben="3000", betrag=100_000.0)
-    await create_booking(db_session, tenant, datum=_swiss(date(2026, 3, 1)), kt_soll="6500", kt_haben="1020", betrag=40_000.0)
+    await create_booking(
+        db_session, tenant, datum=_swiss(date(2026, 2, 1)), kt_soll="1020", kt_haben="3000", betrag=100_000.0
+    )
+    await create_booking(
+        db_session, tenant, datum=_swiss(date(2026, 3, 1)), kt_soll="6500", kt_haben="1020", betrag=40_000.0
+    )
 
     service = LiquiditaetService(db_session, user)
     steuer = service.steuer(await service._bookings(), HEUTE, 14.43)
@@ -252,8 +273,12 @@ async def test_the_provision_is_profit_times_the_rate_the_owner_entered(db_sessi
 
 async def test_what_is_already_provisioned_is_subtracted(db_session, actor):
     tenant, user, _headers = actor
-    await create_booking(db_session, tenant, datum=_swiss(date(2026, 2, 1)), kt_soll="1020", kt_haben="3000", betrag=100_000.0)
-    await create_booking(db_session, tenant, datum=_swiss(date(2026, 4, 1)), kt_soll="8900", kt_haben="2201", betrag=10_000.0)
+    await create_booking(
+        db_session, tenant, datum=_swiss(date(2026, 2, 1)), kt_soll="1020", kt_haben="3000", betrag=100_000.0
+    )
+    await create_booking(
+        db_session, tenant, datum=_swiss(date(2026, 4, 1)), kt_soll="8900", kt_haben="2201", betrag=10_000.0
+    )
 
     service = LiquiditaetService(db_session, user)
     steuer = service.steuer(await service._bookings(), HEUTE, 14.43)
@@ -266,8 +291,12 @@ async def test_what_is_already_provisioned_is_subtracted(db_session, actor):
 
 async def test_a_loss_owes_nothing(db_session, actor):
     tenant, user, _headers = actor
-    await create_booking(db_session, tenant, datum=_swiss(date(2026, 2, 1)), kt_soll="1020", kt_haben="3000", betrag=10_000.0)
-    await create_booking(db_session, tenant, datum=_swiss(date(2026, 3, 1)), kt_soll="6500", kt_haben="1020", betrag=25_000.0)
+    await create_booking(
+        db_session, tenant, datum=_swiss(date(2026, 2, 1)), kt_soll="1020", kt_haben="3000", betrag=10_000.0
+    )
+    await create_booking(
+        db_session, tenant, datum=_swiss(date(2026, 3, 1)), kt_soll="6500", kt_haben="1020", betrag=25_000.0
+    )
 
     service = LiquiditaetService(db_session, user)
     steuer = service.steuer(await service._bookings(), HEUTE, 14.43)
@@ -277,7 +306,9 @@ async def test_a_loss_owes_nothing(db_session, actor):
 
 async def test_last_years_profit_is_not_this_years_tax(db_session, actor):
     tenant, user, _headers = actor
-    await create_booking(db_session, tenant, datum=_swiss(date(2025, 11, 1)), kt_soll="1020", kt_haben="3000", betrag=90_000.0)
+    await create_booking(
+        db_session, tenant, datum=_swiss(date(2025, 11, 1)), kt_soll="1020", kt_haben="3000", betrag=90_000.0
+    )
 
     service = LiquiditaetService(db_session, user)
     steuer = service.steuer(await service._bookings(), HEUTE, 14.43)
@@ -287,8 +318,12 @@ async def test_last_years_profit_is_not_this_years_tax(db_session, actor):
 
 async def test_an_over_provision_never_reads_as_a_refund(db_session, actor):
     tenant, user, _headers = actor
-    await create_booking(db_session, tenant, datum=_swiss(date(2026, 2, 1)), kt_soll="1020", kt_haben="3000", betrag=10_000.0)
-    await create_booking(db_session, tenant, datum=_swiss(date(2026, 4, 1)), kt_soll="8900", kt_haben="2201", betrag=9_000.0)
+    await create_booking(
+        db_session, tenant, datum=_swiss(date(2026, 2, 1)), kt_soll="1020", kt_haben="3000", betrag=10_000.0
+    )
+    await create_booking(
+        db_session, tenant, datum=_swiss(date(2026, 4, 1)), kt_soll="8900", kt_haben="2201", betrag=9_000.0
+    )
 
     service = LiquiditaetService(db_session, user)
     steuer = service.steuer(await service._bookings(), HEUTE, 14.43)
@@ -300,7 +335,9 @@ async def test_an_over_provision_never_reads_as_a_refund(db_session, actor):
 
 async def test_the_report_adds_the_balance_the_inflows_and_the_outflows(db_session, actor):
     tenant, user, _headers = actor
-    await create_booking(db_session, tenant, datum=_swiss(date(2026, 1, 5)), kt_soll="1020", kt_haben="3000", betrag=20_000.0)
+    await create_booking(
+        db_session, tenant, datum=_swiss(date(2026, 1, 5)), kt_soll="1020", kt_haben="3000", betrag=20_000.0
+    )
     await _document(db_session, tenant, amount=5_000.0, direction=DIRECTION_AUSGANG, due=HEUTE + timedelta(days=10))
     await _document(db_session, tenant, amount=3_000.0, direction=DIRECTION_EINGANG, due=HEUTE + timedelta(days=20))
 
@@ -314,7 +351,9 @@ async def test_the_report_adds_the_balance_the_inflows_and_the_outflows(db_sessi
 
 async def test_the_report_names_the_day_the_money_runs_out(db_session, actor):
     tenant, user, _headers = actor
-    await create_booking(db_session, tenant, datum=_swiss(date(2026, 1, 5)), kt_soll="1020", kt_haben="3000", betrag=1_000.0)
+    await create_booking(
+        db_session, tenant, datum=_swiss(date(2026, 1, 5)), kt_soll="1020", kt_haben="3000", betrag=1_000.0
+    )
     await _document(db_session, tenant, amount=4_000.0, direction=DIRECTION_EINGANG, due=HEUTE + timedelta(days=5))
     await _document(db_session, tenant, amount=9_000.0, direction=DIRECTION_AUSGANG, due=HEUTE + timedelta(days=40))
 
@@ -345,9 +384,13 @@ async def test_an_empty_tenant_gets_zeroes_and_an_explanation(db_session, actor)
 
 async def test_the_months_add_up_to_the_totals(db_session, actor):
     tenant, user, _headers = actor
-    await create_booking(db_session, tenant, datum=_swiss(date(2026, 1, 5)), kt_soll="1020", kt_haben="3000", betrag=10_000.0)
+    await create_booking(
+        db_session, tenant, datum=_swiss(date(2026, 1, 5)), kt_soll="1020", kt_haben="3000", betrag=10_000.0
+    )
     for offset in (5, 40, 75):
-        await _document(db_session, tenant, amount=1_000.0, direction=DIRECTION_AUSGANG, due=HEUTE + timedelta(days=offset))
+        await _document(
+            db_session, tenant, amount=1_000.0, direction=DIRECTION_AUSGANG, due=HEUTE + timedelta(days=offset)
+        )
 
     report = await LiquiditaetService(db_session, user).report(heute=HEUTE)
     assert round(sum(m.eingang for m in report.monate), 2) == report.eingang
@@ -366,9 +409,19 @@ async def test_the_endpoint_answers_with_the_declared_shape(client, db_session, 
     assert response.status_code == 200
     body = response.json()
     assert set(body) == {
-        "stichtag", "bis", "stand_heute", "eingang", "ausgang", "prognose",
-        "tiefster_stand", "tiefster_am", "positionen", "dauerbuchungen",
-        "monate", "warnungen", "steuer",
+        "stichtag",
+        "bis",
+        "stand_heute",
+        "eingang",
+        "ausgang",
+        "prognose",
+        "tiefster_stand",
+        "tiefster_am",
+        "positionen",
+        "dauerbuchungen",
+        "monate",
+        "warnungen",
+        "steuer",
     }
     assert body["steuer"]["satz"] is None
 
@@ -376,7 +429,9 @@ async def test_the_endpoint_answers_with_the_declared_shape(client, db_session, 
 async def test_the_endpoint_uses_the_rate_from_the_company_profile(client, db_session, actor):
     tenant, _user, headers = actor
     db_session.add(CompanyProfile(tenant_id=tenant.id, name="Muster GmbH", gewinnsteuer_satz=14.43))
-    await create_booking(db_session, tenant, datum=_swiss(date.today()), kt_soll="1020", kt_haben="3000", betrag=1_000.0)
+    await create_booking(
+        db_session, tenant, datum=_swiss(date.today()), kt_soll="1020", kt_haben="3000", betrag=1_000.0
+    )
     await db_session.commit()
 
     body = (await client.get("/api/liquiditaet/", headers=headers)).json()

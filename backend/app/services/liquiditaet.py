@@ -175,8 +175,18 @@ class LiquiditaetReport:
 
 
 MONATSNAMEN = (
-    "Januar", "Februar", "März", "April", "Mai", "Juni",
-    "Juli", "August", "September", "Oktober", "November", "Dezember",
+    "Januar",
+    "Februar",
+    "März",
+    "April",
+    "Mai",
+    "Juni",
+    "Juli",
+    "August",
+    "September",
+    "Oktober",
+    "November",
+    "Dezember",
 )
 
 
@@ -298,9 +308,7 @@ class LiquiditaetService:
     # --- Offene Posten -----------------------------------------------------
 
     @staticmethod
-    def dokument_positionen(
-        documents: list[Document], heute: date, bis: date, terms_days: int
-    ) -> list[Position]:
+    def dokument_positionen(documents: list[Document], heute: date, bis: date, terms_days: int) -> list[Position]:
         """Offene Rechnungen als erwarteter Geldfluss.
 
         Was schon überfällig ist, wird auf *heute* gelegt statt in die
