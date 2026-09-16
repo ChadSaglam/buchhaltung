@@ -165,3 +165,56 @@ async def test_the_migration_url_is_documented_because_production_refuses_withou
     """B-24 makes this one load-bearing: an empty value, or one equal to
     DATABASE_URL, stops production from booting at all."""
     assert "MIGRATION_DATABASE_URL" in _documented()
+
+
+# --------------------------------------------------------------------------- #
+# What `docker compose up` actually does — found by finally running one
+# --------------------------------------------------------------------------- #
+
+
+async def test_no_service_demands_a_gpu(compose):
+    """`reservations.devices: [capabilities: [gpu]]` is not a preference. Compose
+    refuses to start on any host without an NVIDIA GPU and the container toolkit
+    — which is every Mac — and it takes the whole `up` down with it, including the
+    services that have nothing to do with it. A GPU belongs in that host's own
+    `docker-compose.override.yml`."""
+    fordernd = []
+    for name, service in compose["services"].items():
+        geraete = (service.get("deploy") or {}).get("resources", {}).get("reservations", {}).get("devices") or []
+        if any("gpu" in (g.get("capabilities") or []) for g in geraete):
+            fordernd.append(name)
+
+    assert fordernd == [], f"these refuse to start without a GPU: {fordernd}"
+
+
+async def test_the_default_up_is_the_five_services_the_product_needs(compose):
+    """Everything else is opt-in. Ollama is gigabytes and optional by design
+    (B-20 put it last on the checklist; B-61 keeps `/api/health` at 200 without
+    it), and the backup writes volumes nobody asked for."""
+    standard = {name for name, s in compose["services"].items() if not s.get("profiles")}
+
+    assert standard == {"web", "api", "worker", "db", "redis"}
+
+
+async def test_the_optional_services_say_which_profile_turns_them_on(compose):
+    for name in ("ollama", "backup"):
+        profile = compose["services"][name].get("profiles")
+        assert profile, f"{name} must be behind a profile"
+        assert all(p.strip() for p in profile), f"{name} has an empty profile name"
+
+
+async def test_the_readme_tells_you_how_to_start_the_optional_ones():
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+
+    assert "--profile ai" in readme
+    assert "--profile backup" in readme
+
+
+async def test_make_check_verifies_the_generated_types():
+    """They went stale between two commits and the push was refused by the hook.
+    The hook and CI both checked; the only thing that did not was the command
+    people actually run before pushing."""
+    makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+    ziel = next(line for line in makefile.splitlines() if line.startswith("check:"))
+
+    assert "api-types-check" in ziel, f"`make check` does not check the API types: {ziel}"

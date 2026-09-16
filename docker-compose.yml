@@ -130,15 +130,28 @@ services:
       timeout: 3s
       retries: 5
 
+  # Opt-in, like `backup` below:
+  #   docker compose --profile ai up -d ollama
+  #
+  # Two reasons it is not in the default `up`, both found the first time anyone
+  # actually ran one:
+  #
+  #   * It demanded a GPU. `reservations.devices: [capabilities: [gpu]]` is not a
+  #     preference — compose refuses to start on any host without an NVIDIA GPU
+  #     and the container toolkit, which is every Mac and most rented servers:
+  #     "failed to discover GPU vendor from CDI: no known GPU vendor found", and
+  #     the whole `up` aborts, including the services that had nothing to do with
+  #     it. Ollama runs on CPU. A GPU reservation is a property of one host, so it
+  #     belongs in that host's `docker-compose.override.yml`, not in the file
+  #     everybody shares.
+  #   * It is optional (B-20, B-61). A Swiss QR bill is decoded exactly with no
+  #     model involved, `/api/health` does not go 503 when Ollama is missing, and
+  #     the image is several gigabytes — a surprise download on a laptop.
   ollama:
     image: ollama/ollama
+    profiles: ["ai"]
     volumes:
       - ollama_models:/root/.ollama
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - capabilities: [gpu]
 
   # Nightly backup (B-25). Opt-in so nobody gets a surprise volume on a laptop:
   #   docker compose --profile backup up -d backup

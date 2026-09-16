@@ -76,15 +76,27 @@ make dev      # backend on :8000, frontend on :3000, migrations applied
 
 Or with Docker — production settings by default (`ENVIRONMENT=production`, no
 `--reload`, non-root, only `web` and `api` published): copy `.env.example` to
-`.env`, set `SECRET_KEY` and `POSTGRES_PASSWORD`, then `docker compose up --build`
-(app on `:3000`, API on `:8000`, OpenAPI docs on `:8000/docs`). Local tweaks go
-in `docker-compose.override.yml` (gitignored).
+`.env`, set `SECRET_KEY`, `POSTGRES_PASSWORD` and `APP_DB_PASSWORD`, then
+`docker compose up --build` (app on `:3000`, API on `:8000`, OpenAPI docs on
+`:8000/docs`). Local tweaks go in `docker-compose.override.yml` (gitignored).
+
+The default `up` starts five services: `web`, `api`, `worker`, `db`, `redis`.
+Two more are opt-in, because neither belongs on a laptop by surprise:
+
+```bash
+docker compose --profile ai up -d ollama       # vision/OCR; several GB, CPU is fine
+docker compose --profile backup up -d backup   # nightly dumps — see docs/BACKUP.md
+```
+
+Ollama needs no GPU. If you have one and want it used, put the reservation in
+your own `docker-compose.override.yml` — it is a property of one host, and in the
+shared file it stops `up` dead on every machine that has no GPU.
 
 ### Every command
 
 ```bash
 make help        # list everything
-make check       # lint · format · typecheck · tests (backend + Playwright e2e)  ← before pushing
+make check       # lint · format · typecheck · api-types · tests (backend + e2e)  ← before pushing
 make fix         # auto-fix formatting and lint
 make api-types   # regenerate frontend types from the FastAPI OpenAPI schema
 make migration m="add xyz"   # new Alembic migration

@@ -38,9 +38,11 @@ production, because there is no production yet._
 
 **Nothing here is the next thing to do.** What is left in this file is smaller than what is left outside it:
 
-1. **Start it once.** `docker compose up` has never succeeded in this project. Every deployment item —
-   B-41, B-24's role split, B-25's backup profile, B-61's probes, B-60's smoke job — is written and none of it
-   has run together. The smoke job in CI will be the first time, and it has never executed either.
+1. **Start it once — and it is one line closer.** The first real `docker compose up` (2026-09-16, on the owner's
+   Mac) built every image, created every container, and then died on `ollama`: an unconditional GPU reservation
+   that compose refuses to honour on a host without one, taking the whole `up` with it. Fixed — Ollama is behind
+   `--profile ai` now and asks for no GPU. **The next `up` is still the first one that has ever reached a running
+   stack**, and the CI smoke job has still never executed.
 2. **Rotate the secrets**, including the Postgres password that was in `scripts/setup.sh` until today and is
    still in the history.
 3. **One real payroll month, by hand**, against the previous provider. Until then the watermark stays and Lohn
@@ -188,6 +190,20 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 - **a11y** ✅ 2026-09-16 — `EmptyState` and `ErrorState` rendered an `h3` inside sections whose heading was an `h2`,
   which axe reported as 14 `moderate heading-order` findings across the app. Both gained an `as` prop defaulting to
   `h2`. The whole suite is back to zero findings, light and dark.
+- **The first `docker compose up`** ✅ 2026-09-16 — it found a bug in ninety seconds, which is the argument for
+  running things rather than reading them. Every image built, every container was created, and then the daemon
+  said *"failed to discover GPU vendor from CDI: no known GPU vendor found"* and the whole `up` aborted.
+  The cause was four lines in the `ollama` service: `reservations.devices: [capabilities: [gpu]]`. That is not a
+  preference — compose refuses to start on any host without an NVIDIA GPU and the container toolkit, which is
+  every Mac and most rented servers, and it takes down the services that had nothing to do with it. Ollama runs
+  perfectly well on CPU. A GPU reservation is a property of *one host*, so it belongs in that host's
+  `docker-compose.override.yml`, not in the file everybody shares.
+  Ollama is also **opt-in now** (`--profile ai`), for the same reason `backup` already was: it is optional by
+  design (B-20 put it last on the checklist, B-61 keeps `/api/health` at 200 without it) and it is several
+  gigabytes of surprise download. The default `up` is the five services the product actually needs.
+  And the push that preceded it was refused by the pre-push hook, correctly: `api-types.ts` had gone stale when
+  B-61 added `/api/health/live`. The hook checked, CI checked — the only thing that did not was `make check`, the
+  command people run *before* pushing. It does now. Both are held by tests.
 - **B-60** ✅ 2026-09-16 — CI now tests what the product runs on. It was the item with evidence behind it, and
   the evidence was four defects in one week that one side could see and the other could not.
   **The backend suite runs on both databases.** SQLite has no fixed-width integers, which is why

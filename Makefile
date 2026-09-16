@@ -118,7 +118,15 @@ fix: dev-deps ## Auto-fix what can be auto-fixed
 typecheck: ## TypeScript strict typecheck
 	cd frontend && npm run typecheck
 
-check: lint typecheck test ## Everything CI runs, locally
+check: lint typecheck api-types-check test ## Everything CI runs, locally
+
+api-types-check: ## Fail if frontend/src/lib/api-types.ts is stale (same check as CI + pre-push)
+	@./scripts/gen-api-types.sh >/dev/null
+	@if [ -n "$$(git status --porcelain -- frontend/src/lib/api-types.ts)" ]; then \
+		echo "frontend/src/lib/api-types.ts is out of date. Run: make api-types"; \
+		git --no-pager diff --stat -- frontend/src/lib/api-types.ts; \
+		exit 1; \
+	fi
 
 api-types: ## Regenerate frontend types from the FastAPI OpenAPI schema
 	./scripts/gen-api-types.sh

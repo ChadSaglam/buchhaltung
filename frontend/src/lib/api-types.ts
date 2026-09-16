@@ -1119,10 +1119,10 @@ export interface paths {
         };
         /**
          * Health
-         * @description Liveness + deployment facts (B-13).
+         * @description Readiness (B-13, B-61). **503 when this instance should not get traffic.**
          *
-         *     Production answers with status and version only; everything else is an
-         *     internal detail that stays inside the perimeter.
+         *     Production still answers with status and version only — everything else is an
+         *     internal detail — but it now *checks*, which it did not before.
          */
         get: operations["health_api_health_get"];
         put?: never;
@@ -1140,8 +1140,38 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Health Detail */
+        /**
+         * Health Detail
+         * @description For a human, not for a probe (B-61).
+         *
+         *     It names the upstream and the exception class, which is exactly what makes it
+         *     useful and exactly why it is behind an admin login in production.
+         */
         get: operations["health_detail_api_health_detail_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/health/live": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Live
+         * @description Liveness (B-61). The process answered, therefore it is alive.
+         *
+         *     Deliberately does nothing else. Kubernetes restarts a container whose liveness
+         *     probe fails; if that probe asked the database, one database restart would take
+         *     down every instance at the same moment.
+         */
+        get: operations["live_api_health_live_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6597,6 +6627,28 @@ export interface operations {
                 content: {
                     "application/json": {
                         [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    live_api_health_live_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
                     };
                 };
             };
