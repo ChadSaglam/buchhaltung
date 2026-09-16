@@ -105,7 +105,32 @@ test("dialogs trap focus, close on Escape and restore focus", async ({ page }) =
   await expect(opener).toBeFocused();
 });
 
-const ROUTES = ["/dashboard", "/dashboard/scanner", "/dashboard/modell", "/dashboard/settings", "/dashboard/rechnungen", "/dashboard/abgleich", "/dashboard/abschluss"];
+/**
+ * Every page a signed-in user can reach. The five added on 2026-09-16 were the
+ * loose thread from B-58: `rechnungen/neu`, `firma` and `email` shipped with
+ * B-68/B-69 and were never audited, and Heute grew the Liquidität card (B-71).
+ * `insights`, `review`, `lernverlauf`, `kontenplan` and `audit` are in for the
+ * same reason — the IA moved them under a surface or under "Mehr", and a page
+ * nobody audits is a page that quietly regresses.
+ */
+const ROUTES = [
+  "/dashboard",
+  "/dashboard/rechnungen",
+  "/dashboard/rechnungen/neu",
+  "/dashboard/rechnungen/firma",
+  "/dashboard/rechnungen/email",
+  "/dashboard/scanner",
+  "/dashboard/kontoauszug",
+  "/dashboard/abgleich",
+  "/dashboard/insights",
+  "/dashboard/abschluss",
+  "/dashboard/review",
+  "/dashboard/kontenplan",
+  "/dashboard/modell",
+  "/dashboard/lernverlauf",
+  "/dashboard/audit",
+  "/dashboard/settings",
+];
 
 for (const theme of ["light", "dark"] as const) {
   for (const route of ROUTES) {
