@@ -92,9 +92,7 @@ async def verify_rls_role() -> None:
     try:
         async with engine.connect() as conn:
             row = (
-                await conn.execute(
-                    _text("SELECT rolsuper, rolbypassrls FROM pg_roles WHERE rolname = current_user")
-                )
+                await conn.execute(_text("SELECT rolsuper, rolbypassrls FROM pg_roles WHERE rolname = current_user"))
             ).first()
     except Exception as exc:  # a database that is not up yet is not this check's problem
         log.warning("[rls] could not verify the connected role: %s", exc)
