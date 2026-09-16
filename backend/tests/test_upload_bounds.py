@@ -270,3 +270,24 @@ async def test_a_full_tenant_is_refused_at_the_upload_endpoint(client, db_sessio
         files={"file": ("statement.pdf", b"%PDF-1.4 tiny", "application/pdf")},
     )
     assert response.status_code == 413
+
+
+async def test_the_storage_ledger_holds_more_than_two_gigabytes(db_session):
+    """`quantity` counts bytes, and int32 stops at 2.1 GB.
+
+    This passed on SQLite for a day because SQLite integers have no width. On
+    Postgres it raised `value out of int32 range` — from a *quota* value, but a
+    single large upload would have done the same in production.
+    """
+    from sqlalchemy import select
+
+    from app.models.usage_event import UsageEvent
+    from tests.factories import create_tenant
+
+    tenant = await create_tenant(db_session, name="Viel Speicher AG")
+    grosse_zahl = 50 * 1024**3  # 50 GB, comfortably past int32
+    db_session.add(UsageEvent(tenant_id=tenant.id, event_type="storage_bytes", quantity=grosse_zahl))
+    await db_session.flush()
+
+    stored = await db_session.scalar(select(UsageEvent.quantity).where(UsageEvent.tenant_id == tenant.id))
+    assert stored == grosse_zahl
