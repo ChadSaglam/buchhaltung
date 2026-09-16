@@ -36,8 +36,8 @@ _The 2026-09-16 night run cleared items 2 (B-71), 3 (step 5), 4 and 5 of the pre
 1. **B-72 Lohn light** — payroll. **Deliberately not built unattended** (2026-09-16): the rates change every year,
    a wrong AHV deduction is the customer's liability, and the roadmap itself says "validated against a real
    Treuhänder run". `docs/B-72-LOHN-SPEC.md` has the sourced groundwork; the decision is yours.
-2. **B-79** Send our own invoice by e-mail — unblocked since B-77 exists. Draft with subject and body, the PDF as
-   the attachment. The smallest remaining piece of the "no Treuhänder needed" loop.
+2. **B-79** Send our own invoice by e-mail. The attachment now exists (`rechnung.pdf`, 2026-09-16), so what is
+   left is the draft, the recipient and a `sent_at`. The smallest remaining piece of the "no Treuhänder" loop.
 3. **Finish the IA migration** — step 5 landed (sidebar = four surfaces + Mehr, old routes still resolve). Left:
    move the page files under `app/dashboard/{belege,bank}/`, and turn the Heute cards into inbox *rows*
    (steps 1–4 of `docs/IA-2026-09-14.md`). Pure refactor, do it in one sitting with the app open.
@@ -71,10 +71,13 @@ _2026-09-14: the previous NEXT block (B-49, B-44, B-46, B-14, B-16, B-15, B-34) 
 ### "Kein Treuhänder nötig" — the product track (owner, 2026-09-14; order = impact)
 Target: the Treuhänder signs once a year, nothing in between. Each item is a *flow* inside one of the four surfaces
 (`docs/IA-2026-09-14.md`: Heute · Belege · Bank · Abschluss), not its own page.
-- [ ] **B-79** Send the invoice by e-mail (*Rechnungen › Rechnung schreiben*): send our own QR invoice to the
-      customer instead of printing it — draft with subject and body, the attachment is the PDF from **B-77**, sent
-      through the existing `services/email_sender.py`. The invoice then shows when it went out, and the Mahnung
-      (B-65) builds on that. **B-77 is done** — the invoice only has to go through `pdf_render.py`. — `M` / `M`
+- [ ] **B-79** Send the invoice by e-mail (*Belege › Rechnung schreiben*): send our own QR invoice to the customer
+      instead of printing it — draft with subject and body, sent through the existing `services/email_sender.py`.
+      The invoice then shows when it went out, and the Mahnung (B-65) builds on that.
+      **The attachment exists since 2026-09-16**: `GET /api/rechnungen/{id}/rechnung.pdf` renders the letter and a
+      SIX-conform Zahlteil, and the test decodes the QR out of the finished PDF to prove a scanner can read it.
+      What is left is the sending: a draft endpoint, the recipient (there is no customer master yet — take it from
+      the invoice), and a `sent_at` on the document. — `M` / `S`
 - [ ] **B-74** Dauerbuchungen (*Bank*): the amounts B-63 already recognises monthly (Miete, Leasing, Versicherung) become
       expected lines — "Cembra 770.60 fehlt diesen Monat" on *Heute*, and the Abgleich proposes them with 1.0 when the
       amount+date fit even without a document. Feeds B-71 liquidity. — `M` / `S`
@@ -153,6 +156,14 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 
 ## ✅ Done
 
+- **Rechnung als PDF** ✅ 2026-09-16 — `GET /api/rechnungen/{id}/rechnung.pdf`: the letter plus a Zahlteil built to
+  the SIX template (105 mm, 62 mm receipt, 46 mm QR, 5 mm quiet zone), so B-79 has something to attach.
+  `rechnung.html` stays the browser preview. The QR is drawn as **vector rectangles** (horizontal runs merged),
+  never rasterised; `swiss_qr.qr_matrix()`/`cross_geometry()` are now shared with the SVG renderer. The test that
+  matters renders the finished PDF at 6x and decodes the QR back to the exact 31-line payload — it skips unless
+  `zxing-cpp` is installed, and adding that to `requirements-dev.txt` makes it a real CI check. 11 tests.
+  `pdf_render` gains `Meta.page_numbers` (off here — a page number would land inside the template) and
+  `Meta.company_address`.
 - **IA step 5** ✅ 2026-09-16 — sidebar collapsed from nine entries to the four surfaces of
   `docs/IA-2026-09-14.md` (Heute · Belege · Bank · Abschluss) plus a "Mehr" group. Every former menu entry is a
   tab of its surface (`SurfaceTabs`), `lib/navigation.ts` is the registry the sidebar, the mobile bar, the tab row,
