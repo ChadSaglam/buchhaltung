@@ -7,9 +7,11 @@ from app.models.classifier_model import ClassifierModel
 from app.models.company_profile import CompanyProfile
 from app.models.correction import Correction
 from app.models.document import Document
+from app.models.email_message import EmailMessage
 from app.models.export_batch import ExportBatch
 from app.models.invoice_position import InvoicePosition
 from app.models.kontenplan import Kontenplan
+from app.models.mail_settings import MailSettings
 from app.models.match import Match
 from app.models.memory import Memory
 from app.models.review_queue import ReviewQueueItem
@@ -31,9 +33,11 @@ __all__ = [
     "CompanyProfile",
     "Correction",
     "Document",
+    "EmailMessage",
     "ExportBatch",
     "InvoicePosition",
     "Kontenplan",
+    "MailSettings",
     "Match",
     "Memory",
     "ReviewQueueItem",

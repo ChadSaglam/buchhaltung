@@ -69,6 +69,24 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     FROM_EMAIL: str = ""
 
+    # --- E-Mail-Eingang (B-69) -------------------------------------------
+    # One mailbox for the whole deployment; the tenant is the "+slug" in the
+    # address: belege+muster-gmbh@<domain>. Empty domain = intake is off.
+    EMAIL_INTAKE_DOMAIN: str = ""
+    EMAIL_INTAKE_LOCALPART: str = "belege"
+    # Transport 1 — polling a mailbox over IMAP (works with any provider).
+    IMAP_HOST: str = ""
+    IMAP_PORT: int = 993
+    IMAP_USER: str = ""
+    IMAP_PASSWORD: str = ""
+    IMAP_FOLDER: str = "INBOX"
+    IMAP_BATCH: int = 20
+    # How often the worker looks into the mailbox (seconds).
+    EMAIL_POLL_INTERVAL: float = 300.0
+    # Transport 2 — an inbound webhook (Postmark/Mailgun style), guarded by a
+    # shared secret in the X-Mail-Secret header. Empty = the route is closed.
+    EMAIL_INBOUND_SECRET: str = ""
+
     # --- AI / Ollama -----------------------------------------------------
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     # Preferred text/chat model for the AI assistant. Leave empty to auto-detect

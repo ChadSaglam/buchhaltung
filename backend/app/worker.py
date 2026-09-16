@@ -26,12 +26,14 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.config import settings
 from app.core.logging_config import configure_logging
+from app.services.email_intake import imap_configured, poll_mailbox
 from app.services.scheduler import CronScheduler
 from app.services.training_worker import TrainingWorker
 
 logger = logging.getLogger(__name__)
 
 TRAINING_TASK = "training-jobs"
+MAIL_TASK = "email-intake"
 
 
 class BackgroundJobs:
@@ -46,6 +48,14 @@ class BackgroundJobs:
         self.training = TrainingWorker(session_factory)
         self.scheduler = CronScheduler()
         self.scheduler.register(TRAINING_TASK, interval, self.training.run_once)
+        # B-69: only when a mailbox is configured — otherwise the job would log a
+        # failure every five minutes on every deployment that does not use it.
+        if imap_configured():
+            self.scheduler.register(
+                MAIL_TASK,
+                timedelta(seconds=settings.EMAIL_POLL_INTERVAL),
+                lambda: poll_mailbox(session_factory),
+            )
 
     @property
     def task_names(self) -> list[str]:

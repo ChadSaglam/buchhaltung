@@ -75,6 +75,7 @@ from app.routers import (
     classify,
     classify_extra,
     documents,
+    email_intake,
     export,
     export_batch,
     health,
@@ -113,6 +114,7 @@ application.include_router(documents.router)
 application.include_router(abgleich.router)
 application.include_router(offene_posten.router)
 application.include_router(rechnung.router)
+application.include_router(email_intake.router)
 application.include_router(abschluss.router)
 
 
