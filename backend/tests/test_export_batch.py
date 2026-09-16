@@ -116,7 +116,7 @@ def test_cover_sheet_names_company_total_and_accounts():
     sheet = render_cover_sheet(batch, rows, company="Muster GmbH")
     assert "Muster GmbH" in sheet
     assert "01.04.2026 – 30.04.2026" in sheet
-    assert "1’234.50" in sheet
+    assert "1'234.50" in sheet
     assert "4000" in sheet and "6000" in sheet
     assert "abc123" in sheet
     assert "Notiz: April" in sheet

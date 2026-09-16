@@ -137,7 +137,7 @@ def test_stage_one_is_friendly_and_names_the_deadline():
     frist = (TODAY + timedelta(days=MAHNUNG_FRIST_DAYS)).strftime("%d.%m.%Y")
     assert "Guten Tag Kunde AG" in text
     assert "R-2026-001" in text
-    assert "1’000.00" in text
+    assert "1'000.00" in text
     assert frist in text
     assert "Betreibung" not in text
     assert text.endswith("Muster GmbH\n")

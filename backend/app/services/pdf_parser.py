@@ -15,7 +15,12 @@ def _parse_swiss_number(text: str) -> float | None:
     text = text.strip()
     if not text:
         return None
-    text = text.replace("\u2019", "").replace(",", "").replace(" ", "")
+    # Both apostrophes: statements in the wild use the typographic U+2019, and
+    # anything this product printed itself uses the plain U+0027 (fpdf2's core
+    # fonts are latin-1). Reading back our own PDF used to fail on that alone.
+    # U+00A0 and U+202F are the no-break spaces Swiss statements group with.
+    for mark in ("\u2019", "'", "\u00b4", ",", " ", "\u00a0", "\u202f"):
+        text = text.replace(mark, "")
     try:
         return float(text)
     except ValueError:

@@ -281,7 +281,7 @@ async def test_text_sheet_reads_like_the_form(db_session, actor):
     sheet = render_text(await MwstService(db_session, user).report(Q2))
     assert "MWST-Abrechnung 2026-Q2" in sheet
     assert "Steuerbarer Gesamtumsatz" in sheet
-    assert "10’810.00" in sheet
+    assert "10'810.00" in sheet
     assert "Entwurf aus den Buchungen" in sheet
 
 

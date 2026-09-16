@@ -45,6 +45,15 @@ def round_chf(val) -> Decimal:
     return dec if dec != 0 else _CENT * 0
 
 
+#: U+0027, the plain apostrophe — what the docstring below always promised, what
+#: the frontend's `formatAmount` prints, and what every PDF already shows
+#: (fpdf2's core fonts are latin-1, so `pdf_render.latin1()` was silently
+#: rewriting U+2019 to this on the way out). Until 2026-09-16 this function
+#: emitted U+2019, so the same amount read `1'234.50` on a PDF and `1’234.50` in
+#: the HTML preview, the e-mail and the CSV beside it.
+THOUSANDS = "'"
+
+
 def fmt_swiss(val) -> str:
     """Format a number in Swiss style: 1'234.56"""
     if val is None or val == "" or (isinstance(val, float) and pd.isna(val)):
@@ -55,7 +64,7 @@ def fmt_swiss(val) -> str:
         num = abs(num)
     integer_part = int(num)
     decimal_part = str(num - integer_part)[1:]  # ".56"
-    int_str = f"{integer_part:,}".replace(",", "\u2019")
+    int_str = f"{integer_part:,}".replace(",", THOUSANDS)
     result = f"{int_str}{decimal_part}"
     if negative:
         result = f"-{result}"

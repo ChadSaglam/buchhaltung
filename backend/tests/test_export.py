@@ -64,9 +64,9 @@ def _row(**overrides) -> dict:
     [
         (0, "0.00"),
         (12.5, "12.50"),
-        (1234.56, "1’234.56"),
-        (1234567.89, "1’234’567.89"),
-        (-1234.56, "-1’234.56"),
+        (1234.56, "1'234.56"),
+        (1234567.89, "1'234'567.89"),
+        (-1234.56, "-1'234.56"),
         (-0.5, "-0.50"),
         ("99.9", "99.90"),
         (100, "100.00"),
@@ -87,9 +87,9 @@ def test_fmt_swiss_blank_for_missing(value):
 @pytest.mark.parametrize(
     ("value", "expected"),
     [
-        (1234.999, "1’235.00"),  # carry into the integer part
-        (999.995, "1’000.00"),  # carry across a thousands boundary
-        (1_000_000.995, "1’000’001.00"),  # large amount, carry
+        (1234.999, "1'235.00"),  # carry into the integer part
+        (999.995, "1'000.00"),  # carry across a thousands boundary
+        (1_000_000.995, "1'000'001.00"),  # large amount, carry
         (0.005, "0.01"),  # half-up on a 3-decimal input
         (0.125, "0.13"),  # exact binary half: must not be half-even
         (2.675, "2.68"),  # classic float trap
@@ -517,3 +517,55 @@ def test_excel_blanks_a_non_finite_amount():
     wb = load_workbook(io.BytesIO(df_to_styled_excel(_one(**{"Betrag CHF": float("nan")}))))
     value = wb.active.cell(row=2, column=8).value
     assert value is None or not isinstance(value, float) or value != value
+
+
+# --- the separator the whole product agrees on (2026-09-16) ----------------
+
+
+def test_the_thousands_mark_is_the_plain_apostrophe():
+    """U+0027, not U+2019.
+
+    `fmt_swiss` emitted the typographic apostrophe until 2026-09-16 while its own
+    docstring, the frontend's `formatAmount` and every PDF used the plain one —
+    fpdf2's core fonts are latin-1, so `pdf_render.latin1()` was quietly
+    rewriting it on the way out. The same amount therefore read `1'234.50` on the
+    invoice PDF and `1’234.50` in the e-mail attached to it.
+    """
+    from app.services.export import THOUSANDS, fmt_swiss
+
+    assert THOUSANDS == "'"
+    formatted = fmt_swiss(1_234_567.89)
+    assert formatted == "1'234'567.89"
+    assert "’" not in formatted
+
+
+def test_the_pdf_renderer_no_longer_has_to_rewrite_it():
+    """What `fmt_swiss` produces must survive latin-1 untouched.
+
+    If this ever fails, a PDF and the page beside it are disagreeing again.
+    """
+    from app.services.export import fmt_swiss
+    from app.services.pdf_render import latin1
+
+    amount = fmt_swiss(1_234_567.89)
+    assert latin1(amount) == amount
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "1’234.56",  # typographic — what a bank statement prints
+        "1'234.56",  # plain — what this product prints
+        "1´234.56",  # acute accent, seen in the wild
+        "1 234.56",  # plain space
+        "1 234.56",  # no-break space
+        "1 234.56",  # narrow no-break space
+        "1,234.56",  # comma, from an anglophone export
+        "1234.56",
+    ],
+)
+def test_every_thousands_mark_a_statement_might_use_parses(text: str):
+    """Reading back this product's *own* PDF used to fail on the apostrophe."""
+    from app.services.pdf_parser import _parse_swiss_number
+
+    assert _parse_swiss_number(text) == 1234.56
