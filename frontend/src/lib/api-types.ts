@@ -1357,6 +1357,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/lohn/settings/freigabe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Freigabe
+         * @description Sign off the setup, which is what removes the watermark from the payslips.
+         *
+         *     Its own endpoint rather than a field on the rate form: this says a person
+         *     compared one real month against the previous payroll, and that must not be
+         *     possible to assert by accident while editing a percentage.
+         */
+        post: operations["freigabe_api_lohn_settings_freigabe_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/lohn/vorschau": {
         parameters: {
             query?: never;
@@ -2752,6 +2776,18 @@ export interface components {
             /** Zahlungsfrist Tage */
             zahlungsfrist_tage?: number | null;
         };
+        /**
+         * FreigabeRequest
+         * @description Sign off the setup, or take the sign-off back.
+         *
+         *     A separate endpoint from the rates on purpose: this is a statement that a
+         *     person compared one real month against the previous payroll, and it must not
+         *     be possible to make it by accident while editing a percentage.
+         */
+        FreigabeRequest: {
+            /** Freigegeben */
+            freigegeben: boolean;
+        };
         /** GruppeOut */
         GruppeOut: {
             /** Key */
@@ -2989,6 +3025,13 @@ export interface components {
              * @default []
              */
             fehlt: string[];
+            /**
+             * Freigegeben
+             * @default false
+             */
+            freigegeben: boolean;
+            /** Freigegeben Am */
+            freigegeben_am?: string | null;
             /** Konto Bank */
             konto_bank: string;
             /** Konto Lohnaufwand */
@@ -3001,6 +3044,11 @@ export interface components {
             ktg_satz_ag?: number | null;
             /** Ktg Satz An */
             ktg_satz_an?: number | null;
+            /**
+             * Quelle
+             * @default
+             */
+            quelle: string;
             /** Uvg Bu Satz */
             uvg_bu_satz?: number | null;
             /** Uvg Nbu Satz */
@@ -3011,6 +3059,11 @@ export interface components {
             uvgz_satz_an?: number | null;
             /** Verwaltungskosten Satz */
             verwaltungskosten_satz?: number | null;
+            /**
+             * Wasserzeichen
+             * @default
+             */
+            wasserzeichen: string;
         };
         /** LohnSettingsUpdate */
         LohnSettingsUpdate: {
@@ -6692,6 +6745,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["LohnSettingsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LohnSettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    freigabe_api_lohn_settings_freigabe_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FreigabeRequest"];
             };
         };
         responses: {

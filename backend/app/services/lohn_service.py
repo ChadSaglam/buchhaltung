@@ -127,6 +127,14 @@ class LohnService:
             await self.db.flush()
         return found
 
+    async def freigeben(self, freigegeben: bool) -> LohnSettings:
+        """Record (or withdraw) the sign-off that clears the watermark."""
+        current = await self.settings()
+        current.freigegeben = freigegeben
+        current.freigegeben_am = datetime.now(UTC) if freigegeben else None
+        await self.db.flush()
+        return current
+
     async def update_settings(self, data: dict) -> LohnSettings:
         current = await self.settings()
         for key, value in data.items():

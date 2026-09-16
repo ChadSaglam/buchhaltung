@@ -22,7 +22,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, ForeignKey, String, UniqueConstraint, func
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
@@ -33,6 +33,17 @@ from app.models.types import Chf
 AHV_SATZ_AN = 5.3  # AHV + IV + EO, Arbeitnehmeranteil
 ALV_SATZ_AN = 1.1  # Arbeitslosenversicherung, Arbeitnehmeranteil
 ALV_JAHRESGRENZE = 148_200.0  # UVG-Höchstlohn; above it no ALV is owed
+
+#: Shown next to the federal rates, the way B-70 and B-71 show theirs. A rate
+#: without a source and a date is a number somebody eventually believes; these
+#: two change by law and the review date is the point of the sentence.
+_ALV_GRENZE_TEXT = f"{ALV_JAHRESGRENZE:,.0f}".replace(",", "'")
+LOHN_QUELLE = (
+    "AHV/IV/EO 10.6 % (5.3 % je Seite, ohne Höchstlohn) und ALV 2.2 % "
+    f"(1.1 % je Seite bis CHF {_ALV_GRENZE_TEXT}) — gesetzlich, für alle Arbeitgeber gleich. "
+    "Quellen: AHV/IV Merkblatt 2.01 und 2.08. Stand geprüft: September 2026; "
+    "die Ansätze werden jeweils im Januar neu festgelegt."
+)
 
 # KMU Kontenrahmen (services/tenant_setup.py).
 KONTO_LOHNAUFWAND = "5000"
@@ -69,6 +80,13 @@ class LohnSettings(Base):
     konto_sozialversicherung: Mapped[str] = mapped_column(String(20), default=KONTO_SOZIALVERSICHERUNG)
     konto_verbindlichkeit: Mapped[str] = mapped_column(String(20), default=KONTO_VERBINDLICHKEIT)
     konto_bank: Mapped[str] = mapped_column(String(20), default=KONTO_BANK)
+
+    # Rule 5 of docs/B-72-LOHN-SPEC.md: until one real month has been checked
+    # against what the customer's previous payroll produced, every payslip is
+    # printed with a "Nicht für die Einreichung" watermark. False by default —
+    # the sign-off is a human act, and nothing in this app can perform it.
+    freigegeben: Mapped[bool] = mapped_column(Boolean, default=False)
+    freigegeben_am: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(

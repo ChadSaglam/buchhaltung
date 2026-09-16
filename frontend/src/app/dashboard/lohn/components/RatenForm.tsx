@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { Check, Save } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { SettingsField, SettingsInput } from "../../settings/components/SettingsPrimitives";
-import { FREIWILLIGE_SAETZE, PFLICHTSAETZE, satzWert, type LohnSettings } from "@/lib/lohn";
+import { SettingsField, SettingsInput, SettingsToggle } from "../../settings/components/SettingsPrimitives";
+import { FREIWILLIGE_SAETZE, PFLICHTSAETZE, freigabeSatz, satzWert, type LohnSettings } from "@/lib/lohn";
 
 const ALLE = [...PFLICHTSAETZE.map((s) => s.feld), ...FREIWILLIGE_SAETZE.map((s) => s.feld)] as const;
 type Feld = (typeof ALLE)[number];
@@ -19,9 +19,11 @@ type Feld = (typeof ALLE)[number];
 export function RatenForm({
   settings,
   onSave,
+  onFreigeben,
 }: {
   settings: LohnSettings | undefined;
   onSave: (werte: Record<string, number | null>) => Promise<void>;
+  onFreigeben: (wert: boolean) => Promise<void>;
 }) {
   const [entwurf, setEntwurf] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -71,6 +73,12 @@ export function RatenForm({
         </Button>
       </div>
 
+      {settings?.quelle && (
+        <p className="mb-2 rounded-lg border border-border bg-surface p-3 text-xs leading-snug text-muted-foreground">
+          {settings.quelle}
+        </p>
+      )}
+
       {PFLICHTSAETZE.map((satz) => (
         <SettingsField key={satz.feld} label={`${satz.label} (%)`} description={satz.hinweis}>
           <SettingsInput
@@ -96,6 +104,19 @@ export function RatenForm({
           />
         </SettingsField>
       ))}
+
+      <h3 className="mt-6 text-sm font-medium text-foreground">Freigabe</h3>
+      <p className="mb-1 text-xs text-muted-foreground">{freigabeSatz(settings)}</p>
+      <SettingsField
+        label="Einrichtung geprüft"
+        description="Erst setzen, wenn ein echter Monat mit der bisherigen Lohnbuchhaltung verglichen wurde und der Nettolohn auf den Rappen stimmt."
+      >
+        <SettingsToggle
+          label="Abrechnungen ohne Wasserzeichen drucken"
+          checked={Boolean(settings?.freigegeben)}
+          onChange={(v) => onFreigeben(v)}
+        />
+      </SettingsField>
     </section>
   );
 }

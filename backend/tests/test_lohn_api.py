@@ -297,3 +297,77 @@ async def test_a_year_without_payslips_still_prints(client, actor):
 
 async def test_payroll_needs_a_token(client):
     assert (await client.get("/api/lohn/settings")).status_code in (401, 403)
+
+
+# --- Freigabe und Wasserzeichen -------------------------------------------
+
+
+async def test_a_new_tenant_is_not_signed_off(client, actor):
+    _t, _u, headers = actor
+    res = await client.get("/api/lohn/settings", headers=headers)
+    body = res.json()
+    assert body["freigegeben"] is False
+    assert body["wasserzeichen"] == "Nicht für die Einreichung"
+
+
+async def test_the_settings_say_where_the_federal_rates_come_from(client, actor):
+    _t, _u, headers = actor
+    quelle = (await client.get("/api/lohn/settings", headers=headers)).json()["quelle"]
+    # Rule 3 of docs/B-72-LOHN-SPEC.md: a rate without a source and a date is a
+    # number somebody eventually believes.
+    assert "Merkblatt 2.01" in quelle
+    assert "September 2026" in quelle
+
+
+async def test_signing_off_clears_the_watermark(client, actor):
+    _t, _u, headers = actor
+    res = await client.post("/api/lohn/settings/freigabe", json={"freigegeben": True}, headers=headers)
+    assert res.status_code == 200
+    assert res.json()["wasserzeichen"] == ""
+    assert res.json()["freigegeben_am"] is not None
+
+
+async def test_the_sign_off_can_be_taken_back(client, actor):
+    _t, _u, headers = actor
+    await client.post("/api/lohn/settings/freigabe", json={"freigegeben": True}, headers=headers)
+    res = await client.post("/api/lohn/settings/freigabe", json={"freigegeben": False}, headers=headers)
+    assert res.json()["freigegeben"] is False
+    assert res.json()["freigegeben_am"] is None
+
+
+async def test_editing_a_rate_does_not_sign_anything_off(client, actor):
+    _t, _u, headers = actor
+    res = await client.put("/api/lohn/settings", json=VOLLSTAENDIG, headers=headers)
+    assert res.json()["freigegeben"] is False
+
+
+async def test_a_viewer_cannot_sign_off(client, actor, db_session):
+    tenant, _u, _headers = actor
+    viewer = await create_user(db_session, tenant, role="viewer")
+    res = await client.post("/api/lohn/settings/freigabe", json={"freigegeben": True}, headers=auth_headers(viewer))
+    assert res.status_code == 403
+
+
+async def test_the_sign_off_is_written_to_the_audit_log(client, actor):
+    _t, _u, headers = actor
+    await client.post("/api/lohn/settings/freigabe", json={"freigegeben": True}, headers=headers)
+    res = await client.get("/api/audit/", headers=headers)
+    assert any(e["action"] == "lohn.freigabe" for e in res.json()["items"])
+
+
+async def test_an_unreleased_payslip_carries_the_watermark(client, actor):
+    _t, _u, headers = actor
+    mid = await _setup(client, headers)
+    issued = await client.post(
+        "/api/lohn/abrechnen", json={"mitarbeiter_id": mid, "jahr": 2026, "monat": 3}, headers=headers
+    )
+    abrechnung_id = issued.json()["abrechnung"]["abrechnung_id"]
+    ohne = await client.get(f"/api/lohn/abrechnungen/{abrechnung_id}/lohnabrechnung.pdf", headers=headers)
+
+    await client.post("/api/lohn/settings/freigabe", json={"freigegeben": True}, headers=headers)
+    mit = await client.get(f"/api/lohn/abrechnungen/{abrechnung_id}/lohnabrechnung.pdf", headers=headers)
+
+    # Both are valid PDFs; the watermarked one is the larger, because the text
+    # and its rotation are extra content on every page.
+    assert ohne.content.startswith(b"%PDF-") and mit.content.startswith(b"%PDF-")
+    assert len(ohne.content) > len(mit.content)

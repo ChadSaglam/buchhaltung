@@ -84,6 +84,10 @@ class Meta:
     #: Off for documents whose bottom belongs to something else — the Swiss
     #: QR-bill payment part is a fixed template and nothing may sit in it.
     page_numbers: bool = True
+    #: Drawn diagonally across every page, behind the content. For a document
+    #: that is correct but not yet cleared to leave the building — see B-72's
+    #: "Nicht für die Einreichung". Empty (the default) draws nothing.
+    watermark: str = ""
 
 
 def _fpdf_class():
@@ -92,10 +96,23 @@ def _fpdf_class():
     class _Doc(FPDF):
         """FPDF mit fester Fusszeile — so steht sie auf *jeder* Seite, auch auf Seite 3."""
 
-        def __init__(self, footer_text: str = "", page_numbers: bool = True) -> None:
+        def __init__(self, footer_text: str = "", page_numbers: bool = True, watermark: str = "") -> None:
             super().__init__(orientation="P", unit="mm", format="A4")
             self.footer_text = footer_text
             self.page_numbers = page_numbers
+            self.watermark = watermark
+
+        def header(self) -> None:
+            """The watermark, drawn first so the content sits on top of it."""
+            if not self.watermark:
+                return
+            with self.rotation(45, self.w / 2, self.h / 2):
+                self.set_font("Helvetica", "B", 44)
+                self.set_text_color(228, 228, 228)
+                self.set_xy(0, self.h / 2 - 10)
+                self.cell(self.w, 20, latin1(self.watermark), align="C")
+            self.set_text_color(0, 0, 0)
+            self.set_xy(self.l_margin, self.t_margin)
 
         def footer(self) -> None:
             if not self.page_numbers and not self.footer_text:
@@ -111,8 +128,8 @@ def _fpdf_class():
     return _Doc
 
 
-def _Fpdf(footer_text: str = "", page_numbers: bool = True):
-    return _fpdf_class()(footer_text, page_numbers)
+def _Fpdf(footer_text: str = "", page_numbers: bool = True, watermark: str = ""):
+    return _fpdf_class()(footer_text, page_numbers, watermark)
 
 
 class PdfDoc:
@@ -120,7 +137,7 @@ class PdfDoc:
 
     def __init__(self, meta: Meta) -> None:
         self.meta = meta
-        self.pdf = _Fpdf(meta.footer, meta.page_numbers)
+        self.pdf = _Fpdf(meta.footer, meta.page_numbers, meta.watermark)
         self.pdf.set_auto_page_break(auto=True, margin=20)
         self.pdf.set_margins(MARGIN, MARGIN, MARGIN)
         self.pdf.set_title(latin1(meta.title))

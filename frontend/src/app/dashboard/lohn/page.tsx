@@ -53,7 +53,7 @@ export default function LohnPage() {
             </p>
           </div>
 
-          <RatenForm settings={l.settings} onSave={l.saetzeSpeichern} />
+          <RatenForm settings={l.settings} onSave={l.saetzeSpeichern} onFreigeben={l.freigeben} />
 
           <MitarbeiterListe liste={l.mitarbeiter} onCreate={l.mitarbeiterAnlegen} />
 

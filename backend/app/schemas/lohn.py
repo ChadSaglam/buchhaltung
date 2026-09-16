@@ -29,10 +29,17 @@ class LohnSettingsOut(BaseModel):
     konto_sozialversicherung: str
     konto_verbindlichkeit: str
     konto_bank: str
+    freigegeben: bool = False
+    freigegeben_am: datetime | None = None
     #: Compulsory rates that are not on file yet; while this is non-empty no
     #: payslip can be issued.
     fehlt: list[str] = []
     bereit: bool = False
+    #: Where the two federal rates come from and when they were last checked.
+    quelle: str = ""
+    #: Printed across every payslip until the setup has been signed off; "" once
+    #: it has.
+    wasserzeichen: str = ""
 
 
 class LohnSettingsUpdate(BaseModel):
@@ -51,6 +58,17 @@ class LohnSettingsUpdate(BaseModel):
     konto_sozialversicherung: str | None = Field(default=None, max_length=20)
     konto_verbindlichkeit: str | None = Field(default=None, max_length=20)
     konto_bank: str | None = Field(default=None, max_length=20)
+
+
+class FreigabeRequest(BaseModel):
+    """Sign off the setup, or take the sign-off back.
+
+    A separate endpoint from the rates on purpose: this is a statement that a
+    person compared one real month against the previous payroll, and it must not
+    be possible to make it by accident while editing a percentage.
+    """
+
+    freigegeben: bool
 
 
 class MitarbeiterBase(BaseModel):

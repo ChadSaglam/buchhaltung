@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user, get_db, require_editor
 from app.models.booking import Booking
+from app.models.lohn_settings import LOHN_QUELLE
 from app.models.lohnabrechnung import Lohnabrechnung
 from app.models.mitarbeiter import Mitarbeiter
 from app.models.user import User
@@ -29,6 +30,7 @@ from app.schemas.lohn import (
     AbrechnungListResponse,
     AbzugOut,
     BuchungOut,
+    FreigabeRequest,
     LohnlaufOut,
     LohnlaufRequest,
     LohnSettingsOut,
@@ -49,9 +51,11 @@ router = APIRouter(prefix="/api/lohn", tags=["lohn"])
 def _settings_out(settings) -> LohnSettingsOut:
     missing = fehlende_settings(settings)
     return LohnSettingsOut(
-        **LohnSettingsOut.model_validate(settings).model_dump(exclude={"fehlt", "bereit"}),
+        **LohnSettingsOut.model_validate(settings).model_dump(exclude={"fehlt", "bereit", "quelle", "wasserzeichen"}),
         fehlt=missing,
         bereit=not missing,
+        quelle=LOHN_QUELLE,
+        wasserzeichen=lohn_pdf.wasserzeichen(settings.freigegeben),
     )
 
 
@@ -120,6 +124,31 @@ async def update_settings(
     user: User = Depends(require_editor),
 ) -> LohnSettingsOut:
     out = _settings_out(await LohnService(db, user).update_settings(body.model_dump(exclude_unset=True)))
+    await db.commit()
+    return out
+
+
+@router.post("/settings/freigabe", response_model=LohnSettingsOut)
+async def freigabe(
+    body: FreigabeRequest,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_editor),
+) -> LohnSettingsOut:
+    """Sign off the setup, which is what removes the watermark from the payslips.
+
+    Its own endpoint rather than a field on the rate form: this says a person
+    compared one real month against the previous payroll, and that must not be
+    possible to assert by accident while editing a percentage.
+    """
+    service = LohnService(db, user)
+    out = _settings_out(await service.freigeben(body.freigegeben))
+    await AuditLogService(user.tenant_id, db).record(
+        action="lohn.freigabe",
+        actor_user_id=user.id,
+        target_type="lohn_settings",
+        target_id=user.tenant_id,
+        detail={"freigegeben": body.freigegeben},
+    )
     await db.commit()
     return out
 
@@ -245,8 +274,9 @@ async def abrechnung_pdf(
     """The payslip as a file — each deduction with the rate that produced it."""
     service = LohnService(db, user)
     row, person = await service.abrechnung(abrechnung_id)
+    settings = await service.settings()
     firma, adresse = await _letterhead(db, user)
-    content = lohn_pdf.abrechnung_pdf(row, person, firma=firma, firma_adresse=adresse)
+    content = lohn_pdf.abrechnung_pdf(row, person, firma=firma, firma_adresse=adresse, freigegeben=settings.freigegeben)
     await db.commit()
     name = f"Lohnabrechnung-{row.periode}-{person.name or person.id}.pdf".replace(" ", "-")
     return Response(
@@ -267,8 +297,11 @@ async def jahr_pdf(
     service = LohnService(db, user)
     person = await service.mitarbeiter(mitarbeiter_id)
     rows = await service.jahreslohn(mitarbeiter_id, jahr)
+    settings = await service.settings()
     firma, adresse = await _letterhead(db, user)
-    content = lohn_pdf.jahr_pdf(rows, person, jahr, firma=firma, firma_adresse=adresse)
+    content = lohn_pdf.jahr_pdf(
+        rows, person, jahr, firma=firma, firma_adresse=adresse, freigegeben=settings.freigegeben
+    )
     await db.commit()
     name = f"Jahreszusammenzug-{jahr}-{person.name or person.id}.pdf".replace(" ", "-")
     return Response(

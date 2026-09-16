@@ -63,6 +63,19 @@ export function bereitschaftTone(settings: LohnSettings | undefined): "success" 
   return settings && (settings.fehlt ?? []).length === 0 ? "success" : "warning";
 }
 
+/**
+ * The line above the "signed off" switch.
+ *
+ * Deliberately not reassuring. Until somebody has compared one real month with
+ * what the previous payroll produced, the arithmetic being right says nothing
+ * about the setup being right, and that is what the watermark is for.
+ */
+export function freigabeSatz(settings: LohnSettings | undefined): string {
+  if (!settings) return "";
+  if (settings.freigegeben) return "Freigegeben — die Abrechnungen werden ohne Wasserzeichen gedruckt.";
+  return `Noch nicht freigegeben. Jede Abrechnung trägt "${settings.wasserzeichen}".`;
+}
+
 /** "5.30 %", or nothing at all for a fixed amount like BVG. */
 export function satzLabel(satz: number | null | undefined): string {
   return satz ? `${satz.toFixed(2)} %` : "";

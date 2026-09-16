@@ -1,7 +1,12 @@
 # B-72 Lohn light — spec and sourced groundwork (2026-09-16)
 
-> **Status: not built.** This document exists so the decision is yours, made once, with the numbers in front of
-> you — not made implicitly by an agent at three in the morning.
+> **Status (2026-09-16): built as option B, with the shape option C needs.** The owner chose C. What shipped is
+> the skeleton C sits on — the models, the engine, the payslip, the booking and the Jahreszusammenzug — with every
+> rate as per-tenant configuration and nothing guessed. The four things that make it C are listed under
+> "What is still missing for option C" below; each of them is data or a certification, not code.
+>
+> The document is kept as written: the reasoning for refusing it first, and the sourced figures, are the reason the
+> implementation looks the way it does.
 
 ## Why this one was refused when the rest of the NEXT block was built
 
@@ -105,6 +110,46 @@ Rules worth writing down before the first line of code:
 Not code: take one real payslip the customer's current provider produced, and reproduce it by hand with the figures
 above. If the net matches to the rappen, option B is a week. If it does not, the gap tells you exactly which
 per-tenant field is missing — and that list is the actual spec.
+
+**This is still the next step, and the code enforces it.** Every payslip is printed with a *"Nicht für die
+Einreichung"* watermark until `lohn_settings.freigegeben` is set, and that flag has its own endpoint
+(`POST /api/lohn/settings/freigabe`) so it cannot be set by accident while editing a percentage. It is false for
+every tenant and no migration sets it: the sign-off is a statement that a person did the comparison above, and
+nothing in this app can make that statement on their behalf.
+
+## What shipped (2026-09-16)
+
+Exactly the layout this document proposed, plus the two guards it asked for:
+
+| File | What it does |
+|---|---|
+| `backend/app/models/lohn_settings.py` | one row per tenant; AHV/ALV defaulted (federal), UVG/UVGZ/KTG/FAK/Verwaltungskosten nullable, plus `freigegeben` |
+| `backend/app/models/mitarbeiter.py` | employee; BVG as a **franc amount** per month, Quellensteuer as a **rate**, both from documents we do not produce |
+| `backend/app/models/lohnabrechnung.py` | one payslip per employee per month, storing the rate next to every amount |
+| `backend/app/services/lohn.py` | pure gross→net; raises `LohnKonfigurationFehlt` naming every missing rate at once |
+| `backend/app/services/lohn_service.py` | year-to-date gross for the ALV ceiling, issuing, and the three bookings |
+| `backend/app/services/lohn_pdf.py` | payslip and Jahreszusammenzug via `pdf_render.py` |
+| `frontend/src/app/dashboard/lohn/` | the page; `src/lib/lohn.ts` holds the pure parts |
+
+Two places Swiss payroll is not obvious, both pinned down by tests: the payroll month is 30 days regardless of the
+calendar, and the ALV ceiling is cumulative over the year rather than a monthly twelfth.
+
+The five rules above are all in the code. Rule 3 is `LOHN_QUELLE` in `models/lohn_settings.py`, shown above the rate
+form. Rule 4 is `LohnKonfigurationFehlt` → `ApiError(400, "lohn_konfiguration_fehlt", …)`, which is a code the
+frontend can branch on to send the user to the settings rather than a bare 400.
+
+## What is still missing for option C
+
+None of it is arithmetic; all of it is data or a certification.
+
+1. **Quellensteuer tariff tables** — per canton, per Tarifcode, reissued yearly. Today the *rate* is a field on the
+   employee, filled in from the cantonal tariff by whoever knows it. Owning the tables is a maintenance commitment.
+2. **BVG Altersgutschriften** — the fund's own regulations decide the amount. Today it is a franc amount per
+   employee, copied from the fund's statement, which is the number that actually gets paid.
+3. **Lohnausweis (Formular 11)** — prescribed layout with numbered boxes and a barcode. What ships is a
+   *Jahreszusammenzug* that says on the page that it is not one.
+4. **Swissdec ELM** — the yearly Sozialversicherungs-Jahresmeldung transmission. A certification, not a file
+   format.
 
 ---
 _Sources: [ahv-iv.ch Merkblatt 2.01](https://www.ahv-iv.ch/p/2.01.d) · [ahv-iv.ch Merkblatt 2.08](https://www.ahv-iv.ch/p/2.08.d) · [BVG-Eckwerte](https://www.schwiizerfranke.com/bvg-eckwerte)_

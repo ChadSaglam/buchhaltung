@@ -6,6 +6,7 @@ import {
   bereitschaftSatz,
   bereitschaftTone,
   betragWert,
+  freigabeSatz,
   istAbgerechnet,
   monatsende,
   monatsname,
@@ -107,5 +108,17 @@ describe("Mitarbeiterliste", () => {
 
   it("falls back to an id when a name is missing", () => {
     expect(anzeigeName(person({ vorname: "", name: "", anzeige_name: "" }))).toBe("Mitarbeiter 1");
+  });
+});
+
+describe("Freigabe", () => {
+  it("spells out that the watermark is still on", () => {
+    const s = { freigegeben: false, wasserzeichen: "Nicht für die Einreichung" } as LohnSettings;
+    expect(freigabeSatz(s)).toContain("Nicht für die Einreichung");
+  });
+
+  it("says it is cleared once signed off", () => {
+    const s = { freigegeben: true, wasserzeichen: "" } as LohnSettings;
+    expect(freigabeSatz(s)).toContain("ohne Wasserzeichen");
   });
 });

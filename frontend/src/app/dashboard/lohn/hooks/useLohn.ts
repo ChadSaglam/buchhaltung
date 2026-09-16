@@ -118,6 +118,19 @@ export function useLohn() {
     [settings],
   );
 
+  const freigeben = useCallback(
+    async (wert: boolean) => {
+      try {
+        const { data } = await api.post<LohnSettings>("/api/lohn/settings/freigabe", { freigegeben: wert });
+        await settings.mutate(data, { revalidate: false });
+        toast.success(wert ? "Freigegeben" : "Freigabe zurückgenommen");
+      } catch (e) {
+        toast.error(errorMessage(e));
+      }
+    },
+    [settings],
+  );
+
   const mitarbeiterAnlegen = useCallback(
     async (werte: Record<string, unknown>) => {
       try {
@@ -192,6 +205,7 @@ export function useLohn() {
     abrechnen,
     abrechnungen: abrechnungen.data,
     saetzeSpeichern,
+    freigeben,
     mitarbeiterAnlegen,
     mitarbeiterAendern,
   };

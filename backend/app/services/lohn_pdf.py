@@ -41,6 +41,16 @@ HINWEIS_JAHR = (
     "diese Zusammenstellung liefert die Zahlen dafür."
 )
 
+#: Rule 5 of docs/B-72-LOHN-SPEC.md. Stays on every page until a person has
+#: checked one real month against the previous payroll and set the flag. The
+#: arithmetic being right is not the same as the setup being right, and a
+#: payslip is the wrong place to find that out.
+WASSERZEICHEN = "Nicht für die Einreichung"
+
+
+def wasserzeichen(freigegeben: bool) -> str:
+    return "" if freigegeben else WASSERZEICHEN
+
 
 def monatsname(monat: int) -> str:
     return MONATE[monat - 1] if 1 <= monat <= len(MONATE) else str(monat)
@@ -102,6 +112,7 @@ def abrechnung_pdf(
     *,
     firma: str = "",
     firma_adresse: str = "",
+    freigegeben: bool = False,
 ) -> bytes:
     doc = PdfDoc(
         Meta(
@@ -112,6 +123,7 @@ def abrechnung_pdf(
             period=f"{monatsname(row.monat)} {row.jahr}",
             extra=[("AHV-Nr.", person.ahv_nummer)] if person.ahv_nummer else [],
             footer=firma,
+            watermark=wasserzeichen(freigegeben),
         )
     )
     columns = _spalten()
@@ -152,6 +164,7 @@ def jahr_pdf(
     *,
     firma: str = "",
     firma_adresse: str = "",
+    freigegeben: bool = False,
 ) -> bytes:
     doc = PdfDoc(
         Meta(
@@ -162,6 +175,7 @@ def jahr_pdf(
             period=str(jahr),
             extra=[("AHV-Nr.", person.ahv_nummer)] if person.ahv_nummer else [],
             footer=firma,
+            watermark=wasserzeichen(freigegeben),
         )
     )
 
