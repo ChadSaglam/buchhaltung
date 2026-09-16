@@ -1223,6 +1223,160 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/lohn/abrechnen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Abrechnen
+         * @description Issue the payslip and book it. The period can only be issued once.
+         */
+        post: operations["abrechnen_api_lohn_abrechnen_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lohn/abrechnungen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Abrechnungen */
+        get: operations["abrechnungen_api_lohn_abrechnungen_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lohn/abrechnungen/{abrechnung_id}/lohnabrechnung.pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Abrechnung Pdf
+         * @description The payslip as a file — each deduction with the rate that produced it.
+         */
+        get: operations["abrechnung_pdf_api_lohn_abrechnungen__abrechnung_id__lohnabrechnung_pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lohn/mitarbeiter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mitarbeiter Liste */
+        get: operations["mitarbeiter_liste_api_lohn_mitarbeiter_get"];
+        put?: never;
+        /** Mitarbeiter Anlegen */
+        post: operations["mitarbeiter_anlegen_api_lohn_mitarbeiter_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lohn/mitarbeiter/{mitarbeiter_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mitarbeiter */
+        get: operations["mitarbeiter_api_lohn_mitarbeiter__mitarbeiter_id__get"];
+        /** Mitarbeiter Aendern */
+        put: operations["mitarbeiter_aendern_api_lohn_mitarbeiter__mitarbeiter_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lohn/mitarbeiter/{mitarbeiter_id}/jahr/{jahr}.pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Jahr Pdf
+         * @description Twelve payslips added up — the figures a Lohnausweis is filled in from.
+         */
+        get: operations["jahr_pdf_api_lohn_mitarbeiter__mitarbeiter_id__jahr__jahr__pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lohn/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Settings
+         * @description The tenant's rates, and which compulsory ones are still missing.
+         */
+        get: operations["settings_api_lohn_settings_get"];
+        /** Update Settings */
+        put: operations["update_settings_api_lohn_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lohn/vorschau": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Vorschau
+         * @description What this month would pay. Nothing is written and nothing is booked.
+         */
+        post: operations["vorschau_api_lohn_vorschau_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/offene-posten/": {
         parameters: {
             query?: never;
@@ -1644,6 +1798,61 @@ export interface components {
             /** Vorschlaege */
             vorschlaege: number;
         };
+        /** AbrechnenResponse */
+        AbrechnenResponse: {
+            abrechnung: components["schemas"]["LohnlaufOut"];
+            /**
+             * Buchungen
+             * @default []
+             */
+            buchungen: components["schemas"]["BuchungOut"][];
+        };
+        /** AbrechnungListItem */
+        AbrechnungListItem: {
+            /** Abgerechnet Am */
+            abgerechnet_am?: string | null;
+            /** Abzuege */
+            abzuege: number;
+            /** Ag Total */
+            ag_total: number;
+            /** Brutto */
+            brutto: number;
+            /** Id */
+            id: number;
+            /** Jahr */
+            jahr: number;
+            /** Mitarbeiter Id */
+            mitarbeiter_id: number;
+            /** Monat */
+            monat: number;
+            /** Netto */
+            netto: number;
+            /** Periode */
+            periode: string;
+        };
+        /** AbrechnungListResponse */
+        AbrechnungListResponse: {
+            /**
+             * Ag Total
+             * @default 0
+             */
+            ag_total: number;
+            /**
+             * Brutto Total
+             * @default 0
+             */
+            brutto_total: number;
+            /**
+             * Eintraege
+             * @default []
+             */
+            eintraege: components["schemas"]["AbrechnungListItem"][];
+            /**
+             * Netto Total
+             * @default 0
+             */
+            netto_total: number;
+        };
         /** AbrufResponse */
         AbrufResponse: {
             /** Geholt */
@@ -1675,6 +1884,17 @@ export interface components {
         AbsenderRequest: {
             /** Adresse */
             adresse: string;
+        };
+        /** AbzugOut */
+        AbzugOut: {
+            /** Basis */
+            basis: number;
+            /** Betrag */
+            betrag: number;
+            /** Label */
+            label: string;
+            /** Satz */
+            satz: number;
         };
         /** AccountCount */
         AccountCount: {
@@ -1857,6 +2077,19 @@ export interface components {
             total_amount: number;
             /** Total Count */
             total_count: number;
+        };
+        /** BuchungOut */
+        BuchungOut: {
+            /** Beschreibung */
+            beschreibung: string;
+            /** Betrag */
+            betrag: number;
+            /** Datum */
+            datum: string;
+            /** Kt Haben */
+            kt_haben: string;
+            /** Kt Soll */
+            kt_soll: string;
         };
         /** BuchungRowExport */
         BuchungRowExport: {
@@ -2736,6 +2969,147 @@ export interface components {
             /** Password */
             password: string;
         };
+        /** LohnSettingsOut */
+        LohnSettingsOut: {
+            /** Ahv Satz An */
+            ahv_satz_an: number;
+            /** Alv Jahresgrenze */
+            alv_jahresgrenze: number;
+            /** Alv Satz An */
+            alv_satz_an: number;
+            /**
+             * Bereit
+             * @default false
+             */
+            bereit: boolean;
+            /** Fak Satz */
+            fak_satz?: number | null;
+            /**
+             * Fehlt
+             * @default []
+             */
+            fehlt: string[];
+            /** Konto Bank */
+            konto_bank: string;
+            /** Konto Lohnaufwand */
+            konto_lohnaufwand: string;
+            /** Konto Sozialversicherung */
+            konto_sozialversicherung: string;
+            /** Konto Verbindlichkeit */
+            konto_verbindlichkeit: string;
+            /** Ktg Satz Ag */
+            ktg_satz_ag?: number | null;
+            /** Ktg Satz An */
+            ktg_satz_an?: number | null;
+            /** Uvg Bu Satz */
+            uvg_bu_satz?: number | null;
+            /** Uvg Nbu Satz */
+            uvg_nbu_satz?: number | null;
+            /** Uvgz Satz Ag */
+            uvgz_satz_ag?: number | null;
+            /** Uvgz Satz An */
+            uvgz_satz_an?: number | null;
+            /** Verwaltungskosten Satz */
+            verwaltungskosten_satz?: number | null;
+        };
+        /** LohnSettingsUpdate */
+        LohnSettingsUpdate: {
+            /** Ahv Satz An */
+            ahv_satz_an?: number | null;
+            /** Alv Jahresgrenze */
+            alv_jahresgrenze?: number | null;
+            /** Alv Satz An */
+            alv_satz_an?: number | null;
+            /** Fak Satz */
+            fak_satz?: number | null;
+            /** Konto Bank */
+            konto_bank?: string | null;
+            /** Konto Lohnaufwand */
+            konto_lohnaufwand?: string | null;
+            /** Konto Sozialversicherung */
+            konto_sozialversicherung?: string | null;
+            /** Konto Verbindlichkeit */
+            konto_verbindlichkeit?: string | null;
+            /** Ktg Satz Ag */
+            ktg_satz_ag?: number | null;
+            /** Ktg Satz An */
+            ktg_satz_an?: number | null;
+            /** Uvg Bu Satz */
+            uvg_bu_satz?: number | null;
+            /** Uvg Nbu Satz */
+            uvg_nbu_satz?: number | null;
+            /** Uvgz Satz Ag */
+            uvgz_satz_ag?: number | null;
+            /** Uvgz Satz An */
+            uvgz_satz_an?: number | null;
+            /** Verwaltungskosten Satz */
+            verwaltungskosten_satz?: number | null;
+        };
+        /**
+         * LohnlaufOut
+         * @description A payslip, issued or only previewed — the shape is the same either way.
+         */
+        LohnlaufOut: {
+            /** Abgerechnet Am */
+            abgerechnet_am?: string | null;
+            /** Abrechnung Id */
+            abrechnung_id?: number | null;
+            /**
+             * Abzuege
+             * @default []
+             */
+            abzuege: components["schemas"]["AbzugOut"][];
+            /** Abzuege Total */
+            abzuege_total: number;
+            /** Ag Total */
+            ag_total: number;
+            /** Anteil */
+            anteil: number;
+            /**
+             * Arbeitgeber
+             * @default []
+             */
+            arbeitgeber: components["schemas"]["AbzugOut"][];
+            /** Brutto */
+            brutto: number;
+            /** Dreizehnter */
+            dreizehnter: number;
+            /** Grundlohn */
+            grundlohn: number;
+            /** Jahr */
+            jahr: number;
+            /** Mitarbeiter */
+            mitarbeiter: string;
+            /** Mitarbeiter Id */
+            mitarbeiter_id: number;
+            /** Monat */
+            monat: number;
+            /** Netto */
+            netto: number;
+            /** Periode */
+            periode: string;
+            /** Zulagen */
+            zulagen: number;
+        };
+        /** LohnlaufRequest */
+        LohnlaufRequest: {
+            /**
+             * Dreizehnter
+             * @default false
+             */
+            dreizehnter: boolean;
+            /** Jahr */
+            jahr: number;
+            /** Mitarbeiter Id */
+            mitarbeiter_id: number;
+            /** Monat */
+            monat: number;
+            /**
+             * Zulagen
+             * @default 0
+             */
+            zulagen: number;
+        };
         /** MahnungDraft */
         MahnungDraft: {
             /** Document Id */
@@ -2822,6 +3196,238 @@ export interface components {
             document: components["schemas"]["DocumentOut"];
             /** Match Id */
             match_id: number;
+        };
+        /** MitarbeiterCreate */
+        MitarbeiterCreate: {
+            /**
+             * Ahv Nummer
+             * @default
+             */
+            ahv_nummer: string;
+            /** Austritt */
+            austritt?: string | null;
+            /** Bvg Ag Monat */
+            bvg_ag_monat?: number | null;
+            /** Bvg An Monat */
+            bvg_an_monat?: number | null;
+            /**
+             * Dreizehnter
+             * @default false
+             */
+            dreizehnter: boolean;
+            /** Eintritt */
+            eintritt?: string | null;
+            /**
+             * Email
+             * @default
+             */
+            email: string;
+            /** Geburtsdatum */
+            geburtsdatum?: string | null;
+            /**
+             * Iban
+             * @default
+             */
+            iban: string;
+            /**
+             * Kanton
+             * @default
+             */
+            kanton: string;
+            /**
+             * Kinder
+             * @default 0
+             */
+            kinder: number;
+            /**
+             * Monatslohn
+             * @default 0
+             */
+            monatslohn: number;
+            /**
+             * Name
+             * @default
+             */
+            name: string;
+            /**
+             * Pensum
+             * @default 100
+             */
+            pensum: number;
+            /**
+             * Quellensteuer
+             * @default false
+             */
+            quellensteuer: boolean;
+            /** Quellensteuer Satz */
+            quellensteuer_satz?: number | null;
+            /**
+             * Quellensteuer Tarif
+             * @default
+             */
+            quellensteuer_tarif: string;
+            /**
+             * Vorname
+             * @default
+             */
+            vorname: string;
+        };
+        /** MitarbeiterOut */
+        MitarbeiterOut: {
+            /**
+             * Ahv Nummer
+             * @default
+             */
+            ahv_nummer: string;
+            /**
+             * Anzeige Name
+             * @default
+             */
+            anzeige_name: string;
+            /** Austritt */
+            austritt?: string | null;
+            /** Bvg Ag Monat */
+            bvg_ag_monat?: number | null;
+            /** Bvg An Monat */
+            bvg_an_monat?: number | null;
+            /**
+             * Dreizehnter
+             * @default false
+             */
+            dreizehnter: boolean;
+            /** Eintritt */
+            eintritt?: string | null;
+            /**
+             * Email
+             * @default
+             */
+            email: string;
+            /** Geburtsdatum */
+            geburtsdatum?: string | null;
+            /**
+             * Iban
+             * @default
+             */
+            iban: string;
+            /** Id */
+            id: number;
+            /**
+             * Kanton
+             * @default
+             */
+            kanton: string;
+            /**
+             * Kinder
+             * @default 0
+             */
+            kinder: number;
+            /**
+             * Monatslohn
+             * @default 0
+             */
+            monatslohn: number;
+            /**
+             * Name
+             * @default
+             */
+            name: string;
+            /**
+             * Pensum
+             * @default 100
+             */
+            pensum: number;
+            /**
+             * Quellensteuer
+             * @default false
+             */
+            quellensteuer: boolean;
+            /** Quellensteuer Satz */
+            quellensteuer_satz?: number | null;
+            /**
+             * Quellensteuer Tarif
+             * @default
+             */
+            quellensteuer_tarif: string;
+            /**
+             * Vorname
+             * @default
+             */
+            vorname: string;
+        };
+        /** MitarbeiterUpdate */
+        MitarbeiterUpdate: {
+            /**
+             * Ahv Nummer
+             * @default
+             */
+            ahv_nummer: string;
+            /** Austritt */
+            austritt?: string | null;
+            /** Bvg Ag Monat */
+            bvg_ag_monat?: number | null;
+            /** Bvg An Monat */
+            bvg_an_monat?: number | null;
+            /**
+             * Dreizehnter
+             * @default false
+             */
+            dreizehnter: boolean;
+            /** Eintritt */
+            eintritt?: string | null;
+            /**
+             * Email
+             * @default
+             */
+            email: string;
+            /** Geburtsdatum */
+            geburtsdatum?: string | null;
+            /**
+             * Iban
+             * @default
+             */
+            iban: string;
+            /**
+             * Kanton
+             * @default
+             */
+            kanton: string;
+            /**
+             * Kinder
+             * @default 0
+             */
+            kinder: number;
+            /**
+             * Monatslohn
+             * @default 0
+             */
+            monatslohn: number;
+            /**
+             * Name
+             * @default
+             */
+            name: string;
+            /**
+             * Pensum
+             * @default 100
+             */
+            pensum: number;
+            /**
+             * Quellensteuer
+             * @default false
+             */
+            quellensteuer: boolean;
+            /** Quellensteuer Satz */
+            quellensteuer_satz?: number | null;
+            /**
+             * Quellensteuer Tarif
+             * @default
+             */
+            quellensteuer_tarif: string;
+            /**
+             * Vorname
+             * @default
+             */
+            vorname: string;
         };
         /** MonatOut */
         MonatOut: {
@@ -5793,6 +6399,351 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LiquiditaetResponse"];
+                };
+            };
+        };
+    };
+    abrechnen_api_lohn_abrechnen_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LohnlaufRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AbrechnenResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    abrechnungen_api_lohn_abrechnungen_get: {
+        parameters: {
+            query?: {
+                jahr?: number | null;
+                mitarbeiter_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AbrechnungListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    abrechnung_pdf_api_lohn_abrechnungen__abrechnung_id__lohnabrechnung_pdf_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                abrechnung_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mitarbeiter_liste_api_lohn_mitarbeiter_get: {
+        parameters: {
+            query?: {
+                /** @description Nur Mitarbeitende ohne Austrittsdatum. */
+                aktiv?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MitarbeiterOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mitarbeiter_anlegen_api_lohn_mitarbeiter_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MitarbeiterCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MitarbeiterOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mitarbeiter_api_lohn_mitarbeiter__mitarbeiter_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mitarbeiter_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MitarbeiterOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mitarbeiter_aendern_api_lohn_mitarbeiter__mitarbeiter_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mitarbeiter_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MitarbeiterUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MitarbeiterOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    jahr_pdf_api_lohn_mitarbeiter__mitarbeiter_id__jahr__jahr__pdf_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mitarbeiter_id: number;
+                jahr: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    settings_api_lohn_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LohnSettingsOut"];
+                };
+            };
+        };
+    };
+    update_settings_api_lohn_settings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LohnSettingsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LohnSettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    vorschau_api_lohn_vorschau_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LohnlaufRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LohnlaufOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

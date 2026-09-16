@@ -125,6 +125,7 @@ const ROUTES = [
   "/dashboard/insights",
   "/dashboard/abschluss",
   "/dashboard/review",
+  "/dashboard/lohn",
   "/dashboard/kontenplan",
   "/dashboard/modell",
   "/dashboard/lernverlauf",

@@ -1,7 +1,7 @@
 import {
   BookOpen, Brain, Building2, CheckCheck, FilePlus2, FileText, GraduationCap, Inbox,
   Landmark, ListChecks, Mail, PackageCheck, Receipt, ScanLine, ScrollText, Settings,
-  Sparkles, Sun,
+  Sparkles, Sun, Wallet,
   type LucideIcon,
 } from "lucide-react";
 
@@ -88,6 +88,7 @@ export const SURFACES: Surface[] = [
 /** Power users and the Treuhänder — one group at the bottom, never in the way. */
 export const MEHR: NavItem[] = [
   { label: "Überprüfung", href: "/dashboard/review", icon: ListChecks, section: "Mehr" },
+  { label: "Lohn", href: "/dashboard/lohn", icon: Wallet, section: "Mehr" },
   { label: "Kontenplan", href: "/dashboard/kontenplan", icon: BookOpen, section: "Mehr" },
   { label: "Modell", href: "/dashboard/modell", icon: Brain, section: "Mehr" },
   { label: "Lernverlauf", href: "/dashboard/lernverlauf", icon: GraduationCap, section: "Mehr" },
