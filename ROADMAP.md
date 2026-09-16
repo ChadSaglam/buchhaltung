@@ -5,7 +5,7 @@
 > IDs: `B-xx` = work item (next free: **B-80**) · `P-xx` = parked (next free: **P-05**)
 > Cross-product items (SSO, contracts, design tokens) live in `chadev-platform/ROADMAP.md`, not here.
 > Updated: 2026-09-16 (night run) — **B-51** money columns are Numeric(12,2), **B-59** `response_model` on the seven endpoints that returned bare dicts (and the hand-written frontend interfaces are gone), **B-58** the UX/a11y batch (one formatter, WCAG-AA accents, `usePopover`, heading order, confirms on destructive actions), **B-71** 90-day liquidity + tax provision on Heute, and **step 5 of the IA migration** (sidebar = four surfaces + Mehr; every old route still resolves). Earlier on 2026-09-16: B-70 Jahresabschluss and B-77 (PDF renderer = fpdf2); B-69 e-mail intake; B-52 idempotency by constraint; B-53 export safety. 2026-09-15 — B-68 write invoices (Swiss QR, debtor booking, reference return); B-67 VAT return (form 200); B-66 month-end check; B-65 open items / reminders; B-76 Banana batch (phase 4) done — and the open extension question answered: an extension may not call HTTP, so the file hand-off is final (new: B-78, read-only REST spike); B-73 Abgleich done, `make check` green. 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 amount memory. 2026-09-13 — phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
-> Companion docs: `docs/ADR-002-rls.md` (B-24) · `docs/B-72-LOHN-SPEC.md` (B-72) · `docs/IA-2026-09-14.md` · `docs/DEPLOY-CHECKLIST-B36-B37.md` · `docs/BRAINSTORM-2026-09-12.md`.
+> Companion docs: `docs/ADR-002-rls.md` (B-24) · `docs/BACKUP.md` (B-25) · `docs/B-72-LOHN-SPEC.md` (B-72) · `docs/IA-2026-09-14.md` · `docs/DEPLOY-CHECKLIST-B36-B37.md` · `docs/BRAINSTORM-2026-09-12.md`.
 
 ---
 
@@ -31,20 +31,19 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 
 ## ⏭ NEXT — pull from LATER, in this order
 
-_The 2026-09-16 night run cleared items 2 (B-71), 3 (step 5), 4 and 5 of the previous block. What is left:_
+_The 2026-09-16 run cleared the whole previous block: B-72 (option B built, see below), B-79, the IA file move
+and Heute inbox, B-74, B-24, B-25, B-54 and B-55. What is left of it:_
 
-1. **B-72 Lohn light** — payroll. **Deliberately not built unattended** (2026-09-16): the rates change every year,
-   a wrong AHV deduction is the customer's liability, and the roadmap itself says "validated against a real
-   Treuhänder run". `docs/B-72-LOHN-SPEC.md` has the sourced groundwork; the decision is yours.
-2. **B-79** Send our own invoice by e-mail. The attachment now exists (`rechnung.pdf`, 2026-09-16), so what is
-   left is the draft, the recipient and a `sent_at`. The smallest remaining piece of the "no Treuhänder" loop.
-3. **Finish the IA migration** — step 5 landed (sidebar = four surfaces + Mehr, old routes still resolve). Left:
-   move the page files under `app/dashboard/{belege,bank}/`, and turn the Heute cards into inbox *rows*
-   (steps 1–4 of `docs/IA-2026-09-14.md`). Pure refactor, do it in one sitting with the app open.
-4. **B-20** Onboarding · **B-17** Treuhänder hand-off · **B-74** Dauerbuchungen (B-71 already recognises them,
-   they just need a place to live on *Bank*).
-5. **B-24** RLS · **B-25** backup/restore · **B-54** upload bounds · **B-55** auth surface — the security block.
-   Nothing here is blocking a customer today, which is exactly why it keeps slipping.
+1. **B-20** Onboarding — first scan guided, sample receipt, Kontenplan import wizard. Now the last thing between a
+   new tenant and their first correct booking: everything it would walk somebody through exists and works.
+2. **B-17** Treuhänder hand-off — Banana TSV + PDF summary + receipts zip + audit extract in one click. The hero
+   flow of `docs/BRAINSTORM-2026-09-12.md`, and every piece of it is already built and tested separately.
+3. **B-72 → option C**, when it is worth it. What shipped is option B with C's shape: the rates are per-tenant
+   configuration and nothing is guessed. The four things still missing are data or a certification, not code —
+   Quellensteuer tariff tables, BVG Altersgutschriften, Formular 11, Swissdec ELM. `docs/B-72-LOHN-SPEC.md`.
+   **Before any of that: compare one real month against the previous payroll and lift the watermark.**
+4. **B-22** audit trail completeness · **B-23** observability — what the Treuhänder pack in B-17 will lean on.
+5. **B-26/B-27/B-28** the performance block, when there is enough data for it to matter.
 
 <details><summary>What item 1 of the old block settled (Banana, 2026-09-15) — keep, do not re-litigate</summary>
 
@@ -71,16 +70,8 @@ _2026-09-14: the previous NEXT block (B-49, B-44, B-46, B-14, B-16, B-15, B-34) 
 ### "Kein Treuhänder nötig" — the product track (owner, 2026-09-14; order = impact)
 Target: the Treuhänder signs once a year, nothing in between. Each item is a *flow* inside one of the four surfaces
 (`docs/IA-2026-09-14.md`: Heute · Belege · Bank · Abschluss), not its own page.
-- [ ] **B-79** Send the invoice by e-mail (*Belege › Rechnung schreiben*): send our own QR invoice to the customer
-      instead of printing it — draft with subject and body, sent through the existing `services/email_sender.py`.
-      The invoice then shows when it went out, and the Mahnung (B-65) builds on that.
-      **The attachment exists since 2026-09-16**: `GET /api/rechnungen/{id}/rechnung.pdf` renders the letter and a
-      SIX-conform Zahlteil, and the test decodes the QR out of the finished PDF to prove a scanner can read it.
-      What is left is the sending: a draft endpoint, the recipient (there is no customer master yet — take it from
-      the invoice), and a `sent_at` on the document. — `M` / `S`
-- [ ] **B-74** Dauerbuchungen (*Bank*): the amounts B-63 already recognises monthly (Miete, Leasing, Versicherung) become
-      expected lines — "Cembra 770.60 fehlt diesen Monat" on *Heute*, and the Abgleich proposes them with 1.0 when the
-      amount+date fit even without a document. Feeds B-71 liquidity. — `M` / `S`
+- [x] **B-79** ✅ 2026-09-16 — see Done.
+- [x] **B-74** ✅ 2026-09-16 — see Done (part A; the Abgleich proposal half is still open, see that entry).
 - [ ] **B-75** Kontoauszug ohne Upload: camt.053 pull via bLink/EBICS (UBS, PostFinance, Raiffeisen) or a scheduled
       mailbox import — the statement arrives by itself, the Abgleich inbox fills on Monday morning. PDF stays the
       fallback (customers deliver PDFs today). Needs a bank contract per tenant — spike first. — `M` / `L`
@@ -89,14 +80,9 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
       `Buchungen` could be pulled instead of asking the customer to export `Buchungen.xls` (the model's training
       source, and a reality check against what the customer actually booked). It runs only on the customer's own
       machine, so this is an agent/CLI question, not a server-to-server call. Writing stays impossible. — `L` / `M`
-- [ ] **B-72** Lohn light: monthly Lohnabrechnung with AHV/IV/EO, ALV, BVG, UVG, QST; Lohnausweis PDF; Sozialversicherungs-
-      Jahresmeldung export. High liability — after B-65…B-70, and validated against a real Treuhänder run.
-      **`docs/B-72-LOHN-SPEC.md`** (2026-09-16): why it was left out of the night run, the sourced 2026 figures
-      (AHV/IV/EO 10.6 %, ALV 2.2 % to CHF 148 200, BVG Eckwerte), and the three options it could be — A journal
-      only, B calculator with owner-entered rates (the B-71 pattern), C full payroll. **Decide A/B/C first.**
-      First step is not code: reproduce one real payslip by hand. — `M` / `L`
-
-### Professional
+- [x] **B-72** ✅ 2026-09-16 — built as option **B with option C's shape** (see Done). The owner chose C; what is
+      still missing for it is data or a certification, not code — Quellensteuer tariff tables, BVG Altersgutschriften,
+      Formular 11, Swissdec ELM. `docs/B-72-LOHN-SPEC.md` lists all four.
 - [ ] **B-17** Treuhänder export pack: Banana TSV + PDF summary + receipts zip + audit extract, one click — the hero flow
       (see brainstorm idea A). Validate with two Treuhänder *before* building the PDF. — `M` / `L`
 - [ ] **B-56** Parser/classifier hygiene: `_parse_swiss_number` handles `'`/`’`/`\u202f` and `1234,50`; date regex anchored
@@ -115,15 +101,10 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 - [ ] **B-20** Onboarding: first scan guided, sample receipt, Kontenplan import wizard. — `M` / `M`
 
 ### Security & data
-- [ ] **B-24** Postgres RLS as defence in depth — **ADR-002 drafted** (`docs/ADR-002-rls.md`): RLS + `SET LOCAL` on
-      `after_begin`, migrator/app role split, 12 tables, PG-only proof test. After B-39/40/41. — `H` / `L`
-- [ ] **B-25** Backup/restore: nightly `pg_dump -Fc` + `model_data` (receipts!) sync, `make backup` / `make restore-drill`,
-      retention documented. Nothing exists today. — `H` / `M`
-- [ ] **B-54** Upload bounds: reject on `Content-Length` + streamed cap *before* `file.read()`, cap `ZipInfo.file_size`
-      before `zf.read`, cap list sizes (kontenplan, memory JSON, bulk bookings), per-tenant storage quota via `usage_event`;
-      `pdf/parse` persists before parsing today. — `M` / `M`
-- [ ] **B-55** Auth surface: `RATE_LIMIT_AUTH` 10/min on login/register/sso, min password 12, uvicorn `--forwarded-allow-ips`
-      (keys on the proxy IP today), slowapi `storage_uri=redis` or delete the unused redis service. — `M` / `S`
+- [x] **B-24** ✅ 2026-09-16 — see Done. ADR-002 is now *Accepted and implemented*.
+- [x] **B-25** ✅ 2026-09-16 — see Done. `docs/BACKUP.md`.
+- [x] **B-54** ✅ 2026-09-16 — see Done.
+- [x] **B-55** ✅ 2026-09-16 — see Done.
 - [ ] **B-61** Health: 503 on `degraded`, cheap `SELECT 1` in production (skipped entirely today), `/api/health/detail`
       gated in prod, health exempt from the default limit. — `L` / `S`
 
@@ -156,6 +137,78 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 
 ## ✅ Done
 
+- **B-55** ✅ 2026-09-16 — the unauthenticated edge. Sign-in, sign-up and the SSO hand-off get their own per-IP
+  bucket (`RATE_LIMIT_AUTH`, default 10/minute) far below the general limit — they are the only unauthenticated
+  write paths. New passwords are 12–128 characters; **login** keeps `min_length=1` on purpose, because an existing
+  account with a shorter password still has to be able to sign in. The limiter's counters move to Redis when
+  `REDIS_URL` is set (in-process counters are per-worker, so two workers granted twice the quota), falling back to
+  memory with a warning if the client cannot import. `FORWARDED_ALLOW_IPS` defaults to empty — trust no proxy — so
+  the per-IP limit cannot be keyed on a reverse proxy's address by accident. 12 tests. Found in passing: the e2e
+  suite throttled itself, because 32 a11y tests each register from 127.0.0.1; the Playwright webServer now raises
+  the limit for itself and says why in a comment.
+- **B-54** ✅ 2026-09-16 — bounds on everything that gets uploaded. `MaxBodySizeMiddleware` refuses on
+  `Content-Length` **before** routing and before any body is read, added inside CORS so the browser reports a 413
+  rather than a CORS failure. `read_upload()` streams in 1 MB chunks and aborts at the cap instead of trusting the
+  header; zip members are checked against `ZipInfo.file_size` before `zf.read` (a zip bomb is small until you read
+  it) and against a total; list endpoints cap their counts (Kontenplan, memory JSON, bulk bookings). Plus a
+  per-tenant storage quota on the usage-event ledger — every upload is kept on purpose, so without a ceiling one
+  tenant fills the disk with files the product could not even parse. 25 tests.
+- **B-79** ✅ 2026-09-16 — send our own invoice by e-mail. `GET/POST /api/rechnungen/{id}/versand`: the draft is
+  built and shown before anything is sent, the recipient falls back from `contact_email` to the customer address in
+  the invoice's own JSON (there is no customer master yet), and the PDF from B-77 goes along as the attachment.
+  `sent_at` on the document is what the Rechnungen list and the Mahnung ladder read. 400 on a bad address, 503 with
+  no SMTP configured, 502 when the send itself fails — three different problems the user can act on differently.
+  20 backend tests, 8 frontend.
+- **B-74** ✅ 2026-09-16 — Dauerbuchungen, and which one is missing this month. The recognition B-71 built for
+  liquidity moved into `services/dauerbuchungen.py` and grew a status per entry: bezahlt · kommt noch · **fehlt**,
+  with three days' grace on the usual day. "Cembra 770.60 fehlt diesen Monat" is now a row on Heute rather than
+  something you notice at the year-end close. Deliberately part A only: the Abgleich-proposal half is a separate
+  change, because every proposal today pairs a transaction with a *document* and a standing order has none.
+  18 backend tests, 10 frontend.
+- **a11y** ✅ 2026-09-16 — `EmptyState` and `ErrorState` rendered an `h3` inside sections whose heading was an `h2`,
+  which axe reported as 14 `moderate heading-order` findings across the app. Both gained an `as` prop defaulting to
+  `h2`. The whole suite is back to zero findings, light and dark.
+- **B-24** ✅ 2026-09-16 — Postgres Row-Level Security on the 24 tenant-scoped tables (ADR-002, now *Accepted and
+  implemented*). `SET LOCAL app.tenant_id` re-issued by an `after_begin` listener — the only variant that survives
+  the 27 mid-request commits and does not leak on a pooled connection — plus `bind_tenant()` for the request's first
+  transaction, which `get_current_user` has already opened before it knows the tenant. Context set at four sites
+  (`deps`, `training_worker._run`, `platform_events`, `sso`). **The role split turned out to be the load-bearing
+  part**: as the bootstrap superuser, with every policy in place and `FORCE ROW LEVEL SECURITY` on, tenant 1 could
+  still read and write tenant 2's rows — Postgres exempts a superuser from every policy. Compose now runs the app as
+  `app_rw` (`NOSUPERUSER NOBYPASSRLS`, DML only) with Alembic as the owner, production refuses equal URLs, and
+  `verify_rls_role()` refuses to boot as a role the policies do not apply to. The policy predicate needs a `nullif`:
+  a GUC that was set and then RESET comes back as `''`, and `''::int` raises. The table list lives in `core/rls.py`
+  and a test holds it against the models, so a new tenant-scoped table cannot be forgotten; `users` and
+  `training_jobs` are the two documented exemptions. 20 tests (10 PG-only, proven against a real Postgres).
+- **B-25** ✅ 2026-09-16 — backup and restore, where there was nothing at all. Nightly `pg_dump -Fc` **plus** the
+  `model_data` volume in one compose service on the postgres image (no docker socket, no host cron), behind a
+  profile. Each backup writes a manifest — alembic revision, row counts for eight tables, SHA-256 of both artefacts
+  — and `make restore-drill` restores into a throwaway database and checks all of it. Verified: the good backup
+  passes, a one-byte-appended dump fails on the checksum, a manifest claiming seven tenants when the dump has one
+  fails on the row count. 30-day retention in a separate `backup-prune.sh` (the only part that deletes, and the one
+  with real tests): never removes the newest backup, never touches anything that is not a timestamped directory.
+  `docs/BACKUP.md` documents retention, off-host copies, the real restore, and the three things it does not do.
+  11 tests.
+- **B-72** ✅ 2026-09-16 — Lohn, built as **option B with option C's shape** (`docs/B-72-LOHN-SPEC.md`). Three
+  tables, a pure gross→net engine, payslip and Jahreszusammenzug PDFs, three bookings, and a page under Mehr.
+  AHV/IV/EO and ALV carry defaults because they are federal; UVG, UVGZ, KTG, FAK and the Verwaltungskostenbeitrag
+  are nullable with none, and a missing one raises `lohn_konfiguration_fehlt` naming **every** missing rate at once
+  rather than being treated as zero. UVGZ and KTG are the exception — voluntary, so absent means "not insured" and
+  the line disappears. A payslip stores the rate beside every amount, so a January change never rewrites December,
+  and is issued once (the unique constraint is the guard; the second attempt is a 409). Two places Swiss payroll is
+  not obvious, both pinned by tests: the payroll month is 30 days whatever the calendar says, and the ALV ceiling is
+  cumulative over the year rather than a monthly twelfth. Bookings: 5000/2270 deductions, 5000/1020 net, 5700/2270
+  employer. **Every payslip carries a "Nicht für die Einreichung" watermark until somebody signs off one real month**
+  — its own endpoint, false for every tenant, no migration sets it. The yearly PDF is called Jahreszusammenzug and
+  says on the page that it is not the Lohnausweis. 62 backend tests, 18 frontend.
+- **IA steps 1–4** ✅ 2026-09-16 — the pages moved to where the menu already said they were: `rechnungen/` →
+  `belege/`, `scanner/` → `belege/scanner/`, `kontoauszug/` → `bank/`, `abgleich/` → `bank/abgleich/`, `insights/`
+  → `bank/buchungen/` (the tab has been called Buchungen since step 5; "insights" was never a word this product
+  says). Every old address is a 307 in `next.config.ts` — temporary, because a 308 is cached forever — asserted by
+  six e2e tests at the HTTP level. Heute then became an inbox: one row per thing actually waiting, worst first,
+  each with the one word for what to do about it, with the cards below as the detail. The KPI tiles and the
+  Schnellzugriff grid left the page; neither is a decision, and rule 2 is that decisions come to the user.
+  `lib/heute.ts` is pure and recomputes nothing. 15 tests for the rows, 6 for the redirects.
 - **Mahnung als PDF** ✅ 2026-09-16 — `GET /api/offene-posten/{id}/mahnung.pdf?stufe=N`, served as
   `Mahnung-2-R-2026-001.pdf`. Of the three documents still on HTML, the Mahnung is the one that leaves the
   building on paper. Same text as `mahnung_html` (which stays the preview), letterhead address from the
@@ -166,8 +219,10 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
   the SIX template (105 mm, 62 mm receipt, 46 mm QR, 5 mm quiet zone), so B-79 has something to attach.
   `rechnung.html` stays the browser preview. The QR is drawn as **vector rectangles** (horizontal runs merged),
   never rasterised; `swiss_qr.qr_matrix()`/`cross_geometry()` are now shared with the SVG renderer. The test that
-  matters renders the finished PDF at 6x and decodes the QR back to the exact 31-line payload — it skips unless
-  `zxing-cpp` is installed, and adding that to `requirements-dev.txt` makes it a real CI check. 11 tests.
+  matters renders the finished PDF at 6x and decodes the QR back to the exact 31-line payload. *(Correction,
+  2026-09-16: the commit message and the first version of this entry said the decode test "skips unless zxing-cpp is
+  installed" and suggested adding it to `requirements-dev.txt`. It has been in `backend/requirements.txt` since B-64 —
+  `services/qr_bill.py` decodes with it — so that test has been a real CI check all along.)* 11 tests.
   `pdf_render` gains `Meta.page_numbers` (off here — a page number would land inside the template) and
   `Meta.company_address`.
 - **IA step 5** ✅ 2026-09-16 — sidebar collapsed from nine entries to the four surfaces of
@@ -515,9 +570,9 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 | 0 Recon | ✅ |
 | 0.5 Risk fixes before platform work | ✅ B-00…B-03 (branch `feat/phase0-risks`) |
 | 1 Platform contract | 1.2 ✅ B-31 · 1.4 ✅ B-26 · 1.6 ✅ tokens imported |
-| 2 Security | ✅ B-06, B-07, B-32, B-34, B-40, B-41, B-42, B-43 · open: B-24 (ADR-002), B-25, B-54, B-55 |
+| 2 Security | ✅ B-06, B-07, B-24, B-25, B-32, B-34, B-40, B-41, B-42, B-43, B-54, B-55 · open: — |
 | 3 Reliability | ✅ B-04, B-05, B-08, B-11, B-33, B-35, B-39, B-47, B-48, B-49, B-63, B-64, B-73, B-76, B-51, B-52 · open: B-56, B-57 |
 | 4 Polish | ✅ B-09, B-13, B-66, B-67, B-76, B-53 · open: B-22, B-61 |
-| 5 UX | ✅ B-14, B-15, B-16, B-18, B-19, B-44, B-45, B-46, B-50 (+B-21), B-65, B-58, B-59, B-71 · open: B-17, B-20 |
+| 5 UX | ✅ B-14, B-15, B-16, B-18, B-19, B-44, B-45, B-46, B-50 (+B-21), B-58, B-59, B-65, B-71, B-72, B-74, B-79, IA 1–5 · open: B-17, B-20 |
 | 6 Together | ✅ B-36 (SSO + mirroring), B-37 (events) · deploy: `docs/DEPLOY-CHECKLIST-B36-B37.md` · parked: B-38 |
 | 7 DX | ✅ B-12, B-29, B-30 · open: B-60, B-62 |
