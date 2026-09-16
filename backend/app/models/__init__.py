@@ -12,9 +12,12 @@ from app.models.export_batch import ExportBatch
 from app.models.idempotency_key import IdempotencyKey
 from app.models.invoice_position import InvoicePosition
 from app.models.kontenplan import Kontenplan
+from app.models.lohn_settings import LohnSettings
+from app.models.lohnabrechnung import Lohnabrechnung
 from app.models.mail_settings import MailSettings
 from app.models.match import Match
 from app.models.memory import Memory
+from app.models.mitarbeiter import Mitarbeiter
 from app.models.review_queue import ReviewQueueItem
 from app.models.scanner_config import ScannerConfig
 from app.models.sso_nonce import SsoNonce
@@ -39,9 +42,12 @@ __all__ = [
     "IdempotencyKey",
     "InvoicePosition",
     "Kontenplan",
+    "LohnSettings",
+    "Lohnabrechnung",
     "MailSettings",
     "Match",
     "Memory",
+    "Mitarbeiter",
     "ReviewQueueItem",
     "ScannerConfig",
     "SsoNonce",
