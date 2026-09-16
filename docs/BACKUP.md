@@ -64,6 +64,16 @@ that gets touched by a copy or a sync would otherwise never expire.
 because retention logic tested against a mock filesystem is retention logic that
 has never deleted anything.
 
+## Why the backup connects as the owner
+
+With B-24's Row-Level Security in place, a dump taken as the application's
+`app_rw` role — which has `NOBYPASSRLS` and no `app.tenant_id` set — would
+contain **zero rows** from twenty-four tables and exit 0. The backup service
+therefore connects as `POSTGRES_USER`, the owner, which policies do not apply to.
+
+The manifest's row counts would catch it either way, which is one more reason
+they are in there.
+
 ## Off this machine
 
 What is written here is a backup on the same host as the thing it is backing up.

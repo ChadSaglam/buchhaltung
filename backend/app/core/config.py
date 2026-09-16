@@ -37,6 +37,12 @@ class Settings(BaseSettings):
     # --- Database --------------------------------------------------------
     DATABASE_URL: str = "postgresql+asyncpg://chadev:chadev@localhost:5432/chadev_buchhaltung"
     DATABASE_URL_SYNC: str = "postgresql://chadev:chadev@localhost:5432/chadev_buchhaltung"
+    # B-24 / ADR-002: Alembic connects as the table owner, the app as a role with
+    # NOBYPASSRLS. They must be different users or Row-Level Security is theatre —
+    # Postgres exempts a superuser from every policy and the owner from its own,
+    # and FORCE ROW LEVEL SECURITY only fixes the second of those. Empty falls
+    # back to DATABASE_URL, which is fine everywhere except production.
+    MIGRATION_DATABASE_URL: str = ""
     # In dev/test we bootstrap tables from the models. In production Alembic owns
     # the schema, so this must stay off.
     AUTO_CREATE_TABLES: bool | None = None
@@ -177,6 +183,16 @@ class Settings(BaseSettings):
                 problems.append("AUTO_CREATE_TABLES must be false in production (Alembic owns the schema)")
             if self.STORAGE_BACKEND.strip().lower() == "s3" and not self.S3_BUCKET:
                 problems.append("S3_BUCKET must be set when STORAGE_BACKEND=s3")
+            if self.DATABASE_URL.startswith("postgres") and not self.MIGRATION_DATABASE_URL.strip():
+                problems.append(
+                    "MIGRATION_DATABASE_URL must be set (Alembic as the owner, the app as a "
+                    "NOBYPASSRLS role — see docs/ADR-002-rls.md)"
+                )
+            elif self.MIGRATION_DATABASE_URL.strip() == self.DATABASE_URL.strip():
+                problems.append(
+                    "MIGRATION_DATABASE_URL must not equal DATABASE_URL: the app would connect "
+                    "as the table owner and Row-Level Security would silently do nothing"
+                )
             if problems:
                 raise ValueError(
                     "Refusing to start in production with an unsafe configuration:\n  - " + "\n  - ".join(problems)
@@ -184,6 +200,11 @@ class Settings(BaseSettings):
         elif self.SECRET_KEY.strip().lower() in INSECURE_SECRETS:
             logger.warning("[config] Using the default SECRET_KEY — fine for dev, never for production.")
         return self
+
+    @property
+    def migration_database_url(self) -> str:
+        """Where Alembic connects. Falls back to the app's URL outside production."""
+        return self.MIGRATION_DATABASE_URL.strip() or self.DATABASE_URL
 
     @property
     def is_production(self) -> bool:

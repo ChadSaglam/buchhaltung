@@ -15,10 +15,11 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.core.database import get_db
+from app.core.database import bind_tenant, get_db
 from app.core.errors import ApiError
 from app.core.rate_limit import auth_limit, limiter
 from app.core.security import issue_access_token
+from app.core.tenant_context import set_tenant
 from app.schemas.auth import SsoRequest, TokenResponse
 from app.services.sso import SsoError, consume_nonce, decode_sso_token, mirror_tenant, mirror_user
 
@@ -35,6 +36,10 @@ async def sso_login(request: Request, body: SsoRequest, db: AsyncSession = Depen
         claims = decode_sso_token(body.token, secret)
         await consume_nonce(db, claims)
         tenant = await mirror_tenant(db, claims)
+        # B-24: mirror_user and the Kontenplan seeding below write tenant-scoped
+        # rows, and this path has no `get_current_user` to have set the context.
+        set_tenant(tenant.id)
+        await bind_tenant(db, tenant.id)
         user = await mirror_user(db, tenant, claims)
     except SsoError as exc:
         await db.rollback()

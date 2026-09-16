@@ -20,6 +20,12 @@
 # POSIX sh on purpose: this has to run in the postgres:16-alpine image, which
 # has no bash.
 #
+# It connects as the *owner* (POSTGRES_USER), not as the app's `app_rw` role.
+# That is not laziness: with B-24's Row-Level Security in place, a dump taken as
+# `app_rw` with no `app.tenant_id` set would contain zero rows from twenty-four
+# tables and still exit 0. The manifest's row counts would make that visible, but
+# the right fix is to dump as the role the policies do not apply to.
+#
 # Usage:  scripts/backup.sh            one backup, then exit
 #         scripts/backup.sh loop       one backup every BACKUP_INTERVAL_SECONDS
 set -eu

@@ -19,6 +19,7 @@ from datetime import UTC, datetime
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.core.tenant_context import tenant_scope
 from app.models.training_job import (
     STATUS_DONE,
     STATUS_FAILED,
@@ -85,26 +86,34 @@ class TrainingWorker:
             job = await session.get(TrainingJob, job_id)
             if job is None:
                 return
-            try:
-                result = await TenantClassifier(job.tenant_id, session).train_from_db()
-                job.status = STATUS_FAILED if "error" in result else STATUS_DONE
-                job.error = result.get("error")
-                logger.info("[TRAIN] tenant=%s job=%s %s: %s", job.tenant_id, job_id, job.status, result)
-            except asyncio.CancelledError:
-                # Shutdown mid-training: hand the job back so the next pass retries it.
-                await session.rollback()
-                await self._release(job_id)
-                raise
-            except Exception as exc:
-                await session.rollback()
-                job = await session.get(TrainingJob, job_id)
-                if job is None:
-                    return
-                job.status = STATUS_FAILED
-                job.error = f"{type(exc).__name__}: {exc}"[:2000]
-                logger.exception("[TRAIN] tenant=%s job=%s failed", job.tenant_id, job_id)
-            job.finished_at = datetime.now(UTC)
-            await session.commit()
+            # B-24: the claim above is cross-tenant by design (`training_jobs`
+            # has no policy), but everything the training itself reads and writes
+            # — memory, corrections, the model blob — belongs to one tenant.
+            with tenant_scope(job.tenant_id):
+                await self._train(session, job, job_id)
+
+    async def _train(self, session: AsyncSession, job: TrainingJob, job_id: int) -> None:
+        """One job's training run, already inside its tenant's context."""
+        try:
+            result = await TenantClassifier(job.tenant_id, session).train_from_db()
+            job.status = STATUS_FAILED if "error" in result else STATUS_DONE
+            job.error = result.get("error")
+            logger.info("[TRAIN] tenant=%s job=%s %s: %s", job.tenant_id, job_id, job.status, result)
+        except asyncio.CancelledError:
+            # Shutdown mid-training: hand the job back so the next pass retries it.
+            await session.rollback()
+            await self._release(job_id)
+            raise
+        except Exception as exc:
+            await session.rollback()
+            job = await session.get(TrainingJob, job_id)
+            if job is None:
+                return
+            job.status = STATUS_FAILED
+            job.error = f"{type(exc).__name__}: {exc}"[:2000]
+            logger.exception("[TRAIN] tenant=%s job=%s failed", job.tenant_id, job_id)
+        job.finished_at = datetime.now(UTC)
+        await session.commit()
 
     async def _release(self, job_id: int) -> None:
         async with self._session_factory() as session:

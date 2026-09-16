@@ -9,6 +9,7 @@ from app.core.database import async_session, engine
 from app.core.errors import RequestContextMiddleware, install_error_handlers
 from app.core.logging_config import configure_logging
 from app.core.rate_limit import enforce_default_limit, limiter
+from app.core.rls import verify_rls_role
 from app.core.sentry import configure_sentry
 from app.core.uploads import MaxBodySizeMiddleware
 from app.models.base import Base
@@ -25,6 +26,7 @@ async def lifespan(application: FastAPI):
         # Dev/test convenience only — in production Alembic owns the schema.
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+    await verify_rls_role()
     # Scheduler + training worker share the API's event loop only when asked
     # to (dev default). In compose the `worker` service runs them instead.
     jobs: BackgroundJobs | None = None

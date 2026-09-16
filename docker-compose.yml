@@ -25,7 +25,11 @@ services:
       # a wildcard CORS origin or AUTO_CREATE_TABLES. Local overrides belong in
       # docker-compose.override.yml (gitignored), not here.
       - ENVIRONMENT=production
-      - DATABASE_URL=postgresql+asyncpg://chadev:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/chadev_buchhaltung
+      # B-24: the app connects as `app_rw` (NOSUPERUSER NOBYPASSRLS, DML only),
+      # Alembic as the owner. Two users, or Row-Level Security enforces nothing —
+      # see docs/ADR-002-rls.md and docker/db-init/10-app-role.sql.
+      - DATABASE_URL=postgresql+asyncpg://app_rw:${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}@db:5432/chadev_buchhaltung
+      - MIGRATION_DATABASE_URL=postgresql+asyncpg://chadev:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/chadev_buchhaltung
       - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (>= 32 random chars)}
       - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
@@ -72,7 +76,10 @@ services:
     entrypoint: ["python", "-m", "app.worker"]
     environment:
       - ENVIRONMENT=production
-      - DATABASE_URL=postgresql+asyncpg://chadev:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/chadev_buchhaltung
+      # Same split as the API. The worker never migrates (its entrypoint is
+      # overridden above), but it still has to be a role RLS applies to.
+      - DATABASE_URL=postgresql+asyncpg://app_rw:${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}@db:5432/chadev_buchhaltung
+      - MIGRATION_DATABASE_URL=postgresql+asyncpg://chadev:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/chadev_buchhaltung
       - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (>= 32 random chars)}
       - OLLAMA_BASE_URL=http://ollama:11434
     depends_on:
@@ -90,9 +97,14 @@ services:
       POSTGRES_USER: chadev
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: chadev_buchhaltung
+      # Read by db-init/10-app-role.sql, which creates the role the app uses.
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}
     # No published port: only the compose network reaches the database.
     volumes:
       - pgdata:/var/lib/postgresql/data
+      # Runs once, on an empty data directory. An existing deployment has to run
+      # this by hand — docs/ADR-002-rls.md says how.
+      - ./docker/db-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U chadev -d chadev_buchhaltung"]
       interval: 5s
