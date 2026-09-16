@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Check, Copy, Printer, X } from "lucide-react";
+import { Check, Copy, FileDown, Printer, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 import type { MahnungDraft } from "@/lib/offene-posten";
@@ -13,10 +13,12 @@ interface Props {
   onClose: () => void;
   onRecord: () => void;
   onPrint: (draft: MahnungDraft) => void;
+  /** The letter as a file — what actually goes in the envelope. */
+  onPdf: (draft: MahnungDraft) => void;
 }
 
 /** The draft the owner reads before anything leaves the house. */
-export function MahnungDialog({ draft, recording, onClose, onRecord, onPrint }: Props) {
+export function MahnungDialog({ draft, recording, onClose, onRecord, onPrint, onPdf }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
   useFocusTrap(Boolean(draft), onClose, dialogRef);
@@ -85,11 +87,14 @@ export function MahnungDialog({ draft, recording, onClose, onRecord, onPrint }: 
 
             <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-5 py-3">
               <div className="flex gap-2">
-                <Button size="sm" variant="secondary" icon={copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} onClick={copy}>
+                <Button size="sm" variant="secondary" icon={copied ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : <Copy className="h-3.5 w-3.5" aria-hidden="true" />} onClick={copy}>
                   {copied ? "Kopiert" : "Text kopieren"}
                 </Button>
-                <Button size="sm" variant="ghost" icon={<Printer className="h-3.5 w-3.5" />} onClick={() => onPrint(draft)}>
-                  Drucken / PDF
+                <Button size="sm" variant="secondary" icon={<FileDown className="h-3.5 w-3.5" aria-hidden="true" />} onClick={() => onPdf(draft)}>
+                  PDF
+                </Button>
+                <Button size="sm" variant="ghost" icon={<Printer className="h-3.5 w-3.5" aria-hidden="true" />} onClick={() => onPrint(draft)}>
+                  Druckvorschau
                 </Button>
               </div>
               <Button size="sm" variant="primary" loading={recording} onClick={onRecord}>

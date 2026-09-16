@@ -151,6 +151,7 @@ export function OffenePostenCard() {
         onClose={o.closeDraft}
         onRecord={o.recordSent}
         onPrint={o.openLetter}
+        onPdf={o.openLetterPdf}
       />
     </>
   );

@@ -27,7 +27,9 @@ from app.services.offene_posten import (
     days_overdue,
     effective_due_date,
     mahnstufe_label,
+    mahnung_dateiname,
     mahnung_html,
+    mahnung_pdf,
     mahnung_subject,
     mahnung_text,
     next_mahnstufe,
@@ -161,6 +163,59 @@ def test_html_letter_is_printable_and_escapes_the_customer_name():
     assert "<script" not in page
 
 
+def test_the_letter_is_also_a_file_a_scanner_never_sees():
+    """A Mahnung goes in an envelope; "print the page" was never the answer."""
+    import io
+
+    content = mahnung_pdf(
+        doc(due=date(2026, 9, 1)),
+        2,
+        company="Muster GmbH",
+        company_address="Bahnhofstrasse 12, 8001 Zürich",
+        today=TODAY,
+    )
+    assert content.startswith(b"%PDF-")
+
+    pdfplumber = pytest.importorskip("pdfplumber")
+    with pdfplumber.open(io.BytesIO(content)) as pdf:
+        assert len(pdf.pages) == 1
+        text = pdf.pages[0].extract_text()
+
+    assert "1. Mahnung" in text
+    assert "Muster GmbH" in text
+    assert "Bahnhofstrasse 12, 8001 Zürich" in text
+    assert "R-2026-001" in text
+    # The draft warning has to be on the file too, not only on the web page.
+    assert "Entwurf" in text
+    # One page in an envelope — a page number only asks what page two said.
+    assert "Seite" not in text
+
+
+def test_the_pdf_says_the_same_thing_as_the_html():
+    """Two renderings of one letter; the day they disagree is the day one is wrong."""
+    import io
+
+    letter = doc(due=date(2026, 9, 1))
+    pdfplumber = pytest.importorskip("pdfplumber")
+    with pdfplumber.open(io.BytesIO(mahnung_pdf(letter, 3, company="Muster GmbH", today=TODAY))) as pdf:
+        text = pdf.pages[0].extract_text()
+
+    body = mahnung_text(letter, 3, company="Muster GmbH", today=TODAY)
+    for sentence in ("letzte Frist", "Verzugszins", "gegenstandslos"):
+        assert sentence in body
+        assert sentence in text
+
+
+def test_typographic_characters_do_not_kill_the_letter():
+    content = mahnung_pdf(doc(vendor="Meier & „Söhne“ – AG"), 1, company="Muster GmbH – Zürich", today=TODAY)
+    assert content.startswith(b"%PDF-")
+
+
+def test_the_file_name_names_the_stage_and_the_invoice():
+    assert mahnung_dateiname(doc(), 2) == "Mahnung-2-R-2026-001.pdf"
+    assert mahnung_dateiname(doc(no="2026/07 A"), 1) == "Mahnung-1-2026-07-A.pdf"
+
+
 # ── service + HTTP ───────────────────────────────────────────────────────────
 
 
@@ -276,6 +331,29 @@ async def test_a_document_can_be_marked_as_debitor_over_the_api(client, db_sessi
     assert patched.json()["direction"] == "ausgang"
     assert patched.json()["contact_email"] == "kunde@example.com"
     assert (await client.get(f"/api/offene-posten/{document.id}/mahnung", headers=headers)).status_code == 200
+
+
+async def test_the_letter_endpoint_serves_a_named_pdf(client, db_session, actor):
+    tenant, _user, headers = actor
+    document = await add(db_session, tenant, no="R-2026-009", due=date(2026, 8, 1))
+    await db_session.commit()
+
+    response = await client.get(f"/api/offene-posten/{document.id}/mahnung.pdf?stufe=2", headers=headers)
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+    assert "Mahnung-2-R-2026-009.pdf" in response.headers["content-disposition"]
+    assert response.content.startswith(b"%PDF-")
+
+
+async def test_the_letter_endpoint_refuses_another_tenants_invoice(client, db_session, actor):
+    tenant, _user, _headers = actor
+    document = await add(db_session, tenant, no="R-2026-010")
+    await db_session.commit()
+
+    other = await create_tenant(db_session, name="Fremd AG")
+    other_user = await create_user(db_session, other, role="owner")
+    response = await client.get(f"/api/offene-posten/{document.id}/mahnung.pdf", headers=auth_headers(other_user))
+    assert response.status_code == 404
 
 
 async def test_viewer_may_read_but_not_record(client, db_session, actor):

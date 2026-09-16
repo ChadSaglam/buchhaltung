@@ -201,6 +201,73 @@ def mahnung_html(
 """
 
 
+def mahnung_pdf(
+    doc: Document,
+    stufe: int,
+    *,
+    company: str = "",
+    company_address: str = "",
+    today: date | None = None,
+    terms_days: int = DEFAULT_TERMS_DAYS,
+) -> bytes:
+    """The Mahnung as a file. It is a letter that gets posted — "print the page"
+    was never the right answer for the one document that leaves the building on
+    paper. Same text as :func:`mahnung_html`, which stays the browser preview.
+    """
+    from app.services.pdf_render import CONTENT_WIDTH, Column, Meta, PdfDoc, Row, latin1
+
+    day = today or today_utc()
+    due = effective_due_date(doc, terms_days)
+    body = mahnung_text(doc, stufe, company=company, today=day, terms_days=terms_days)
+
+    document = PdfDoc(
+        Meta(
+            title=mahnung_subject(doc, stufe),
+            company=company,
+            company_address=company_address,
+            period=_swiss(day),
+            # A Mahnung is one page and goes in an envelope; a page number on it
+            # only raises the question of what the second page said.
+            footer="Entwurf - bitte vor dem Versand prüfen.",
+            page_numbers=False,
+        )
+    )
+    pdf = document.pdf
+
+    pdf.ln(6)
+    pdf.set_font("Helvetica", "", 10.5)
+    pdf.cell(0, 5, latin1(doc.vendor or ""), new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(6)
+
+    for block in body.split("\n\n"):
+        block = block.strip()
+        if not block:
+            continue
+        pdf.set_font("Helvetica", "", 10.5)
+        for line in block.split("\n"):
+            pdf.set_x(pdf.l_margin)
+            pdf.multi_cell(CONTENT_WIDTH, 5.2, latin1(line), new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(3)
+
+    document.section("Die offene Rechnung")
+    document.table(
+        [Column("Position", 55.0, "L"), Column("", CONTENT_WIDTH - 55.0, "L")],
+        [
+            Row(["Rechnung", doc.invoice_no or "-"]),
+            Row(["Rechnungsdatum", _swiss(doc.invoice_date)]),
+            Row(["Fällig am", _swiss(due)]),
+            Row(["Betrag CHF", fmt_swiss(doc.amount or 0.0)], bold=True, top_line=True),
+        ],
+    )
+    return document.output()
+
+
+def mahnung_dateiname(doc: Document, stufe: int) -> str:
+    """`Mahnung-2-2026-0001.pdf` — recognisable in a folder of letters."""
+    nummer = (doc.invoice_no or str(doc.id)).replace("/", "-").replace(" ", "-")
+    return f"Mahnung-{stufe}-{nummer}.pdf"
+
+
 @dataclass
 class OpenItem:
     document: Document
@@ -265,6 +332,23 @@ class OffenePostenService:
     async def _company(self) -> str:
         tenant = (await self.db.execute(select(Tenant).where(Tenant.id == self.tenant_id))).scalar_one_or_none()
         return getattr(tenant, "name", "") or ""
+
+    async def company_address(self) -> str:
+        """The sender line for the letterhead, from the Firmenprofil (B-68) if there is one."""
+        from app.models.company_profile import CompanyProfile
+        from app.services.swiss_qr import Party
+
+        row = await self.db.execute(select(CompanyProfile).where(CompanyProfile.tenant_id == self.tenant_id))
+        profile = row.scalar_one_or_none()
+        if profile is None:
+            return ""
+        return Party(
+            name=profile.name,
+            strasse=profile.strasse,
+            hausnummer=profile.hausnummer,
+            plz=profile.plz,
+            ort=profile.ort,
+        ).address_line()
 
     async def _own_document(self, document_id: int) -> Document:
         row = await self.db.execute(

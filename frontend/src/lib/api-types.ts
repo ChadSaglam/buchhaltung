@@ -1264,6 +1264,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/offene-posten/{document_id}/mahnung.pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Mahnung File
+         * @description The letter as a file — a Mahnung goes in an envelope, not through Strg+P.
+         */
+        get: operations["mahnung_file_api_offene_posten__document_id__mahnung_pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/pdf/parse": {
         parameters: {
             query?: never;
@@ -5698,6 +5718,39 @@ export interface operations {
                 };
                 content: {
                     "text/html": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mahnung_file_api_offene_posten__document_id__mahnung_pdf_get: {
+        parameters: {
+            query?: {
+                stufe?: number | null;
+            };
+            header?: never;
+            path: {
+                document_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

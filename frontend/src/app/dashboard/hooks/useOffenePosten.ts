@@ -45,18 +45,28 @@ export function useOffenePosten() {
   }, [draft, posten]);
 
   /** The letter needs the bearer token, so it is fetched and opened as a blob. */
-  const openLetter = useCallback(async (item: MahnungDraft) => {
+  const openLetterAs = useCallback(async (item: MahnungDraft, suffix: "html" | "pdf", mime: string) => {
     try {
-      const res = await api.get(`/api/offene-posten/${item.document_id}/mahnung.html?stufe=${item.stufe}`, {
+      const res = await api.get(`/api/offene-posten/${item.document_id}/mahnung.${suffix}?stufe=${item.stufe}`, {
         responseType: "blob",
       });
-      const url = URL.createObjectURL(new Blob([res.data], { type: "text/html" }));
+      const url = URL.createObjectURL(new Blob([res.data], { type: mime }));
       window.open(url, "_blank", "noopener");
       setTimeout(() => URL.revokeObjectURL(url), 30_000);
     } catch (e) {
       toast.error(errorMessage(e));
     }
   }, []);
+
+  const openLetter = useCallback(
+    (item: MahnungDraft) => openLetterAs(item, "html", "text/html"),
+    [openLetterAs],
+  );
+  /** A Mahnung goes in an envelope — this is the file, not a print dialog. */
+  const openLetterPdf = useCallback(
+    (item: MahnungDraft) => openLetterAs(item, "pdf", "application/pdf"),
+    [openLetterAs],
+  );
 
   return {
     debitoren: posten.data?.debitoren,
@@ -71,5 +81,6 @@ export function useOffenePosten() {
     recording,
     recordSent,
     openLetter,
+    openLetterPdf,
   };
 }

@@ -8,7 +8,7 @@ from here.
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user, get_db, require_editor
@@ -25,7 +25,9 @@ from app.services.offene_posten import (
     OffenePostenService,
     Side,
     mahnstufe_label,
+    mahnung_dateiname,
     mahnung_html,
+    mahnung_pdf,
     mahnung_subject,
     mahnung_text,
 )
@@ -98,6 +100,24 @@ async def mahnung_page(
     """The print-ready letter (Strg/Cmd + P → PDF)."""
     doc, level, company = await OffenePostenService(db, user).draft(document_id, stufe)
     return HTMLResponse(mahnung_html(doc, level, company=company))
+
+
+@router.get("/{document_id}/mahnung.pdf")
+async def mahnung_file(
+    document_id: int,
+    stufe: int | None = None,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> Response:
+    """The letter as a file — a Mahnung goes in an envelope, not through Strg+P."""
+    service = OffenePostenService(db, user)
+    doc, level, company = await service.draft(document_id, stufe)
+    content = mahnung_pdf(doc, level, company=company, company_address=await service.company_address())
+    return Response(
+        content=content,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'inline; filename="{mahnung_dateiname(doc, level)}"'},
+    )
 
 
 @router.post("/{document_id}/mahnung", response_model=MahnungDraft)
