@@ -156,6 +156,12 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 
 ## ✅ Done
 
+- **Mahnung als PDF** ✅ 2026-09-16 — `GET /api/offene-posten/{id}/mahnung.pdf?stufe=N`, served as
+  `Mahnung-2-R-2026-001.pdf`. Of the three documents still on HTML, the Mahnung is the one that leaves the
+  building on paper. Same text as `mahnung_html` (which stays the preview), letterhead address from the
+  Firmenprofil, no page number (one page, one envelope), and the "Entwurf" line stays on the file. 7 tests,
+  one of which reads the text back out of the PDF and asserts it matches `mahnung_text`.
+  **Still on HTML: the MWST sheet (B-67).**
 - **Rechnung als PDF** ✅ 2026-09-16 — `GET /api/rechnungen/{id}/rechnung.pdf`: the letter plus a Zahlteil built to
   the SIX template (105 mm, 62 mm receipt, 46 mm QR, 5 mm quiet zone), so B-79 has something to attach.
   `rechnung.html` stays the browser preview. The QR is drawn as **vector rectangles** (horizontal runs merged),
