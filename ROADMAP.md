@@ -34,8 +34,7 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 _The 2026-09-16 run cleared the whole previous block: B-72 (option B built, see below), B-79, the IA file move
 and Heute inbox, B-74, B-24, B-25, B-54 and B-55. What is left of it:_
 
-1. **B-20 rest** — the Kontenplan import wizard. The two cheap halves shipped (sample invoice, checklist
-   reordered); a wizard is a screen that does not exist yet and wants a sketch before code.
+1. ~~**B-20 rest**~~ ✅ 2026-09-16 — the Kontenplan import wizard. See Done.
 2. **B-72 → option C**, when it is worth it. Three of the four gaps are left, and all three are data or a
    certification, not code: Quellensteuer tariff tables, Formular 11, Swissdec ELM. The fourth — BVG — is closed
    as far as the law allows: the amount still comes from the pension fund, but the *legal minimum* is checked
@@ -98,8 +97,8 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
       *before* `auto_train`. — `M` / `S`
 
 ### User-friendly
-- [x] **B-20** ✅ 2026-09-16 — see Done (sample receipt + the checklist reordered). The Kontenplan import
-      wizard is deliberately still open — see that entry.
+- [x] **B-20** ✅ 2026-09-16 — complete: sample receipt, the checklist reordered, and the Kontenplan import
+      wizard (second run, see Done).
 
 ### Security & data
 - [x] **B-24** ✅ 2026-09-16 — see Done. ADR-002 is now *Accepted and implemented*.
@@ -167,6 +166,19 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 - **a11y** ✅ 2026-09-16 — `EmptyState` and `ErrorState` rendered an `h3` inside sections whose heading was an `h2`,
   which axe reported as 14 `moderate heading-order` findings across the app. Both gained an `as` prop defaulting to
   `h2`. The whole suite is back to zero findings, light and dark.
+- **B-20 (finished)** ✅ 2026-09-16 — the Kontenplan import wizard, the last third. A new customer's chart of
+  accounts arrives as a file from their Treuhänder or their old program; without this it gets typed in.
+  The reason it is a wizard and not a button is one line of existing code: `PUT /api/kontenplan/` **replaces the
+  whole plan**. Upload a partial list, press save, and everything the file does not mention is gone — noticed at
+  the next booking. So reading and writing are separate requests: `POST /api/kontenplan/import/vorschau` writes
+  nothing and answers per row (neu / geändert / unverändert / nicht gelesen, with the line number in the user's
+  own file), plus the list of accounts that would **disappear**; `POST /api/kontenplan/import` takes an explicit
+  `ergaenzen` / `ersetzen`, defaults to the one that cannot lose data, and the screen makes you tick a box before
+  a destructive one.
+  It refuses to guess: a Banana group row (a description, no account number) is skipped, a `TOTAL` line is
+  reported rather than repaired, and a duplicate names the line it collides with. Column headers are matched
+  across German, English, French and Italian exports.
+  `tests/test_kontenplan_import.py` (29) and `src/lib/kontenplan_import.test.ts` (17).
 - **B-72 option C, the BVG part** ✅ 2026-09-16 — the one gap of the four that is *law* rather than purchased
   data. The Altersgutschrift on the payslip still comes from the pension fund, and that stays: a real plan is
   almost never the BVG minimum, and a number re-derived here would contradict the one that gets paid. What the law

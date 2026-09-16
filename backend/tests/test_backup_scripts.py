@@ -57,17 +57,21 @@ def test_it_keeps_what_is_inside_the_window(tmp_path: Path):
 
 
 def test_it_removes_what_is_past_the_window(tmp_path: Path):
-    make_backups(tmp_path, 1, 40, 90)
+    # The expected name comes from `make_backups`, never from a second `stamp()`
+    # call: `stamp()` reads the clock, so recomputing it after the subprocess has
+    # run gives a different second whenever the test straddles a tick. That is a
+    # flake that only shows up on a loaded machine — which is to say, in CI.
+    juengste, _alt, _aelter = make_backups(tmp_path, 1, 40, 90)
     prune(tmp_path, 30)
-    assert remaining(tmp_path) == {stamp(1)}
+    assert remaining(tmp_path) == {juengste}
 
 
 def test_the_newest_backup_is_never_removed(tmp_path: Path):
     # Retention 0 means "keep one", not "keep none" — an empty backup directory
     # is the state this whole feature exists to prevent.
-    make_backups(tmp_path, 400)
+    (einzige,) = make_backups(tmp_path, 400)
     prune(tmp_path, 0)
-    assert remaining(tmp_path) == {stamp(400)}
+    assert remaining(tmp_path) == {einzige}
 
 
 def test_it_leaves_everything_that_is_not_a_backup(tmp_path: Path):
@@ -98,6 +102,6 @@ def test_it_removes_the_whole_backup_not_just_its_dump(tmp_path: Path):
 def test_backup_names_sort_the_way_time_runs(tmp_path: Path):
     # The whole script compares timestamps as strings; that only works because
     # the format is fixed-width UTC. A local-time or a %-d format would not sort.
-    make_backups(tmp_path, 5, 2, 50)
+    fuenf, zwei, _fuenfzig = make_backups(tmp_path, 5, 2, 50)
     prune(tmp_path, 30)
-    assert remaining(tmp_path) == {stamp(5), stamp(2)}
+    assert remaining(tmp_path) == {fuenf, zwei}

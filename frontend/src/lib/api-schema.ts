@@ -64,3 +64,8 @@ export type UsageCounter = Schemas["UsageCounter"];
 // --- B-72 option C: das gesetzliche BVG-Minimum als Prüfung ------------------
 export type BvgPruefungOut = Schemas["BvgPruefungOut"];
 export type BvgHinweisOut = Schemas["BvgHinweisOut"];
+
+// --- B-20: der Kontenplan-Import-Assistent ----------------------------------
+export type KontenplanImportVorschau = Schemas["KontenplanImportVorschau"];
+export type KontenplanImportZeile = Schemas["KontenplanImportZeile"];
+export type KontenplanImportErgebnis = Schemas["KontenplanImportErgebnis"];

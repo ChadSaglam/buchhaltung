@@ -9,6 +9,7 @@ import { ErrorState } from "@/components/shared/ErrorState";
 import { PageSkeleton } from "@/components/shared/PageSkeleton";
 import { t } from "@/lib/i18n";
 import { useKontenplan } from "./hooks/useKontenplan";
+import { ImportAssistent } from "./components/ImportAssistent";
 import { KontenTable } from "./components/KontenTable";
 import { TrainingCard } from "./components/TrainingCard";
 import type { KontenplanTab } from "./types";
@@ -83,6 +84,10 @@ export default function KontenplanPage() {
                 <Button variant="primary" onClick={k.handleSave} disabled={k.saving} loading={k.saving} icon={<Save className="h-4 w-4" aria-hidden="true" />}>
                   {k.saving ? "Speichert..." : t("kontenplan.save")}
                 </Button>
+              </div>
+
+              <div className="mt-8">
+                <ImportAssistent bestand={k.konten.length} onFertig={k.retry} />
               </div>
             </>
           )}

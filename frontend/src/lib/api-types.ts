@@ -1229,6 +1229,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/kontenplan/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import Anwenden
+         * @description Den Import ausführen (B-20).
+         *
+         *     Die Datei wird ein zweites Mal gelesen statt die Vorschau zwischenzuspeichern:
+         *     eine Serverkopie zwischen zwei Klicks wäre Zustand, der veralten kann, und
+         *     das Ergebnis meldet ohnehin, was tatsächlich passiert ist.
+         */
+        post: operations["import_anwenden_api_kontenplan_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/kontenplan/import/vorschau": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import Vorschau
+         * @description Was der Import tun würde (B-20). Schreibt nichts.
+         *
+         *     Eigener Schritt, weil ``PUT /api/kontenplan/`` den ganzen Plan ersetzt: wer
+         *     eine Teilliste hochlädt, soll *vorher* sehen, welche Konten dabei
+         *     verschwinden würden.
+         */
+        post: operations["import_vorschau_api_kontenplan_import_vorschau_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/liquiditaet/": {
         parameters: {
             query?: never;
@@ -2097,6 +2145,16 @@ export interface components {
              */
             model: string;
         };
+        /** Body_import_anwenden_api_kontenplan_import_post */
+        Body_import_anwenden_api_kontenplan_import_post: {
+            /** File */
+            file: string;
+            /**
+             * Modus
+             * @default ergaenzen
+             */
+            modus: string;
+        };
         /** Body_import_banana_file_api_import_banana_post */
         Body_import_banana_file_api_import_banana_post: {
             /** File */
@@ -2104,6 +2162,11 @@ export interface components {
         };
         /** Body_import_statement_api_abgleich_statements_post */
         Body_import_statement_api_abgleich_statements_post: {
+            /** File */
+            file: string;
+        };
+        /** Body_import_vorschau_api_kontenplan_import_vorschau_post */
+        Body_import_vorschau_api_kontenplan_import_vorschau_post: {
             /** File */
             file: string;
         };
@@ -2963,6 +3026,70 @@ export interface components {
             ready: boolean;
             /** Warnings */
             warnings: number;
+        };
+        /** KontenplanImportErgebnis */
+        KontenplanImportErgebnis: {
+            /** Count */
+            count: number;
+            /** Entfernt */
+            entfernt: number;
+            /** Geaendert */
+            geaendert: number;
+            /** Modus */
+            modus: string;
+            /** Neu */
+            neu: number;
+            /** Status */
+            status: string;
+        };
+        /**
+         * KontenplanImportVorschau
+         * @description Was ein Import tun *würde*. Es wird nichts geschrieben.
+         *
+         *     `entfaellt` ist der Satz, der vor dem Klick zählt: diese Konten hat der
+         *     Mandant und die Datei nennt sie nicht, also verschwinden sie im Modus
+         *     "ersetzen".
+         */
+        KontenplanImportVorschau: {
+            /** Entfaellt */
+            entfaellt: string[];
+            /** Spalte Bezeichnung */
+            spalte_bezeichnung: string;
+            /** Spalte Konto */
+            spalte_konto: string;
+            /** Zaehler */
+            zaehler: {
+                [key: string]: number;
+            };
+            /** Zeilen */
+            zeilen: components["schemas"]["KontenplanImportZeile"][];
+        };
+        /**
+         * KontenplanImportZeile
+         * @description Eine Zeile der hochgeladenen Datei, wie der Assistent sie liest.
+         */
+        KontenplanImportZeile: {
+            /** Bezeichnung */
+            bezeichnung: string;
+            /**
+             * Bisher
+             * @default
+             */
+            bisher: string;
+            /**
+             * Grund
+             * @default
+             */
+            grund: string;
+            /** Konto */
+            konto: string;
+            /**
+             * Quelle
+             * @default 0
+             */
+            quelle: number;
+            /** Status */
+            status: string;
         };
         /**
          * KontenplanResponse
@@ -6616,6 +6743,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["KontoDefaultsResponse"];
+                };
+            };
+        };
+    };
+    import_anwenden_api_kontenplan_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_anwenden_api_kontenplan_import_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KontenplanImportErgebnis"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_vorschau_api_kontenplan_import_vorschau_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_vorschau_api_kontenplan_import_vorschau_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KontenplanImportVorschau"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
