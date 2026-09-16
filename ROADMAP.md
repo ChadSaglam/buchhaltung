@@ -41,7 +41,8 @@ and Heute inbox, B-74, B-24, B-25, B-54 and B-55. What is left of it:_
    Quellensteuer tariff tables, BVG Altersgutschriften, Formular 11, Swissdec ELM. `docs/B-72-LOHN-SPEC.md`.
    **Before any of that: compare one real month against the previous payroll and lift the watermark.**
 3. **B-23** observability — the other half of what the Treuhänder pack leans on.
-4. **B-26/B-27/B-28** the performance block, when there is enough data for it to matter.
+4. **B-26/B-27** the rest of the performance block (N+1 queries, the full-tenant scans), when there is enough
+   data for it to matter. B-28 is done.
 
 <details><summary>What item 1 of the old block settled (Banana, 2026-09-15) — keep, do not re-litigate</summary>
 
@@ -119,8 +120,7 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 - [ ] **B-27** Query audit: `import_data.py:341` one memory SELECT per key → preload once; `/stats` 3 statements → one
       `GROUP BY source`; `/stats/learning` drop 3 redundant counts; `ai_assistant.py:129` full-tenant scan per chat message
       → SQL bucketing, 12-month cap; cache `_load_model` per process keyed on `updated_at`. — `M` / `M`
-- [ ] **B-28** Indexes: add `bookings(tenant_id, id DESC)` and `(tenant_id, source, id)`, drop redundant `ix_bookings_id`;
-      `review_queue_items(tenant_id, status, confidence)`; `training_jobs(tenant_id, status)`. — `M` / `S`
+- [x] **B-28** ✅ 2026-09-16 — see Done. Two corrections to what this line proposed, both from measuring.
 
 ---
 
@@ -167,6 +167,18 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 - **a11y** ✅ 2026-09-16 — `EmptyState` and `ErrorState` rendered an `h3` inside sections whose heading was an `h2`,
   which axe reported as 14 `moderate heading-order` findings across the app. Both gained an `as` prop defaulting to
   `h2`. The whole suite is back to zero findings, light and dark.
+- **B-28** ✅ 2026-09-16 — indexes, chosen from `EXPLAIN (ANALYZE, BUFFERS)` against a seeded database rather
+  than from reading the code. Before → after: the bookings list for one tenant, on 800k rows across 200 tenants,
+  438 buffers with 23'053 rows thrown away by a filter → 90 buffers and an Index Cond, and **flat instead of
+  linear in the number of tenants**; the same list filtered by source, 327 → 88; the review queue on 60k rows,
+  1'603 → 521; the worker claiming the oldest pending job, 263 buffers and a 3'926-row sort → an **Index Only
+  Scan, 4 buffers, Heap Fetches 0**.
+  **Two corrections to what the roadmap line proposed.** `training_jobs` needs *two* indexes, not one: the line
+  named `(tenant_id, status)`, which serves `enqueue_training` — but the worker's claim is cross-tenant by design
+  (B-24 exempts the table for that reason) and needs `(status, requested_at, id)`. And `ix_bookings_id` was not
+  the only index duplicating its own primary key: writing the general test instead of the specific one found
+  `ix_kontenplan_id` and `ix_konto_defaults_id` doing the same. All three dropped; re-measured, nothing slower.
+  7 tests, no timing assertions — a stopwatch in a test suite is a flaky test, not a guarantee.
 - **B-22** ✅ 2026-09-16 — the audit log had six actions in it, four added that same week. The UI and the model
   had existed for months; what was missing was anything worth showing. Since B-17 dumps this table straight into
   the Treuhänder hand-off as `50-Protokoll.csv`, the pack was shipping an audit extract that was very nearly
