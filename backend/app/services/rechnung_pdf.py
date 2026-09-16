@@ -17,6 +17,8 @@ Rechtecke im Content-Stream.
 
 from __future__ import annotations
 
+from datetime import date
+
 from app.models.company_profile import CompanyProfile
 from app.models.document import Document
 from app.models.invoice_position import InvoicePosition
@@ -254,6 +256,7 @@ def invoice_pdf(
     netto: float,
     mwst: float,
     watermark: str = "",
+    erstellt: date | None = None,
 ) -> bytes:
     """Brief oben, Zahlteil unten — die Datei, die der Kunde bekommt.
 
@@ -293,6 +296,7 @@ def invoice_pdf(
             footer="",
             page_numbers=False,
             watermark=watermark,
+            erstellt=erstellt,
         )
     )
     pdf = document.pdf

@@ -85,9 +85,24 @@ def test_the_qr_message_says_it_is_not_a_real_claim(pdf):
 
 
 def test_the_same_day_gives_the_same_file():
-    # No randomness, no clock inside the render: a sample that differs run to run
-    # would make every diff of a stored copy noise.
+    # No randomness, and no clock: the sample is a function of its date alone, so
+    # the PDF's own /CreationDate is pinned to that date too (B-60). Without that
+    # pin fpdf2 stamps "now" and two renders one second apart differ — which made
+    # this assertion a coin flip instead of a check.
     assert beispiel_pdf(date(2026, 9, 16)) == beispiel_pdf(date(2026, 9, 16))
+
+
+def test_a_different_day_gives_a_different_file():
+    """The pin must follow the argument, not freeze every sample to one date."""
+    assert beispiel_pdf(date(2026, 9, 16)) != beispiel_pdf(date(2026, 9, 17))
+
+
+def test_a_real_invoice_keeps_its_real_timestamp():
+    """Only the sample is pinned. A document that claims to have been created on
+    a day it was not is a worse problem than a noisy diff."""
+    from app.services.pdf_render import Meta
+
+    assert Meta(title="Rechnung").erstellt is None
 
 
 def _pdf_text(pdf: bytes) -> bytes:

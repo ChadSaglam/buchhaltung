@@ -15,9 +15,31 @@ env:
   NODE_VERSION: "22"
 
 jobs:
-  backend:
-    name: Backend (lint · types · tests)
+  lint:
+    name: Lint (ruff)
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+      # ruff is pinned to the same version .pre-commit-config.yaml uses, so the
+      # hook, this job and a local `make lint` cannot disagree about formatting.
+      # `tests/test_ci_contract.py` fails if the two pins drift apart.
+      - run: pip install -r backend/requirements-dev.txt
+      - run: ruff check .
+      - run: ruff format --check .
+
+  backend:
+    name: Backend tests (${{ matrix.db }})
+    runs-on: ubuntu-latest
+    strategy:
+      # Both legs always run: the whole point is to see which one disagrees.
+      fail-fast: false
+      matrix:
+        db: [postgres, sqlite]
     services:
       postgres:
         image: postgres:16
@@ -33,7 +55,15 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     env:
-      DATABASE_URL: postgresql+asyncpg://test:test@127.0.0.1:5432/buchhaltung_test
+      # B-60: the two databases hide different things from each other. SQLite has
+      # no fixed-width integers, so `usage_events.quantity` overflowed int32 at
+      # 2.1 GB on Postgres while the local suite stayed green for weeks; SQLite has
+      # no row-level security, so the B-24 tests skip there entirely. Running one
+      # leg and calling it "tests pass" is what let both through.
+      DATABASE_URL: >-
+        ${{ matrix.db == 'postgres'
+        && 'postgresql+asyncpg://test:test@127.0.0.1:5432/buchhaltung_test'
+        || 'sqlite+aiosqlite:///./ci.db' }}
       DATABASE_URL_SYNC: postgresql://test:test@127.0.0.1:5432/buchhaltung_test
       JWT_SECRET: test-secret-that-is-long-enough-for-ci-usage
       ENVIRONMENT: test
@@ -53,14 +83,10 @@ jobs:
           # The dev file is the toolchain AND the test-only deps (segno renders the
           # QR-bills the decoder tests read) — installing it keeps CI == `make test`.
           pip install -r backend/requirements-dev.txt
-      - name: Lint (ruff)
-        run: ruff check .
-      - name: Format check (ruff)
-        run: ruff format --check .
       - name: Tests + coverage
         run: pytest -q --cov=backend/app --cov-report=term-missing --cov-report=xml
       - name: Upload coverage
-        if: always()
+        if: always() && matrix.db == 'postgres'
         uses: actions/upload-artifact@v4
         with:
           name: backend-coverage
@@ -100,6 +126,14 @@ jobs:
       - name: Apply migrations
         working-directory: backend
         run: alembic upgrade head
+      - name: Downgrade to base and back up again
+        working-directory: backend
+        # A migration nobody has ever reversed is a migration that cannot be
+        # rolled back at 3 a.m. This is also the leg that catches the
+        # `921d958b8530` + `now()` default, which only breaks on the way down.
+        run: |
+          alembic downgrade base
+          alembic upgrade head
       - name: Fail if models drifted from migrations
         working-directory: backend
         run: |
@@ -160,6 +194,43 @@ jobs:
           name: playwright-report
           path: frontend/playwright-report
           if-no-files-found: ignore
+
+  compose-smoke:
+    name: Compose (build · up · health · worker)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Write the .env compose refuses to start without
+        # Every one of these is a `${VAR:?}` in docker-compose.yml. Generating
+        # them here is deliberate: a fixed value in the workflow would be a
+        # credential in git, and `tests/test_deployment_contract.py` already
+        # holds this list against the compose file.
+        run: |
+          {
+            echo "SECRET_KEY=$(openssl rand -hex 32)"
+            echo "POSTGRES_PASSWORD=$(openssl rand -hex 16)"
+            echo "APP_DB_PASSWORD=$(openssl rand -hex 16)"
+          } > .env
+      - name: Build the images
+        # The frontend image too — it was never built in CI, and it is the one
+        # whose NEXT_PUBLIC_* build args are easy to break without noticing (B-62).
+        run: docker compose build api worker web
+      - name: Start the stack
+        # Not ollama: nothing here needs a model, and the image is gigabytes.
+        # `--wait` honours the api healthcheck, which is B-61's readiness probe.
+        run: docker compose up -d --wait db redis api worker
+      - name: The API says it is ready
+        run: |
+          curl --fail --silent --show-error http://127.0.0.1:8000/api/health
+          curl --fail --silent --show-error http://127.0.0.1:8000/api/health/live
+      - name: The worker runs a pass and exits 0
+        run: docker compose run --rm --entrypoint "" worker python -m app.worker --once
+      - name: Logs, if anything above failed
+        if: failure()
+        run: docker compose logs --no-color --tail 200
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
 
   api-contract:
     name: API contract (frontend types in sync)

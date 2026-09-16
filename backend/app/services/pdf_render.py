@@ -14,6 +14,7 @@ derselbe Renderer für jedes Dokument taugt.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import UTC, date, datetime
 
 from app.services.export import fmt_swiss
 
@@ -88,6 +89,12 @@ class Meta:
     #: that is correct but not yet cleared to leave the building — see B-72's
     #: "Nicht für die Einreichung". Empty (the default) draws nothing.
     watermark: str = ""
+    #: When set, the PDF's ``/CreationDate`` is this instead of "now", which makes
+    #: the bytes reproducible for a given day. Only for documents that *are* a
+    #: function of their date and nothing else — the onboarding sample (B-20). A
+    #: real invoice keeps the real timestamp; a document that claims to have been
+    #: created on a day it was not is a worse problem than a noisy diff.
+    erstellt: date | None = None
 
 
 def _fpdf_class():
@@ -138,6 +145,8 @@ class PdfDoc:
     def __init__(self, meta: Meta) -> None:
         self.meta = meta
         self.pdf = _Fpdf(meta.footer, meta.page_numbers, meta.watermark)
+        if meta.erstellt is not None:
+            self.pdf.set_creation_date(datetime(meta.erstellt.year, meta.erstellt.month, meta.erstellt.day, tzinfo=UTC))
         self.pdf.set_auto_page_break(auto=True, margin=20)
         self.pdf.set_margins(MARGIN, MARGIN, MARGIN)
         self.pdf.set_title(latin1(meta.title))

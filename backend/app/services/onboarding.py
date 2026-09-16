@@ -135,4 +135,10 @@ def beispiel_pdf(heute: date | None = None) -> bytes:
         netto=netto,
         mwst=mwst,
         watermark=WASSERZEICHEN,
+        # The sample is a function of its date and nothing else, so pin the PDF's
+        # own creation stamp to that date too. Without it fpdf2 writes "now" and
+        # two renders one second apart differ — which made the determinism test
+        # here a coin flip rather than a check (B-60, same shape as the backup
+        # retention flake).
+        erstellt=tag,
     )

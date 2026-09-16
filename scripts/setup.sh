@@ -18,7 +18,15 @@ BACKEND_HOST="${BACKEND_HOST:-127.0.0.1}"
 BACKEND_PORT="${BACKEND_PORT:-8000}"
 FRONTEND_PORT="${FRONTEND_PORT:-3000}"
 OLLAMA_BASE_URL="${OLLAMA_BASE_URL:-http://127.0.0.1:11434}"
-DEFAULT_DATABASE_URL="postgresql://chadev:Chadev%2F2202@localhost:5432/buchhaltung"
+# B-60: this line used to carry a real password. A default that is a credential
+# is a credential in git, in every clone and in every fork — and it stays in the
+# history after it is removed, which is why the one that was here has to be
+# rotated, not just deleted. Set DATABASE_URL (or POSTGRES_PASSWORD) before
+# running this script; the placeholder below is not a working password.
+DEFAULT_DB_USER="${POSTGRES_USER:-chadev}"
+DEFAULT_DB_PASSWORD="${POSTGRES_PASSWORD:-CHANGE_ME}"
+DEFAULT_DB_NAME="${POSTGRES_DB:-buchhaltung}"
+DEFAULT_DATABASE_URL="${DATABASE_URL:-postgresql://${DEFAULT_DB_USER}:${DEFAULT_DB_PASSWORD}@localhost:5432/${DEFAULT_DB_NAME}}"
 NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL:-http://${BACKEND_HOST}:${BACKEND_PORT}}"
 
 SETUP_BACKEND=1
