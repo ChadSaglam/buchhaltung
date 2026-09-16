@@ -130,11 +130,11 @@ def jahresanteil(mitarbeiter: Mitarbeiter, jahr: int) -> float:
     return tage / (TAGE_PRO_MONAT * MONATE_PRO_JAHR)
 
 
-def fehlende_konfiguration(mitarbeiter: Mitarbeiter, settings: LohnSettings, *, jahresbrutto: float) -> list[str]:
-    """Rates this payslip needs and does not have, in payslip order.
+def fehlende_settings(settings: LohnSettings) -> list[str]:
+    """Compulsory tenant-level rates that are not on file, in payslip order.
 
-    ``jahresbrutto`` is the employee's expected yearly gross; it decides only
-    whether BVG is expected at all.
+    Only the ones that always apply. UVGZ and KTG are voluntary and their
+    absence is an answer, not a gap — see the module docstring.
     """
     fehlend: list[str] = []
     if settings.uvg_nbu_satz is None:
@@ -145,6 +145,16 @@ def fehlende_konfiguration(mitarbeiter: Mitarbeiter, settings: LohnSettings, *, 
         fehlend.append("FAK-Satz")
     if settings.verwaltungskosten_satz is None:
         fehlend.append("Verwaltungskostenbeitrag")
+    return fehlend
+
+
+def fehlende_konfiguration(mitarbeiter: Mitarbeiter, settings: LohnSettings, *, jahresbrutto: float) -> list[str]:
+    """Rates this payslip needs and does not have, in payslip order.
+
+    ``jahresbrutto`` is the employee's expected yearly gross; it decides only
+    whether BVG is expected at all.
+    """
+    fehlend = fehlende_settings(settings)
     if mitarbeiter.quellensteuer and mitarbeiter.quellensteuer_satz is None:
         fehlend.append("Quellensteuersatz")
     if jahresbrutto >= BVG_EINTRITTSSCHWELLE and mitarbeiter.bvg_an_monat is None:

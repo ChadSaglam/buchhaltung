@@ -87,6 +87,7 @@ from app.routers import (
     health,
     import_data,
     liquiditaet,
+    lohn,
     offene_posten,
     pdf,
     platform_events,
@@ -125,6 +126,7 @@ application.include_router(email_intake.router)
 application.include_router(abschluss.router)
 application.include_router(liquiditaet.router)
 application.include_router(dauerbuchungen.router)
+application.include_router(lohn.router)
 
 
 app = application
