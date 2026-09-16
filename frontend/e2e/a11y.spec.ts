@@ -68,7 +68,7 @@ async function register(page: Page) {
   await page.getByLabel("Firmenname").fill(`A11y AG ${stamp}`);
   await page.getByLabel("Ihr Name").fill("Axe Tester");
   await page.getByLabel("E-Mail").fill(`a11y-${stamp}@example.ch`);
-  await page.getByLabel("Passwort").fill("Secret123!");
+  await page.getByLabel("Passwort").fill("Secret123!pass");
   await page.getByRole("button", { name: /registrieren/i }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
 }

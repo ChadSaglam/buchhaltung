@@ -57,6 +57,11 @@ export default defineConfig({
         SECRET_KEY: "e2e-only-secret-not-used-outside-playwright",
         CORS_ORIGINS: `http://127.0.0.1:${E2E_PORT},http://localhost:${E2E_PORT}`,
         SENTRY_DSN: "",
+        // B-55 put a 10/minute per-IP bucket on register/login/sso. Every test
+        // here registers a fresh tenant from 127.0.0.1, so the suite would
+        // throttle itself after the tenth one. The limit is covered by
+        // backend/tests/test_auth_surface.py; this run is about everything else.
+        RATE_LIMIT_AUTH: "10000/minute",
         // Platform SSO (e2e/sso.spec.ts mints the hand-off token with this secret).
         PLATFORM_SHARED_SECRET: E2E_PLATFORM_SECRET,
         BILLING_URL: E2E_BILLING_URL,

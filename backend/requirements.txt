@@ -22,6 +22,10 @@ defusedxml>=0.7.1
 aiosqlite>=0.20.0
 httpx==0.28.1
 slowapi==0.1.10
+# B-55: shared rate-limit counters. Optional at runtime — without REDIS_URL the
+# limiter stays in process memory — but compose already runs redis, and with more
+# than one uvicorn worker in-memory buckets hand out the quota once per worker.
+redis>=5.0
 sentry-sdk==2.62.0
 # Only imported when STORAGE_BACKEND=s3 (app/services/storage.py); local storage needs no AWS libs.
 boto3>=1.34

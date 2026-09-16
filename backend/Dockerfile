@@ -17,7 +17,15 @@ COPY . .
 RUN mkdir -p /app/data && chmod +x /app/scripts/migrate-and-run.sh && chown -R app:app /app
 USER app
 
+# B-55: behind a reverse proxy every request arrives from the proxy, so the
+# per-IP rate limit and every logged client address would be the proxy's. With
+# --proxy-headers uvicorn reads X-Forwarded-For, but only from the hops named in
+# FORWARDED_ALLOW_IPS — an empty default means "trust nobody", which is the safe
+# way round: no proxy configured, no header believed. Set it to the proxy's
+# address (or the docker network) when you put one in front.
+ENV FORWARDED_ALLOW_IPS=""
+
 # The ENTRYPOINT migrates, then execs CMD. The worker service overrides the
 # ENTRYPOINT so only the API migrates (see docker-compose.yml).
 ENTRYPOINT ["/app/scripts/migrate-and-run.sh"]
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips \"$FORWARDED_ALLOW_IPS\""]

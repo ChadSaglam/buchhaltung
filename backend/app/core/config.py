@@ -57,6 +57,13 @@ class Settings(BaseSettings):
     RATE_LIMIT_DEFAULT: str = "200/minute"
     RATE_LIMIT_CLASSIFY: str = "60/minute"
     RATE_LIMIT_HEAVY: str = "30/minute"
+    # B-55: sign-in, sign-up and the SSO hand-off are the only unauthenticated
+    # write paths, so they are keyed per IP and kept far below the default.
+    RATE_LIMIT_AUTH: str = "10/minute"
+    # Where the rate-limit counters live. Empty = in-process memory, which is
+    # correct for one uvicorn process and silently wrong for two: each worker
+    # would then allow the full quota. compose already runs redis.
+    REDIS_URL: str = ""
 
     # --- CORS ------------------------------------------------------------
     # Comma-separated list, e.g. "https://app.example.ch,https://admin.example.ch"

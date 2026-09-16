@@ -35,7 +35,7 @@ async def create_user(
     db: AsyncSession,
     tenant: Tenant,
     email: str | None = None,
-    password: str = "Test1234!",
+    password: str = "Test1234!pass",
     role: str = "owner",
 ) -> User:
     user = User(

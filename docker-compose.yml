@@ -35,7 +35,12 @@ services:
       - SMTP_PASSWORD=${SMTP_PASSWORD:-}
       - FROM_EMAIL=${FROM_EMAIL:-}
       - OLLAMA_BASE_URL=http://ollama:11434
+      # B-55: shared rate-limit buckets. Without this the limiter counts in
+      # process memory, which is per-worker and therefore per-worker generous.
       - REDIS_URL=redis://redis:6379/0
+      # Empty = trust no proxy's X-Forwarded-For. Set to your reverse proxy's
+      # address once one is in front, or the rate limit keys on its IP.
+      - FORWARDED_ALLOW_IPS=${FORWARDED_ALLOW_IPS:-}
       # Background jobs run in the `worker` service below, not in the API.
       - RUN_WORKER_IN_API=false
       # Platform SSO + events (chadev-platform/contracts/sso.md, events.md).

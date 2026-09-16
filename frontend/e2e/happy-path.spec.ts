@@ -26,10 +26,12 @@ test("register, browse the Kontenplan, book and export", async ({ page, request 
 
   // ── register via the UI ──────────────────────────────────────────────
   await page.goto("/register");
-  await page.getByPlaceholder("Meine Firma GmbH").fill(`E2E AG ${stamp}`);
-  await page.getByPlaceholder("Max Muster").fill("E2E Tester");
-  await page.getByPlaceholder("name@firma.ch").fill(email);
-  await page.getByPlaceholder("Mindestens 8 Zeichen").fill("Secret123!");
+  // By label, not by placeholder: the placeholder is copy and changes with the
+  // rules (B-55 moved the password floor from 8 to 12), the label is the contract.
+  await page.getByLabel("Firmenname").fill(`E2E AG ${stamp}`);
+  await page.getByLabel("Ihr Name").fill("E2E Tester");
+  await page.getByLabel("E-Mail").fill(email);
+  await page.getByLabel("Passwort").fill("Secret123!pass");
   await page.getByRole("button", { name: /registrieren/i }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
 

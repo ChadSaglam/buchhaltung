@@ -26,8 +26,8 @@ def _claims(token: str) -> dict:
 
 async def test_login_token_has_platform_claims(client, db_session):
     tenant = await create_tenant(db_session)
-    user = await create_user(db_session, tenant, password="Secret123!")
-    resp = await client.post("/api/auth/login", json={"email": user.email, "password": "Secret123!"})
+    user = await create_user(db_session, tenant, password="Secret123!pass")
+    resp = await client.post("/api/auth/login", json={"email": user.email, "password": "Secret123!pass"})
     assert resp.status_code == 200
     claims = _claims(resp.json()["access_token"])
     assert claims["sub"] == str(user.id)
@@ -42,7 +42,7 @@ async def test_login_token_has_platform_claims(client, db_session):
 async def test_register_token_has_platform_claims(client):
     resp = await client.post(
         "/api/auth/register",
-        json={"email": "new@example.com", "password": "Secret123!", "tenant_name": "Neu AG"},
+        json={"email": "new@example.com", "password": "Secret123!pass", "tenant_name": "Neu AG"},
     )
     assert resp.status_code in (200, 201)
     claims = _claims(resp.json()["access_token"])

@@ -77,7 +77,7 @@ export default function RegisterPage() {
             </div>
             <div className="space-y-1.5">
               <label htmlFor="reg-password" className="text-xs font-medium text-muted-foreground">Passwort</label>
-              <Input id="reg-password" type="password" placeholder="Mindestens 8 Zeichen" icon={<Lock />} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} autoComplete="new-password" />
+              <Input id="reg-password" type="password" placeholder="Mindestens 12 Zeichen" icon={<Lock />} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={12} autoComplete="new-password" />
             </div>
             {error && (
               <motion.p

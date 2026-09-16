@@ -11,6 +11,8 @@ Two layers:
   nests per included router, so it silently skipped every route.
 * `@limiter.limit(...)` on the expensive routes (`scanner/extract`, `classify*`,
   `ai/*`, `pdf/parse`) replaces the default with a tighter per-tenant bucket.
+* `RATE_LIMIT_AUTH` on `/auth/register`, `/auth/login` and `/auth/sso` — the
+  only unauthenticated write paths, so the bucket is per IP and tight (B-55).
 
 Limits live in `core/config.py` (`RATE_LIMIT_*`) and are read per request so
 they can be tuned per environment without code changes.
@@ -18,6 +20,7 @@ they can be tuned per environment without code changes.
 
 from __future__ import annotations
 
+import logging
 import math
 import time
 
@@ -27,6 +30,8 @@ from slowapi.util import get_remote_address
 
 from app.core.config import settings
 from app.core.security import decode_access_token
+
+logger = logging.getLogger(__name__)
 
 
 def tenant_id_from_token(request: Request) -> int | None:
@@ -68,7 +73,31 @@ def heavy_limit() -> str:
     return settings.RATE_LIMIT_HEAVY
 
 
-limiter = Limiter(key_func=tenant_or_ip, default_limits=[default_limit])
+def auth_limit() -> str:
+    return settings.RATE_LIMIT_AUTH
+
+
+def storage_uri() -> str:
+    """Where the counters live (B-55).
+
+    In-process memory is right for one uvicorn process and quietly wrong for
+    two — each worker would grant the full quota. `REDIS_URL` makes the buckets
+    shared. A configured URL whose client is not installed is a configuration
+    mistake worth saying out loud, not worth crashing over, so it falls back to
+    memory with a warning.
+    """
+    url = (settings.REDIS_URL or "").strip()
+    if not url:
+        return "memory://"
+    try:
+        import redis  # noqa: F401
+    except ImportError:
+        logger.warning("[LIMIT] REDIS_URL is set but the redis client is missing; using in-memory limits")
+        return "memory://"
+    return url
+
+
+limiter = Limiter(key_func=tenant_or_ip, default_limits=[default_limit], storage_uri=storage_uri())
 
 
 async def enforce_default_limit(request: Request) -> None:

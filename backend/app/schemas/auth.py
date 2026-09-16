@@ -1,21 +1,40 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Annotated
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from pydantic.config import ConfigDict
 
+#: B-55. Length is the only rule that reliably buys entropy; composition rules
+#: ("one upper, one digit, one symbol") push people to `Passwort1!` and no
+#: further. 12 is the NIST-style floor; the 128 cap keeps bcrypt from hashing a
+#: megabyte someone pasted.
+MIN_PASSWORD_LENGTH = 12
+MAX_PASSWORD_LENGTH = 128
+
+NewPassword = Annotated[
+    str,
+    Field(
+        min_length=MIN_PASSWORD_LENGTH,
+        max_length=MAX_PASSWORD_LENGTH,
+        description=f"Mindestens {MIN_PASSWORD_LENGTH} Zeichen.",
+    ),
+]
+
 
 class RegisterRequest(BaseModel):
     email: EmailStr
-    password: str
+    password: NewPassword
     display_name: str = ""
     tenant_name: str = "Meine Firma"
 
 
 class LoginRequest(BaseModel):
     email: EmailStr
-    password: str
+    #: Not `NewPassword`: an account created under the old floor must still be
+    #: able to sign in, and a length rule on login leaks the rule to an attacker.
+    password: str = Field(min_length=1, max_length=MAX_PASSWORD_LENGTH)
 
 
 class TokenResponse(BaseModel):
