@@ -13,7 +13,7 @@
 
 | Owner's words | What it means in this repo | Tracks that deliver it |
 |---|---|---|
-| **more professional** | Money that rounds right in every export, correct VAT codes, audit trail, Treuhänder hand-off that is accepted first time | B-01 ✅, B-04 ✅, B-05 ✅, B-09 ✅, B-47 ✅, B-48 ✅, B-67 ✅, B-68 ✅, B-70 ✅, B-77 ✅, B-51 ✅, B-53 ✅, B-17, B-22 |
+| **more professional** | Money that rounds right in every export, correct VAT codes, audit trail, Treuhänder hand-off that is accepted first time | B-01 ✅, B-04 ✅, B-05 ✅, B-09 ✅, B-47 ✅, B-48 ✅, B-67 ✅, B-68 ✅, B-70 ✅, B-77 ✅, B-51 ✅, B-53 ✅, B-17 ✅, B-22 |
 | **more dynamic** | Scan → classify → book without a reload; live review queue; optimistic booking edits; the learning loop visibly closes | B-45 ✅, B-14 ✅, B-15 ✅, B-16 ✅ |
 | **easier to improve** | No god-files, one type source, tests that catch regressions, jobs outside the API process, prod == compose | B-02 ✅, B-03 ✅, B-08 ✅, B-10 ✅, B-11 ✅, B-13 ✅, B-33 ✅, B-39 ✅, B-41 ✅, B-49 ✅, B-59 ✅, B-60 |
 | **together** (platform) | One login across billing + buchhaltung, paid invoices book themselves, roles mean something | B-36 ✅, B-37 ✅, B-40 ✅, B-52 ✅, B-38 🅿️ |
@@ -36,14 +36,12 @@ and Heute inbox, B-74, B-24, B-25, B-54 and B-55. What is left of it:_
 
 1. **B-20** Onboarding — first scan guided, sample receipt, Kontenplan import wizard. Now the last thing between a
    new tenant and their first correct booking: everything it would walk somebody through exists and works.
-2. **B-17** Treuhänder hand-off — Banana TSV + PDF summary + receipts zip + audit extract in one click. The hero
-   flow of `docs/BRAINSTORM-2026-09-12.md`, and every piece of it is already built and tested separately.
-3. **B-72 → option C**, when it is worth it. What shipped is option B with C's shape: the rates are per-tenant
+2. **B-72 → option C**, when it is worth it. What shipped is option B with C's shape: the rates are per-tenant
    configuration and nothing is guessed. The four things still missing are data or a certification, not code —
    Quellensteuer tariff tables, BVG Altersgutschriften, Formular 11, Swissdec ELM. `docs/B-72-LOHN-SPEC.md`.
    **Before any of that: compare one real month against the previous payroll and lift the watermark.**
-4. **B-22** audit trail completeness · **B-23** observability — what the Treuhänder pack in B-17 will lean on.
-5. **B-26/B-27/B-28** the performance block, when there is enough data for it to matter.
+3. **B-22** audit trail completeness · **B-23** observability — what the Treuhänder pack in B-17 will lean on.
+4. **B-26/B-27/B-28** the performance block, when there is enough data for it to matter.
 
 <details><summary>What item 1 of the old block settled (Banana, 2026-09-15) — keep, do not re-litigate</summary>
 
@@ -83,7 +81,7 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 - [x] **B-72** ✅ 2026-09-16 — built as option **B with option C's shape** (see Done). The owner chose C; what is
       still missing for it is data or a certification, not code — Quellensteuer tariff tables, BVG Altersgutschriften,
       Formular 11, Swissdec ELM. `docs/B-72-LOHN-SPEC.md` lists all four.
-- [ ] **B-17** Treuhänder export pack: Banana TSV + PDF summary + receipts zip + audit extract, one click — the hero flow
+- [x] **B-17** ✅ 2026-09-16 — see Done. Original: Banana TSV + PDF summary + receipts zip + audit extract, one click — the hero flow
       (see brainstorm idea A). Validate with two Treuhänder *before* building the PDF. — `M` / `L`
 - [ ] **B-56** Parser/classifier hygiene: `_parse_swiss_number` handles `'`/`’`/`\u202f` and `1234,50`; date regex anchored
       (4-digit year → `3924` today); tenant-specific supplier names out of `CLASSIFICATION_RULES` into per-tenant
@@ -168,6 +166,18 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 - **a11y** ✅ 2026-09-16 — `EmptyState` and `ErrorState` rendered an `h3` inside sections whose heading was an `h2`,
   which axe reported as 14 `moderate heading-order` findings across the app. Both gained an `as` prop defaulting to
   `h2`. The whole suite is back to zero findings, light and dark.
+- **B-17** ✅ 2026-09-16 — the Treuhänder hand-off, in one file. `GET /api/export/batches/{id}/pack.zip`:
+  cover sheet as a PDF, the Banana import **byte-identical to the batch**, the receipts numbered to match the
+  bookings (`30-Belege/047-Migros.pdf`), the same rows as a readable CSV, and the audit trail for the period.
+  The useful part is not what is in the zip but what the README says is *not*: the bookings with no receipt,
+  listed by number, because that list is the Treuhänder's actual review task and the only thing they would
+  otherwise derive by hand. A document whose file cannot be read gets its own section — that is the one failure
+  invisible from the booking alone, where the system believes a receipt exists and it does not. Building the pack
+  is a pure read, so a Treuhänder who loses the e-mail gets the same zip again. Filenames go through a whitelist
+  (vendor names come out of OCR, and `../../etc/passwd` is a vendor name as far as the extractor is concerned),
+  the CSV carries plain numbers so a column can be summed and `safe_text` so a description starting with `=` is
+  not a formula, and the pack refuses past 512 MB with the number in the message rather than dying at 94 %.
+  19 tests.
 - **B-24** ✅ 2026-09-16 — Postgres Row-Level Security on the 24 tenant-scoped tables (ADR-002, now *Accepted and
   implemented*). `SET LOCAL app.tenant_id` re-issued by an `after_begin` listener — the only variant that survives
   the 27 mid-request commits and does not leak on a pooled connection — plus `bind_tenant()` for the request's first
@@ -573,6 +583,6 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 | 2 Security | ✅ B-06, B-07, B-24, B-25, B-32, B-34, B-40, B-41, B-42, B-43, B-54, B-55 · open: — |
 | 3 Reliability | ✅ B-04, B-05, B-08, B-11, B-33, B-35, B-39, B-47, B-48, B-49, B-63, B-64, B-73, B-76, B-51, B-52 · open: B-56, B-57 |
 | 4 Polish | ✅ B-09, B-13, B-66, B-67, B-76, B-53 · open: B-22, B-61 |
-| 5 UX | ✅ B-14, B-15, B-16, B-18, B-19, B-44, B-45, B-46, B-50 (+B-21), B-58, B-59, B-65, B-71, B-72, B-74, B-79, IA 1–5 · open: B-17, B-20 |
+| 5 UX | ✅ B-14, B-15, B-16, B-18, B-19, B-44, B-45, B-46, B-50 (+B-21), B-58, B-59, B-65, B-71, B-72, B-74, B-79, IA 1–5 · open: B-20 |
 | 6 Together | ✅ B-36 (SSO + mirroring), B-37 (events) · deploy: `docs/DEPLOY-CHECKLIST-B36-B37.md` · parked: B-38 |
 | 7 DX | ✅ B-12, B-29, B-30 · open: B-60, B-62 |

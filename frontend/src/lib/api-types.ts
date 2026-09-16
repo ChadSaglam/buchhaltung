@@ -1014,6 +1014,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/export/batches/{batch_id}/pack.zip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download Pack
+         * @description The whole hand-off in one file (B-17).
+         *
+         *     Cover sheet, the Banana import byte-identical to the batch, the receipts
+         *     numbered to match the bookings, the same rows as a readable CSV, and the
+         *     audit trail for the period. Building it is a read — nothing is stamped,
+         *     nothing is marked as sent — so a Treuhänder who loses the e-mail gets the
+         *     same zip again.
+         */
+        get: operations["download_pack_api_export_batches__batch_id__pack_zip_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/export/csv": {
         parameters: {
             query?: never;
@@ -6023,6 +6049,37 @@ export interface operations {
         };
     };
     download_batch_api_export_batches__batch_id__file_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batch_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_pack_api_export_batches__batch_id__pack_zip_get: {
         parameters: {
             query?: never;
             header?: never;

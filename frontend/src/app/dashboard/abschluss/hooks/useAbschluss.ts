@@ -31,6 +31,7 @@ export function useAbschluss() {
   const batches = useApi<ExportBatchListResponse>("/api/export/batches/");
   const [exporting, setExporting] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [packing, setPacking] = useState<number | null>(null);
 
   const retry = useCallback(() => {
     void preflight.mutate();
@@ -61,6 +62,20 @@ export function useAbschluss() {
     }
   }, []);
 
+  /** B-17: the whole hand-off in one file. Larger than the others, so it says
+   *  so while it builds — a silent button that takes twenty seconds reads as
+   *  broken. */
+  const downloadPack = useCallback(async (batch: ExportBatchOut) => {
+    setPacking(batch.id);
+    try {
+      await download(`/api/export/batches/${batch.id}/pack.zip`, `Treuhand-Export-${batch.id}.zip`);
+    } catch (e) {
+      toast.error(errorMessage(e));
+    } finally {
+      setPacking(null);
+    }
+  }, []);
+
   const downloadCover = useCallback(async (batch: ExportBatchOut) => {
     try {
       await download(`/api/export/batches/${batch.id}/cover`, `deckblatt_${batch.id}.txt`);
@@ -81,5 +96,7 @@ export function useAbschluss() {
     runExport,
     downloadFile,
     downloadCover,
+    downloadPack,
+    packing,
   };
 }

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,6 +17,7 @@ from app.schemas.export_batch import (
     PreflightResponse,
 )
 from app.services.export_batch import ExportBatchService
+from app.services.treuhand_pack import PackTooLarge, TreuhandPackService
 
 router = APIRouter(prefix="/api/export/batches", tags=["export"])
 
@@ -100,3 +101,29 @@ async def download_cover(
 ) -> Response:
     batch, content = await ExportBatchService(db, user).cover_sheet(batch_id)
     return _attachment(content, f"deckblatt_{batch.id}.txt")
+
+
+@router.get("/{batch_id}/pack.zip")
+async def download_pack(
+    batch_id: int,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> Response:
+    """The whole hand-off in one file (B-17).
+
+    Cover sheet, the Banana import byte-identical to the batch, the receipts
+    numbered to match the bookings, the same rows as a readable CSV, and the
+    audit trail for the period. Building it is a read — nothing is stamped,
+    nothing is marked as sent — so a Treuhänder who loses the e-mail gets the
+    same zip again.
+    """
+    try:
+        name, content = await TreuhandPackService(db, user).build(batch_id)
+    except PackTooLarge as exc:
+        raise HTTPException(413, str(exc)) from exc
+    await db.commit()
+    return Response(
+        content=content,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{name}"'},
+    )

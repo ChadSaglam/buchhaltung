@@ -122,7 +122,13 @@ export default function AbschlussPage() {
                 />
               </Card>
             ) : (
-              <BatchList batches={a.batches} onFile={a.downloadFile} onCover={a.downloadCover} />
+              <BatchList
+                batches={a.batches}
+                onFile={a.downloadFile}
+                onCover={a.downloadCover}
+                onPack={a.downloadPack}
+                packing={a.packing}
+              />
             )}
           </section>
         </>

@@ -1,4 +1,4 @@
-import { Download, FileText } from "lucide-react";
+import { Download, FileText, Package } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { formatDate } from "@/lib/format";
@@ -9,9 +9,13 @@ interface Props {
   batches: ExportBatchOut[];
   onFile: (batch: ExportBatchOut) => void;
   onCover: (batch: ExportBatchOut) => void;
+  /** B-17: cover sheet, Banana file, receipts and audit trail in one zip. */
+  onPack: (batch: ExportBatchOut) => void;
+  /** Id of the batch whose pack is building, or null. */
+  packing: number | null;
 }
 
-export function BatchList({ batches, onFile, onCover }: Props) {
+export function BatchList({ batches, onFile, onCover, onPack, packing }: Props) {
   return (
     <Card>
       <div className="overflow-x-auto">
@@ -22,7 +26,7 @@ export function BatchList({ batches, onFile, onCover }: Props) {
               <th scope="col" className="px-4 py-2 font-medium">Zeitraum</th>
               <th scope="col" className="px-4 py-2 font-medium">Inhalt</th>
               <th scope="col" className="px-4 py-2 font-medium">Erstellt</th>
-              <th scope="col" className="px-4 py-2 font-medium text-right">Datei</th>
+              <th scope="col" className="px-4 py-2 font-medium text-right">Dateien</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -43,6 +47,17 @@ export function BatchList({ batches, onFile, onCover }: Props) {
                     </Button>
                     <Button size="xs" variant="ghost" icon={<FileText className="h-3.5 w-3.5" />} onClick={() => onCover(batch)}>
                       Deckblatt
+                    </Button>
+                    <Button
+                      size="xs"
+                      variant="secondary"
+                      icon={<Package className="h-3.5 w-3.5" />}
+                      onClick={() => onPack(batch)}
+                      loading={packing === batch.id}
+                      disabled={packing !== null}
+                      title="Deckblatt, Banana-Datei, Belege und Protokoll in einem ZIP"
+                    >
+                      Für die Treuhand
                     </Button>
                   </div>
                 </td>
