@@ -357,3 +357,28 @@ async def test_something_will_move_the_lock():
     assert any(u["directory"].rstrip("/").endswith("backend") for u in pip), (
         "dependabot's pip entry does not point at backend/"
     )
+
+
+async def test_ci_and_the_image_agree_on_which_python_this_is():
+    """The lock is compiled for one interpreter. If the workflow and the image do
+    not name the same one, half of what runs is running on a tree that was never
+    resolved for it — and nothing else in this repo would say so."""
+    workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    dockerfile = (ROOT / "backend" / "Dockerfile").read_text(encoding="utf-8")
+
+    ci_version = re.search(r'PYTHON_VERSION:\s*"?([\d.]+)"?', workflow)
+    im_image = set(re.findall(r"^FROM\s+python:([\d.]+)", dockerfile, re.M))
+
+    assert ci_version, "the workflow no longer declares PYTHON_VERSION"
+    assert im_image, "the backend image no longer pins a Python version"
+    assert im_image == {ci_version.group(1)}, f"CI runs Python {ci_version.group(1)}, the image runs {sorted(im_image)}"
+
+
+async def test_make_setup_says_something_when_the_local_python_is_a_different_one():
+    """Installing a lock resolved for another minor usually works and sometimes
+    fails with a compiler error that explains nothing. A warning is enough — a
+    newer local venv is a choice, not a mistake."""
+    ziel = (ROOT / "Makefile").read_text(encoding="utf-8")
+    setup = ziel[ziel.index("\nsetup:") :].split("\n\n")[0]
+
+    assert "PYTHON_VERSION" in setup, "`make setup` installs the lock without checking which Python it is for"

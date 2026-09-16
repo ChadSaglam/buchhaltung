@@ -21,6 +21,22 @@ setup: ## Install backend + frontend dependencies
 		echo "→ reusing existing backend/venv ($$($(PY) --version))"; \
 	fi
 	$(PIP) install --upgrade pip
+	@# B-81: requirements.txt is compiled for the Python CI and the images run.
+	@# Installing it into a different minor is usually fine and occasionally is not
+	@# — a pin whose wheel does not exist for your version fails here with a
+	@# compiler error that says nothing about why. Warn, do not refuse: a local
+	@# venv on a newer Python is a choice, not a mistake.
+	@want=$$(grep -E '^[[:space:]]*PYTHON_VERSION:' .github/workflows/ci.yml | head -1 | tr -d '\042 ' | cut -d: -f2); \
+	have=$$($(PY) -c 'import sys;print("%d.%d"%sys.version_info[:2])'); \
+	if [ "$$want" != "$$have" ]; then \
+		echo ""; \
+		echo "  ⚠ backend/venv is Python $$have; CI and the images run $$want."; \
+		echo "    backend/requirements.txt was resolved for $$want, so this installs"; \
+		echo "    versions your Python was not the one chosen for, and \`make lock\`"; \
+		echo "    will refuse. Either recreate the venv with python$$want, or change"; \
+		echo "    PYTHON_VERSION in .github/workflows/ci.yml and backend/Dockerfile."; \
+		echo ""; \
+	fi
 	$(PIP) install -r backend/requirements.txt -r backend/requirements-dev.txt
 	cd frontend && npm install
 	@$(MAKE) --no-print-directory e2e-deps

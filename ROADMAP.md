@@ -186,6 +186,11 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
   healthy; and `pip freeze` inside the running API container is **83 packages, zero missing, zero mismatched,
   zero extra** against the lock. 9 new tests, including the one that matters — a package added to
   `requirements.in` without running `make lock` fails the suite.
+  **Found while proving it, and it is the owner's to decide:** `backend/venv` on the Mac is **Python 3.14**, CI
+  and both image stages are **3.13**. The local suite has been running on a different interpreter than production
+  for a while; the lock is what made it visible. `make setup` now warns when the two differ, `make lock` refuses,
+  and a test holds `PYTHON_VERSION` against the `FROM python:` lines. Fix it either way — recreate the venv on
+  3.13, or move CI and `backend/Dockerfile` to 3.14 — but pick one.
   Not locked, deliberately: `requirements-dev.txt`. It is the toolchain, ruff is already pinned to the version
   pre-commit installs, and a second lock would be a second thing to bump for no deployment risk.
 - **The stack runs** ✅ 2026-09-16 — not a roadmap item, and the largest thing that happened today. Every
