@@ -8,6 +8,7 @@ import { API_URL } from "@/lib/api";
 import { formatCHF } from "@/lib/format";
 import { anzeigeName, bereitschaftSatz, bereitschaftTone, periodeLabel } from "@/lib/lohn";
 import { AbrechnungPanel } from "./components/AbrechnungPanel";
+import { BvgPruefung } from "./components/BvgPruefung";
 import { MitarbeiterListe } from "./components/MitarbeiterListe";
 import { RatenForm } from "./components/RatenForm";
 import { useLohn } from "./hooks/useLohn";
@@ -56,6 +57,8 @@ export default function LohnPage() {
           <RatenForm settings={l.settings} onSave={l.saetzeSpeichern} onFreigeben={l.freigeben} />
 
           <MitarbeiterListe liste={l.mitarbeiter} onCreate={l.mitarbeiterAnlegen} />
+
+          <BvgPruefung pruefung={l.bvg} />
 
           <AbrechnungPanel
             waehlbar={l.waehlbar}

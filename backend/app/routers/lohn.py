@@ -30,6 +30,8 @@ from app.schemas.lohn import (
     AbrechnungListResponse,
     AbzugOut,
     BuchungOut,
+    BvgHinweisOut,
+    BvgPruefungOut,
     FreigabeRequest,
     LohnlaufOut,
     LohnlaufRequest,
@@ -39,6 +41,7 @@ from app.schemas.lohn import (
     MitarbeiterOut,
     MitarbeiterUpdate,
 )
+from app.services import bvg as bvg_service
 from app.services import lohn_pdf
 from app.services.audit_log import AuditLogService
 from app.services.lohn import Lohnlauf, fehlende_settings
@@ -206,6 +209,28 @@ async def mitarbeiter_aendern(
 
 
 # ── Abrechnen ────────────────────────────────────────────────────────────────
+
+
+@router.get("/bvg-pruefung", response_model=BvgPruefungOut)
+async def bvg_pruefung(
+    jahr: int = Query(..., ge=2000, le=2100),
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> BvgPruefungOut:
+    """Die eingetragenen BVG-Beträge gegen das gesetzliche Minimum (B-72, Option C).
+
+    Liest nur. Die Altersgutschrift auf der Abrechnung kommt weiterhin von der
+    Pensionskasse; hier steht, wo sie dem Obligatorium widerspricht.
+    """
+    leute = await LohnService(db, user).mitarbeiter_liste(inklusive_ausgetreten=False)
+    grenzen, aktuell = bvg_service.grenzen_fuer(jahr)
+    hinweise = bvg_service.pruefen(list(leute), jahr)
+    return BvgPruefungOut(
+        jahr=jahr,
+        grenzbetraege_jahr=grenzen.jahr,
+        grenzbetraege_aktuell=aktuell,
+        hinweise=[BvgHinweisOut(code=h.code, text=h.text, mitarbeiter_id=h.mitarbeiter_id) for h in hinweise],
+    )
 
 
 @router.post("/vorschau", response_model=LohnlaufOut)

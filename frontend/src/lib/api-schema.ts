@@ -60,3 +60,7 @@ export type KontoDefaultsResponse = Schemas["KontoDefaultsResponse"];
 // --- B-23: Verbrauch gegen Plan-Grenzen -------------------------------------
 export type UsageResponse = Schemas["UsageResponse"];
 export type UsageCounter = Schemas["UsageCounter"];
+
+// --- B-72 option C: das gesetzliche BVG-Minimum als Prüfung ------------------
+export type BvgPruefungOut = Schemas["BvgPruefungOut"];
+export type BvgHinweisOut = Schemas["BvgHinweisOut"];

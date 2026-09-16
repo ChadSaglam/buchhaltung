@@ -1306,6 +1306,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/lohn/bvg-pruefung": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Bvg Pruefung
+         * @description Die eingetragenen BVG-Beträge gegen das gesetzliche Minimum (B-72, Option C).
+         *
+         *     Liest nur. Die Altersgutschrift auf der Abrechnung kommt weiterhin von der
+         *     Pensionskasse; hier steht, wo sie dem Obligatorium widerspricht.
+         */
+        get: operations["bvg_pruefung_api_lohn_bvg_pruefung_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/lohn/mitarbeiter": {
         parameters: {
             query?: never;
@@ -2211,6 +2234,33 @@ export interface components {
             nr: number;
             /** Rechnung */
             rechnung: string;
+        };
+        /** BvgHinweisOut */
+        BvgHinweisOut: {
+            /** Code */
+            code: string;
+            /** Mitarbeiter Id */
+            mitarbeiter_id?: number | null;
+            /** Text */
+            text: string;
+        };
+        /**
+         * BvgPruefungOut
+         * @description Das gesetzliche BVG-Minimum gegen die eingetragenen Beträge (B-72, Option C).
+         *
+         *     Eine reine Prüfung: sie ändert keine Abrechnung. `grenzbetraege_jahr` sagt,
+         *     welche Jahreszahlen verwendet wurden — bei einem Jahr ohne hinterlegte
+         *     Grenzbeträge ist das nicht dasselbe wie `jahr`.
+         */
+        BvgPruefungOut: {
+            /** Grenzbetraege Aktuell */
+            grenzbetraege_aktuell: boolean;
+            /** Grenzbetraege Jahr */
+            grenzbetraege_jahr: number;
+            /** Hinweise */
+            hinweise: components["schemas"]["BvgHinweisOut"][];
+            /** Jahr */
+            jahr: number;
         };
         /** ChatMessage */
         ChatMessage: {
@@ -6673,6 +6723,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bvg_pruefung_api_lohn_bvg_pruefung_get: {
+        parameters: {
+            query: {
+                jahr: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BvgPruefungOut"];
                 };
             };
             /** @description Validation Error */

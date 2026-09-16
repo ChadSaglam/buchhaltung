@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { useApi } from "@/hooks/useApi";
 import api from "@/lib/api";
+import type { BvgPruefungOut } from "@/lib/api-schema";
 import { errorMessage } from "@/lib/errors";
 import {
   aktive,
@@ -47,6 +48,9 @@ export function useLohn() {
   const [busy, setBusy] = useState(false);
 
   const abrechnungen = useApi<AbrechnungListe>(`/api/lohn/abrechnungen?jahr=${jahr}`);
+  // B-72 Option C: eine reine Lesung, deshalb an das Jahr gebunden und nicht
+  // an die Auswahl — sie sagt etwas über die Belegschaft, nicht über einen Lauf.
+  const bvg = useApi<BvgPruefungOut>(`/api/lohn/bvg-pruefung?jahr=${jahr}`);
 
   const liste = useMemo(() => mitarbeiter.data ?? [], [mitarbeiter.data]);
   const waehlbar = useMemo(() => aktive(liste, monatsende(jahr, monat)), [liste, jahr, monat]);
@@ -163,6 +167,7 @@ export function useLohn() {
 
   return {
     settings: settings.data,
+    bvg: bvg.data,
     bereit,
     isLoading: settings.isLoading || mitarbeiter.isLoading,
     error: settings.error ?? mitarbeiter.error,

@@ -36,9 +36,10 @@ and Heute inbox, B-74, B-24, B-25, B-54 and B-55. What is left of it:_
 
 1. **B-20 rest** — the Kontenplan import wizard. The two cheap halves shipped (sample invoice, checklist
    reordered); a wizard is a screen that does not exist yet and wants a sketch before code.
-2. **B-72 → option C**, when it is worth it. What shipped is option B with C's shape: the rates are per-tenant
-   configuration and nothing is guessed. The four things still missing are data or a certification, not code —
-   Quellensteuer tariff tables, BVG Altersgutschriften, Formular 11, Swissdec ELM. `docs/B-72-LOHN-SPEC.md`.
+2. **B-72 → option C**, when it is worth it. Three of the four gaps are left, and all three are data or a
+   certification, not code: Quellensteuer tariff tables, Formular 11, Swissdec ELM. The fourth — BVG — is closed
+   as far as the law allows: the amount still comes from the pension fund, but the *legal minimum* is checked
+   against it (2026-09-16, see Done). `docs/B-72-LOHN-SPEC.md`.
    **Before any of that: compare one real month against the previous payroll and lift the watermark.**
 3. ~~**B-23**~~ ✅ 2026-09-16 — see Done.
 4. ~~**B-27**~~ ✅ 2026-09-16 — see Done. B-26 was never performance — it is the 2026-09-10 tenant-column rename.
@@ -79,8 +80,9 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
       source, and a reality check against what the customer actually booked). It runs only on the customer's own
       machine, so this is an agent/CLI question, not a server-to-server call. Writing stays impossible. — `L` / `M`
 - [x] **B-72** ✅ 2026-09-16 — built as option **B with option C's shape** (see Done). The owner chose C; what is
-      still missing for it is data or a certification, not code — Quellensteuer tariff tables, BVG Altersgutschriften,
-      Formular 11, Swissdec ELM. `docs/B-72-LOHN-SPEC.md` lists all four.
+      still missing for it is data or a certification, not code — Quellensteuer tariff tables, Formular 11,
+      Swissdec ELM. The BVG gap is closed as far as the law allows (2026-09-16, second run).
+      `docs/B-72-LOHN-SPEC.md`.
 - [x] **B-17** ✅ 2026-09-16 — see Done. Original: Banana TSV + PDF summary + receipts zip + audit extract, one click — the hero flow
       (see brainstorm idea A). Validate with two Treuhänder *before* building the PDF. — `M` / `L`
 - [ ] **B-56** Parser/classifier hygiene: `_parse_swiss_number` handles `'`/`’`/`\u202f` and `1234,50`; date regex anchored
@@ -165,6 +167,20 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 - **a11y** ✅ 2026-09-16 — `EmptyState` and `ErrorState` rendered an `h3` inside sections whose heading was an `h2`,
   which axe reported as 14 `moderate heading-order` findings across the app. Both gained an `as` prop defaulting to
   `h2`. The whole suite is back to zero findings, light and dark.
+- **B-72 option C, the BVG part** ✅ 2026-09-16 — the one gap of the four that is *law* rather than purchased
+  data. The Altersgutschrift on the payslip still comes from the pension fund, and that stays: a real plan is
+  almost never the BVG minimum, and a number re-derived here would contradict the one that gets paid. What the law
+  does give is a **floor** — `services/bvg.py` carries the Grenzbeträge per year (BSV's own table) and the Art. 16
+  Altersgutschriftensätze (25–34 → 7 %, 35–44 → 10 %, 45–54 → 15 %, 55+ → 18 %), and
+  `GET /api/lohn/bvg-pruefung?jahr=` reports where the entered amounts contradict the obligation. It changes no
+  payslip; the payroll engine is untouched.
+  Three decisions in the diff. **Nothing is interpolated**: a year that is not in the table is checked against the
+  nearest one *and says so on screen*, because extrapolating would have been wrong in 2005, when the
+  Eintrittsschwelle stopped being a copy of the Koordinationsabzug. **The Altersjahr is the calendar year minus the
+  year of birth**, so a band changes at New Year, not on a birthday. And **Art. 66 Abs. 1 is checked across the
+  workforce, not per employee** — the law compares the employer's total with the total of *all* employees', so one
+  person paying more than their own employer share is legal and a per-person check would flag it wrongly.
+  `tests/test_bvg.py` (41) + 6 API tests, one of which asserts the payslip is byte-identical before and after.
 - **B-23** ✅ 2026-09-16 — plan limits, enforced. B-54 started counting; this refuses. Three ceilings —
   Belege/month, Klassifizierungen/month, storage — all read out of `usage_events`, so the number shown to the
   customer and the number that locks them out cannot drift apart. `GET /api/usage`, a page under *Mehr*, and one

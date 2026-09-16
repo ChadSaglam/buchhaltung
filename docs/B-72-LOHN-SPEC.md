@@ -144,12 +144,44 @@ None of it is arithmetic; all of it is data or a certification.
 
 1. **Quellensteuer tariff tables** — per canton, per Tarifcode, reissued yearly. Today the *rate* is a field on the
    employee, filled in from the cantonal tariff by whoever knows it. Owning the tables is a maintenance commitment.
-2. **BVG Altersgutschriften** — the fund's own regulations decide the amount. Today it is a franc amount per
-   employee, copied from the fund's statement, which is the number that actually gets paid.
+2. ~~**BVG Altersgutschriften**~~ — **the part that is law shipped on 2026-09-16.** The *amount* still comes
+   from the fund's statement, and that is not a gap to close: a real plan is almost never the BVG minimum, and a
+   number re-derived here would contradict the one that gets paid. What the law does give is a **floor**, and it
+   is federal, so `backend/app/services/bvg.py` now carries the Grenzbeträge per year and the Art. 16
+   Altersgutschriftensätze, and `GET /api/lohn/bvg-pruefung?jahr=` reports where the entered amounts contradict
+   the obligation. It changes no payslip. See "The BVG check" below.
 3. **Lohnausweis (Formular 11)** — prescribed layout with numbered boxes and a barcode. What ships is a
    *Jahreszusammenzug* that says on the page that it is not one.
 4. **Swissdec ELM** — the yearly Sozialversicherungs-Jahresmeldung transmission. A certification, not a file
    format.
 
+## The BVG check (shipped 2026-09-16)
+
+`backend/app/services/bvg.py`. A read-only check beside the payroll engine, never inside it.
+
+**The figures, looked up — not recalled.** The Grenzbeträge come from the BSV's own year-by-year table
+(*Wichtige Masszahlen im Bereich der beruflichen Vorsorge*, `BPP_Zahlen_85_2026.pdf`) and the 2026 line is
+confirmed against *Beträge gültig ab dem 1. Januar 2026*:
+
+| Year | Eintrittsschwelle | Koordinationsabzug | min. koord. Lohn | obere Limite |
+|---|---|---|---|---|
+| 2021–2022 | 21'510 | 25'095 | 3'585 | 86'040 |
+| 2023–2024 | 22'050 | 25'725 | 3'675 | 88'200 |
+| 2025–2026 | 22'680 | 26'460 | 3'780 | 90'720 |
+
+Altersgutschriften, Art. 16 BVG: **25–34 → 7 %**, **35–44 → 10 %**, **45–54 → 15 %**, **55+ → 18 %** of the
+koordinierter Lohn. Under 25 only the risk benefits are compulsory, so no savings credit is required.
+
+**Nothing is interpolated.** A year that is not in the table is checked against the nearest one *and says so on
+screen* — the alternative, extrapolating, would have been wrong in 2005, when the Eintrittsschwelle stopped being
+a copy of the Koordinationsabzug. Adding a year is one line, copied from the BSV table.
+
+**The Altersjahr is the calendar year minus the year of birth**, not the age on the payslip date: the band changes
+at New Year, not on the birthday.
+
+**Art. 66 Abs. 1 BVG is checked across the workforce, not per employee.** The law compares the employer's total
+contributions with the total of *all* employees' contributions. One employee paying more than their own employer
+share is legal; a per-person check would report it as a violation and be wrong.
+
 ---
-_Sources: [ahv-iv.ch Merkblatt 2.01](https://www.ahv-iv.ch/p/2.01.d) · [ahv-iv.ch Merkblatt 2.08](https://www.ahv-iv.ch/p/2.08.d) · [BVG-Eckwerte](https://www.schwiizerfranke.com/bvg-eckwerte)_
+_Sources: [ahv-iv.ch Merkblatt 2.01](https://www.ahv-iv.ch/p/2.01.d) · [ahv-iv.ch Merkblatt 2.08](https://www.ahv-iv.ch/p/2.08.d) · [BVG-Eckwerte](https://www.schwiizerfranke.com/bvg-eckwerte) · [BSV, Masszahlen berufliche Vorsorge](https://www.bsv.admin.ch/dam/de/sd-web/3jZGqTLgADbl/BPP_Zahlen_85_2026.pdf) · [BSV, Beträge ab 1.1.2026](https://www.bsv.admin.ch/dam/de/sd-web/sAgdISSXenMT/d_Betr%C3%A4ge%202026.pdf) · [BSV, Technische Aspekte der obligatorischen beruflichen Vorsorge](https://www.bsv.admin.ch/dam/de/sd-web/icRMLk5siLmb/technische_aspektederobligatorischenberuflichenvorsorge.pdf)_

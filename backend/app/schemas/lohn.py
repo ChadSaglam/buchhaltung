@@ -179,3 +179,23 @@ class BuchungOut(BaseModel):
 class AbrechnenResponse(BaseModel):
     abrechnung: LohnlaufOut
     buchungen: list[BuchungOut] = []
+
+
+class BvgHinweisOut(BaseModel):
+    code: str
+    text: str
+    mitarbeiter_id: int | None = None
+
+
+class BvgPruefungOut(BaseModel):
+    """Das gesetzliche BVG-Minimum gegen die eingetragenen Beträge (B-72, Option C).
+
+    Eine reine Prüfung: sie ändert keine Abrechnung. `grenzbetraege_jahr` sagt,
+    welche Jahreszahlen verwendet wurden — bei einem Jahr ohne hinterlegte
+    Grenzbeträge ist das nicht dasselbe wie `jahr`.
+    """
+
+    jahr: int
+    grenzbetraege_jahr: int
+    grenzbetraege_aktuell: bool
+    hinweise: list[BvgHinweisOut]

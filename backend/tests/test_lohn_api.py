@@ -371,3 +371,80 @@ async def test_an_unreleased_payslip_carries_the_watermark(client, actor):
     # and its rotation are extra content on every page.
     assert ohne.content.startswith(b"%PDF-") and mit.content.startswith(b"%PDF-")
     assert len(ohne.content) > len(mit.content)
+
+
+# --- B-72 option C: the BVG minimum, as a check -----------------------------
+
+
+async def test_bvg_pruefung_is_quiet_for_a_compliant_plan(client, actor):
+    _tenant, _user, headers = actor
+    await _setup(client, headers, person={**ANNA, "geburtsdatum": "1986-05-04"})
+
+    body = (await client.get("/api/lohn/bvg-pruefung?jahr=2026", headers=headers)).json()
+
+    assert body["jahr"] == 2026
+    assert body["grenzbetraege_jahr"] == 2026
+    assert body["grenzbetraege_aktuell"] is True
+    assert body["hinweise"] == []
+
+
+async def test_bvg_pruefung_reports_a_contribution_below_the_obligation(client, actor):
+    _tenant, _user, headers = actor
+    await _setup(
+        client,
+        headers,
+        person={**ANNA, "geburtsdatum": "1986-05-04", "bvg_an_monat": 5.0, "bvg_ag_monat": 5.0},
+    )
+
+    body = (await client.get("/api/lohn/bvg-pruefung?jahr=2026", headers=headers)).json()
+
+    assert [h["code"] for h in body["hinweise"]] == ["unter_obligatorium"]
+    assert body["hinweise"][0]["mitarbeiter_id"] is not None
+
+
+async def test_bvg_pruefung_changes_nothing(client, actor):
+    """It is a read. The payslip still comes from the pension fund's numbers."""
+    _tenant, _user, headers = actor
+    mid = await _setup(
+        client,
+        headers,
+        person={**ANNA, "geburtsdatum": "1986-05-04", "bvg_an_monat": 5.0, "bvg_ag_monat": 5.0},
+    )
+    lauf = {"mitarbeiter_id": mid, "jahr": 2026, "monat": 3}
+
+    vorher = (await client.post("/api/lohn/vorschau", json=lauf, headers=headers)).json()
+    await client.get("/api/lohn/bvg-pruefung?jahr=2026", headers=headers)
+    nachher = (await client.post("/api/lohn/vorschau", json=lauf, headers=headers)).json()
+
+    assert vorher == nachher
+    assert vorher["abzuege"], "the preview must actually have produced a payslip"
+
+
+async def test_bvg_pruefung_says_when_it_used_another_years_figures(client, actor):
+    _tenant, _user, headers = actor
+    await _setup(client, headers, person={**ANNA, "geburtsdatum": "1986-05-04"})
+
+    body = (await client.get("/api/lohn/bvg-pruefung?jahr=2099", headers=headers)).json()
+
+    assert body["grenzbetraege_aktuell"] is False
+    assert body["grenzbetraege_jahr"] != 2099
+    assert body["hinweise"][0]["code"] == "grenzbetraege_veraltet"
+
+
+async def test_bvg_pruefung_needs_a_token(client):
+    assert (await client.get("/api/lohn/bvg-pruefung?jahr=2026")).status_code in (401, 403)
+
+
+async def test_bvg_pruefung_only_sees_its_own_tenant(client, db_session, actor):
+    _tenant, _user, headers = actor
+    await _setup(
+        client,
+        headers,
+        person={**ANNA, "geburtsdatum": "1986-05-04", "bvg_an_monat": 5.0, "bvg_ag_monat": 5.0},
+    )
+    fremd = await create_tenant(db_session, name="Fremd AG")
+    fremd_user = await create_user(db_session, fremd, role="owner")
+
+    body = (await client.get("/api/lohn/bvg-pruefung?jahr=2026", headers=auth_headers(fremd_user))).json()
+
+    assert body["hinweise"] == []
