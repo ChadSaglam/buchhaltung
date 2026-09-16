@@ -42,8 +42,7 @@ and Heute inbox, B-74, B-24, B-25, B-54 and B-55. What is left of it:_
    **Before any of that: compare one real month against the previous payroll and lift the watermark.**
 3. **B-23** usage limits enforced from `usage_event` — the free/pro ceiling. Billing (R-106 Stripe) means
    nothing until a plan can actually be exceeded. B-54 already meters storage; this is the enforcement half.
-4. **B-27** the rest of the performance block (N+1 queries, the full-tenant scans), when there is enough
-   data for it to matter. B-28 is done; B-26 was never performance — it is the 2026-09-10 tenant-column rename.
+4. ~~**B-27**~~ ✅ 2026-09-16 — see Done. B-26 was never performance — it is the 2026-09-10 tenant-column rename.
 
 <details><summary>What item 1 of the old block settled (Banana, 2026-09-15) — keep, do not re-litigate</summary>
 
@@ -118,9 +117,8 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
       `build.args` (runtime env is ignored — Apps switcher never renders in the compose image), `node:22-alpine`, `npm ci`. — `M` / `S`
 
 ### Performance
-- [ ] **B-27** Query audit: `import_data.py:341` one memory SELECT per key → preload once; `/stats` 3 statements → one
-      `GROUP BY source`; `/stats/learning` drop 3 redundant counts; `ai_assistant.py:129` full-tenant scan per chat message
-      → SQL bucketing, 12-month cap; cache `_load_model` per process keyed on `updated_at`. — `M` / `M`
+- [x] **B-27** ✅ 2026-09-16 — see Done. One correction to what this line proposed: the months in the assistant
+      context cannot be bucketed in SQL, because `bookings.datum` is a free-text string.
 - [x] **B-28** ✅ 2026-09-16 — see Done. Two corrections to what this line proposed, both from measuring.
 
 ---
@@ -168,6 +166,21 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 - **a11y** ✅ 2026-09-16 — `EmptyState` and `ErrorState` rendered an `h3` inside sections whose heading was an `h2`,
   which axe reported as 14 `moderate heading-order` findings across the app. Both gained an `as` prop defaulting to
   `h2`. The whole suite is back to zero findings, light and dark.
+- **B-27** ✅ 2026-09-16 — the query audit. Five places, one shape: a statement that scaled with how much the
+  tenant already had. The Banana import ran one `SELECT` per distinct description — 800 round trips inside one
+  request, and it got slower the longer a tenant had been a customer (**699 ms → 165 ms** re-importing 800 rows
+  against Postgres). `GET /api/bookings/stats` asked three times for numbers one `GROUP BY source` returns.
+  `/api/stats/learning` queried for a booking count it was already holding. `build_context()` read **every**
+  booking of the tenant on **every** chat message. And the classifier unpickled its model from the database on
+  every request, because the only cache was on an object that lived for one request.
+  Two things worth arguing with. The roadmap asked for SQL month-bucketing in the assistant context; that is not
+  safe here — `bookings.datum` is a free-text string (`POST /api/bookings` accepts whatever the client sends, and
+  the writers disagree), so `substr(datum, …)` would bucket half a tenant's rows into the wrong month. The scan is
+  bounded instead. And the model cache **skips any row without a `model_sha256`**: that is the pre-B-34 shape,
+  where the signature check is the only thing between the blob and `pickle.loads`, and it has to run on the bytes
+  every time.
+  Guarded by `tests/test_query_budget.py` — 18 tests that count the statements an endpoint issues. An N+1 never
+  fails a test on its own, which is why all five survived this long.
 - **B-28** ✅ 2026-09-16 — indexes, chosen from `EXPLAIN (ANALYZE, BUFFERS)` against a seeded database rather
   than from reading the code. Before → after: the bookings list for one tenant, on 800k rows across 200 tenants,
   438 buffers with 23'053 rows thrown away by a filter → 90 buffers and an Index Cond, and **flat instead of
@@ -633,7 +646,7 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 |---|---|
 | 0 Recon | ✅ |
 | 0.5 Risk fixes before platform work | ✅ B-00…B-03 (branch `feat/phase0-risks`) |
-| 1 Platform contract | 1.2 ✅ B-31 · 1.4 ✅ B-26 · 1.6 ✅ tokens imported |
+| 1 Platform contract | 1.2 ✅ B-31 · 1.4 ✅ B-26 · 1.6 ✅ tokens imported · perf: ✅ B-27, B-28 |
 | 2 Security | ✅ B-06, B-07, B-24, B-25, B-32, B-34, B-40, B-41, B-42, B-43, B-54, B-55 · open: — |
 | 3 Reliability | ✅ B-04, B-05, B-08, B-11, B-33, B-35, B-39, B-47, B-48, B-49, B-63, B-64, B-73, B-76, B-51, B-52 · open: B-56, B-57 |
 | 4 Polish | ✅ B-09, B-13, B-66, B-67, B-76, B-53, B-22 · open: B-61 |

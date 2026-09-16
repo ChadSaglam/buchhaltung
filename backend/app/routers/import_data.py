@@ -214,6 +214,20 @@ async def import_banana_file(
     training_objects = []
     memory_objects = []
 
+    # B-27: look every key up once, not once per row. A 2'000-line Banana export
+    # carries several hundred distinct descriptions, and each one used to be its
+    # own SELECT inside the request — the import got slower the more the tenant
+    # had already learned. Chunked at 500 because SQLite's default parameter
+    # limit is 999.
+    memory_by_key: dict[str, Memory] = {}
+    if also_memory:
+        wanted = sorted({k for k in (make_memory_key(r["beschreibung"]) for r in rows) if k})
+        for start in range(0, len(wanted), 500):
+            found = await db.execute(
+                select(Memory).where(Memory.tenant_id == tid, Memory.lookup_key.in_(wanted[start : start + 500]))
+            )
+            memory_by_key.update({m.lookup_key: m for m in found.scalars().all()})
+
     for r in rows:
         training_objects.append(
             TrainingRow(
@@ -232,8 +246,7 @@ async def import_banana_file(
             if key and key not in seen_keys:
                 seen_keys.add(key)
                 # Upsert memory
-                existing = await db.execute(select(Memory).where(Memory.tenant_id == tid, Memory.lookup_key == key))
-                mem = existing.scalar_one_or_none()
+                mem = memory_by_key.get(key)
                 if mem:
                     mem.kt_soll = r["kt_soll"]
                     mem.kt_haben = r["kt_haben"]

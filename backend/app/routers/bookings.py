@@ -178,23 +178,25 @@ async def booking_stats(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    total_result = await db.execute(
-        select(func.count()).select_from(Booking).where(Booking.tenant_id == user.tenant_id)
+    # B-27: one GROUP BY, not three statements. The total count and the total
+    # amount are sums over the *same* grouping, so asking for them separately
+    # meant three round trips and three scans of the same rows.
+    result = await db.execute(
+        select(Booking.source, func.count(), func.coalesce(func.sum(Booking.betrag), 0))
+        .where(Booking.tenant_id == user.tenant_id)
+        .group_by(Booking.source)
     )
-    total_count = total_result.scalar() or 0
+    rows = result.all()
 
-    # B-51: PostgreSQL sums the Numeric column exactly; round once, hand out a float.
-    sum_result = await db.execute(select(func.sum(Booking.betrag)).where(Booking.tenant_id == user.tenant_id))
-    total_amount = float(round_chf(sum_result.scalar() or 0))
-
-    source_result = await db.execute(
-        select(Booking.source, func.count()).where(Booking.tenant_id == user.tenant_id).group_by(Booking.source)
-    )
-    by_source = {row[0] or "unknown": row[1] for row in source_result.all()}
+    by_source = {row[0] or "unknown": row[1] for row in rows}
+    total_count = sum(row[1] for row in rows)
+    # B-51: PostgreSQL sums the Numeric column exactly (one exact Decimal per
+    # source), so adding the groups up is exact too; round once at the end.
+    total_amount = float(round_chf(sum(row[2] or 0 for row in rows)))
 
     return {
         "total_count": total_count,
-        "total_amount": float(total_amount),
+        "total_amount": total_amount,
         "by_source": by_source,
     }
 

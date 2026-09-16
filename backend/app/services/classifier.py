@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
-from collections import Counter
+from collections import Counter, OrderedDict
 from dataclasses import dataclass
 
 import pandas as pd
@@ -331,6 +331,50 @@ def fit_pipeline(rows: list[dict[str, str]]) -> FittedModel | None:
     return pipeline, len(df), int(y.nunique()), cv_acc, train_acc
 
 
+#: One unpickled pipeline per (tenant, model version) per process (B-27).
+#:
+#: ``self._model`` only ever helped inside a single request: every request built
+#: a new ``TenantClassifier``, pulled the blob out of the database again and
+#: unpickled a scikit-learn pipeline to answer one prediction.
+#:
+#: The key carries ``model_sha256``, so a retrain (new blob, new digest, new
+#: ``updated_at``) misses the cache by construction — there is no invalidation
+#: call to forget. **A row without a digest is never cached**: that is the
+#: pre-B-34 shape, where the only thing standing between the blob and
+#: ``pickle.loads`` is the signature check in ``model_row_is_trusted``, and that
+#: check has to run against the bytes every single time.
+#:
+#: The cached ``Pipeline`` is shared by every request in the process. Predicting
+#: does not mutate a fitted pipeline; nothing here may start.
+_MODEL_CACHE: OrderedDict[int, tuple[str, Pipeline]] = OrderedDict()
+#: Bounded so a busy multi-tenant process cannot hold every model it ever served.
+_MODEL_CACHE_MAX = 32
+
+
+def _model_version(updated_at: object, sha256: str | None) -> str | None:
+    """The cache key, or None when this row must not be cached."""
+    return f"{updated_at}:{sha256}" if sha256 else None
+
+
+def _cache_get(tenant_id: int, version: str | None) -> Pipeline | None:
+    if version is None:
+        return None
+    hit = _MODEL_CACHE.get(tenant_id)
+    if hit is None or hit[0] != version:
+        return None
+    _MODEL_CACHE.move_to_end(tenant_id)
+    return hit[1]
+
+
+def _cache_put(tenant_id: int, version: str | None, model: Pipeline) -> None:
+    if version is None:
+        return
+    _MODEL_CACHE[tenant_id] = (version, model)
+    _MODEL_CACHE.move_to_end(tenant_id)
+    while len(_MODEL_CACHE) > _MODEL_CACHE_MAX:
+        _MODEL_CACHE.popitem(last=False)
+
+
 def model_row_is_trusted(row: ClassifierModel | None) -> bool:
     """Signed by this installation and — when the fingerprint exists — unchanged since written."""
     if row is None or not row.model_blob:
@@ -352,6 +396,24 @@ class TenantClassifier:
     async def _load_model(self) -> Pipeline | None:
         if self._model is not None:
             return self._model
+        # B-27: read the two small columns first. On a hit that is the whole
+        # database traffic — the blob (hundreds of KB) is never transferred and
+        # never unpickled.
+        head = (
+            await self.db.execute(
+                select(ClassifierModel.updated_at, ClassifierModel.model_sha256).where(
+                    ClassifierModel.tenant_id == self.tenant_id
+                )
+            )
+        ).one_or_none()
+        if head is None:
+            return None
+        version = _model_version(head[0], head[1])
+        cached = _cache_get(self.tenant_id, version)
+        if cached is not None:
+            self._model = cached
+            return self._model
+
         result = await self.db.execute(select(ClassifierModel).where(ClassifierModel.tenant_id == self.tenant_id))
         row = result.scalar_one_or_none()
         if row:
@@ -362,6 +424,7 @@ class TenantClassifier:
                 return None
             try:
                 self._model = unpack(row.model_blob)
+                _cache_put(self.tenant_id, version, self._model)
             except UntrustedModelBlob:
                 logger.warning("[CLASSIFIER] tenant=%s: model blob is not signed, ignoring it", self.tenant_id)
         return self._model

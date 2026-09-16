@@ -98,13 +98,24 @@ def _is_embed_model(name: str) -> bool:
     return any(k in n for k in ("embed", "nomic", "bge", "minilm"))
 
 
+#: How many months of history the assistant is given. Six, not twelve: the
+#: context is JSON-truncated at 8'000 characters anyway (`_build_messages`).
+MONATE_IM_KONTEXT = 6
+#: Upper bound on the rows read to build those months (B-27). At 4'000 rows a
+#: tenant booking 600 movements a month still has every one of the six months
+#: complete; beyond that the oldest month in the window is the one that thins out,
+#: and it is the least interesting.
+KONTEXT_ZEILEN_MAX = 4000
+
+
 async def build_context(tenant_id: int, db: AsyncSession) -> dict[str, Any]:
     """Assemble a compact, token-bounded context from the tenant's data."""
-    # Stats
-    total_count = await db.scalar(select(func.count()).select_from(Booking).where(Booking.tenant_id == tenant_id))
-    total_amount = await db.scalar(
-        select(func.coalesce(func.sum(Booking.betrag), 0)).where(Booking.tenant_id == tenant_id)
-    )
+    # Stats — B-27: one statement for both, they scan the same rows.
+    total_count, total_amount = (
+        await db.execute(
+            select(func.count(), func.coalesce(func.sum(Booking.betrag), 0)).where(Booking.tenant_id == tenant_id)
+        )
+    ).one()
 
     # Recent bookings (bounded)
     rows = (
@@ -124,9 +135,25 @@ async def build_context(tenant_id: int, db: AsyncSession) -> dict[str, Any]:
         for b in rows
     ]
 
-    # Monthly aggregation (from the recent slice + a wider sum query)
+    # Monthly aggregation.
+    #
+    # B-27: this read *every* booking of the tenant on every chat message — an
+    # unbounded scan in the hot path of a streaming endpoint. It cannot be
+    # bucketed in SQL: `bookings.datum` is a free-text string (`POST /api/bookings`
+    # takes whatever the client sends, and the writers disagree — "%d.%m.%Y" in
+    # `abgleich.py`, whatever the caller had in `bookings.py`), so `substr(datum, …)`
+    # would silently bucket half a tenant's rows into the wrong month. Bound the
+    # scan instead: newest first, capped. Only six months are shown, and the cap
+    # is far above what six months of a real tenant contains.
     monthly: dict[str, dict[str, float]] = {}
-    all_rows = (await db.execute(select(Booking.datum, Booking.betrag).where(Booking.tenant_id == tenant_id))).all()
+    all_rows = (
+        await db.execute(
+            select(Booking.datum, Booking.betrag)
+            .where(Booking.tenant_id == tenant_id)
+            .order_by(Booking.id.desc())
+            .limit(KONTEXT_ZEILEN_MAX)
+        )
+    ).all()
     for datum, betrag in all_rows:
         key = _month_key(datum)
         if not key:
@@ -141,7 +168,7 @@ async def build_context(tenant_id: int, db: AsyncSession) -> dict[str, Any]:
     monthly_list = [
         {"monat": k, "einnahmen": _chf(v["einnahmen"]), "ausgaben": _chf(v["ausgaben"]), "anzahl": int(v["anzahl"])}
         for k, v in sorted(monthly.items(), reverse=True)
-    ][:6]
+    ][:MONATE_IM_KONTEXT]
 
     # Account plan (Kontenplan) — helps VAT/account questions
     konten = (await db.execute(select(Konto).where(Konto.tenant_id == tenant_id).limit(200))).scalars().all()

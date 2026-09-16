@@ -50,22 +50,25 @@ async def learning_stats(
     )
     source_distribution = [{"source": row[0] or "unbekannt", "count": row[1]} for row in bookings_by_source.all()]
 
-    # Totals
-    mem_count = (
-        await db.execute(select(func.count()).select_from(Memory).where(Memory.tenant_id == tid))
-    ).scalar() or 0
+    # B-27: the booking total is the source histogram added up — it is grouped by
+    # `source` with no LIMIT, so every booking is in exactly one bucket. Asking
+    # the database for a number it just handed over was a third round trip.
+    booking_count = sum(item["count"] for item in source_distribution)
 
-    corr_count = (
-        await db.execute(select(func.count()).select_from(Correction).where(Correction.tenant_id == tid))
-    ).scalar() or 0
-
-    booking_count = (
-        await db.execute(select(func.count()).select_from(Booking).where(Booking.tenant_id == tid))
-    ).scalar() or 0
+    # The other two totals cannot be derived: their histograms are LIMIT 15.
+    # One statement for both, though — two scalar subqueries, one round trip.
+    mem_count, corr_count = (
+        await db.execute(
+            select(
+                select(func.count()).select_from(Memory).where(Memory.tenant_id == tid).scalar_subquery(),
+                select(func.count()).select_from(Correction).where(Correction.tenant_id == tid).scalar_subquery(),
+            )
+        )
+    ).one()
 
     return {
-        "memory_count": mem_count,
-        "correction_count": corr_count,
+        "memory_count": mem_count or 0,
+        "correction_count": corr_count or 0,
         "booking_count": booking_count,
         "memory_distribution": memory_distribution,
         "correction_distribution": correction_distribution,
