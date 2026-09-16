@@ -13,11 +13,45 @@ auch in einer Checkliste stehen kann und nicht nur auf einem Bildschirm.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
+
+# Der Backend-Code lebt im venv (`make setup`). Wer `python3 scripts/…` tippt —
+# und das tut jeder — landet sonst bei einem ModuleNotFoundError für sqlalchemy,
+# was nach einem kaputten Skript aussieht und keins ist. Also: einmal selbst ins
+# venv wechseln, still, und nur wenn es eines gibt.
+
+
+def _im_venv_neu_starten() -> None:
+    """Einmal ins venv wechseln, still, und nur wenn es eines gibt.
+
+    Der Backend-Code lebt im venv (`make setup`). Wer `python3 scripts/...`
+    tippt - und das tut jeder - landet sonst bei einem ModuleNotFoundError fuer
+    sqlalchemy, was nach einem kaputten Skript aussieht und keins ist.
+    """
+    try:
+        import sqlalchemy  # noqa: F401
+    except ModuleNotFoundError:
+        pass
+    else:
+        return
+    venv_python = ROOT / "backend" / "venv" / "bin" / "python"
+    schon_drin = venv_python.exists() and Path(sys.executable).resolve() == venv_python.resolve()
+    if not venv_python.exists() or schon_drin:
+        print(
+            "Dieses Skript braucht die Backend-Abhaengigkeiten. Einmal `make setup`, oder direkt: "
+            "backend/venv/bin/python scripts/lohn-vergleich.py <datei>",
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
+    os.execv(str(venv_python), [str(venv_python), str(Path(__file__).resolve()), *sys.argv[1:]])
+
+
+_im_venv_neu_starten()
 
 from app.services.lohn import LohnKonfigurationFehlt  # noqa: E402
 from app.services.lohn_vergleich import (  # noqa: E402

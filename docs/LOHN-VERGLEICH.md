@@ -11,10 +11,13 @@ Haftung des Arbeitgebers, nicht ein Anzeigefehler.
 Dieses Werkzeug macht den Vergleich mechanisch statt mühsam.
 
 ```bash
-python scripts/lohn-vergleich.py --vorlage > april.txt   # leere Vorlage
+make lohn-vergleich > april.txt   # leere Vorlage
 # april.txt ausfüllen: links die Eingaben, rechts was auf der alten Abrechnung steht
-python scripts/lohn-vergleich.py april.txt
+python3 scripts/lohn-vergleich.py april.txt
 ```
+
+Das Skript braucht die Backend-Abhängigkeiten und holt sich das venv aus
+`make setup` selbst — `python3 scripts/…` genügt also.
 
 Exit-Code `0`, wenn alles stimmt, sonst `1` — der Vergleich kann also in einer
 Checkliste stehen und nicht nur auf einem Bildschirm.
