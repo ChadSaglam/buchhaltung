@@ -14,6 +14,12 @@ interface Props {
   /** `inline` = compact row inside a card; `page` = centred block. */
   variant?: "page" | "inline";
   className?: string;
+  /**
+   * Heading level for the `page` variant. `h2` by default — it replaces a page
+   * section under the `<h1>`, and `<h3>` skipped a level. `inline` has no
+   * heading at all.
+   */
+  as?: "h2" | "h3";
 }
 
 /**
@@ -21,7 +27,7 @@ interface Props {
  * `error.message` (already German and actionable, see `lib/errors.ts`), the
  * request id for bug reports, and a retry button when the caller can retry.
  */
-export function ErrorState({ error, onRetry, title, icon: Icon = AlertCircle, variant = "page", className = "" }: Props) {
+export function ErrorState({ error, onRetry, title, icon: Icon = AlertCircle, variant = "page", className = "", as: Heading = "h2" }: Props) {
   const e = toAppError(error);
   const heading = title ?? t("state.error_title");
 
@@ -51,7 +57,7 @@ export function ErrorState({ error, onRetry, title, icon: Icon = AlertCircle, va
       <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
         <Icon className="h-7 w-7" aria-hidden="true" />
       </div>
-      <h3 className="mt-4 text-base font-semibold text-foreground">{heading}</h3>
+      <Heading className="mt-4 text-base font-semibold text-foreground">{heading}</Heading>
       <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">{e.message}</p>
       {e.requestId && (
         <p className="mt-1 font-mono text-xs text-muted-foreground">
