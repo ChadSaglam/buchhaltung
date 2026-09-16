@@ -1,49 +1,31 @@
 "use client";
 
-import { motion } from "motion/react";
-import Link from "next/link";
-import {
-  Bot, Brain, Pencil, BookOpen, FileText,
-  ScanLine, Settings, Cpu, ArrowRight,
-} from "lucide-react";
-import { MetricCard } from "@/components/ui/metric_card";
-import { MetricCardSkeleton } from "@/components/shared/LoadingSkeleton";
-import { ErrorState } from "@/components/shared/ErrorState";
-import { SystemChecklist } from "@/components/shared/SystemChecklist";
 import { GettingStarted } from "@/components/shared/GettingStarted";
-import { useBookingStats, useClassifierInfo } from "@/hooks/useSystemData";
-import { OffenePostenCard } from "./components/OffenePostenCard";
-import { EmailEingangCard } from "./components/EmailEingangCard";
-import { LiquiditaetCard } from "./components/LiquiditaetCard";
+import { SystemChecklist } from "@/components/shared/SystemChecklist";
 import { DauerbuchungenCard } from "./components/DauerbuchungenCard";
-import { cn } from "@/lib/utils";
+import { EmailEingangCard } from "./components/EmailEingangCard";
+import { Inbox } from "./components/Inbox";
+import { LiquiditaetCard } from "./components/LiquiditaetCard";
+import { OffenePostenCard } from "./components/OffenePostenCard";
 
-const container = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.06 } },
-};
-const item = {
-  hidden: { opacity: 0, y: 10 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] as const } },
-};
-
-const ACTIONS = [
-  { title: "Kontoauszug", desc: "PDF hochladen & automatisch kontieren", href: "/dashboard/bank", icon: FileText, tint: "text-info bg-info/12" },
-  { title: "Rechnung Scanner", desc: "Quittung fotografieren → AI Buchung", href: "/dashboard/belege/scanner", icon: ScanLine, tint: "text-brand-600 dark:text-brand-300 bg-brand-500/12" },
-  { title: "Kontenplan", desc: "Kontenplan bearbeiten & Modell trainieren", href: "/dashboard/kontenplan", icon: Settings, tint: "text-success bg-success/12" },
-  { title: "Modell Manager", desc: "ML-Modell testen & Gedächtnis verwalten", href: "/dashboard/modell", icon: Cpu, tint: "text-warning bg-warning/15" },
-];
-
-export default function DashboardPage() {
-  const info = useClassifierInfo();
-  const stats = useBookingStats();
-  const isLoading = info.isLoading || stats.isLoading;
-  const error = info.error ?? stats.error;
-  const retry = () => {
-    info.mutate();
-    stats.mutate();
-  };
-
+/**
+ * Heute — step 4 of `docs/IA-2026-09-14.md`.
+ *
+ * The page now answers its own question first. The inbox at the top is every
+ * decision that is actually waiting, one row each; the cards below are the
+ * detail behind those rows and the place where the work happens (a Mahnung is
+ * still written from the Offene-Posten card).
+ *
+ * Two things left in this rewrite, both on purpose:
+ *
+ * * the four KPI tiles (model accuracy, memory size, corrections, bookings).
+ *   None of them is a decision, and IA rule 4 says say why, not how sure — a
+ *   percentage on the first screen is the opposite of that. They live on Modell
+ *   and Lernverlauf, where they mean something;
+ * * the Schnellzugriff grid. Four links into pages the sidebar and ⌘K already
+ *   reach is hunting UI, and rule 2 is that decisions come to the user.
+ */
+export default function HeutePage() {
   return (
     <div className="space-y-8">
       <div>
@@ -56,110 +38,36 @@ export default function DashboardPage() {
       <GettingStarted />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
-        {/* Left: Metrics + Actions */}
         <div className="space-y-8">
-          <motion.div
-            variants={container}
-            initial="hidden"
-            animate="show"
-            className="grid grid-cols-1 gap-4 sm:grid-cols-2"
-          >
-            {isLoading ? (
-              Array.from({ length: 4 }).map((_, i) => <MetricCardSkeleton key={i} />)
-            ) : error ? (
-              <ErrorState error={error} onRetry={retry} variant="inline" className="sm:col-span-2" />
-            ) : (
-              <>
-                <motion.div variants={item}>
-                  <MetricCard
-                    title="ML-Modell"
-                    value={info.data ? `${Math.round(info.data.model_accuracy * 100)}%` : "–"}
-                    subtitle="Genauigkeit"
-                    accent="brand"
-                    icon={<Bot />}
-                  />
-                </motion.div>
-                <motion.div variants={item}>
-                  <MetricCard
-                    title="Gedächtnis"
-                    value={info.data?.memory_count ?? "–"}
-                    subtitle="Einträge"
-                    accent="success"
-                    icon={<Brain />}
-                  />
-                </motion.div>
-                <motion.div variants={item}>
-                  <MetricCard
-                    title="Korrekturen"
-                    value={info.data?.correction_count ?? "–"}
-                    subtitle="Gesamt"
-                    accent="warning"
-                    icon={<Pencil />}
-                  />
-                </motion.div>
-                <motion.div variants={item}>
-                  <MetricCard
-                    title="Buchungen"
-                    value={stats.data?.total_count ?? "–"}
-                    subtitle="In Datenbank"
-                    accent="danger"
-                    icon={<BookOpen />}
-                  />
-                </motion.div>
-              </>
-            )}
-          </motion.div>
+          <Inbox />
 
-          <div>
-            <h2 className="mb-4 text-base font-semibold text-foreground">Geld und Steuern</h2>
+          <section aria-labelledby="geld-titel" id="liquiditaet" className="scroll-mt-24">
+            <h2 id="geld-titel" className="mb-4 text-base font-semibold text-foreground">
+              Geld und Steuern
+            </h2>
             <div className="space-y-4">
               <LiquiditaetCard />
-              <DauerbuchungenCard />
+              <div id="dauerbuchungen" className="scroll-mt-24">
+                <DauerbuchungenCard />
+              </div>
             </div>
-          </div>
+          </section>
 
-          <div>
-            <h2 className="mb-4 text-base font-semibold text-foreground">Offene Posten</h2>
+          <section aria-labelledby="posten-titel" id="offene-posten" className="scroll-mt-24">
+            <h2 id="posten-titel" className="mb-4 text-base font-semibold text-foreground">
+              Offene Posten
+            </h2>
             <OffenePostenCard />
-          </div>
+          </section>
 
-          <div>
-            <h2 className="mb-4 text-base font-semibold text-foreground">Posteingang</h2>
+          <section aria-labelledby="post-titel">
+            <h2 id="post-titel" className="mb-4 text-base font-semibold text-foreground">
+              Posteingang
+            </h2>
             <EmailEingangCard />
-          </div>
-
-          <div>
-            <h2 className="mb-4 text-base font-semibold text-foreground">Schnellzugriff</h2>
-            <motion.div
-              variants={container}
-              initial="hidden"
-              animate="show"
-              className="grid grid-cols-1 gap-4 sm:grid-cols-2"
-            >
-              {ACTIONS.map((action) => (
-                <motion.div key={action.href} variants={item}>
-                  <Link
-                    href={action.href}
-                    className="group flex items-start gap-4 rounded-xl border border-border bg-card p-5 shadow-sm transition-[transform,box-shadow,border-color] hover:-translate-y-0.5 hover:border-border-strong hover:shadow-md"
-                  >
-                    <div className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-lg [&_svg]:h-5 [&_svg]:w-5", action.tint)}>
-                      <action.icon />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-foreground transition-colors group-hover:text-brand-600 dark:group-hover:text-brand-300">
-                        {action.title}
-                      </p>
-                      <p className="mt-0.5 text-sm text-muted-foreground">{action.desc}</p>
-                    </div>
-                    <ArrowRight className="mt-1 h-4 w-4 -translate-x-2 text-muted-foreground opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100" />
-                  </Link>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
+          </section>
         </div>
 
-        {/* Right: System checklist */}
         <div className="self-start lg:sticky lg:top-[calc(var(--topbar-height)+1.5rem)]">
           <SystemChecklist />
         </div>
