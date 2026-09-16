@@ -10,6 +10,7 @@ from app.core.errors import RequestContextMiddleware, install_error_handlers
 from app.core.logging_config import configure_logging
 from app.core.rate_limit import enforce_default_limit, limiter
 from app.core.sentry import configure_sentry
+from app.core.uploads import MaxBodySizeMiddleware
 from app.models.base import Base
 from app.worker import BackgroundJobs
 
@@ -50,6 +51,11 @@ application = FastAPI(
     openapi_url=None if settings.is_production else "/openapi.json",
 )
 
+# B-54: an oversized upload is refused on its Content-Length, before the router
+# and before any body is read. Added *before* CORS so that CORS ends up wrapping
+# it — otherwise the browser reports the 413 as a CORS failure and the user sees
+# "network error" instead of "file too large".
+application.add_middleware(MaxBodySizeMiddleware)
 application.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
@@ -58,7 +64,6 @@ application.add_middleware(
     allow_headers=["*"],
     expose_headers=["X-Request-ID"],
 )
-
 application.add_middleware(RequestContextMiddleware)
 install_error_handlers(application)
 

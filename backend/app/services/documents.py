@@ -24,6 +24,7 @@ from app.services.classifier import TenantClassifier
 from app.services.qr_bill import QrBill, invoice_number_from_message, read_qr_bill
 from app.services.receipts import store_receipt
 from app.services.scanner.scanner_service import ScannerService
+from app.services.storage_quota import StorageQuota
 
 logger = logging.getLogger(__name__)
 
@@ -53,9 +54,14 @@ class DocumentService:
         """Store the file, read it (QR first), classify, persist. Never raises for a bad document —
         the row is created with status ``fehler`` so the user sees *which* file failed."""
         ScannerService(self.db, self.user)._validate_upload(content_type=content_type, content=content)
+        # B-54: the file is kept whether or not it can be read, so the tenant's
+        # quota decides before anything is written.
+        quota = StorageQuota(self.user.tenant_id, self.db)
+        await quota.ensure_room_for(len(content))
         file_key = await asyncio.to_thread(
             store_receipt, self.user.tenant_id, filename=filename, content_type=content_type, content=content
         )
+        await quota.record(len(content))
         doc = Document(
             tenant_id=self.user.tenant_id,
             kind=KIND_RECHNUNG,

@@ -13,6 +13,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user, get_db, require_admin, require_editor
 from app.core.rate_limit import classify_limit, heavy_limit, limiter
+from app.core.uploads import (
+    MAX_MEMORY_ENTRIES,
+    MAX_MODEL_BUNDLE_BYTES,
+    check_count,
+    check_zip_total,
+    read_upload,
+    zip_member,
+)
 from app.models.classifier_model import ClassifierModel
 from app.models.correction import Correction
 from app.models.kontenplan import Konto, KontoDefault
@@ -295,7 +303,7 @@ async def upload_bundle(
     user: User = Depends(require_admin),
 ) -> dict[str, Any]:
     tid = user.tenant_id
-    content = await file.read()
+    content = await read_upload(file, max_bytes=MAX_MODEL_BUNDLE_BYTES, label="Modell-Paket")
     filename = (file.filename or "").lower()
 
     if filename.endswith(".pkl"):
@@ -313,6 +321,8 @@ async def upload_bundle(
         data = json.loads(content.decode("utf-8"))
         if not isinstance(data, list):
             raise HTTPException(status_code=400, detail="Ungültiges Memory-JSON-Format.")
+        # A few MB of JSON is a few hundred thousand INSERTs (B-54).
+        check_count(data, max_items=MAX_MEMORY_ENTRIES, label="Gedächtnis-Einträge")
 
         await db.execute(delete(Memory).where(Memory.tenant_id == tid))
         for entry in data:
@@ -332,10 +342,13 @@ async def upload_bundle(
     if filename.endswith(".zip"):
         restored: list[str] = []
         with zipfile.ZipFile(io.BytesIO(content)) as zf:
+            # 40 kB compressed can be 4 GB unpacked, so the archive's own
+            # directory is checked before anything is read out of it (B-54).
+            check_zip_total(zf)
             names = set(zf.namelist())
 
             if "model.pkl" in names:
-                model_blob = zf.read("model.pkl")
+                model_blob = zip_member(zf, "model.pkl", label="Modell")
                 _require_trusted_model(model_blob)
                 row = await _get_model_row(db, tid)
                 if row:
@@ -346,7 +359,10 @@ async def upload_bundle(
                 restored.append("model")
 
             if "memory.json" in names:
-                mem_data = json.loads(zf.read("memory.json").decode("utf-8"))
+                mem_data = json.loads(zip_member(zf, "memory.json", label="Gedächtnis").decode("utf-8"))
+                if not isinstance(mem_data, list):
+                    raise HTTPException(status_code=400, detail="Ungültiges Memory-JSON-Format.")
+                check_count(mem_data, max_items=MAX_MEMORY_ENTRIES, label="Gedächtnis-Einträge")
                 await db.execute(delete(Memory).where(Memory.tenant_id == tid))
                 for entry in mem_data:
                     db.add(

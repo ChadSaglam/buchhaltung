@@ -60,6 +60,11 @@ class Settings(BaseSettings):
     # B-55: sign-in, sign-up and the SSO hand-off are the only unauthenticated
     # write paths, so they are keyed per IP and kept far below the default.
     RATE_LIMIT_AUTH: str = "10/minute"
+    # B-54: how much stored evidence one tenant may keep. Every upload is kept
+    # on purpose (B-09), so without a ceiling one tenant fills the disk — with
+    # files the product could not even read. 0 = no quota (single-tenant install).
+    MAX_TENANT_STORAGE_MB: int = 5120
+
     # Where the rate-limit counters live. Empty = in-process memory, which is
     # correct for one uvicorn process and silently wrong for two: each worker
     # would then allow the full quota. compose already runs redis.

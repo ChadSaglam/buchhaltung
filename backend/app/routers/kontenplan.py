@@ -8,6 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user, get_db, require_admin
+from app.core.uploads import MAX_KONTENPLAN_ENTRIES, check_count
 from app.models.kontenplan import Konto, KontoDefault
 from app.models.user import User
 from app.schemas.kontenplan import KontenplanResponse, KontenplanSaved, KontoDefaultsResponse
@@ -36,6 +37,9 @@ async def update_kontenplan(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_admin),
 ):
+    # A small JSON body, one row each (B-54).
+    check_count(body.kontenplan, max_items=MAX_KONTENPLAN_ENTRIES, label="Konten")
+
     existing = await db.execute(select(Konto).where(Konto.tenant_id == user.tenant_id))
     for row in existing.scalars().all():
         await db.delete(row)

@@ -6,12 +6,15 @@ import asyncio
 import io
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.deps import require_editor
+from app.core.deps import get_db, require_editor
 from app.core.rate_limit import heavy_limit, limiter
+from app.core.uploads import MAX_PDF_BYTES, read_upload
 from app.models.user import User
 from app.services.pdf_parser import extract_transactions_from_pdf
 from app.services.receipts import store_receipt
+from app.services.storage_quota import StorageQuota
 
 router = APIRouter(prefix="/api/pdf", tags=["pdf"])
 
@@ -21,14 +24,17 @@ router = APIRouter(prefix="/api/pdf", tags=["pdf"])
 async def parse_pdf(
     request: Request,
     file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
     user: User = Depends(require_editor),
 ):
     if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(400, "Nur PDF-Dateien erlaubt.")
 
-    content = await file.read()
-    if len(content) > 50 * 1024 * 1024:
-        raise HTTPException(400, "PDF zu gross (max 50MB).")
+    content = await read_upload(file, max_bytes=MAX_PDF_BYTES, label="PDF")
+    # The audit copy below is kept whether or not the parse works, so the quota
+    # is checked before it is written, not after the disk is full (B-54).
+    quota = StorageQuota(user.tenant_id, db)
+    await quota.ensure_room_for(len(content))
 
     # Audit copy first (B-09): the statement survives even if parsing fails.
     source_key = await asyncio.to_thread(
@@ -38,6 +44,8 @@ async def parse_pdf(
         content_type=file.content_type or "application/pdf",
         content=content,
     )
+    await quota.record(len(content))
+    await db.commit()
 
     try:
         # pdfplumber is CPU-bound and takes seconds on a long statement (B-49).

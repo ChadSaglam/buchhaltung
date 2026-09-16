@@ -11,6 +11,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import ROLE_RANK, get_db, require_editor
+from app.core.uploads import MAX_IMPORT_BYTES, read_upload
 from app.models.memory import Memory
 from app.models.training_data import TrainingRow
 from app.models.user import User
@@ -196,7 +197,7 @@ async def import_banana_file(
     if replace and ROLE_RANK.get(user.role, -1) < ROLE_RANK["admin"]:
         raise HTTPException(403, "Requires admin role or higher")
 
-    content = await file.read()
+    content = await read_upload(file, max_bytes=MAX_IMPORT_BYTES, label="Banana-Datei")
     rows = parse_banana_xls(content, file.filename or "data.xls")
 
     if not rows:

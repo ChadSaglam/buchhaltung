@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user, get_db, require_editor
 from app.core.rate_limit import heavy_limit, limiter
+from app.core.uploads import MAX_STATEMENT_BYTES, read_upload
 from app.models.bank_transaction import TX_STATUS_OFFEN, BankTransaction
 from app.models.match import TIER_REFERENCE, Match
 from app.models.user import User
@@ -28,10 +29,9 @@ from app.schemas.document import DocumentOut
 from app.services.abgleich import AbgleichService
 from app.services.pdf_parser import extract_transactions_from_pdf
 from app.services.receipts import store_receipt
+from app.services.storage_quota import StorageQuota
 
 router = APIRouter(prefix="/api/abgleich", tags=["abgleich"])
-
-MAX_STATEMENT_SIZE = 50 * 1024 * 1024
 
 
 @router.post("/statements", response_model=StatementImportResponse)
@@ -45,9 +45,9 @@ async def import_statement(
     """Upload a Kontoauszug: every line becomes a bank transaction, then proposals are refreshed."""
     if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(400, "Nur PDF-Dateien erlaubt.")
-    content = await file.read()
-    if len(content) > MAX_STATEMENT_SIZE:
-        raise HTTPException(400, "PDF zu gross (max 50MB).")
+    content = await read_upload(file, max_bytes=MAX_STATEMENT_BYTES, label="Kontoauszug")
+    quota = StorageQuota(user.tenant_id, db)
+    await quota.ensure_room_for(len(content))
 
     statement_key = await asyncio.to_thread(
         store_receipt,
@@ -56,6 +56,7 @@ async def import_statement(
         content_type=file.content_type or "application/pdf",
         content=content,
     )
+    await quota.record(len(content))
     try:
         rows = await asyncio.to_thread(extract_transactions_from_pdf, io.BytesIO(content))
     except Exception as exc:

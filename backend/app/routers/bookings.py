@@ -18,6 +18,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user, get_db, require_editor
+from app.core.uploads import MAX_BULK_BOOKINGS, check_count
 from app.models.booking import Booking
 from app.models.idempotency_key import IdempotencyKey
 from app.models.user import User
@@ -111,6 +112,8 @@ async def create_bookings(
             return replayed
 
     items = body if isinstance(body, list) else [body]
+    # A bulk post is cheap to send and expensive to write (B-54).
+    check_count(items, max_items=MAX_BULK_BOOKINGS, label="Buchungen")
     for item in items:
         # A key is only accepted when it addresses this tenant's own document.
         if item.source_key and not key_belongs_to_tenant(item.source_key, user.tenant_id):

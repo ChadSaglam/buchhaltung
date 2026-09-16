@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user, get_db, require_admin, require_editor
 from app.core.rate_limit import heavy_limit, limiter
+from app.core.uploads import MAX_RECEIPT_BYTES, read_upload
 from app.models.user import User
 from app.schemas.scanner import (
     ScannerConfigResponse,
@@ -67,7 +68,7 @@ async def extract_invoice_endpoint(
     db: AsyncSession = Depends(get_db),
 ) -> ScannerExtractResponse:
     service = ScannerService(db=db, user=user)
-    content = await file.read()
+    content = await read_upload(file, max_bytes=MAX_RECEIPT_BYTES, label="Beleg")
     kwargs: dict[str, Any] = {
         "file_name": file.filename or "upload",
         "content_type": file.content_type or "",

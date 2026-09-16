@@ -25,6 +25,7 @@ from app.services.ollama_vision import parse_invoice_text
 from app.services.receipts import store_receipt
 from app.services.scanner.base import ScannerFile
 from app.services.scanner.registry import ScannerProviderRegistry
+from app.services.storage_quota import StorageQuota
 
 logger = logging.getLogger(__name__)
 
@@ -134,10 +135,14 @@ class ScannerService:
 
         self._validate_upload(content_type=content_type, content=content)
         # Audit copy first (B-09): the document survives even if extraction fails.
+        # Which is exactly why the quota has to answer before it is written (B-54).
+        quota = StorageQuota(self.user.tenant_id, self.db)
+        await quota.ensure_room_for(len(content))
         await emit({"icon": "📤", "label": "Datei wird gespeichert", "status": "active"})
         source_key = await asyncio.to_thread(
             store_receipt, self.user.tenant_id, filename=file_name, content_type=content_type, content=content
         )
+        await quota.record(len(content))
         steps[-1]["status"] = "done"
         scanner_file = ScannerFile(
             filename=file_name,

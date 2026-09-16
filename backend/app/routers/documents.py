@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user, get_db, require_editor
 from app.core.rate_limit import heavy_limit, limiter
+from app.core.uploads import MAX_RECEIPT_BYTES, read_upload
 from app.models.document import (
     DOCUMENT_STATUSES,
     STATUS_BEZAHLT,
@@ -51,7 +52,7 @@ async def upload_documents(
     for upload in files:
         name = upload.filename or "upload"
         try:
-            content = await upload.read()
+            content = await read_upload(upload, max_bytes=MAX_RECEIPT_BYTES, label=name)
             doc = await service.ingest(filename=name, content_type=upload.content_type or "", content=content)
             results.append(
                 DocumentUploadResult(
