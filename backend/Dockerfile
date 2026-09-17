@@ -1,12 +1,12 @@
 # Two stages (B-41): build wheels with a compiler, run without one, as a non-root user.
-FROM python:3.13-slim AS build
+FROM python:3.14-slim AS build
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends gcc libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 COPY requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-FROM python:3.13-slim
+FROM python:3.14-slim
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 tesseract-ocr tesseract-ocr-deu tesseract-ocr-eng \

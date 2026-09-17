@@ -4,7 +4,7 @@ Self-learning Swiss bookkeeping SaaS. Photograph a receipt or upload a bank
 statement — the system extracts the data, classifies it to the right accounts,
 and exports Banana-compatible bookings. Multi-tenant from the ground up.
 
-![Python](https://img.shields.io/badge/Python-3.13%2B-blue)
+![Python](https://img.shields.io/badge/Python-3.14%2B-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-async-green)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black)
 ![License](https://img.shields.io/badge/License-Proprietary-red)
@@ -60,7 +60,7 @@ matching, idempotent Banana batches).
 
 ## Quick start
 
-Prerequisites: Python 3.13+, Node.js 22+, PostgreSQL 15+ (or Docker),
+Prerequisites: Python 3.14+, Node.js 22+, PostgreSQL 15+ (or Docker),
 [Ollama](https://ollama.com) with a vision-capable model.
 
 ```bash

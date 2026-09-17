@@ -54,8 +54,8 @@ venv_python() {
     echo "${BACKEND_DIR}/venv/bin/python"
   elif [[ -x "${BACKEND_DIR}/venv/bin/python3" ]]; then
     echo "${BACKEND_DIR}/venv/bin/python3"
-  elif [[ -x "${BACKEND_DIR}/venv/bin/python3.13" ]]; then
-    echo "${BACKEND_DIR}/venv/bin/python3.13"
+  elif [[ -x "${BACKEND_DIR}/venv/bin/python3.14" ]]; then
+    echo "${BACKEND_DIR}/venv/bin/python3.14"
   else
     fail "No Python executable found in backend virtual environment"
   fi

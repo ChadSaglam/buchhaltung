@@ -1,5 +1,14 @@
 [tool.ruff]
 line-length = 120
+# The language floor, not the runtime. Everything runs on 3.14 now (CI, both
+# image stages, the venv), but this stays one behind on purpose: at py314
+# ruff's formatter rewrites `except (TypeError, ValueError):` into PEP 758's
+# `except TypeError, ValueError:` — 10 files of churn, a SyntaxError on any
+# older Python, and a line that reads like Python 2 to everyone else. UP037
+# also starts demanding unquoted forward references in the SQLAlchemy models,
+# where the quotes are what let the registry resolve a class that is not
+# imported (see the `# noqa: F821` next to each one). Bump this only
+# deliberately, and read the resulting diff before committing it.
 target-version = "py313"
 src = ["backend"]
 exclude = ["backend/venv", "backend/alembic/versions", "__pycache__", "frontend", "graphify-out"]
