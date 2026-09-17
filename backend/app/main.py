@@ -53,11 +53,32 @@ application = FastAPI(
     openapi_url=None if settings.is_production else "/openapi.json",
 )
 
+# Starlette applies middleware in reverse: the LAST one added is the OUTERMOST.
+# This block therefore reads inside-out, and CORS has to stay at the bottom.
+#
 # B-54: an oversized upload is refused on its Content-Length, before the router
-# and before any body is read. Added *before* CORS so that CORS ends up wrapping
-# it — otherwise the browser reports the 413 as a CORS failure and the user sees
-# "network error" instead of "file too large".
+# and before any body is read — inside CORS, so the browser reports a 413 and
+# the user reads "file too large" instead of "network error".
 application.add_middleware(MaxBodySizeMiddleware)
+
+# RequestContextMiddleware catches an unhandled exception and *builds* the 500
+# itself. A response built outside CORS never gets an Access-Control-Allow-Origin
+# header, so the browser reports every server error as a CORS failure and the
+# real cause never reaches the developer — the comment above had the principle
+# right and the line below it used to break it.
+#
+# The first real run (2026-09-17) is what surfaced this: the console said
+# "blocked by CORS policy", CORS was configured perfectly, and the actual error
+# was an RLS refusal on /api/auth/register that nothing in the browser could
+# show. Two hours of the wrong suspect.
+#
+# What it costs: CORS now answers preflights before they reach here, so OPTIONS
+# no longer appears in the access log. A fair trade for errors that say what
+# they are — and it removes a wall of OPTIONS lines from the log as a bonus.
+application.add_middleware(RequestContextMiddleware)
+
+# Outermost on purpose: every response leaves through here, including the ones
+# the two middlewares above build for errors.
 application.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
@@ -66,7 +87,6 @@ application.add_middleware(
     allow_headers=["*"],
     expose_headers=["X-Request-ID"],
 )
-application.add_middleware(RequestContextMiddleware)
 install_error_handlers(application)
 
 # 429s go through the uniform error envelope (core/errors.py).

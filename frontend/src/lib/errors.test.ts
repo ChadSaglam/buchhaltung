@@ -98,6 +98,10 @@ describe("errorMessage", () => {
   });
 
   it("returns the bare message otherwise", () => {
-    expect(errorMessage({ code: "ERR_NETWORK" })).toBe("Server nicht erreichbar. Läuft das Backend?");
+    // The message must name BOTH causes: a down backend and a CORS refusal are
+    // the same ERR_NETWORK, and only one of them is fixed by restarting things.
+    const nachricht = errorMessage({ code: "ERR_NETWORK" });
+    expect(nachricht).toContain("Keine Antwort von");
+    expect(nachricht).toContain("CORS_ORIGINS");
   });
 });

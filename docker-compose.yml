@@ -41,7 +41,12 @@ services:
       - DATABASE_URL=postgresql+asyncpg://app_rw:${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}@db:5432/chadev_buchhaltung
       - MIGRATION_DATABASE_URL=postgresql+asyncpg://chadev:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/chadev_buchhaltung
       - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (>= 32 random chars)}
-      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000}
+      # Both spellings of the same host, because they are NOT the same origin
+      # to a browser. config.py's own default allows both; listing only one
+      # here narrowed it, and a page opened on 127.0.0.1:3000 was blocked by
+      # CORS while every container reported healthy — the first real run
+      # (2026-09-17) lost its first ten minutes to exactly that.
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
       - SMTP_HOST=${SMTP_HOST:-}
       - SMTP_PORT=${SMTP_PORT:-465}

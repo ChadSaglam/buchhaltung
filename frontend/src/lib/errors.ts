@@ -95,9 +95,16 @@ export function toAppError(err: unknown): AppError {
   }
 
   if (anyErr?.code === "ERR_NETWORK") {
+    // ERR_NETWORK is what axios reports for every failure that happens *before*
+    // a response exists. A backend that is down and a backend that is up but
+    // whose CORS_ORIGINS does not list this page's origin are indistinguishable
+    // from here. Naming only the first sends a user whose stack is entirely
+    // healthy off to restart containers — which is what the first real run
+    // (2026-09-17) did, with all five services green the whole time.
+    const ziel = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
     return {
       code: "network",
-      message: "Server nicht erreichbar. Läuft das Backend?",
+      message: `Keine Antwort von ${ziel}. Entweder läuft das Backend nicht — oder es läuft und lehnt diese Herkunft ab (CORS_ORIGINS).`,
       retryable: true,
     };
   }

@@ -5,11 +5,12 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
+from app.core.database import bind_tenant, get_db
 from app.core.deps import get_current_user, require_admin
 from app.core.errors import ApiError
 from app.core.rate_limit import auth_limit, limiter
 from app.core.security import hash_password, issue_access_token, verify_password
+from app.core.tenant_context import set_tenant
 from app.models.tenant import Tenant
 from app.models.user import AUTH_SOURCE_LOCAL, User
 from app.schemas.auth import (
@@ -53,6 +54,23 @@ async def register(request: Request, body: RegisterRequest, db: AsyncSession = D
             continue
     else:
         raise HTTPException(status_code=409, detail="Tenant name is taken, please retry")
+
+    # B-24: everything below this line writes tenant-scoped rows — and the
+    # Kontenplan that `seed_tenant` inserts is one of the 24 tables the policies
+    # cover. Nothing on this path has established the tenant context, so the
+    # policy predicate has nothing to match and Postgres refuses the INSERT:
+    #     new row violates row-level security policy for table "kontenplan"
+    #
+    # `sso.py` has done exactly this since B-36 and says why. /register never
+    # did, and the suite could not see it: the tests connect as the table owner,
+    # for whom policies do not apply. So the one endpoint that creates the very
+    # first account was impossible to complete in the production configuration —
+    # found by the first real run on compose (2026-09-17), in five minutes.
+    #
+    # Both calls, for the reason deps.py gives: the contextvar for every later
+    # transaction of this request, `bind_tenant` for the one already open.
+    set_tenant(tenant.id)
+    await bind_tenant(db, tenant.id)
 
     user = User(
         tenant_id=tenant.id,

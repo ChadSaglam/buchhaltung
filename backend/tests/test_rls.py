@@ -376,3 +376,87 @@ def test_every_place_that_opens_its_own_session_is_accounted_for():
         f"these open a database session without a reviewed tenant decision: {sorted(new)}. "
         "Set the context (app.core.tenant_context) and add it to `reviewed` with a reason."
     )
+
+
+# --- /register is a context site too, and was the one nobody listed ----------
+
+
+@pytest.fixture
+def recorded_register_context(monkeypatch):
+    """What `register` established, recorded from inside the request.
+
+    Same spy as `recorded_context`, pointed at `app.routers.auth`: registration
+    creates its tenant and then writes to it, with no `get_current_user` in
+    front of it to have set the context.
+    """
+    calls: list[tuple[str, int | None]] = []
+    import app.routers.auth as auth_router
+
+    real_set, real_bind = auth_router.set_tenant, auth_router.bind_tenant
+
+    def spy_set(tenant_id):
+        calls.append(("set", tenant_id))
+        return real_set(tenant_id)
+
+    async def spy_bind(session, tenant_id):
+        calls.append(("bind", tenant_id))
+        return await real_bind(session, tenant_id)
+
+    monkeypatch.setattr(auth_router, "set_tenant", spy_set)
+    monkeypatch.setattr(auth_router, "bind_tenant", spy_bind)
+    return calls
+
+
+async def test_registrierung_setzt_den_tenant_bevor_sie_schreibt(client, recorded_register_context):
+    """The regression that made the product impossible to sign up for.
+
+    `seed_tenant` inserts the default Kontenplan, which RLS covers. Without the
+    context the policy predicate matches nothing and Postgres answers
+
+        new row violates row-level security policy for table "kontenplan"
+
+    As the table owner — which every test connected as until now — policies do
+    not apply, so this passed everywhere except where it mattered.
+    """
+    res = await client.post(
+        "/api/auth/register",
+        json={
+            "email": "erstkonto@example.ch",
+            "password": "ein-langes-passwort",
+            "display_name": "Erst Konto",
+            "tenant_name": "Erstkonto AG",
+        },
+    )
+    assert res.status_code == 201, res.text
+
+    arten = [art for art, _ in recorded_register_context]
+    assert "set" in arten and "bind" in arten, (
+        "register must establish the tenant context before seeding: both the "
+        "contextvar (later transactions) and the GUC (the transaction already "
+        f"open). Recorded: {recorded_register_context}"
+    )
+    ids = {tid for _, tid in recorded_register_context}
+    assert len(ids) == 1 and None not in ids, f"one real tenant id expected, got {ids}"
+
+
+async def test_die_registrierung_legt_den_kontenplan_wirklich_an(client):
+    """The seeding is the part RLS refused — assert the rows exist afterwards."""
+    res = await client.post(
+        "/api/auth/register",
+        json={
+            "email": "kontenplan@example.ch",
+            "password": "ein-langes-passwort",
+            "display_name": "Konten Plan",
+            "tenant_name": "Kontenplan AG",
+        },
+    )
+    assert res.status_code == 201, res.text
+    token = res.json()["access_token"]
+
+    konten = await client.get("/api/kontenplan/", headers={"Authorization": f"Bearer {token}"})
+    assert konten.status_code == 200
+    # GET /api/kontenplan/ answers {"kontenplan": {konto_nr: beschreibung}}.
+    nummern = set(konten.json()["kontenplan"])
+    # 1020 is the bank account every Abgleich books against; an empty Kontenplan
+    # is a tenant that cannot book anything at all.
+    assert "1020" in nummern, f"seed_tenant produced no chart of accounts: {sorted(nummern)}"

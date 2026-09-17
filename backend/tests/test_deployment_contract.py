@@ -436,3 +436,54 @@ async def test_the_readme_names_every_area_of_the_product(readme_pfade):
     ]
 
     assert fehlend == [], f"the README's API table has nothing about: {fehlend}"
+
+
+# --- CORS: the deployment file may not narrow the code's own default ---------
+#
+# Found by the first real end-to-end run (2026-09-17), not by any test here.
+# `config.py` defaults CORS_ORIGINS to localhost:3000 **and** 127.0.0.1:3000,
+# because to a browser those are two different origins and a first-run user
+# types whichever one they are used to. `docker-compose.yml` then overrode it
+# with only the first. Every container was healthy, the API was listening, and
+# the register page said "Server nicht erreichbar. Läuft das Backend?" — which
+# is the one explanation that was not true.
+#
+# Two files, each defensible alone, disagreeing. That is the shape a test suite
+# does not catch and a person opening the page does, so the guard belongs here.
+
+CONFIG_PY = ROOT / "backend" / "app" / "core" / "config.py"
+
+
+def _config_cors_default() -> set[str]:
+    m = re.search(r'^\s*CORS_ORIGINS:\s*str\s*=\s*"([^"]*)"', CONFIG_PY.read_text(encoding="utf-8"), re.M)
+    assert m, "CORS_ORIGINS default not found in config.py — did the field move?"
+    return {o.strip() for o in m.group(1).split(",") if o.strip()}
+
+
+def _compose_cors_default(compose: dict) -> set[str]:
+    for eintrag in compose["services"]["api"]["environment"]:
+        if str(eintrag).startswith("CORS_ORIGINS="):
+            # "CORS_ORIGINS=${CORS_ORIGINS:-a,b}" → {"a", "b"}
+            roh = str(eintrag).split("=", 1)[1]
+            m = re.search(r":-(.*)\}$", roh)
+            roh = m.group(1) if m else roh
+            return {o.strip() for o in roh.split(",") if o.strip()}
+    raise AssertionError("the api service does not set CORS_ORIGINS at all")
+
+
+async def test_compose_darf_die_cors_vorgabe_nicht_verengen(compose):
+    fehlend = _config_cors_default() - _compose_cors_default(compose)
+    assert not fehlend, (
+        "docker-compose.yml allows fewer origins than config.py's own default. "
+        f"Missing: {sorted(fehlend)}. A browser on a dropped origin gets a CORS "
+        "refusal, which reaches the user as a network error — so the app blames "
+        "a backend that is running perfectly well."
+    )
+
+
+async def test_localhost_und_loopback_sind_beide_erlaubt(compose):
+    # Naming them explicitly: the superset test above passes trivially if
+    # somebody ever narrows *both* files at once.
+    erlaubt = _compose_cors_default(compose)
+    for herkunft in ("http://localhost:3000", "http://127.0.0.1:3000"):
+        assert herkunft in erlaubt, f"{herkunft} must be allowed out of the box"
