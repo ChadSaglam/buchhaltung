@@ -4,7 +4,7 @@
 > Legend: severity `C`ritical / `H`igh / `M`edium / `L`ow · effort `S` (<1h) / `M` (half day) / `L` (multi-day)
 > IDs: `B-xx` = work item (next free: **B-82**) · `P-xx` = parked (next free: **P-05**)
 > Cross-product items (SSO, contracts, design tokens) live in `chadev-platform/ROADMAP.md`, not here.
-> Updated: 2026-09-17 — Python is **3.14** everywhere (CI, both image stages, the scripts, the lock); ruff's `target-version` stays at `py313` and `pyproject.toml` says why. 2026-09-16 (fifth run) — **B-81** the runtime lockfile, and **the stack runs**: five healthy services and the whole compose-smoke job, verbatim, plus B-24 verified against the live database. **Lohn-Vergleich** (the tool that lifts the payslip watermark) and **B-80** the frontend image, built and served before it was believed. Fourth run — the NEXT block emptied: **B-61** health that can fail, **B-57** worker hardening, **B-56** parser hygiene (the `3924` was real), **B-62** (already done — the line was stale), **B-60** CI parity (both databases, a compose smoke job, and a real password out of `scripts/setup.sh`). Earlier that day (third run): **B-27** the query audit (five statements that grew with the tenant), **B-23** plan limits enforced from `usage_events`, **B-72 option C** as far as the law reaches (BVG minimum as a check), **B-20 finished** (the Kontenplan import wizard). Earlier that day (second run): **B-72** payroll (option B with option C's shape), **B-79** invoice e-mail, **B-74** part A, **B-24** row-level security (`app_rw` is `NOSUPERUSER NOBYPASSRLS`), **B-25** backup + restore drill, **B-54**/**B-55**, **B-17** the Treuhänder pack in one zip, **B-20** (sample invoice + checklist; the wizard is still open), **B-51 finished** (the last five money columns), **B-22** the audit log, **B-28** indexes chosen by `EXPLAIN`. Earlier that day (night run): **B-51** money columns are Numeric(12,2), **B-59** `response_model` on the seven endpoints that returned bare dicts (and the hand-written frontend interfaces are gone), **B-58** the UX/a11y batch (one formatter, WCAG-AA accents, `usePopover`, heading order, confirms on destructive actions), **B-71** 90-day liquidity + tax provision on Heute, and **step 5 of the IA migration** (sidebar = four surfaces + Mehr; every old route still resolves). Earlier on 2026-09-16: B-70 Jahresabschluss and B-77 (PDF renderer = fpdf2); B-69 e-mail intake; B-52 idempotency by constraint; B-53 export safety. 2026-09-15 — B-68 write invoices (Swiss QR, debtor booking, reference return); B-67 VAT return (form 200); B-66 month-end check; B-65 open items / reminders; B-76 Banana batch (phase 4) done — and the open extension question answered: an extension may not call HTTP, so the file hand-off is final (new: B-78, read-only REST spike); B-73 Abgleich done, `make check` green. 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 amount memory. 2026-09-13 — phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
+> Updated: 2026-09-17 — **the stack runs on the owner's own Mac** (arm64, all five services healthy, 30 migrations applied, RLS 24/24/24 live) and the branch is **pushed**. Python is **3.14** everywhere (CI, both image stages, the scripts, the lock); ruff's `target-version` stays at `py313` and `pyproject.toml` says why. 2026-09-16 (fifth run) — **B-81** the runtime lockfile, and **the stack runs**: five healthy services and the whole compose-smoke job, verbatim, plus B-24 verified against the live database. **Lohn-Vergleich** (the tool that lifts the payslip watermark) and **B-80** the frontend image, built and served before it was believed. Fourth run — the NEXT block emptied: **B-61** health that can fail, **B-57** worker hardening, **B-56** parser hygiene (the `3924` was real), **B-62** (already done — the line was stale), **B-60** CI parity (both databases, a compose smoke job, and a real password out of `scripts/setup.sh`). Earlier that day (third run): **B-27** the query audit (five statements that grew with the tenant), **B-23** plan limits enforced from `usage_events`, **B-72 option C** as far as the law reaches (BVG minimum as a check), **B-20 finished** (the Kontenplan import wizard). Earlier that day (second run): **B-72** payroll (option B with option C's shape), **B-79** invoice e-mail, **B-74** part A, **B-24** row-level security (`app_rw` is `NOSUPERUSER NOBYPASSRLS`), **B-25** backup + restore drill, **B-54**/**B-55**, **B-17** the Treuhänder pack in one zip, **B-20** (sample invoice + checklist; the wizard is still open), **B-51 finished** (the last five money columns), **B-22** the audit log, **B-28** indexes chosen by `EXPLAIN`. Earlier that day (night run): **B-51** money columns are Numeric(12,2), **B-59** `response_model` on the seven endpoints that returned bare dicts (and the hand-written frontend interfaces are gone), **B-58** the UX/a11y batch (one formatter, WCAG-AA accents, `usePopover`, heading order, confirms on destructive actions), **B-71** 90-day liquidity + tax provision on Heute, and **step 5 of the IA migration** (sidebar = four surfaces + Mehr; every old route still resolves). Earlier on 2026-09-16: B-70 Jahresabschluss and B-77 (PDF renderer = fpdf2); B-69 e-mail intake; B-52 idempotency by constraint; B-53 export safety. 2026-09-15 — B-68 write invoices (Swiss QR, debtor booking, reference return); B-67 VAT return (form 200); B-66 month-end check; B-65 open items / reminders; B-76 Banana batch (phase 4) done — and the open extension question answered: an extension may not call HTTP, so the file hand-off is final (new: B-78, read-only REST spike); B-73 Abgleich done, `make check` green. 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 amount memory. 2026-09-13 — phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
 > Companion docs: `docs/ADR-002-rls.md` (B-24) · `docs/BACKUP.md` (B-25) · `docs/B-72-LOHN-SPEC.md` (B-72) · `docs/IA-2026-09-14.md` · `docs/DEPLOY-CHECKLIST-B36-B37.md` · `docs/BRAINSTORM-2026-09-12.md`.
 
 ---
@@ -31,26 +31,21 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 
 ## ⏭ NEXT — pull from LATER, in this order
 
-_The whole block is cleared. 2026-09-16 shipped **B-27**, **B-23**, **B-72 option C** (the part that is law),
-**B-20**, **B-61**, **B-57**, **B-56**, **B-62** and **B-60** — and three of those lines turned out to be
-describing work that was already done. The list now matches the code; the thing it does not match is
-production, because there is no production yet._
+_The whole block is cleared, and as of 2026-09-17 the stack runs on the owner's own machine — arm64 Docker
+Desktop, his real `pgdata` volume, all five services healthy, all 30 migrations applied, RLS live at 24 tables
+enabled / forced / one policy each. The list now matches the code **and** the code matches something that starts.
+What it still does not match is a deployment or a single real user._
 
 **Nothing here is the next thing to do.** What is left in this file is smaller than what is left outside it:
 
-1. **Start it on *your* machine.** The stack now runs: on 2026-09-16 a full
-   `docker compose up -d --wait db redis api worker web` came up with **all five services healthy**, and every
-   step of the CI smoke job passed verbatim — both health endpoints, the `/login` page *and* the stylesheet it
-   references, and `python -m app.worker --once` exiting 0. B-24 was verified live at the same time: `app_rw` is
-   `NOSUPERUSER NOBYPASSRLS`, 24 tables with RLS enabled, forced and one policy each, the API connected as
-   `app_rw`, and an `INSERT` with no tenant context was refused with `new row violates row-level security policy`.
-   The first `up` before that died on `ollama`'s unconditional GPU reservation; it is behind `--profile ai` now.
-   **What is still unproven is your machine**, and two things are specific to it: Docker Desktop on arm64 (the
-   images above were built on x86_64), and an existing `pgdata` volume — if one is there, `POSTGRES_PASSWORD`
-   must match what it was created with, or `docker compose down -v` first, which deletes the data. An existing
-   volume also means `docker/db-init/10-app-role.sql` never ran, so `app_rw` has to be created by hand.
-2. **Rotate the secrets**, including the Postgres password that was in `scripts/setup.sh` until today and is
-   still in the history.
+1. **Rotate the secrets.** The chat-pasted ones and the Postgres password that was in `scripts/setup.sh`
+   until 2026-09-16. It is out of HEAD and **still in the history** — and the branch is pushed now, so it is on
+   the remote too. Deleting it is not rotating it, and making the repository private is not rotating it either.
+   This is the oldest open item and the only one that gets worse while it waits.
+2. **Use it once, end to end.** The stack is up and every table is empty. Nobody has registered a tenant,
+   uploaded a receipt, imported a statement and run an Abgleich against the real compose stack — every check so
+   far has been a test suite, and a test suite only asks the questions somebody thought to write down. Onboarding
+   → Beleg → Bank → Abgleich → Export, once, as a user rather than as the author.
 3. **One real payroll month**, against the previous provider. Until then the watermark stays and Lohn cannot be
    given to anyone. It is no longer *by hand*: `make lohn-vergleich` writes a template, the numbers from the old
    payslip go in, and `python scripts/lohn-vergleich.py <datei>` prints the line-by-line difference with the input
@@ -66,10 +61,14 @@ Then, and only then, the code that is left:
 - **B-74 part B** — standing orders as Abgleich proposals. **Decide before coding:**
   `docs/ADR-003-standing-orders-in-abgleich.md` asks three questions; the recommendation is option C.
 - **B-75** bank pull (needs a contract per tenant, spike first) and **B-78** the read-only Banana REST spike.
-- The **B-24 cutover**: `docs/RUNBOOK-RLS-CUTOVER.md`. A deployment step, not a commit — but read section 5
-  first: the obvious rollback (point `DATABASE_URL` back at the owner) does **not** work, because production
-  refuses to boot as a superuser and the compose image makes `POSTGRES_USER` one. The fallback role has to exist
-  before the switch, not during the incident.
+- The **B-24 watch**: `docs/RUNBOOK-RLS-CUTOVER.md`. The cutover itself is behind us — on a database created
+  from scratch the migration lands `ENABLE` + `FORCE` + one policy in one step, and 2026-09-17 read back
+  **24 / 24 / 24** on the owner's own stack with the API connected as `app_rw`. What is left is section 4, and it
+  needs **data**: RLS fails silently, as an empty list rather than an error, so the check that matters is counting
+  rows as the owner and as `app_rw` with the context set and finding the same number. On an empty database that
+  check passes for the wrong reason. Section 5 still applies the day something goes wrong: the obvious rollback
+  (point `DATABASE_URL` back at the owner) does **not** work, because production refuses to boot as a superuser
+  and the compose image makes `POSTGRES_USER` one — the fallback role has to exist before it is needed.
 
 <details><summary>What item 1 of the old block settled (Banana, 2026-09-15) — keep, do not re-litigate</summary>
 
@@ -181,11 +180,14 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
   pins `numpy 2.5.3` and `scipy 1.18.1`. The first version of this lock was built on 3.11 and looked perfectly
   correct. `make lock` now refuses to run unless the venv's Python matches `PYTHON_VERSION` in the workflow, and
   a test holds the lock's own header against that same value.
-  Proof, end to end: a clean 3.13 venv installed from the lock ran the suite at **1168 passed / 20 skipped**;
-  `docker compose build api worker` installed it (`Collecting aiosqlite==0.22.1`, not a range); the stack came up
-  healthy; and `pip freeze` inside the running API container is **83 packages, zero missing, zero mismatched,
-  zero extra** against the lock. 9 new tests, including the one that matters — a package added to
-  `requirements.in` without running `make lock` fails the suite.
+  Proof, end to end, and re-run after the 3.14 move below: a clean venv installed from the lock ran the suite at
+  **1179 passed / 20 skipped** on 3.14.7; `docker compose build api worker` installed it
+  (`Collecting aiosqlite==0.22.1`, not a range); the stack came up healthy; and `pip freeze` inside the running
+  API container is **83 packages, zero missing, zero mismatched, zero extra** against the lock. 11 new tests,
+  including the one that matters — a package added to `requirements.in` without running `make lock` fails the
+  suite. One more datapoint from 2026-09-17: `make lock` run on macOS/arm64 produced a **byte-identical** file to
+  the one compiled in a Linux container, so this dependency set is platform-stable. An observation, not a
+  guarantee — a future dependency with platform markers could end that.
   **Found while proving it, and now settled:** `backend/venv` on the Mac was **Python 3.14** while CI and both
   image stages were **3.13** — the local suite had been running on a different interpreter than production, and
   the lock is what made it visible. Resolved upwards: **everything is 3.14** (`PYTHON_VERSION` in both workflows,
@@ -214,8 +216,13 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
   context is refused with `new row violates row-level security policy`. Fail-closed, live.
   It also confirmed the trap `docs/RUNBOOK-RLS-CUTOVER.md` warns about: `chadev` really is `rolsuper = t`, so
   pointing `DATABASE_URL` back at the owner is not a rollback — production refuses to boot as a superuser.
-  Caveat worth keeping: this ran on x86_64 with a Linux daemon. Docker Desktop on an arm64 Mac is a different
-  build of every image.
+  **Confirmed on the owner's machine, 2026-09-17** — which was the one caveat this entry shipped with, since the
+  run above was x86_64 with a Linux daemon. arm64 Docker Desktop, an existing `pgdata` volume, `docker compose
+  build api worker` clean, `up -d --wait` → five healthy services, **all 30 migrations applied** from baseline to
+  B-28, `/login` 200 with its stylesheet at 87 195 bytes, and RLS read back off the live database as
+  **24 enabled / 24 forced / 24 policies**. Two things cost time and are worth writing down: a local `make dev`
+  still holding **:3000** makes the `up` fail with *"ports are not available"* — nothing to do with compose — and
+  a half-started stack has to be `docker compose down`ed before `up -d --wait` behaves.
 - **B-80** ✅ 2026-09-16 — the frontend image stops shipping its own toolchain. **1.23 GB → 235 MB**, measured by
   building both. It was single-stage, so the published image carried the whole source tree and every devDependency
   `npm ci` installed — typescript, eslint, vitest, Playwright, tailwind, 734 MB of `node_modules` — and ran as
