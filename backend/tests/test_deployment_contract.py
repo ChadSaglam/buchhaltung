@@ -345,3 +345,94 @@ async def test_every_build_directory_is_out_of_git():
     for datei in (ROOT / ".gitignore", ROOT / "frontend" / ".gitignore"):
         muster = datei.read_text(encoding="utf-8").split()
         assert ".next*/" in muster, f"{datei.relative_to(ROOT)} does not ignore every NEXT_DIST_DIR"
+
+
+# --------------------------------------------------------------------------- #
+# The README's API table is a promise; hold it against the router table
+# --------------------------------------------------------------------------- #
+
+README = ROOT / "README.md"
+
+#: `{a,b}` in the README is shorthand for several paths; `{id}` is a path
+#: parameter. A comma is what tells them apart.
+_GRUPPE = re.compile(r"\{([^{}]*,[^{}]*)\}")
+
+
+def _entfalten(pfad: str) -> list[str]:
+    """`/api/x{,/y}` → ['/api/x', '/api/x/y'] — one level is all the README uses."""
+    treffer = _GRUPPE.search(pfad)
+    if not treffer:
+        return [pfad]
+    vorn, hinten = pfad[: treffer.start()], pfad[treffer.end() :]
+    return [teil for wahl in treffer.group(1).split(",") for teil in _entfalten(vorn + wahl + hinten)]
+
+
+def _schablone(pfad: str) -> str:
+    """Path parameters differ in name between the README and the code."""
+    return re.sub(r"\{[^{}]*\}", "{}", pfad.rstrip("/")) or "/"
+
+
+@pytest.fixture(scope="module")
+def readme_pfade() -> set[str]:
+    text = README.read_text(encoding="utf-8")
+    roh = re.findall(r"`([A-Z/][^`]*)`", text)
+    pfade: set[str] = set()
+    for stueck in roh:
+        for wort in re.findall(r"/api[\w/{},.\-]*", stueck):
+            pfade |= {_schablone(p) for p in _entfalten(wort.rstrip(".,·"))}
+    return pfade
+
+
+#: Endpoints that exist and are deliberately `include_in_schema=False`. They are
+#: still worth documenting, so the README may name them — but each one has to be
+#: listed here, with the reason, rather than silently passing.
+AUSSERHALB_DES_SCHEMAS: set[str] = {
+    "/api/email/inbound",  # a mail provider's webhook, not part of the public API
+}
+
+
+@pytest.fixture(scope="module")
+def echte_pfade() -> set[str]:
+    """From the OpenAPI document, not `app.routes`: this FastAPI keeps included
+    routers as lazy wrappers, so the route list is empty until the schema is
+    built. The schema is the published contract anyway — it is what
+    `make api-types` reads."""
+    from app.main import app
+
+    pfade = {_schablone(pfad) for pfad in app.openapi()["paths"] if pfad.startswith("/api")}
+    return pfade | AUSSERHALB_DES_SCHEMAS
+
+
+async def test_the_readme_only_names_endpoints_that_exist(readme_pfade, echte_pfade):
+    """Four paths in this table were wrong the day it was written — `/abgleich/import`
+    for `/abgleich/statements`, `/lohn/abrechnung` for `/lohn/abrechnen`, and two
+    more. Nothing else in the repository would ever have said so."""
+    assert echte_pfade, "no /api routes found — the app did not import"
+
+    erfunden = sorted(p for p in readme_pfade if p not in echte_pfade)
+
+    assert erfunden == [], f"the README names endpoints the app does not serve: {erfunden}"
+
+
+async def test_the_readme_names_every_area_of_the_product(readme_pfade):
+    """Not every endpoint — that list would rot — but every *surface*. A whole
+    feature missing from the README is how the front page ends up describing the
+    product of a week ago."""
+    fehlend = [
+        prefix
+        for prefix in (
+            "/api/documents",
+            "/api/abgleich",
+            "/api/abschluss",
+            "/api/rechnungen",
+            "/api/offene-posten",
+            "/api/lohn",
+            "/api/email",
+            "/api/kontenplan",
+            "/api/export/batches",
+            "/api/health",
+        )
+        if not any(p.startswith(prefix) for p in readme_pfade)
+    ]
+
+    assert fehlend == [], f"the README's API table has nothing about: {fehlend}"
