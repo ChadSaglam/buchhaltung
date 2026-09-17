@@ -1,6 +1,8 @@
 import { Brain, Database, Eye, Cpu, TrendingUp } from "lucide-react";
 import { accuracyTextClass } from "../helpers";
 import type { ModelInfo, VisionStatus } from "../types";
+import { visionAktiv } from "../helpers";
+
 import { StatCard } from "./StatCard";
 
 interface ModelStatGridProps {
@@ -40,9 +42,9 @@ export function ModelStatGrid({ info, vision, acc }: ModelStatGridProps) {
       <StatCard
         icon={<Eye className="w-5 h-5 text-brand-600 dark:text-brand-300" />}
         label="Vision"
-        value={vision.available ? (vision.is_cloud ? "Cloud" : "Lokal") : "—"}
-        sub={vision.model_name ?? "Nicht verbunden"}
-        valueClass={vision.available ? "text-brand-600 dark:text-brand-300" : "text-muted-foreground"}
+        value={visionAktiv(vision) ? (vision.scanner_mode ?? "Aktiv") : "—"}
+        sub={vision.best_vision ?? (vision.custom_ocr_available ? "Eigenes OCR" : "Nicht verbunden")}
+        valueClass={visionAktiv(vision) ? "text-brand-600 dark:text-brand-300" : "text-muted-foreground"}
       />
     </div>
   );

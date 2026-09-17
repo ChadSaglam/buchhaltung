@@ -4,7 +4,7 @@ import type { ModelInfo, VisionStatus } from "../types";
 
 export function useModellInfo() {
   const [info, setInfo] = useState<ModelInfo | null>(null);
-  const [vision, setVision] = useState<VisionStatus>({ available: false, model_name: null, model_count: 0, is_cloud: false });
+  const [vision, setVision] = useState<VisionStatus>({ ok: false, models: [], vision_models: [], best_vision: null, custom_ocr_available: false });
   const [loading, setLoading] = useState(true);
   // Only the classifier info is essential: without it the page has nothing to
   // show. A missing vision status just reads as "Vision fehlt".

@@ -12,6 +12,7 @@ import { useModellActions } from "./hooks/useModellActions";
 import { useModellInspect } from "./hooks/useModellInspect";
 import { SystemStatusBadge } from "./components/SystemStatusBadge";
 import { ModelStatGrid } from "./components/ModelStatGrid";
+import { visionAktiv } from "./helpers";
 import { AccuracyCard } from "./components/AccuracyCard";
 import { InspectTabs } from "./components/InspectTabs";
 import { BananaImportCard } from "./components/BananaImportCard";
@@ -71,7 +72,7 @@ export default function ModellPage() {
       />
 
       {/* ── System Status ─────────────────────────────────────────────── */}
-      <SystemStatusBadge hasModel={info.has_model} hasVision={vision.available} />
+      <SystemStatusBadge hasModel={info.has_model} hasVision={visionAktiv(vision)} />
       {info.has_model && info.model_trusted === false && (
         <div
           role="alert"

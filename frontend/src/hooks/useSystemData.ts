@@ -1,6 +1,6 @@
 "use client";
 import { useApi } from "@/hooks/useApi";
-import type { BookingStatsResponse, ClassifierInfoResponse, ReviewQueueResponse } from "@/lib/api-schema";
+import type { BookingStatsResponse, ClassifierInfoResponse, ReviewQueueResponse, ScannerStatusResponse } from "@/lib/api-schema";
 
 /**
  * The handful of endpoints every dashboard surface reads (KPIs, system
@@ -16,11 +16,17 @@ export type ClassifierInfo = ClassifierInfoResponse;
 export type BookingStats = BookingStatsResponse;
 export type ReviewQueue = ReviewQueueResponse;
 
-/** `/api/scanner/vision-status` and `/api/ai/status` are still untyped upstream. */
-export interface VisionStatus {
-  ok: boolean;
-  best_vision?: string | null;
-}
+/**
+ * B-87: `/api/scanner/vision-status` is NOT untyped — it has had
+ * `response_model=ScannerStatusResponse` since B-59, and this comment saying
+ * otherwise is what kept two hand-written copies of it alive. This one happened
+ * to name real fields; the copy in `modell/types.ts` named four that do not
+ * exist, so the two pages disagreed about the same endpoint on the same screen.
+ * One generated type, no copies.
+ *
+ * `/api/ai/status` really is still untyped — see AiStatus below.
+ */
+export type VisionStatus = ScannerStatusResponse;
 
 export interface AiStatus {
   ok: boolean;
