@@ -85,3 +85,37 @@ design-system/
 # B-25: backups are data, not source. Keep the directory out of git entirely —
 # a dump committed by accident is every tenant's bookkeeping in the history.
 /backups/
+
+# --- 2026-09-17: hygiene sweep ---
+
+# macOS metadata, anywhere. The bare `.DS_Store` rule above never matched
+# `frontend/.DS_Store`, which was committed before that rule existed — a
+# gitignore rule does nothing to a file git is already tracking.
+**/.DS_Store
+
+# Tree dumps and scratch inventories generated to hand to a tool: 20k+ lines
+# of derived text, a diff nobody reads and a merge conflict nobody can resolve.
+structure.txt
+tree.txt
+/*.patch
+/*.bundle
+/*.tgz
+
+# Tool caches. Each drops its own .gitignore, so this is belt and braces —
+# but a cache that survives one `rm -rf` of that file gets committed.
+.pytest_cache/
+.ruff_cache/
+backend/.ruff_cache/
+.mypy_cache/
+
+# Virtualenvs by any name, not only backend/venv/.
+venv/
+.venv/
+env/
+
+# TypeScript incremental build state, wherever tsc puts it.
+*.tsbuildinfo
+
+# Working material for the first end-to-end run: real ledgers, real receipts,
+# real payslips. Never in git — it is a customer's bookkeeping.
+tour/

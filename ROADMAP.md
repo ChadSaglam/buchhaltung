@@ -2,10 +2,10 @@
 
 > One running list. Never duplicated — items move between sections, they don't get re-added.
 > Legend: severity `C`ritical / `H`igh / `M`edium / `L`ow · effort `S` (<1h) / `M` (half day) / `L` (multi-day)
-> IDs: `B-xx` = work item (next free: **B-82**) · `P-xx` = parked (next free: **P-05**)
+> IDs: `B-xx` = work item (next free: **B-100**) · `P-xx` = parked (next free: **P-05**)
 > Cross-product items (SSO, contracts, design tokens) live in `chadev-platform/ROADMAP.md`, not here.
-> Updated: 2026-09-17 — **the stack runs on the owner's own Mac** (arm64, all five services healthy, 30 migrations applied, RLS 24/24/24 live) and the branch is **pushed**. Python is **3.14** everywhere (CI, both image stages, the scripts, the lock); ruff's `target-version` stays at `py313` and `pyproject.toml` says why. 2026-09-16 (fifth run) — **B-81** the runtime lockfile, and **the stack runs**: five healthy services and the whole compose-smoke job, verbatim, plus B-24 verified against the live database. **Lohn-Vergleich** (the tool that lifts the payslip watermark) and **B-80** the frontend image, built and served before it was believed. Fourth run — the NEXT block emptied: **B-61** health that can fail, **B-57** worker hardening, **B-56** parser hygiene (the `3924` was real), **B-62** (already done — the line was stale), **B-60** CI parity (both databases, a compose smoke job, and a real password out of `scripts/setup.sh`). Earlier that day (third run): **B-27** the query audit (five statements that grew with the tenant), **B-23** plan limits enforced from `usage_events`, **B-72 option C** as far as the law reaches (BVG minimum as a check), **B-20 finished** (the Kontenplan import wizard). Earlier that day (second run): **B-72** payroll (option B with option C's shape), **B-79** invoice e-mail, **B-74** part A, **B-24** row-level security (`app_rw` is `NOSUPERUSER NOBYPASSRLS`), **B-25** backup + restore drill, **B-54**/**B-55**, **B-17** the Treuhänder pack in one zip, **B-20** (sample invoice + checklist; the wizard is still open), **B-51 finished** (the last five money columns), **B-22** the audit log, **B-28** indexes chosen by `EXPLAIN`. Earlier that day (night run): **B-51** money columns are Numeric(12,2), **B-59** `response_model` on the seven endpoints that returned bare dicts (and the hand-written frontend interfaces are gone), **B-58** the UX/a11y batch (one formatter, WCAG-AA accents, `usePopover`, heading order, confirms on destructive actions), **B-71** 90-day liquidity + tax provision on Heute, and **step 5 of the IA migration** (sidebar = four surfaces + Mehr; every old route still resolves). Earlier on 2026-09-16: B-70 Jahresabschluss and B-77 (PDF renderer = fpdf2); B-69 e-mail intake; B-52 idempotency by constraint; B-53 export safety. 2026-09-15 — B-68 write invoices (Swiss QR, debtor booking, reference return); B-67 VAT return (form 200); B-66 month-end check; B-65 open items / reminders; B-76 Banana batch (phase 4) done — and the open extension question answered: an extension may not call HTTP, so the file hand-off is final (new: B-78, read-only REST spike); B-73 Abgleich done, `make check` green. 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 amount memory. 2026-09-13 — phase 0 of `docs/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
-> Companion docs: `docs/ADR-002-rls.md` (B-24) · `docs/BACKUP.md` (B-25) · `docs/B-72-LOHN-SPEC.md` (B-72) · `docs/IA-2026-09-14.md` · `docs/DEPLOY-CHECKLIST-B36-B37.md` · `docs/BRAINSTORM-2026-09-12.md`.
+> Updated: 2026-09-17 — **the stack runs on the owner's own Mac** (arm64, all five services healthy, 30 migrations applied, RLS 24/24/24 live) and the branch is **pushed**. Python is **3.14** everywhere (CI, both image stages, the scripts, the lock); ruff's `target-version` stays at `py313` and `pyproject.toml` says why. 2026-09-16 (fifth run) — **B-81** the runtime lockfile, and **the stack runs**: five healthy services and the whole compose-smoke job, verbatim, plus B-24 verified against the live database. **Lohn-Vergleich** (the tool that lifts the payslip watermark) and **B-80** the frontend image, built and served before it was believed. Fourth run — the NEXT block emptied: **B-61** health that can fail, **B-57** worker hardening, **B-56** parser hygiene (the `3924` was real), **B-62** (already done — the line was stale), **B-60** CI parity (both databases, a compose smoke job, and a real password out of `scripts/setup.sh`). Earlier that day (third run): **B-27** the query audit (five statements that grew with the tenant), **B-23** plan limits enforced from `usage_events`, **B-72 option C** as far as the law reaches (BVG minimum as a check), **B-20 finished** (the Kontenplan import wizard). Earlier that day (second run): **B-72** payroll (option B with option C's shape), **B-79** invoice e-mail, **B-74** part A, **B-24** row-level security (`app_rw` is `NOSUPERUSER NOBYPASSRLS`), **B-25** backup + restore drill, **B-54**/**B-55**, **B-17** the Treuhänder pack in one zip, **B-20** (sample invoice + checklist; the wizard is still open), **B-51 finished** (the last five money columns), **B-22** the audit log, **B-28** indexes chosen by `EXPLAIN`. Earlier that day (night run): **B-51** money columns are Numeric(12,2), **B-59** `response_model` on the seven endpoints that returned bare dicts (and the hand-written frontend interfaces are gone), **B-58** the UX/a11y batch (one formatter, WCAG-AA accents, `usePopover`, heading order, confirms on destructive actions), **B-71** 90-day liquidity + tax provision on Heute, and **step 5 of the IA migration** (sidebar = four surfaces + Mehr; every old route still resolves). Earlier on 2026-09-16: B-70 Jahresabschluss and B-77 (PDF renderer = fpdf2); B-69 e-mail intake; B-52 idempotency by constraint; B-53 export safety. 2026-09-15 — B-68 write invoices (Swiss QR, debtor booking, reference return); B-67 VAT return (form 200); B-66 month-end check; B-65 open items / reminders; B-76 Banana batch (phase 4) done — and the open extension question answered: an extension may not call HTTP, so the file hand-off is final (new: B-78, read-only REST spike); B-73 Abgleich done, `make check` green. 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 amount memory. 2026-09-13 — phase 0 of `docs/archiv/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/archiv/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
+> Companion docs: `docs/ADR-002-rls.md` (B-24) · `docs/BACKUP.md` (B-25) · `docs/B-72-LOHN-SPEC.md` (B-72) · `docs/IA-2026-09-14.md` · `docs/DEPLOY-CHECKLIST-B36-B37.md` · `docs/archiv/BRAINSTORM-2026-09-12.md`.
 
 ---
 
@@ -92,6 +92,240 @@ _2026-09-14: the previous NEXT block (B-49, B-44, B-46, B-14, B-16, B-15, B-34) 
 
 ## 📋 LATER — by track
 
+### First-run findings — the e2e run of 2026-09-17 (`docs/E2E-ERSTLAUF.md`)
+
+Everything here was found by one person using the product for real, in one sitting. None of it
+was found by 1179 tests. New findings from the rest of the run get appended here.
+
+- [ ] **B-84** The seeded Kontenplan gives umbrella names to accounts the Swiss KMU chart splits.
+      `6200` ships as **"Fahrzeugaufwand"** — but in a real chart 6200 is *Reparaturen und Service*
+      specifically, with `6210` Betriebsstoffe, `6220` Fahrzeugversicherung, `6230` Verkehrsabgaben,
+      `6260` Fahrzeugleasing and `6270` Privatanteile beside it. A user who reads our label books
+      fuel, insurance and road tax into 6200 and only finds out at the year-end close.
+      **The split is not cosmetic — it carries the VAT.** Measured against a real 2024 ledger
+      (135 vehicle bookings by a Treuhänder): 6210 is 82/91 `I81` (8.1 %), while **6220 is 5/5 and
+      6230 is 6/6 with no VAT code at all** — insurance premiums are exempt and road tax is a
+      sovereign levy. Collapsed into one account, that account is half taxed and half not, so the
+      classifier cannot learn a rate for it and B-67's "Aufwand ohne Vorsteuer" hint fires forever
+      on every legitimate insurance payment.
+      Fix: ship the vehicle block split, and audit the rest of `seed_tenant` for the same mistake —
+      `6500 Verwaltungsaufwand` (real: Büromaterial und Drucksachen, with 6503/6510/6513/6530 beside
+      it), `5700 AHV, IV, EO` (real: *Inhaber*) and `8900 Direkte Steuern` (real: Kantons- und
+      Gemeindesteuern) came back as `geändert` from the same import, which is the same smell.
+      — `M` / `M`
+
+- [x] **B-86** ✅ 2026-09-17 — the Banana import reported **exactly twice** the memory entries it
+      wrote. `memory_entries` was `len(memory_objects) + len(seen_keys)`, but `seen_keys` already
+      holds every distinct key the import touched and `memory_objects` is the subset of those that
+      were new — so on a fresh tenant every entry counted twice. The Modell page showed
+      "GEDÄCHTNIS 182" and "364 Gedächtnis" for the same import, three centimetres apart.
+      Not cosmetic: the same number is written to the audit row, and B-17 hands that table to the
+      Treuhänder as `50-Protokoll.csv`. A hand-off that states a quantity nobody ever wrote is worse
+      than one that states nothing. `tests/test_import_counts.py` now asserts the reported figure
+      against `SELECT count(*)` — on a first import and on a re-import, where an update must not
+      read as a new entry.
+
+- [x] **B-87** ✅ 2026-09-17 — **the Vision card could not report anything but "Nicht verbunden".**
+      `modell/types.ts` carried a hand-written `VisionStatus` promising `available`, `model_name`,
+      `model_count` and `is_cloud`. `/api/scanner/vision-status` sends **none of those four**: it
+      sends `ok`, `error`, `models`, `vision_models`, `best_vision`, `scanner_mode` and
+      `custom_ocr_available`. So `vision.available` was `undefined` on every request — the card and
+      the "Teilweise aktiv — ML bereit, Vision fehlt" banner were reporting `undefined`, not a
+      state, for every user since the page was written. Meanwhile **Heute**, reading the same
+      endpoint through a *second* hand-written interface that happened to name real fields, showed
+      Vision green with `custom-ocr`. Two screens, one endpoint, opposite answers.
+      This is precisely the failure B-59 existed to end, surviving on the one endpoint B-59 did not
+      touch — and the comment above the second copy, "still untyped upstream", is what protected it:
+      the endpoint has had `response_model=ScannerStatusResponse` since B-59, and the generated type
+      was sitting unused in `api-schema.ts` the whole time. Both copies are gone; both pages now use
+      the generated type.
+      One decision in the fix: **the built-in OCR counts as vision.** `custom_ocr_available` alone
+      is enough for `visionAktiv()`, because a scanner that reads invoices through its own OCR is
+      not "not connected" — that was the state on screen when this was found. 4 tests in
+      `modell/helpers.test.ts`, one of which feeds it the old four fictional fields and asserts they
+      change nothing.
+      **The pattern is now the story of this run.** Four of today's findings are the same shape —
+      two places that each look correct and disagree: compose vs `config.py` on CORS (B-83),
+      `seed_tenant` vs a real chart on 2200/2205 (B-85), the import's count vs the KPI card (B-86),
+      and this. Worth a sweep of its own once the tour is done.
+
+- [ ] **B-88** The 86.7 % on the Modell page does not describe the path receipts take, and the page
+      does not say so. It is a cross-validation over Banana descriptions — short, clean, bank-shaped
+      strings like `Agrola, TS`. What the scanner hands the classifier is OCR off a till receipt:
+      `LANDI THULA TopShop Matzingen BLEIFREI 95`. Different length, different vocabulary, different
+      distribution.
+      Measured on the first real run, on a model trained from 762 of the owner's own 2024 bookings:
+      `Agrola, TS` → Gedächtnis, 6210, 100 % (ML agrees at 89 %). The real receipt line → the ML's
+      own top-5 reads **5820 Spesen 22 %, 6210 14 %, 6500 14 %** — it puts the *wrong* account first.
+      The keyword rule (Stufe 3) rescued it and returned the right answer at 72 %.
+      So the layered pipeline works exactly as designed, and that is the point: **the number the page
+      leads with belongs to a layer that was not consulted.** A user reads 86.7 % and trusts the
+      scanner by that much. Options, cheapest first: label the figure for what it measures; report a
+      second figure over receipt-shaped text; or train on the descriptions the scanner actually
+      produces. Do not just raise the number. — `S` / `M`
+
+- [ ] **B-89** A till receipt paid by card is not an open payable, and the product files it as one.
+      First real run, 2026-09-17: a Landi/Agrola fuel receipt was read correctly in every field
+      (vendor, 58.48, 07.11.2025, 6210/1020, I81 — from a phone photo of thermal paper, past the EMV
+      hashes and the barcode). It then landed as **status `offen`**, and the Belege page reported
+      **"OFFEN CHF 58.48 · 1 Rechnung"**.
+      The receipt says `Erhalten: MASTERCARD 58.48` and `DEBIT MASTERCARD contactless`. The money
+      left the account at the till on 7 November. There is no creditor and nothing is owed.
+      The root of it is that one `status` carries two different meanings and the UI shows the wrong
+      one: on the Belege list `offen` reads as *not yet reconciled against a bank line*, which is
+      true and harmless; on **Offene Posten** and the Heute card (B-65) the same rows are presented
+      as *"Was schulden wir"*, which for this row is false. The two cards sit side by side —
+      `OFFEN` next to `ÜBERFÄLLIG · Fälligkeitsdatum überschritten` — so the meaning on screen is
+      unambiguously the money-owed one. Scan a month of fuel receipts and Heute invents a debt.
+      A card receipt is detectable: `Erhalten:`/`MASTERCARD`/`contactless`/`Total-EFT` and the
+      absence of any due date (the extractor already leaves `Fällig` empty here, correctly). Such a
+      Beleg should go straight to *awaiting reconciliation* without ever being an open item.
+      Decide the shape before coding: a third status, or a `paid_at_source` flag that Offene Posten
+      filters on. — `M` / `M`
+
+- [ ] **B-90** "Insights" is still on screen after the IA migration retired the word. `IA step 5`
+      renamed the tab to **Buchungen** and its roadmap entry says *"insights was never a word this
+      product says"* — but `bank/buchungen/page.tsx` still titles itself **"Insights & Suche"** and
+      `lib/quick-actions.tsx` still offers a quick action labelled **Insights**. So the sidebar, the
+      tab and the breadcrumb say Buchungen while the page heading and the command palette say
+      Insights, for the same page. Same family as B-83/B-85/B-86/B-87: two places, one truth.
+      — `S` / `S`
+
+- [ ] **B-91** «Alle AI-Vorschläge übernehmen» takes the uncertain ones too, and the screen says so
+      one centimetre away. First real run, 2026-09-17, on the owner's real UBS April statement:
+      the header reads **«28 Transaktionen · 21 unsicher»** and immediately beside it offers a single
+      button that applies all 28. One click puts 14 wrong bookings in the ledger.
+      The button must apply only what clears a confidence threshold and must say how many that is —
+      «7 sichere übernehmen» — leaving the rest to the Abgleich, which is the stage built for them.
+      — `S` / `S`
+
+- [ ] **B-92** A proposal the classifier does not believe should be blank, not a specific wrong
+      account. Same run: of 28 bank lines, **14 were proposed as `6500`**, most at 35 % confidence —
+      every `E-BANKING-SAMMELAUFTRAG` and `ZAHLUNG DEBITKARTE`, the lines whose text names no
+      counterparty at all. `6500` appears in **8 of the owner's 762 real 2024 bookings** (~1 %). The
+      model is putting a 1 % account on 50 % of the statement because it has no signal and still has
+      to answer.
+      That the lines are unresolvable is known and fine — B-63 says so, and the Abgleich (B-73) is
+      where they get resolved against invoices. What is not fine is filling the field anyway: a
+      pre-filled account gets accepted, a blank one gets looked at.
+      **The product already holds the opposite principle in writing.** B-67, on the VAT return:
+      *"Ziffern, die kein Buchungssatz hergibt … stehen sichtbar auf 0.00 statt geraten zu werden."*
+      Figures no booking supports are shown as zero rather than guessed. Kontierung should obey the
+      same rule — below the threshold, propose nothing and say why ("kein Gegenpart im Text — wird
+      im Abgleich aufgelöst").
+      Measured contrast from the same screen, for the threshold discussion: where the bank text does
+      name a counterparty the model is strong — Cembra → 6260 at 92 %, Santander → 6260 at 92 %,
+      Sarah Mäder Miete Lager → 6000 at 92 %, Die Post → 6513 at 67 %, Swiss Life → 5720 at 61 %.
+      — `M` / `M`
+
+- [ ] **B-93** Check the sign on the MwSt rate for Gutschrift lines. On the same statement, revenue
+      lines show `V81 / **-8.10**` while expense lines show `I81 / 8.10`. If that minus is the rate
+      rather than the amount, every credit line carries a negative rate into the VAT return. Verify
+      against B-67's Ziffer 302/312/342 before deciding whether it is a display convention or a bug.
+      — `S` / `S`
+
+- [ ] **B-94** Check the Pensionskasse base against the Koordinationsabzug, and say which plan shape
+      is assumed. On the real June 2026 payslip brought to the first run, the pension contribution is
+      **9.9 % of the full monthly salary with no Koordinationsabzug applied**. That is correct for a
+      plan *ohne Koordinationsabzug* — many are — and wrong for a BVG-minimum plan, where the insured
+      salary is the annual wage less the Koordinationsabzug. The two produce materially different
+      numbers and nothing on the payslip says which one is meant.
+      B-72 built `GET /api/lohn/bvg-pruefung` for exactly this and it carries the Grenzbeträge per
+      year, so the check is a read away. Two things to settle: whether the engine should ask for the
+      plan shape (mit/ohne Koordinationsabzug) rather than infer it, and whether the Lohn-Vergleich
+      should name a mismatch here as a finding rather than a rounding difference.
+      Owner flagged this as one to look at properly. — `M` / `M`
+
+- [ ] **B-95** The BVG card reports "Kein Widerspruch zum Obligatorium gefunden" on a tenant with
+      **zero employees**. It is green because there is nothing to check, which is the same failure
+      mode `docs/RUNBOOK-RLS-CUTOVER.md` section 4 warns about for RLS on an empty database: a check
+      that passes for the wrong reason. A green badge over an empty set invites trust it has not
+      earned, and the first thing a new user sees on the Lohn page is that badge.
+      An empty check should read as *nothing to check yet*, not as *no problem found*. Sweep the
+      other status badges for the same shape while in there. — `S` / `S`
+
+- [ ] **B-96** **Kinderzulagen go into the AHV base, and they must not.** `services/lohn.py:191`:
+      `brutto = grundlohn + dreizehnter + zulagen`, and every deduction is then taken on `brutto`.
+      Familien-/Kinderzulagen are not AHV-pflichtig — they are not Erwerbseinkommen — so AHV, IV, EO,
+      ALV, NBU, KTG and the employer side are all overstated whenever a Zulage is a child allowance.
+      **The owner's own June 2026 payslip does it correctly and ours would not:** Bruttolohn 6'657.95
+      (6'257.95 + 400 Kinderzulagen), every deduction computed on **6'257.95**. Ours would take them
+      on 6'657.95 — 400 × 5.3 % = 21.20 too much AHV alone, before ALV, NBU, KTG and the employer
+      half. Real money, every month, silently.
+      The root is one generic field doing two jobs. A gratification, an overtime bonus or a
+      Spesen-Pauschale **is** AHV-liable; a Kinderzulage is not. One "Zulagen (CHF)" input cannot be
+      both, so it needs to split: an AHV-liable Zulage and an AHV-free Familienzulage, the latter
+      recurring per child rather than typed in every month.
+      This is the first concrete instance of why the "Nicht für die Einreichung" watermark exists,
+      and the exact class of error `make lohn-vergleich` was built to catch — it would have shown up
+      as a net-wage difference on line one. — `M` / `M`
+
+- [ ] **B-97** Say which base the Verwaltungskostenbeitrag is a percentage *of*, and let the user
+      pick. `services/lohn.py:251` computes it as `_prozent(brutto, verwaltungskosten_satz)` — a
+      percentage of the gross wage. Many Ausgleichskassen state it instead as a percentage **of the
+      AHV/IV/EO contributions**, and some state it in ‰ of the Lohnsumme. The three are not
+      interchangeable: a rate quoted as "5 % der Beiträge" entered into a field that means "% of
+      gross" comes out roughly **ten times too large**, and nothing on the screen would say so.
+      The field label today is "Verwaltungskosten (%) — Beitrag der Ausgleichskasse", which does not
+      disambiguate. Either name the base in the label and validate the magnitude (a wage-based rate
+      above ~1 % is almost certainly a contribution-based rate in the wrong field), or offer the base
+      as a choice beside the number. — `S` / `M`
+
+- [ ] **B-98** Help the user find the four rates instead of telling them to go look. The page is
+      right that UVG BU, FAK and the Verwaltungskostenbeitrag **cannot** be defaulted — BU is a
+      per-company risk class, FAK is cantonal *and* per-Kasse, and the admin fee is per-Kasse — and
+      it says why, well: *"eine geschätzte Prämie sieht wie eine richtige aus"*. But "steht im
+      Vertrag mit Ihrer Versicherung oder wird vom Kanton bestimmt" is where the help stops, and a
+      first-time user does not know which letter that is.
+      Two levels, cheapest first. **Per field, name the document**: UVG BU is on the annual
+      Prämienrechnung from the accident insurer; FAK and the Verwaltungskostenbeitrag are both on
+      the Ausgleichskasse's Beitragsverfügung, usually on the same line block as the AHV rate. Add a
+      plausibility range per field so a decimal-point slip is caught.
+      **Then the one worth building: read them off the document.** The product already OCRs a
+      thermal till receipt correctly (stage 4 of the first run). A Beitragsverfügung and a
+      Prämienrechnung are cleaner inputs than that. "Drop your two letters here" turns the setup
+      from a filing-cabinet errand into the thing this product is already good at — and it is the
+      product's own thesis applied to its own onboarding.
+      **Link only to official sources, and keep the pattern the page already uses** for AHV/ALV:
+      ahv-iv.ch Merkblatt 2.01 and 2.08, cited with the date the figures were checked (verified
+      correct on 2026-09-17: AHV/IV/EO 10.6 %, ALV 2.2 % to CHF 148'200). Commercial template sites
+      are not candidates: they can change or disappear, they carry no authority, and a dead or wrong
+      link inside a payroll product is worse than no link. — `M` / `M`
+
+- [ ] **B-99** **The pack has no Anhang, and for a GmbH the Anhang is not optional.** The Treuhänder
+      pack (B-17) ships `00-LIESMICH.txt`, `10-Uebersicht.pdf`, `20-Buchungen.txt`, `30-Belege/`,
+      `40-Buchungen.csv` and `50-Protokoll.csv`. The word "Anhang" does not appear anywhere in
+      `backend/app/`. B-70's Jahresabschluss produces a balance sheet, an income statement and
+      depreciation proposals — and stops there.
+      OR Art. 959c requires an Anhang der Jahresrechnung. The owner's real 2024 year-end, prepared by
+      his Treuhänder, is exactly that document: Geschäftstätigkeit · Vollzeitstellen im
+      Jahresdurchschnitt · Grundlagen der Rechnungslegung (OR 957–962) · Bemerkungen zur Bilanz ·
+      Beteiligungen · eigene Stimmanteile · Ereignisse nach dem Bilanzstichtag · signature block.
+      **This is where "kein Treuhänder nötig" actually breaks.** The pack hands the Treuhänder
+      everything except the one document the Treuhänder has to write — so the year still needs them,
+      for the part the product never attempts.
+      Half of it is derivable and half is not, and the split is the design. Derivable from the
+      bookings: the **Kontokorrent movement table** (his Anhang's section 4.1 — opening balance,
+      Einlagen, Bezüge, Verzinsung, closing balance) comes straight out of account `1120`, which
+      carries 42 bookings in his 2024 ledger, and the Verzinsung is a booking like any other. Not
+      derivable: the business description, the headcount band, the subsequent-events statement — but
+      those are prompts with a stable answer year over year, not research.
+      Ship a **draft** Anhang: derived sections filled from the ledger, narrative sections as last
+      year's text with a "still true?" prompt, and the signature block left empty. A draft the owner
+      corrects is a different product from a pack that omits the document. — `L` / `L`
+
+- [ ] **B-85** `seed_tenant` puts Geschuldete MWST on **2200**; real Swiss charts use **2205**.
+      Importing a real Kontenplan with *Ergänzen* therefore leaves the tenant holding two accounts,
+      `2200` and `2205`, with **byte-identical descriptions** — and nothing in the product prefers
+      one. The VAT return (B-67) reads accounts, the classifier learns accounts, and a user picking
+      by name is picking at random.
+      Neither number is wrong in the abstract, so this is a decision, not a typo: either seed 2205,
+      or have the import wizard notice that an incoming account duplicates an existing one by
+      description and offer to merge. The wizard already reports `neu / geändert / unverändert /
+      nicht gelesen` per row — "duplicates an existing account" is a fifth verdict it does not have.
+      — `S` / `M`
+
+
 ### "Kein Treuhänder nötig" — the product track (owner, 2026-09-14; order = impact)
 Target: the Treuhänder signs once a year, nothing in between. Each item is a *flow* inside one of the four surfaces
 (`docs/IA-2026-09-14.md`: Heute · Belege · Bank · Abschluss), not its own page.
@@ -165,6 +399,40 @@ Target: the Treuhänder signs once a year, nothing in between. Each item is a *f
 ---
 
 ## ✅ Done
+
+- **B-82** ✅ 2026-09-17 — **registration was impossible in the production configuration**, and had been
+  since B-24. `POST /api/auth/register` creates a tenant and then calls `seed_tenant`, which inserts the
+  default Kontenplan — one of the 24 tables RLS covers. Nothing on that path establishes the tenant
+  context, so the policy predicate matched nothing and Postgres refused the INSERT outright:
+  `new row violates row-level security policy for table "kontenplan"`. The only way to create a first
+  account, in the only configuration that is meant to ship.
+  **Why no test caught it:** every test connects as the table owner, for whom policies do not apply —
+  the exact trap `docs/ADR-002-rls.md` documents for reads, arriving on a write. And `make dev` connects
+  as a superuser (it prints a warning saying so on every boot), so a year of local use could not have
+  found it either. `sso.py` has done `set_tenant` + `bind_tenant` since B-36 and even comments on why;
+  `/register`, the older endpoint, was never brought along. Two paths that create a tenant, one of them
+  updated.
+  Fixed by the pattern `deps.py` already uses. Two new tests in `test_rls.py` run on SQLite as well —
+  they assert Python, not Postgres: that the context is established, and that the Kontenplan actually
+  has rows afterwards (1020 specifically, since an Abgleich books against it).
+  **Found by the first real end-to-end run, five minutes in.** 1179 passing tests did not.
+
+- **B-83** ✅ 2026-09-17 — **every unhandled 500 reached the browser as a CORS error.**
+  `RequestContextMiddleware` builds the 500 response itself, and it sat *outside* `CORSMiddleware`, so
+  that response carried no `Access-Control-Allow-Origin`. The console said "blocked by CORS policy", the
+  CORS configuration was correct, and the actual error was unreachable from the client. B-54's own
+  comment three lines above states the principle — "added *before* CORS so that CORS ends up wrapping
+  it" — and the next line broke it for the error path.
+  This is what turned B-82 into two hours instead of five minutes, so it is the more expensive of the
+  two defects even though it is the smaller diff: it makes every future server error lie.
+  CORS is now the outermost middleware; `test_middleware_stack.py` pins all three positions. One cost,
+  deliberate: CORS answers preflights before they reach the logger, so OPTIONS no longer appears in the
+  access log — which also takes a wall of OPTIONS lines out of it.
+  Found here too: `docker-compose.yml` set `CORS_ORIGINS` to `http://localhost:3000` only, while
+  `config.py`'s own default allows `127.0.0.1:3000` as well — a deployment file narrowing the code's
+  safe default. Two guards in `test_deployment_contract.py`. And `errors.ts` mapped axios `ERR_NETWORK`
+  to "Läuft das Backend?", the one explanation that was not true; it now names both possible causes and
+  prints the URL it tried.
 
 - **B-81** ✅ 2026-09-16 — the runtime lockfile, installed before it was believed. `backend/requirements.txt`
   was 40 lines of `>=`, so two builds a month apart resolved different trees and "it worked yesterday" had no

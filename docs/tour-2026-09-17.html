@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Erstlauf-Protokoll</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,500;1,400&display=swap">
+<style>
+:root{
+  --paper:#F7F8F6; --raised:#FFFFFF; --sunken:#EEF0EC;
+  --ink:#16191C; --ink-soft:#4F565C; --ink-faint:#7C858B;
+  --rule:#DDE1DC; --rule-strong:#C3C9C2;
+  --accent:#1F3A5F; --accent-soft:#E7ECF3;
+  --fixed:#2E6B4F; --fixed-soft:#E3EFE8;
+  --open:#A4471F; --open-soft:#F7E9E1;
+  --sev-c:#8C2A16; --sev-h:#A4471F; --sev-m:#7A6320; --sev-l:#5C6469;
+  --shadow:0 1px 2px rgba(22,25,28,.06);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --paper:#14171A; --raised:#1B1F23; --sunken:#101316;
+  --ink:#E8EBE7; --ink-soft:#A8B0B4; --ink-faint:#79828A;
+  --rule:#2A3036; --rule-strong:#3B434A;
+  --accent:#8FB3DC; --accent-soft:#1D2A3A;
+  --fixed:#6FC49B; --fixed-soft:#16281F;
+  --open:#E08A5E; --open-soft:#2B1C13;
+  --sev-c:#E8714F; --sev-h:#E08A5E; --sev-m:#C9AC55; --sev-l:#9AA4AB;
+  --shadow:0 1px 2px rgba(0,0,0,.4);
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --paper:#14171A; --raised:#1B1F23; --sunken:#101316;
+  --ink:#E8EBE7; --ink-soft:#A8B0B4; --ink-faint:#79828A;
+  --rule:#2A3036; --rule-strong:#3B434A;
+  --accent:#8FB3DC; --accent-soft:#1D2A3A;
+  --fixed:#6FC49B; --fixed-soft:#16281F;
+  --open:#E08A5E; --open-soft:#2B1C13;
+  --sev-c:#E8714F; --sev-h:#E08A5E; --sev-m:#C9AC55; --sev-l:#9AA4AB;
+  --shadow:0 1px 2px rgba(0,0,0,.4);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--paper); color:var(--ink);
+  font:400 16px/1.62 "IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  padding:0 16px;
+}
+.wrap{max-width:1080px;margin:0 auto}
+.col{max-width:68ch}
+h1,h2,h3{text-wrap:balance;margin:0;font-weight:600;letter-spacing:-.011em}
+h1{font-size:clamp(1.9rem,5vw,2.9rem);line-height:1.12;letter-spacing:-.022em}
+h2{font-size:clamp(1.3rem,3vw,1.65rem);line-height:1.2}
+h3{font-size:1.02rem;line-height:1.3}
+p{margin:0 0 1em}
+a{color:var(--accent)}
+code,.mono,.num{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums}
+code{font-size:.87em;background:var(--sunken);padding:.1em .35em;border-radius:3px}
+.eyebrow{font:600 .69rem/1.4 "IBM Plex Mono",monospace;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-faint)}
+.lede{font-size:1.1rem;color:var(--ink-soft)}
+hr{border:0;border-top:1px solid var(--rule);margin:0}
+
+/* ── masthead ─────────────────────────────────────────── */
+header.mast{padding-block:clamp(2.5rem,7vw,4.5rem) 2rem}
+.mast .rule{display:flex;gap:1.5rem;align-items:baseline;flex-wrap:wrap;
+  border-bottom:2px solid var(--ink);padding-bottom:.6rem;margin-bottom:1.6rem}
+.mast .rule .eyebrow{color:var(--ink)}
+.verdict{font-family:"IBM Plex Serif",Georgia,serif;font-size:clamp(1.05rem,2.4vw,1.3rem);
+  line-height:1.5;border-left:3px solid var(--accent);padding-left:1.1rem;margin:1.8rem 0 0;color:var(--ink)}
+
+/* ── tally ────────────────────────────────────────────── */
+.tally{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;
+  background:var(--rule);border:1px solid var(--rule);margin:2.5rem 0}
+.tally div{background:var(--paper);padding:1rem 1.1rem}
+.tally .n{font:600 1.85rem/1 "IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;display:block}
+.tally .k{font-size:.8rem;color:var(--ink-soft);margin-top:.35rem;display:block}
+.tally .n.ok{color:var(--fixed)} .tally .n.no{color:var(--open)}
+
+/* ── stage nav ────────────────────────────────────────── */
+nav.stages{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;
+  background:color-mix(in srgb,var(--paper) 92%,transparent);backdrop-filter:blur(8px);
+  border-block:1px solid var(--rule);margin-bottom:2.5rem}
+nav.stages ul{display:flex;gap:0;list-style:none;margin:0;padding:0;overflow-x:auto;scrollbar-width:thin}
+nav.stages a{display:block;white-space:nowrap;padding:.62rem .85rem;font-size:.82rem;
+  color:var(--ink-soft);text-decoration:none;border-bottom:2px solid transparent}
+nav.stages a:hover{color:var(--ink);background:var(--sunken)}
+nav.stages a .s{font-family:"IBM Plex Mono",monospace;color:var(--ink-faint);margin-right:.4rem}
+
+/* ── stage sections ───────────────────────────────────── */
+section.stage{padding-block:2.2rem;border-top:1px solid var(--rule);scroll-margin-top:4rem}
+section.stage:first-of-type{border-top:0}
+.stage-head{display:flex;gap:1rem;align-items:flex-start;margin-bottom:1.1rem}
+.stage-no{font:600 .95rem/1 "IBM Plex Mono",monospace;color:var(--paper);background:var(--ink);
+  min-width:2.1rem;height:2.1rem;display:grid;place-items:center;border-radius:2px;flex:none}
+.stage-head .t{flex:1}
+.stage-head .sub{font-size:.88rem;color:var(--ink-soft);margin-top:.15rem}
+
+/* ── ledger table ─────────────────────────────────────── */
+.scroller{overflow-x:auto;border:1px solid var(--rule);background:var(--raised)}
+table{border-collapse:collapse;width:100%;font-size:.88rem;min-width:560px}
+th{text-align:left;font:600 .69rem/1.4 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--ink-faint);padding:.6rem .75rem;border-bottom:1px solid var(--rule-strong);white-space:nowrap}
+td{padding:.62rem .75rem;border-bottom:1px solid var(--rule);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--sunken)}
+td.id{font-family:"IBM Plex Mono",monospace;font-weight:500;white-space:nowrap}
+td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.pill{display:inline-block;font:600 .68rem/1.5 "IBM Plex Mono",monospace;letter-spacing:.05em;
+  padding:.1rem .45rem;border-radius:2px;white-space:nowrap}
+.pill.fixed{background:var(--fixed-soft);color:var(--fixed)}
+.pill.open{background:var(--open-soft);color:var(--open)}
+.sev{font:600 .72rem/1 "IBM Plex Mono",monospace}
+.sev.C{color:var(--sev-c)} .sev.H{color:var(--sev-h)} .sev.M{color:var(--sev-m)} .sev.L{color:var(--sev-l)}
+.why{color:var(--ink-soft);font-size:.83rem;margin-top:.2rem}
+
+/* ── filters ──────────────────────────────────────────── */
+.filters{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin:1.2rem 0 .9rem}
+.chip{font:500 .8rem/1 "IBM Plex Sans",sans-serif;padding:.42rem .7rem;border:1px solid var(--rule-strong);
+  background:var(--raised);color:var(--ink-soft);border-radius:2px;cursor:pointer}
+.chip:hover{border-color:var(--ink-faint);color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--paper)}
+:root[data-theme="dark"] .chip[aria-pressed="true"]{color:#10161F}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .chip[aria-pressed="true"]{color:#10161F}}
+.chip:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type="search"]{font:400 .85rem "IBM Plex Sans",sans-serif;padding:.42rem .6rem;
+  border:1px solid var(--rule-strong);background:var(--raised);color:var(--ink);border-radius:2px;min-width:180px;flex:1}
+.count{font:500 .8rem "IBM Plex Mono",monospace;color:var(--ink-faint);margin-left:auto;white-space:nowrap}
+
+/* ── quote specimen ───────────────────────────────────── */
+.specimen{font-family:"IBM Plex Serif",Georgia,serif;font-size:1.02rem;line-height:1.55;
+  background:var(--sunken);border-left:3px solid var(--rule-strong);padding:1rem 1.2rem;margin:1.4rem 0}
+.specimen .src{display:block;font-family:"IBM Plex Mono",monospace;font-size:.72rem;
+  color:var(--ink-faint);margin-top:.6rem;font-style:normal}
+
+/* ── two-world / compare grid ─────────────────────────── */
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--rule);
+  border:1px solid var(--rule);margin:1.4rem 0}
+.compare>div{background:var(--raised);padding:.9rem 1rem}
+.compare h3{font-size:.8rem;font-family:"IBM Plex Mono",monospace;font-weight:600;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:.55rem}
+.compare ul{margin:0;padding-left:0;list-style:none;font-size:.86rem}
+.compare li{display:flex;justify-content:space-between;gap:.8rem;padding:.2rem 0}
+.compare li b{font-family:"IBM Plex Mono",monospace;font-weight:500;font-variant-numeric:tabular-nums}
+@media (max-width:620px){.compare{grid-template-columns:1fr}}
+
+.pattern td:first-child{font-family:"IBM Plex Mono",monospace;font-weight:500}
+footer{border-top:2px solid var(--ink);margin-top:3rem;padding-block:1.6rem 3rem;
+  font-size:.84rem;color:var(--ink-soft)}
+.themebtn{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:30;
+  width:38px;height:38px;border-radius:50%;border:1px solid var(--rule-strong);background:var(--raised);
+  color:var(--ink-soft);cursor:pointer;font-size:15px;box-shadow:var(--shadow)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<button class="themebtn" id="theme" aria-label="Theme wechseln">◐</button>
+<div class="wrap">
+
+<header class="mast col">
+  <div class="rule">
+    <span class="eyebrow">Erstlauf-Protokoll</span>
+    <span class="eyebrow">17.09.2026</span>
+  </div>
+  <h1>Ein Tag als Kunde der eigenen Software</h1>
+  <p class="lede" style="margin-top:1rem">Der Eigentümer hat das Produkt einen Tag lang benutzt wie ein
+  Kunde — nicht wie sein Autor. Was jeder Bildschirm leisten soll, was er tatsächlich tat,
+  und was daraus zu lernen war.</p>
+  <blockquote class="verdict">81 Roadmap-Punkte waren erledigt und 1179 Tests grün — und man konnte
+  sich nicht registrieren. Keiner der Funde war von einer Testsuite auffindbar, weil eine Testsuite
+  nur die Fragen stellt, die jemand aufzuschreiben wusste.</blockquote>
+</header>
+
+<div class="tally col" id="tally"></div>
+
+</div>
+
+<nav class="stages">
+  <div class="wrap"><ul>
+    <li><a href="#s0"><span class="s">00</span>Vorher</a></li>
+    <li><a href="#s1"><span class="s">01</span>Registrierung</a></li>
+    <li><a href="#s2"><span class="s">02</span>Kontenplan</a></li>
+    <li><a href="#s3"><span class="s">03</span>Training</a></li>
+    <li><a href="#s4"><span class="s">04</span>Erster Beleg</a></li>
+    <li><a href="#s5"><span class="s">05</span>Kontoauszug</a></li>
+    <li><a href="#s7"><span class="s">07</span>Lohn</a></li>
+    <li><a href="#s8"><span class="s">08</span>Treuhand-Paket</a></li>
+    <li><a href="#muster"><span class="s">▦</span>Das Muster</a></li>
+    <li><a href="#register"><span class="s">☰</span>Alle Funde</a></li>
+  </ul></div>
+</nav>
+
+<div class="wrap">
+
+<section class="col" style="padding-bottom:1.5rem">
+  <h2>Was das Produkt ist</h2>
+  <p style="margin-top:.8rem">Ein Schuhkarton voller Belege und ein teurer Mensch, der ihn einmal im
+  Jahr sortiert. Dies ist der Roboter, der sortiert. Geld verschwindet nie — es wandert von einer
+  beschrifteten Schublade in die nächste, und jede Buchung berührt genau zwei: eine nimmt
+  (<i>Soll</i>), eine gibt (<i>Haben</i>). Ein Tank Benzin für CHF 58.48 ist
+  <code>Soll 6210 Betriebsstoffe / Haben 1020 Bankguthaben</code>. Die ganze Buchhaltung ist diese
+  eine Zeile, wiederholt. Die Aufgabe des Roboters: sie schreiben, ohne gefragt zu werden — und aus
+  den Korrekturen lernen, wenn er danebenliegt.</p>
+
+  <div class="scroller" style="margin-top:1.4rem">
+  <table>
+    <thead><tr><th>Fläche</th><th>Ihre Frage</th><th>Was dort passiert</th></tr></thead>
+    <tbody>
+      <tr><td><b>Heute</b></td><td>Was muss ich tun?</td><td>Der Zettel am Kühlschrank. Entscheidungen, keine Zahlen.</td></tr>
+      <tr><td><b>Belege</b></td><td>Was ist reingekommen?</td><td>Papier hinein — Foto, E-Mail, oder eine Rechnung, die man schreibt</td></tr>
+      <tr><td><b>Bank</b></td><td>Was ist passiert?</td><td>Der Auszug kommt; das Memory-Spiel (<i>Abgleich</i>) paart Geld mit Papier</td></tr>
+      <tr><td><b>Abschluss</b></td><td>Ist alles sauber?</td><td>Monatscheck, MWST-Quartal, Jahresende, ein ZIP für den Treuhänder</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section class="stage" id="s0">
+  <div class="stage-head"><span class="stage-no">00</span><div class="t">
+    <h2>Vorher</h2><div class="sub">Zwei Dinge, die im Code nicht zu sehen waren</div></div></div>
+  <div class="col">
+  <p><b>Ein gültiges Passwort lag in der gepushten Historie.</b> Das Postgres-Passwort, das
+  <code>make dev</code> an diesem Morgen ausgab, stand in <code>scripts/setup.sh</code> über ein
+  Dutzend Commits eines gepushten Branches. Kein altes Geheimnis — genau das, mit dem die laufende
+  Datenbank arbeitete. Zuerst rotiert: das Passwort zu ändern schliesst die Lücke, die Historie zu
+  bereinigen ist Hygiene danach.</p>
+  <p>Nebenbei gefunden: <code>JWT_SECRET</code> überschreibt <code>SECRET_KEY</code> stillschweigend
+  (<code>config.py:170</code>). Nur letzteres zu rotieren hätte nichts geändert — und derselbe
+  Schlüssel signiert die Modell-Blobs, das Einzige zwischen einer gespeicherten <code>.pkl</code>
+  und <code>pickle.loads</code>.</p>
+  <p><b>Der Lauf fand auf Compose statt, nicht auf <code>make dev</code>.</b> <code>make dev</code>
+  verbindet als Postgres-Superuser und warnt beim Start selbst, dass Row-Level Security deshalb
+  nichts durchsetzt. Das zentrale Versprechen des Produkts auf einer Verbindung zu prüfen, die davon
+  ausgenommen ist, ist keine Prüfung. Diese Entscheidung brachte Stufe 1 ans Licht.</p>
+  </div>
+</section>
+
+<section class="stage" id="s1">
+  <div class="stage-head"><span class="stage-no">01</span><div class="t">
+    <h2>Registrierung</h2><div class="sub">Man konnte sich nicht anmelden — seit B-24</div></div></div>
+  <div class="col">
+  <p><code>POST /api/auth/register</code> legt einen Mandanten an und sät dann den Kontenplan.
+  <code>kontenplan</code> ist eine der 24 Tabellen, die RLS abdeckt, und nichts auf diesem Weg setzte
+  den Mandantenkontext. Postgres verweigerte:</p>
+  <div class="specimen">new row violates row-level security policy for table &laquo;kontenplan&raquo;
+  <span class="src">api-1 · POST /api/auth/register · 500</span></div>
+  <p>Der einzige Weg zum ersten Konto, kaputt in der einzigen Konfiguration, die ausgeliefert werden
+  soll. Drei Dinge verdeckten es: jeder Test verbindet als Tabelleneigentümer, für den Policies nicht
+  gelten; <code>make dev</code> läuft als Superuser; und <code>sso.py</code> machte es seit B-36
+  richtig, während <code>/register</code> — der ältere Endpunkt — nie nachgezogen wurde.
+  Zwei Wege legen einen Mandanten an; einer wurde aktualisiert.</p>
+  <p><b>Und ein zweiter Defekt verdeckte den ersten zwei Stunden lang.</b> Der Browser meldete
+  &laquo;blocked by CORS policy&raquo;, während CORS korrekt konfiguriert war.
+  <code>RequestContextMiddleware</code> baut die 500-Antwort selbst und sass <i>ausserhalb</i> der
+  <code>CORSMiddleware</code> — diese Antwort trug keinen
+  <code>Access-Control-Allow-Origin</code>, und jeder Serverfehler erreichte den Client als
+  CORS-Fehler. Der Kommentar drei Zeilen darüber formuliert das Prinzip korrekt für den 413-Fall;
+  die nächste Zeile brach es für Fehler.</p>
+  </div>
+  <div data-findings="1"></div>
+</section>
+
+<section class="stage" id="s2">
+  <div class="stage-head"><span class="stage-no">02</span><div class="t">
+    <h2>Kontenplan</h2><div class="sub">Dem Roboter seine Schubladen zeigen</div></div></div>
+  <div class="col">
+  <p>Ein neuer Mandant bekommt 16 Konten. Das echte Geschäft benutzt 39, aus 762 eigenen
+  2024er-Buchungen extrahiert und über den Assistenten importiert:
+  <b class="num">27 neu · 4 geändert · 8 unverändert · 0 nicht gelesen</b> → 43 Konten.</p>
+  <p>Der Assistent ist ein Assistent und kein Knopf, weil <code>PUT /api/kontenplan/</code> den
+  <i>ganzen</i> Plan ersetzt. Lesen und Schreiben sind getrennte Anfragen, die Vorschau benennt, was
+  verschwinden würde, und <i>Ergänzen</i> — der Modus, der keine Daten verlieren kann — ist die
+  Vorgabe. Dieses Design hielt einer echten Datei stand.</p>
+  <p><b>Die vier &laquo;geändert&raquo;-Zeilen waren das Wertvollste auf dem Bildschirm</b>, weil sie
+  die generische Beschriftung des Produkts gegen die eines echten Treuhänders stellen:</p>
+  </div>
+  <div class="scroller" style="margin-top:.4rem">
+  <table><thead><tr><th>Konto</th><th>Das Produkt liefert</th><th>Das echte Hauptbuch sagt</th></tr></thead>
+  <tbody>
+    <tr><td class="id">5700</td><td>AHV, IV, EO</td><td>AHV, IV, EO <b>Inhaber</b></td></tr>
+    <tr><td class="id">6200</td><td>Fahrzeugaufwand</td><td><b>Reparaturen, Service Fahrzeuge</b></td></tr>
+    <tr><td class="id">6500</td><td>Verwaltungsaufwand</td><td>Büromaterial und Drucksachen</td></tr>
+    <tr><td class="id">8900</td><td>Direkte Steuern</td><td>Kantons- und Gemeindesteuern</td></tr>
+  </tbody></table>
+  </div>
+  <div class="col">
+  <p style="margin-top:1.2rem">Sollte man die getrennten Fahrzeugkonten zu 6200 zusammenlegen?
+  <b>Nein — und die Daten entscheiden das.</b> Über 135 Fahrzeugbuchungen des Treuhänders:
+  6210 Betriebsstoffe trägt MWST (82 von 91 Zeilen <code>I81</code>, 8.1 %), während
+  <b>6220 Fahrzeugversicherung 5 von 5 und 6230 Verkehrsabgaben 6 von 6 gänzlich ohne MWST-Code</b>
+  sind — Versicherungsprämien sind ausgenommen, Verkehrsabgaben sind hoheitliche Gebühren. In einem
+  Konto zusammengelegt ist dieses Konto zur Hälfte steuerbar und zur Hälfte nicht: der Klassifikator
+  kann keinen Satz dafür lernen. <b>Die Aufteilung trägt die MWST.</b></p>
+  </div>
+  <div data-findings="2"></div>
+</section>
+
+<section class="stage" id="s3">
+  <div class="stage-head"><span class="stage-no">03</span><div class="t">
+    <h2>Training</h2><div class="sub">Dem Roboter das letzte Jahr zeigen</div></div></div>
+  <div class="col">
+  <p>762 Buchungen importiert, Modell automatisch trainiert:
+  <b class="num">86.7 %</b> Cross-Validation, 37 Kontenklassen, 182 Gedächtniseinträge. Zehn Zeilen
+  fielen weg — alle zehn Bananas eigene Kopfzeilen. Keine echte Buchung verloren. Das war die erste
+  Prüfung des Tages, die schlicht bestand.</p>
+  <p><b>Was 86.7 % bedeutet.</b> Zufall über 37 Klassen wären 2.7 %; immer das häufigste Konto zu
+  raten wären 23 %. Also ein echtes Ergebnis. Aber Cross-Validation fragt <i>kann es reproduzieren,
+  was der Treuhänder schon getan hat</i> — nicht <i>trifft es den Beleg von morgen</i>.</p>
+  </div>
+  <div class="compare">
+    <div><h3>Bekannter Text</h3>
+      <ul>
+        <li><span><code>Agrola, TS</code> — 91× im Training</span></li>
+        <li><span>Quelle</span><b>Gedächtnis</b></li>
+        <li><span>Konto</span><b>6210 ✓</b></li>
+        <li><span>Konfidenz</span><b>100 %</b></li>
+        <li><span>ML stimmt zu</span><b>89 %</b></li>
+      </ul></div>
+    <div><h3>Echter Belegtext</h3>
+      <ul>
+        <li><span><code>LANDI THULA … BLEIFREI 95</code></span></li>
+        <li><span>Quelle</span><b>Regeln</b></li>
+        <li><span>Konto</span><b>6210 ✓</b></li>
+        <li><span>Konfidenz</span><b>72 %</b></li>
+        <li><span>ML wollte</span><b>5820 ✗ (22 %)</b></li>
+      </ul></div>
+  </div>
+  <div class="col">
+  <p>Die Schicht-Pipeline funktionierte genau wie entworfen — und das ist der Punkt: <b>die Zahl, mit
+  der die Seite aufmacht, gehört einer Schicht, die gar nicht befragt wurde.</b> Das Schlüsselwort
+  rettete die Antwort, nicht das Modell.</p>
+  </div>
+  <div data-findings="3"></div>
+</section>
+
+<section class="stage" id="s4">
+  <div class="stage-head"><span class="stage-no">04</span><div class="t">
+    <h2>Erster Beleg</h2><div class="sub">Der erste vollständige Erfolg</div></div></div>
+  <div class="col">
+  <p>Ein Handyfoto eines Thermo-Kassenbons — Landi/Agrola, Treibstoff, vorbei an EMV-Hashes und
+  Strichcode, nirgends ein QR-Code.</p>
+  </div>
+  <div class="scroller" style="margin-top:.4rem">
+  <table><thead><tr><th>Feld</th><th>Erwartet</th><th>Gelesen</th></tr></thead>
+  <tbody>
+    <tr><td>Lieferant</td><td>LANDI THULA</td><td>Landi ✓</td></tr>
+    <tr><td>Betrag</td><td class="num">58.48</td><td class="num">CHF 58.48 ✓</td></tr>
+    <tr><td>Datum</td><td class="num">07.11.2025</td><td class="num">07.11.2025 ✓</td></tr>
+    <tr><td>Konto</td><td class="num">6210 / 1020</td><td class="num">6210 / 1020 ✓</td></tr>
+    <tr><td>MwSt</td><td class="num">I81</td><td class="num">I81 ✓</td></tr>
+  </tbody></table>
+  </div>
+  <div class="col">
+  <p style="margin-top:1.2rem">Fünf von fünf — und <code>Fällig</code> blieb leer, statt ein
+  Fälligkeitsdatum zu erfinden.</p>
+  <p><b>Aber der Beleg wurde als offene Schuld abgelegt.</b> Auf dem Bon steht
+  <code>Erhalten: MASTERCARD</code> — das Geld verliess das Konto an der Kasse. Die Belege-Seite
+  meldete &laquo;OFFEN CHF 58.48 · 1 Rechnung&raquo;, neben einer Karte mit der Überschrift
+  <i>Fälligkeitsdatum überschritten</i>. Ein Monat Tankbelege, und Heute erfindet eine Schuld.</p>
+  </div>
+  <div data-findings="4"></div>
+</section>
+
+<section class="stage" id="s5">
+  <div class="stage-head"><span class="stage-no">05</span><div class="t">
+    <h2>Kontoauszug</h2><div class="sub">Wo das Produkt an seine Grenze stösst — ehrlich</div></div></div>
+  <div class="col">
+  <p>Ein echter UBS-Auszug: <b class="num">28 Transaktionen</b> gelesen, <b class="num">21</b> als
+  &laquo;unsicher&raquo; markiert. Das Modell lebt in zwei Welten, und die Grenze ist, ob der
+  Banktext eine Gegenpartei nennt.</p>
+  </div>
+  <div class="compare">
+    <div><h3>Text nennt jemanden</h3><ul>
+      <li><span>Cembra Money, Leasing → 6260</span><b>92 %</b></li>
+      <li><span>Santander Consumer → 6260</span><b>92 %</b></li>
+      <li><span>Sarah Mäder, Miete → 6000</span><b>92 %</b></li>
+      <li><span>Die Post → 6513</span><b>67 %</b></li>
+      <li><span>Swiss Life ×2 → 5720</span><b>61 %</b></li>
+    </ul></div>
+    <div><h3>Text nennt niemanden</h3><ul>
+      <li><span>E-BANKING-SAMMELAUFTRAG → 6500</span><b>35 %</b></li>
+      <li><span>ZAHLUNG DEBITKARTE → 6500</span><b>35 %</b></li>
+      <li><span>&nbsp;</span><b>&nbsp;</b></li>
+      <li><span><b>14 von 28 Zeilen</b> → 6500</span><b></b></li>
+      <li><span>Anteil 6500 im echten Hauptbuch</span><b>~1 %</b></li>
+    </ul></div>
+  </div>
+  <div class="col">
+  <p>Dass diese Zeilen aus dem Banktext nicht auflösbar sind, ist bekannt und in Ordnung — der
+  Abgleich existiert genau dafür. Was nicht folgt: das Feld trotzdem zu füllen. <b>Ein vorausgefülltes
+  Konto wird angenommen, ein leeres wird angeschaut.</b> Das Produkt hält das Gegenteil bereits
+  schriftlich fest:</p>
+  <div class="specimen">Ziffern, die kein Buchungssatz hergibt … stehen sichtbar auf 0.00 statt
+  geraten zu werden.<span class="src">ROADMAP.md · B-67, zur MWST-Abrechnung</span></div>
+  <p>Und neben den Worten &laquo;21 unsicher&raquo; steht ein einziger Knopf:
+  <b>&laquo;Alle AI-Vorschläge übernehmen&raquo;</b>. Ein Klick, 14 falsche Buchungen.</p>
+  </div>
+  <div data-findings="5"></div>
+</section>
+
+<section class="stage" id="s7">
+  <div class="stage-head"><span class="stage-no">07</span><div class="t">
+    <h2>Lohn</h2><div class="sub">Der bestgeschriebene Bildschirm des Produkts</div></div></div>
+  <div class="col">
+  <p>Ohne Konfiguration geöffnet, verweigert die Seite die Arbeit und sagt genau warum:</p>
+  <div class="specimen">Noch nicht bereit. Es fehlen: UVG NBU-Satz, UVG BU-Satz, FAK-Satz,
+  Verwaltungskostenbeitrag. … ohne sie wird keine Abrechnung erstellt, weil eine geschätzte Prämie
+  wie eine richtige aussieht.<span class="src">Lohn · Sätze der Versicherungen</span></div>
+  <p>Alle vier fehlenden Sätze auf einmal, nicht einer nach dem anderen. Die Bundessätze, die
+  vorbelegt <i>werden können</i>, sind vorbelegt <b>und nennen ihre Quelle</b> — AHV/IV Merkblatt
+  2.01 und 2.08, mit dem Prüfdatum und dem Hinweis, dass sie jeden Januar neu festgelegt werden.
+  Leere freiwillige Versicherungen heissen &laquo;nicht versichert&raquo;, und die Zeile erscheint
+  gar nicht. Ein Monat wird einmal abgerechnet; eine Korrektur ist eine neue Abrechnung. Und der
+  Jahreszusammenzug sagt auf seiner eigenen Seite, dass er <i>kein</i> Lohnausweis ist.</p>
+  <p><b>Das ist die Seite, die weiss, dass sie nicht raten darf.</b> Sie gehört neben Stufe 5, wo das
+  Produkt ein 1 %-Konto auf die Hälfte eines Kontoauszugs rät: dieselbe Codebasis, zwei
+  entgegengesetzte Instinkte — und nur einer davon ist als Prinzip aufgeschrieben.</p>
+  </div>
+  <div data-findings="7"></div>
+</section>
+
+<section class="stage" id="s8">
+  <div class="stage-head"><span class="stage-no">08</span><div class="t">
+    <h2>Treuhand-Paket</h2><div class="sub">Was drin ist — und was fehlt</div></div></div>
+  <div class="col">
+  <p>Das Paket liefert sechs Dateien: <code>00-LIESMICH.txt</code> (mit der Liste der Buchungen
+  <i>ohne</i> Beleg — der eigentlich wertvolle Teil), <code>10-Uebersicht.pdf</code>,
+  <code>20-Buchungen.txt</code>, <code>30-Belege/</code>, <code>40-Buchungen.csv</code> und
+  <code>50-Protokoll.csv</code>.</p>
+  <p><b>Das Wort &laquo;Anhang&raquo; kommt in <code>backend/app/</code> nirgends vor.</b> Für eine
+  GmbH ist der Anhang der Jahresrechnung nach OR 959c vorgeschrieben — und der echte Abschluss 2024
+  ist genau dieses Dokument: Geschäftstätigkeit · Vollzeitstellen · Grundlagen der Rechnungslegung ·
+  Bemerkungen zur Bilanz · Beteiligungen · Ereignisse nach dem Bilanzstichtag · Unterschrift.</p>
+  <p><b>Hier bricht &laquo;kein Treuhänder nötig&raquo; tatsächlich.</b> Das Paket übergibt dem
+  Treuhänder alles ausser dem einen Dokument, das der Treuhänder schreiben muss. Die Hälfte davon ist
+  herleitbar: die Kontokorrent-Bewegungstabelle kommt direkt aus Konto <code>1120</code> — 42
+  Buchungen im Hauptbuch 2024, die Verzinsung ist eine Buchung wie jede andere. Ein
+  <i>Entwurf</i>, den der Eigentümer korrigiert, ist ein anderes Produkt als ein Paket, das das
+  Dokument auslässt.</p>
+  </div>
+  <div data-findings="8"></div>
+</section>
+
+<section class="stage" id="muster">
+  <div class="stage-head"><span class="stage-no">▦</span><div class="t">
+    <h2>Das Muster</h2><div class="sub">Zwei Quellen für eine Wahrheit</div></div></div>
+  <div class="col"><p>Die meisten Funde des Tages haben dieselbe Form: <b>zwei Stellen, jede für sich
+  vertretbar, die derselben Tatsache widersprechen.</b></p></div>
+  <div class="scroller" style="margin-top:.4rem">
+  <table class="pattern"><thead><tr><th>Fund</th><th>Die eine Seite</th><th>Die andere</th></tr></thead>
+  <tbody>
+    <tr><td>B-83</td><td><code>docker-compose.yml</code> CORS</td><td><code>config.py</code> CORS-Vorgabe</td></tr>
+    <tr><td>B-85</td><td><code>seed_tenant</code> → 2200</td><td>echte Schweizer Pläne → 2205</td></tr>
+    <tr><td>B-86</td><td>Import-Ergebnis → 364</td><td>KPI-Karte → 182</td></tr>
+    <tr><td>B-87</td><td>Heute liest <code>best_vision</code></td><td>Modell liest <code>available</code> (existiert nicht)</td></tr>
+    <tr><td>B-90</td><td>Menü sagt <i>Buchungen</i></td><td>Seitentitel sagt <i>Insights</i></td></tr>
+    <tr><td>B-92</td><td>B-67: nie eine Zahl raten</td><td>Kontierung: rät trotzdem</td></tr>
+  </tbody></table>
+  </div>
+  <div class="col"><p style="margin-top:1.2rem"><b>B-87 ist der schärfste davon:</b> zwei
+  handgeschriebene TypeScript-Schnittstellen für <i>einen</i> Endpunkt, eine davon mit vier Feldern,
+  die die API nie gesendet hat — diese Karte konnte niemals etwas anderes melden als &laquo;Nicht
+  verbunden&raquo;. Genau das Versagen, das B-59 beenden sollte, überlebt auf dem einzigen Endpunkt,
+  den B-59 nicht anfasste, geschützt von einem veralteten Kommentar.</p>
+  <p><b>Das ist kein Programmierproblem. Es ist ein Problem zweier Quellen für eine Wahrheit</b> —
+  und verdient eine eigene Durchsicht.</p></div>
+</section>
+
+<section class="stage" id="register">
+  <div class="stage-head"><span class="stage-no">☰</span><div class="t">
+    <h2>Alle Funde</h2><div class="sub">Filtern nach Status, Stufe oder Stichwort</div></div></div>
+
+  <div class="filters">
+    <button class="chip" data-f="status" data-v="all" aria-pressed="true">Alle</button>
+    <button class="chip" data-f="status" data-v="fixed" aria-pressed="false">Behoben</button>
+    <button class="chip" data-f="status" data-v="open" aria-pressed="false">Offen</button>
+    <span style="width:1px;height:22px;background:var(--rule-strong);margin:0 .3rem"></span>
+    <button class="chip" data-f="sev" data-v="all" aria-pressed="true">Jede Schwere</button>
+    <button class="chip" data-f="sev" data-v="CH" aria-pressed="false">Nur C + H</button>
+    <input type="search" id="q" placeholder="Suchen — Konto, Datei, Stichwort…" aria-label="Funde durchsuchen">
+    <span class="count" id="count"></span>
+  </div>
+
+  <div class="scroller">
+  <table>
+    <thead><tr><th>Nr.</th><th>St.</th><th>Fund</th><th>Status</th><th>Schw.</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+  </div>
+</section>
+
+<footer class="col">
+  <p><b>Stand nach Tag eins.</b> Noch offen: der Abgleich mit echten Rechnungen, der Abschluss gegen
+  die 2024er-Zahlen, ein echter Lohnmonat auf den Rappen verglichen, und ein echtes Treuhand-Paket
+  an einen echten Treuhänder.</p>
+  <p style="margin:0"><span class="eyebrow">Quellen</span> &nbsp;
+  <code>docs/TOUR-2026-09-17.md</code> · <code>docs/E2E-ERSTLAUF.md</code> ·
+  <code>docs/FRAGEN-AN-DEN-TREUHAENDER.md</code> · <code>ROADMAP.md › First-run findings</code></p>
+</footer>
+
+</div>
+
+<script>
+const FUNDE = [
+ {id:"B-82",st:1,t:"Registrierung unter RLS unmöglich",w:"seed_tenant schreibt in kontenplan ohne Mandantenkontext — Postgres verweigert. Der einzige Weg zum ersten Konto.",s:"fixed",sev:"C"},
+ {id:"B-83",st:1,t:"Jeder 500er erreichte den Browser als CORS-Fehler",w:"RequestContextMiddleware baut die Fehlerantwort ausserhalb von CORS — ohne Access-Control-Allow-Origin.",s:"fixed",sev:"H"},
+ {id:"B-84",st:2,t:"Gesäter Kontenplan benutzt Sammelbezeichnungen",w:"6200 «Fahrzeugaufwand» statt «Reparaturen, Service» — die Aufteilung trägt die MWST (6220/6230 sind steuerfrei).",s:"open",sev:"H"},
+ {id:"B-85",st:2,t:"2200 und 2205 mit identischer Bezeichnung",w:"seed_tenant legt MWST auf 2200, echte Pläne benutzen 2205. Nach Ergänzen hat der Mandant beide.",s:"open",sev:"M"},
+ {id:"B-86",st:3,t:"Gedächtnisgrösse doppelt gemeldet",w:"len(memory_objects)+len(seen_keys) — 182 geschrieben, 364 gemeldet. Diese Zahl geht ins Audit-Protokoll.",s:"fixed",sev:"M"},
+ {id:"B-87",st:3,t:"Vision-Karte meldete undefined, nicht einen Zustand",w:"Handgeschriebene Schnittstelle mit vier Feldern, die der Endpunkt nie sendet. Konnte nie etwas anderes als «Nicht verbunden» zeigen.",s:"fixed",sev:"M"},
+ {id:"B-88",st:3,t:"86.7 % beschreibt nicht den Belegweg",w:"Cross-Validation über Banktexte; der Scanner liefert OCR von Kassenbons. Das ML setzte beim echten Beleg das falsche Konto an erste Stelle.",s:"open",sev:"M"},
+ {id:"B-89",st:4,t:"Bezahlter Kassenbon als offene Schuld abgelegt",w:"«Erhalten: MASTERCARD» — das Geld ist weg. Ein Monat Tankbelege erfindet auf Heute eine Schuld.",s:"open",sev:"H"},
+ {id:"B-90",st:4,t:"«Insights» überlebte die IA-Migration",w:"Menü und Reiter sagen Buchungen, Seitentitel und Befehlspalette sagen Insights.",s:"open",sev:"L"},
+ {id:"B-91",st:5,t:"«Alle AI-Vorschläge übernehmen» nimmt auch die unsicheren",w:"Daneben steht «21 unsicher». Ein Klick, 14 falsche Buchungen im Hauptbuch.",s:"open",sev:"H"},
+ {id:"B-92",st:5,t:"Unsicherer Vorschlag füllt das Feld trotzdem",w:"14 von 28 Zeilen auf 6500 — ein Konto mit ~1 % Anteil im echten Hauptbuch. Leer wäre ehrlicher.",s:"open",sev:"H"},
+ {id:"B-93",st:5,t:"Negativer MWST-Satz auf Gutschriften",w:"V81 / −8.10 bei Erlöszeilen, I81 / 8.10 bei Aufwand. Vorzeichen prüfen, bevor es ins Formular 200 wandert.",s:"open",sev:"M"},
+ {id:"B-94",st:7,t:"Koordinationsabzug nicht benannt",w:"9.9 % des vollen Lohns ohne Abzug — richtig bei einem Plan ohne Koordinationsabzug, falsch beim BVG-Minimum. Nichts sagt welcher.",s:"open",sev:"M"},
+ {id:"B-95",st:7,t:"BVG-Karte grün bei null Mitarbeitenden",w:"«Kein Widerspruch gefunden», weil es nichts zu prüfen gibt — dieselbe Form wie eine RLS-Prüfung auf leerer Datenbank.",s:"open",sev:"L"},
+ {id:"B-96",st:7,t:"Kinderzulagen landen in der AHV-Basis",w:"brutto = grundlohn + dreizehnter + zulagen, und alle Abzüge darauf. Familienzulagen sind nicht AHV-pflichtig. Echtes Geld, jeden Monat.",s:"open",sev:"H"},
+ {id:"B-97",st:7,t:"Verwaltungskosten: Basis nicht benannt",w:"Als Prozent der Lohnsumme gerechnet. Viele Kassen nennen ihn als Prozent der AHV-Beiträge — Faktor zehn Unterschied.",s:"open",sev:"M"},
+ {id:"B-98",st:7,t:"Die vier Sätze finden helfen, statt nur hinzuschicken",w:"Pro Feld das Dokument benennen — und besser: die Beitragsverfügung einlesen, so wie das Produkt schon Belege liest.",s:"open",sev:"M"},
+ {id:"B-99",st:8,t:"Das Paket enthält keinen Anhang",w:"Für eine GmbH nach OR 959c vorgeschrieben. Die Kontokorrent-Tabelle ist aus Konto 1120 herleitbar; der Rest sind Prompts.",s:"open",sev:"H"}
+];
+const STUFE = {1:"01",2:"02",3:"03",4:"04",5:"05",7:"07",8:"08"};
+const state = {status:"all", sev:"all", q:""};
+const rows = document.getElementById("rows"), count = document.getElementById("count");
+
+function matches(f){
+  if(state.status!=="all" && f.s!==state.status) return false;
+  if(state.sev==="CH" && !(f.sev==="C"||f.sev==="H")) return false;
+  if(state.q){ const h=(f.id+" "+f.t+" "+f.w).toLowerCase(); if(!h.includes(state.q)) return false; }
+  return true;
+}
+function row(f){
+  return `<tr><td class="id">${f.id}</td><td class="num">${STUFE[f.st]}</td>`+
+    `<td><b>${f.t}</b><div class="why">${f.w}</div></td>`+
+    `<td><span class="pill ${f.s}">${f.s==="fixed"?"behoben":"offen"}</span></td>`+
+    `<td><span class="sev ${f.sev}">${f.sev}</span></td></tr>`;
+}
+function render(){
+  const list = FUNDE.filter(matches);
+  rows.innerHTML = list.length ? list.map(row).join("")
+    : `<tr><td colspan="5" style="padding:1.4rem;color:var(--ink-faint)">Kein Fund passt zu diesem Filter.</td></tr>`;
+  count.textContent = `${list.length} / ${FUNDE.length}`;
+}
+document.querySelectorAll(".chip").forEach(b=>b.addEventListener("click",()=>{
+  const f=b.dataset.f; state[f]=b.dataset.v;
+  document.querySelectorAll(`.chip[data-f="${f}"]`).forEach(o=>o.setAttribute("aria-pressed", String(o===b)));
+  render();
+}));
+document.getElementById("q").addEventListener("input",e=>{state.q=e.target.value.trim().toLowerCase();render();});
+
+// Inline-Funde pro Stufe
+document.querySelectorAll("[data-findings]").forEach(box=>{
+  const st=Number(box.dataset.findings), f=FUNDE.filter(x=>x.st===st);
+  if(!f.length) return;
+  box.innerHTML = `<div class="scroller" style="margin-top:1.2rem"><table><tbody>`+
+    f.map(x=>`<tr><td class="id">${x.id}</td><td><b>${x.t}</b><div class="why">${x.w}</div></td>`+
+      `<td style="text-align:right"><span class="pill ${x.s}">${x.s==="fixed"?"behoben":"offen"}</span></td></tr>`).join("")+
+    `</tbody></table></div>`;
+});
+
+// Bilanz
+const nf=FUNDE.filter(x=>x.s==="fixed").length, no=FUNDE.length-nf;
+document.getElementById("tally").innerHTML =
+  `<div><span class="n ok">${nf}</span><span class="k">behoben am selben Tag</span></div>`+
+  `<div><span class="n no">${no}</span><span class="k">aufgeschrieben</span></div>`+
+  `<div><span class="n">762</span><span class="k">echte Buchungen trainiert</span></div>`+
+  `<div><span class="n">5 / 5</span><span class="k">Felder auf dem Kassenbon</span></div>`+
+  `<div><span class="n">1179</span><span class="k">grüne Tests, die nichts davon sahen</span></div>`;
+
+// Theme
+const tb=document.getElementById("theme");
+tb.addEventListener("click",()=>{
+  const cur=document.documentElement.getAttribute("data-theme");
+  const dark=cur ? cur==="dark" : matchMedia("(prefers-color-scheme:dark)").matches;
+  document.documentElement.setAttribute("data-theme", dark?"light":"dark");
+  try{localStorage.setItem("tour-theme", dark?"light":"dark")}catch(e){}
+});
+try{const s=localStorage.getItem("tour-theme"); if(s) document.documentElement.setAttribute("data-theme",s);}catch(e){}
+
+render();
+</script>
+</body>
+</html>
