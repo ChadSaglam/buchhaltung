@@ -270,7 +270,18 @@ async def import_banana_file(
     db.add_all(memory_objects)
     await db.flush()
 
-    result = {"imported": len(training_objects), "memory_entries": len(memory_objects) + len(seen_keys)}
+    # `seen_keys` already holds every distinct key this import touched — the new
+    # ones AND the ones that were updated in place. `memory_objects` is a subset
+    # of it (the new ones), so adding the two counted every new entry twice: a
+    # fresh tenant reported exactly 2× what it had written. Found on the first
+    # real run (2026-09-17): the page showed "GEDÄCHTNIS 182" and, three
+    # centimetres below, "364 Gedächtnis" for the same import.
+    #
+    # This number is not cosmetic — it goes into the audit row below, and B-17
+    # ships the audit table to the Treuhänder as 50-Protokoll.csv. A hand-off
+    # that states a quantity nobody ever wrote is worse than one that states
+    # nothing.
+    result = {"imported": len(training_objects), "memory_entries": len(seen_keys)}
 
     await audit(
         db,
