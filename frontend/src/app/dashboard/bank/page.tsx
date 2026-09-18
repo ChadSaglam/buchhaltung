@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { ErrorState } from "@/components/shared/ErrorState";
 import { t } from "@/lib/i18n";
+import { istSicher } from "./helpers";
 import { useKontoauszug } from "./hooks/useKontoauszug";
 import { PdfDropZone } from "./components/PdfDropZone";
 import { TransactionTable } from "./components/TransactionTable";
@@ -22,7 +23,8 @@ const enter = { initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 }, ex
 
 export default function KontoauszugPage() {
   const k = useKontoauszug();
-  const lowConfidenceCount = k.rows.filter((r) => (r.confidence ?? 1) < 0.8).length;
+  const sichere = k.rows.filter(istSicher).length;
+  const lowConfidenceCount = k.rows.length - sichere;
   const busy = k.phase !== "idle";
 
   return (
@@ -65,8 +67,15 @@ export default function KontoauszugPage() {
             <div className="flex flex-wrap gap-2 items-center">
               <span className="text-sm text-muted-foreground">{k.rows.length} Transaktionen</span>
               {lowConfidenceCount > 0 && <Badge tone="warning">{lowConfidenceCount} unsicher</Badge>}
-              <Button variant="secondary" size="sm" icon={<Sparkles className="h-3.5 w-3.5" aria-hidden="true" />} onClick={k.acceptAll}>
-                Alle AI-Vorschläge übernehmen
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={<Sparkles className="h-3.5 w-3.5" aria-hidden="true" />}
+                onClick={k.acceptAll}
+                disabled={sichere === 0}
+                title={lowConfidenceCount > 0 ? `${lowConfidenceCount} unsichere bleiben offen — die löst der Abgleich gegen Belege auf.` : undefined}
+              >
+                {sichere} sichere Vorschläge übernehmen
               </Button>
               <div className="flex-1" />
               {EXPORTS.map((e) => (

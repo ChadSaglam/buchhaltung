@@ -1,10 +1,22 @@
 import type { TxRow } from "./types";
 
+/**
+ * B-91: the one line between "sicher" and "unsicher". The badge, the row tone
+ * and the bulk button all read this — before, the page said «21 unsicher» from
+ * one 0.8 and the button next to it applied all 28 from no threshold at all.
+ */
+export const SICHER_AB = 0.8;
+
+/** A proposal worth applying without a person looking at it first. */
+export function istSicher(r: Pick<TxRow, "confidence" | "suggSoll">): boolean {
+  return r.suggSoll != null && (r.confidence ?? 0) >= SICHER_AB;
+}
+
 /** Map an AI confidence score to a badge tone + label. */
 export function confidenceTone(c?: number): { tone: "success" | "warning" | "danger" | "neutral"; label: string } {
   if (c == null) return { tone: "neutral", label: "—" };
   const pct = Math.round(c * 100);
-  if (c >= 0.8) return { tone: "success", label: `${pct}%` };
+  if (c >= SICHER_AB) return { tone: "success", label: `${pct}%` };
   if (c >= 0.5) return { tone: "warning", label: `${pct}%` };
   return { tone: "danger", label: `${pct}%` };
 }

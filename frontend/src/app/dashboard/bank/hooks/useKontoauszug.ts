@@ -2,7 +2,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { api } from "@/lib/api";
 import { errorMessage } from "@/lib/errors";
-import { correctionsFor, toRow } from "../helpers";
+import { correctionsFor, istSicher, toRow } from "../helpers";
 import type { ExportFormat, TxRow } from "../types";
 
 export function useKontoauszug() {
@@ -73,7 +73,9 @@ export function useKontoauszug() {
     setRows((prev) => prev.map((r, i) => (i === idx ? { ...r, [field]: value } : r)));
   const accept = (r: TxRow): TxRow => ({ ...r, KtSoll: r.suggSoll ?? r.KtSoll, KtHaben: r.suggHaben ?? r.KtHaben, accepted: true });
   const acceptSuggestion = (idx: number) => setRows((prev) => prev.map((r, i) => (i === idx ? accept(r) : r)));
-  const acceptAll = () => setRows((prev) => prev.map(accept));
+  // B-91: only what clears SICHER_AB. The uncertain ones are the Abgleich's job —
+  // a pre-filled account gets accepted, a blank one gets looked at.
+  const acceptAll = () => setRows((prev) => prev.map((r) => (istSicher(r) ? accept(r) : r)));
   const reset = () => { setRows([]); setSaved(false); setFailure(null); };
   const retry = () => failure && processFile(failure.file);
 
