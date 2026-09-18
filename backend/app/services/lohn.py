@@ -70,8 +70,10 @@ class Lohnlauf:
     anteil: float  # 1.0 for a full month, less when the employee joined or left
     grundlohn: float
     dreizehnter: float
-    zulagen: float
-    brutto: float
+    zulagen: float  # AHV-pflichtig
+    kinderzulagen: float  # AHV-frei (B-96)
+    ahv_lohn: float  # massgebender Lohn: the base every percentage is taken on
+    brutto: float  # ahv_lohn + kinderzulagen: what the employee is paid
     abzuege: list[Abzug] = field(default_factory=list)
     abzuege_total: float = 0.0
     netto: float = 0.0
@@ -188,38 +190,51 @@ def berechnen(
         else 0.0
     )
     zulagen = _chf(zulagen)
-    brutto = _chf(grundlohn + dreizehnter_betrag + zulagen)
+    # B-96: two different sums, and the payslip the owner brought to the first
+    # real run showed exactly this split — Bruttolohn 6'657.95, every deduction
+    # on 6'257.95. Familienzulagen are not massgebender Lohn (AHVV Art. 6):
+    # they are paid out, they are taxable, and no social insurance rate touches
+    # them. Before this, `brutto` was both numbers at once and the AHV, ALV,
+    # NBU, KTG, FAK and VK were all overstated by the Zulage — 400 × 5.3 % =
+    # 21.20 too much AHV alone, every month, silently.
+    # `or 0.0` like bvg_an_monat above: a column default applies on INSERT, not
+    # to an object built in Python, so a fresh Mitarbeiter carries None here.
+    kinderzulagen = _chf((mitarbeiter.kinderzulagen_monat or 0.0) * anteil)
+    ahv_lohn = _chf(grundlohn + dreizehnter_betrag + zulagen)
+    brutto = _chf(ahv_lohn + kinderzulagen)
 
-    jahresbrutto = _chf(brutto_ytd + brutto + mitarbeiter.monatslohn * (MONATE_PRO_JAHR - monat))
+    jahresbrutto = _chf(brutto_ytd + ahv_lohn + mitarbeiter.monatslohn * (MONATE_PRO_JAHR - monat))
     fehlend = fehlende_konfiguration(mitarbeiter, settings, jahresbrutto=jahresbrutto)
     if fehlend:
         raise LohnKonfigurationFehlt(fehlend)
 
     # --- Arbeitnehmer -----------------------------------------------------
     abzuege: list[Abzug] = []
-    ahv = _prozent(brutto, settings.ahv_satz_an)
-    abzuege.append(Abzug("AHV/IV/EO", settings.ahv_satz_an, brutto, ahv))
+    ahv = _prozent(ahv_lohn, settings.ahv_satz_an)
+    abzuege.append(Abzug("AHV/IV/EO", settings.ahv_satz_an, ahv_lohn, ahv))
 
-    alv_basis = max(0.0, min(brutto, _chf(settings.alv_jahresgrenze - brutto_ytd)))
+    alv_basis = max(0.0, min(ahv_lohn, _chf(settings.alv_jahresgrenze - brutto_ytd)))
     alv = _prozent(alv_basis, settings.alv_satz_an)
     abzuege.append(Abzug("ALV", settings.alv_satz_an, alv_basis, alv))
 
-    nbu = _prozent(brutto, settings.uvg_nbu_satz or 0.0)
-    abzuege.append(Abzug("NBU", settings.uvg_nbu_satz or 0.0, brutto, nbu))
+    nbu = _prozent(ahv_lohn, settings.uvg_nbu_satz or 0.0)
+    abzuege.append(Abzug("NBU", settings.uvg_nbu_satz or 0.0, ahv_lohn, nbu))
 
-    uvgz = _prozent(brutto, settings.uvgz_satz_an) if settings.uvgz_satz_an else 0.0
+    uvgz = _prozent(ahv_lohn, settings.uvgz_satz_an) if settings.uvgz_satz_an else 0.0
     if uvgz:
-        abzuege.append(Abzug("UVGZ", settings.uvgz_satz_an or 0.0, brutto, uvgz))
-    ktg = _prozent(brutto, settings.ktg_satz_an) if settings.ktg_satz_an else 0.0
+        abzuege.append(Abzug("UVGZ", settings.uvgz_satz_an or 0.0, ahv_lohn, uvgz))
+    ktg = _prozent(ahv_lohn, settings.ktg_satz_an) if settings.ktg_satz_an else 0.0
     if ktg:
-        abzuege.append(Abzug("KTG", settings.ktg_satz_an or 0.0, brutto, ktg))
+        abzuege.append(Abzug("KTG", settings.ktg_satz_an or 0.0, ahv_lohn, ktg))
 
     # BVG is an amount from the fund, pro-rated like the salary when the month
     # is partial — the fund bills the month, the employee owes their share of it.
     bvg = _chf((mitarbeiter.bvg_an_monat or 0.0) * anteil)
     if bvg:
-        abzuege.append(Abzug("BVG", 0.0, brutto, bvg))
+        abzuege.append(Abzug("BVG", 0.0, ahv_lohn, bvg))
 
+    # Quellensteuer stays on `brutto`, deliberately: Familienzulagen are taxable
+    # income — exempt from the social insurances, not from tax.
     quellensteuer = (
         _prozent(brutto, mitarbeiter.quellensteuer_satz or 0.0)
         if mitarbeiter.quellensteuer and mitarbeiter.quellensteuer_satz
@@ -235,26 +250,26 @@ def berechnen(
     # AHV and ALV are paid in equal halves, so the employer share is the
     # employee's own rate applied to the same base.
     arbeitgeber: list[Abzug] = [
-        Abzug("AHV/IV/EO", settings.ahv_satz_an, brutto, ahv),
+        Abzug("AHV/IV/EO", settings.ahv_satz_an, ahv_lohn, ahv),
         Abzug("ALV", settings.alv_satz_an, alv_basis, alv),
-        Abzug("UVG BU", settings.uvg_bu_satz or 0.0, brutto, _prozent(brutto, settings.uvg_bu_satz or 0.0)),
+        Abzug("UVG BU", settings.uvg_bu_satz or 0.0, ahv_lohn, _prozent(ahv_lohn, settings.uvg_bu_satz or 0.0)),
     ]
     if settings.uvgz_satz_ag:
-        arbeitgeber.append(Abzug("UVGZ", settings.uvgz_satz_ag, brutto, _prozent(brutto, settings.uvgz_satz_ag)))
+        arbeitgeber.append(Abzug("UVGZ", settings.uvgz_satz_ag, ahv_lohn, _prozent(ahv_lohn, settings.uvgz_satz_ag)))
     if settings.ktg_satz_ag:
-        arbeitgeber.append(Abzug("KTG", settings.ktg_satz_ag, brutto, _prozent(brutto, settings.ktg_satz_ag)))
-    arbeitgeber.append(Abzug("FAK", settings.fak_satz or 0.0, brutto, _prozent(brutto, settings.fak_satz or 0.0)))
+        arbeitgeber.append(Abzug("KTG", settings.ktg_satz_ag, ahv_lohn, _prozent(ahv_lohn, settings.ktg_satz_ag)))
+    arbeitgeber.append(Abzug("FAK", settings.fak_satz or 0.0, ahv_lohn, _prozent(ahv_lohn, settings.fak_satz or 0.0)))
     arbeitgeber.append(
         Abzug(
             "Verwaltungskosten",
             settings.verwaltungskosten_satz or 0.0,
-            brutto,
-            _prozent(brutto, settings.verwaltungskosten_satz or 0.0),
+            ahv_lohn,
+            _prozent(ahv_lohn, settings.verwaltungskosten_satz or 0.0),
         )
     )
     ag_bvg = _chf((mitarbeiter.bvg_ag_monat or 0.0) * anteil)
     if ag_bvg:
-        arbeitgeber.append(Abzug("BVG", 0.0, brutto, ag_bvg))
+        arbeitgeber.append(Abzug("BVG", 0.0, ahv_lohn, ag_bvg))
     ag_total = _chf(sum(a.betrag for a in arbeitgeber))
 
     return Lohnlauf(
@@ -264,6 +279,8 @@ def berechnen(
         grundlohn=grundlohn,
         dreizehnter=dreizehnter_betrag,
         zulagen=zulagen,
+        kinderzulagen=kinderzulagen,
+        ahv_lohn=ahv_lohn,
         brutto=brutto,
         abzuege=abzuege,
         abzuege_total=abzuege_total,

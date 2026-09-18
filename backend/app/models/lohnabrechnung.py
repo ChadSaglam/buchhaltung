@@ -49,8 +49,13 @@ class Lohnabrechnung(Base):
     # Earnings.
     grundlohn: Mapped[float] = mapped_column(Chf, default=0)
     dreizehnter: Mapped[float] = mapped_column(Chf, default=0)
-    zulagen: Mapped[float] = mapped_column(Chf, default=0)
-    brutto: Mapped[float] = mapped_column(Chf, default=0)
+    zulagen: Mapped[float] = mapped_column(Chf, default=0)  # AHV-pflichtig (Gratifikation, Bonus)
+    kinderzulagen: Mapped[float] = mapped_column(Chf, default=0)  # B-96: AHV-frei
+    brutto: Mapped[float] = mapped_column(Chf, default=0)  # what is paid: ahv_lohn + kinderzulagen
+    # B-96: the contributory base every rate is applied to, and what the ALV
+    # ceiling accumulates over. Stored, not derived, so a later change to what
+    # counts as AHV-frei never rewrites a settled month.
+    ahv_lohn: Mapped[float] = mapped_column(Chf, default=0)
 
     # Employee deductions — rate *and* amount, so the payslip stays readable
     # without the settings row it was computed from.

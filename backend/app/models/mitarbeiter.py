@@ -49,6 +49,11 @@ class Mitarbeiter(Base):
     monatslohn: Mapped[float] = mapped_column(Chf, default=0)  # gross for a full month at this Pensum
     dreizehnter: Mapped[bool] = mapped_column(Boolean, default=False)
     kinder: Mapped[int] = mapped_column(Integer, default=0)
+    # B-96: Familienzulagen are paid with the salary and are NOT part of the
+    # massgebender Lohn — no AHV, ALV, UVG, KTG, FAK on them (AHVV Art. 6). A
+    # monthly total rather than per child, because the cantonal rate per child
+    # differs and the Ausgleichskasse's decision names the amount, not a formula.
+    kinderzulagen_monat: Mapped[float] = mapped_column(Chf, default=0)
     kanton: Mapped[str] = mapped_column(String(2), default="")
 
     quellensteuer: Mapped[bool] = mapped_column(Boolean, default=False)

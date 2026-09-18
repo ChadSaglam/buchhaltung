@@ -338,3 +338,79 @@ def test_bvg_follows_a_part_month():
 def test_the_period_reads_as_a_month():
     lauf = berechnen(mitarbeiter=mitarbeiter(), settings=settings(), jahr=2026, monat=3)
     assert lauf.periode == "2026-03"
+
+
+# --- B-96: Kinderzulagen are paid, taxed, and exempt from every rate ---------
+#
+# The payslip the owner brought to the first real run (June 2026): Monatslohn
+# 6'257.95, Kinderzulagen 400, Bruttolohn 6'657.95 — and every deduction on
+# 6'257.95. Ours took them on 6'657.95. Familienzulagen are not massgebender
+# Lohn (AHVV Art. 6). These tests hold the split.
+
+
+def _kz():
+    # The June payslip: PK 9.9 % of 6'257.95 = 619.54 on the employee side.
+    return mitarbeiter(monatslohn=6_257.95, kinderzulagen_monat=400.0, bvg_an_monat=619.54, bvg_ag_monat=619.54)
+
+
+def test_kinderzulagen_are_paid_out_but_not_in_the_ahv_base():
+    lauf = berechnen(mitarbeiter=_kz(), settings=settings(uvg_nbu_satz=0.5, ktg_satz_an=0.7), jahr=2026, monat=6)
+    assert lauf.kinderzulagen == 400.0
+    assert lauf.ahv_lohn == 6_257.95
+    assert lauf.brutto == 6_657.95  # what the employee is paid, Zulage included
+    for label in ("AHV/IV/EO", "ALV", "NBU", "KTG"):
+        assert abzug(lauf, label).basis == 6_257.95, label
+
+
+def test_the_owners_june_payslip_to_the_rappen():
+    """The real numbers, line by line. The old provider does not round at all
+    (its net was 5562.80875); we round half-up per line, which is the only
+    version that can be paid. The difference is under one Rappen."""
+    lauf = berechnen(mitarbeiter=_kz(), settings=settings(uvg_nbu_satz=0.5, ktg_satz_an=0.7), jahr=2026, monat=6)
+    assert abzug(lauf, "AHV/IV/EO").betrag == 331.67  # 6257.95 × 5.3 %
+    assert abzug(lauf, "ALV").betrag == 68.84  # × 1.1 %
+    assert abzug(lauf, "NBU").betrag == 31.29  # × 0.5 %
+    assert abzug(lauf, "KTG").betrag == 43.81  # × 0.7 %
+    assert abzug(lauf, "BVG").betrag == 619.54  # the fund's amount, not a rate
+    assert lauf.abzuege_total == 1_095.15  # theirs: 1095.14125, unrounded
+    assert lauf.netto == 5_562.80  # theirs: 5562.80875 — under one Rappen apart
+
+
+def test_every_employer_rate_also_skips_the_kinderzulagen():
+    lauf = berechnen(mitarbeiter=_kz(), settings=settings(), jahr=2026, monat=6)
+    for label in ("AHV/IV/EO", "UVG BU", "FAK", "Verwaltungskosten"):
+        assert ag_beitrag(lauf, label).basis == 6_257.95, label
+
+
+def test_kinderzulagen_stay_in_the_quellensteuer_base():
+    """Exempt from the social insurances, not from tax."""
+    person = _kz()
+    person.quellensteuer, person.quellensteuer_satz = True, 10.0
+    lauf = berechnen(mitarbeiter=person, settings=settings(), jahr=2026, monat=6)
+    assert abzug(lauf, "Quellensteuer").basis == 6_657.95
+
+
+def test_a_partial_month_pro_rates_the_kinderzulagen_too():
+    person = _kz()
+    person.eintritt = date(2026, 6, 16)  # half of a 30-day payroll month
+    lauf = berechnen(mitarbeiter=person, settings=settings(), jahr=2026, monat=6)
+    assert lauf.kinderzulagen == 200.0
+    assert lauf.ahv_lohn == pytest.approx(6_257.95 / 2, abs=0.01)
+
+
+def test_an_ahv_liable_zulage_is_still_in_the_base():
+    """The one-off Zulage (Gratifikation, Bonus) is the other kind — it stays
+    contributory. The two fields must not be confused for each other."""
+    lauf = berechnen(mitarbeiter=_kz(), settings=settings(), jahr=2026, monat=6, zulagen=500.0)
+    assert lauf.zulagen == 500.0
+    assert lauf.ahv_lohn == 6_757.95  # 6257.95 + 500, Kinderzulagen not included
+    assert lauf.brutto == 7_157.95  # + 400 Kinderzulagen
+    assert abzug(lauf, "AHV/IV/EO").basis == 6_757.95
+
+
+def test_no_kinderzulagen_changes_nothing():
+    """Every existing test above still holds — a tenant without Zulagen sees
+    the same payslip as before B-96."""
+    lauf = berechnen(mitarbeiter=mitarbeiter(), settings=settings(), jahr=2026, monat=3)
+    assert lauf.kinderzulagen == 0.0
+    assert lauf.ahv_lohn == lauf.brutto == 6_000.0

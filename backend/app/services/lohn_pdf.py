@@ -67,12 +67,14 @@ def _satz(value: float) -> str:
 
 def _abzugszeilen(row: Lohnabrechnung) -> list[Row]:
     lines = [
-        ("AHV/IV/EO", row.ahv_satz, row.brutto, row.ahv_betrag),
+        # B-96: the Basis column shows the massgebender Lohn — the number the
+        # rate was actually applied to — not the payout.
+        ("AHV/IV/EO", row.ahv_satz, row.ahv_lohn, row.ahv_betrag),
         ("ALV", row.alv_satz, row.alv_basis, row.alv_betrag),
-        ("NBU", row.nbu_satz, row.brutto, row.nbu_betrag),
-        ("UVGZ", row.uvgz_satz, row.brutto, row.uvgz_betrag),
-        ("KTG", row.ktg_satz, row.brutto, row.ktg_betrag),
-        ("BVG", 0.0, row.brutto, row.bvg_betrag),
+        ("NBU", row.nbu_satz, row.ahv_lohn, row.nbu_betrag),
+        ("UVGZ", row.uvgz_satz, row.ahv_lohn, row.uvgz_betrag),
+        ("KTG", row.ktg_satz, row.ahv_lohn, row.ktg_betrag),
+        ("BVG", 0.0, row.ahv_lohn, row.bvg_betrag),
         ("Quellensteuer", row.quellensteuer_satz, row.brutto, row.quellensteuer_betrag),
     ]
     return [
@@ -133,6 +135,8 @@ def abrechnung_pdf(
         lohn.append(Row(["13. Monatslohn", "", "", fmt_swiss(row.dreizehnter)]))
     if row.zulagen:
         lohn.append(Row(["Zulagen", "", "", fmt_swiss(row.zulagen)]))
+    if row.kinderzulagen:
+        lohn.append(Row(["Kinderzulagen", "", "", fmt_swiss(row.kinderzulagen)]))
     lohn.append(Row(["Bruttolohn", "", "", fmt_swiss(row.brutto)], bold=True, top_line=True))
     doc.section("Lohn")
     doc.table(columns, lohn)

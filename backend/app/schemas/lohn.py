@@ -87,6 +87,8 @@ class MitarbeiterBase(BaseModel):
     quellensteuer_satz: float | None = Field(default=None, ge=0, le=MAX_SATZ)
     quellensteuer_tarif: str = Field(default="", max_length=10)
     bvg_an_monat: float | None = Field(default=None, ge=0, le=MAX_MONATSLOHN)
+    #: B-96: Familienzulagen per month, AHV-frei. Paid with the salary, never in a rate's base.
+    kinderzulagen_monat: float = Field(default=0.0, ge=0, le=MAX_MONATSLOHN)
     bvg_ag_monat: float | None = Field(default=None, ge=0, le=MAX_MONATSLOHN)
     iban: str = Field(default="", max_length=34)
     email: str = Field(default="", max_length=255)
@@ -127,6 +129,10 @@ class LohnlaufOut(BaseModel):
     grundlohn: float
     dreizehnter: float
     zulagen: float
+    #: B-96: paid with the salary, outside every rate's base.
+    kinderzulagen: float = 0.0
+    #: B-96: the massgebender Lohn the percentages were applied to.
+    ahv_lohn: float
     brutto: float
     abzuege: list[AbzugOut] = []
     abzuege_total: float

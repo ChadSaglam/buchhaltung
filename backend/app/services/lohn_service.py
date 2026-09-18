@@ -195,7 +195,9 @@ class LohnService:
         would make the cap depend on whether somebody left a preview lying around.
         """
         rows = await self.db.execute(
-            select(Lohnabrechnung.brutto).where(
+            # B-96: the ALV ceiling accumulates over the massgebender Lohn, not
+            # over what was paid out — Kinderzulagen must not eat into the cap.
+            select(Lohnabrechnung.ahv_lohn).where(
                 Lohnabrechnung.tenant_id == self.tenant_id,
                 Lohnabrechnung.mitarbeiter_id == mitarbeiter_id,
                 Lohnabrechnung.jahr == jahr,
@@ -245,6 +247,8 @@ class LohnService:
             grundlohn=lauf.grundlohn,
             dreizehnter=lauf.dreizehnter,
             zulagen=lauf.zulagen,
+            kinderzulagen=lauf.kinderzulagen,
+            ahv_lohn=lauf.ahv_lohn,
             brutto=lauf.brutto,
             abzuege=lauf.abzuege_total,
             netto=lauf.netto,

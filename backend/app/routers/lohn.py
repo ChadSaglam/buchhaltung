@@ -77,6 +77,8 @@ def _lauf_out(
         grundlohn=lauf.grundlohn,
         dreizehnter=lauf.dreizehnter,
         zulagen=lauf.zulagen,
+        kinderzulagen=lauf.kinderzulagen,
+        ahv_lohn=lauf.ahv_lohn,
         brutto=lauf.brutto,
         abzuege=[AbzugOut(**vars(a)) for a in lauf.abzuege],
         abzuege_total=lauf.abzuege_total,
