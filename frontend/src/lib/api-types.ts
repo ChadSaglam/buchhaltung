@@ -3455,6 +3455,16 @@ export interface components {
             netto: number;
             /** Periode */
             periode: string;
+            /**
+             * Stunden
+             * @default 0
+             */
+            stunden: number;
+            /**
+             * Stundenlohn
+             * @default 0
+             */
+            stundenlohn: number;
             /** Zulagen */
             zulagen: number;
         };
@@ -3471,6 +3481,11 @@ export interface components {
             mitarbeiter_id: number;
             /** Monat */
             monat: number;
+            /**
+             * Stunden
+             * @default 0
+             */
+            stunden: number;
             /**
              * Zulagen
              * @default 0
@@ -3612,6 +3627,12 @@ export interface components {
              */
             kinderzulagen_monat: number;
             /**
+             * Lohnart
+             * @default monat
+             * @enum {string}
+             */
+            lohnart: "monat" | "stunde";
+            /**
              * Monatslohn
              * @default 0
              */
@@ -3638,6 +3659,11 @@ export interface components {
              * @default
              */
             quellensteuer_tarif: string;
+            /**
+             * Stundenlohn
+             * @default 0
+             */
+            stundenlohn: number;
             /**
              * Vorname
              * @default
@@ -3699,6 +3725,12 @@ export interface components {
              */
             kinderzulagen_monat: number;
             /**
+             * Lohnart
+             * @default monat
+             * @enum {string}
+             */
+            lohnart: "monat" | "stunde";
+            /**
              * Monatslohn
              * @default 0
              */
@@ -3725,6 +3757,11 @@ export interface components {
              * @default
              */
             quellensteuer_tarif: string;
+            /**
+             * Stundenlohn
+             * @default 0
+             */
+            stundenlohn: number;
             /**
              * Vorname
              * @default
@@ -3779,6 +3816,12 @@ export interface components {
              */
             kinderzulagen_monat: number;
             /**
+             * Lohnart
+             * @default monat
+             * @enum {string}
+             */
+            lohnart: "monat" | "stunde";
+            /**
              * Monatslohn
              * @default 0
              */
@@ -3805,6 +3848,11 @@ export interface components {
              * @default
              */
             quellensteuer_tarif: string;
+            /**
+             * Stundenlohn
+             * @default 0
+             */
+            stundenlohn: number;
             /**
              * Vorname
              * @default

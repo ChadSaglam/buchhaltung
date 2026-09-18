@@ -79,6 +79,16 @@ class Lohnlauf:
     netto: float = 0.0
     arbeitgeber: list[Abzug] = field(default_factory=list)
     ag_total: float = 0.0
+    # B-100: how the Grundlohn was arrived at. Both 0 for a monthly employee, where
+    # `grundlohn` is `monatslohn × anteil`; for an hourly one `grundlohn` is
+    # `stunden × stundenlohn` and `anteil` never touches it — the hours already say
+    # how much of the month was worked, and pro-rating them would count it twice.
+    stunden: float = 0.0
+    stundenlohn: float = 0.0
+
+    @property
+    def im_stundenlohn(self) -> bool:
+        return self.stundenlohn > 0
 
     @property
     def periode(self) -> str:
@@ -157,6 +167,10 @@ def fehlende_konfiguration(mitarbeiter: Mitarbeiter, settings: LohnSettings, *, 
     whether BVG is expected at all.
     """
     fehlend = fehlende_settings(settings)
+    # B-100: an hourly employee without an hourly rate is the same class of hole as
+    # a missing UVG premium — refuse, do not treat it as zero.
+    if mitarbeiter.im_stundenlohn and not (mitarbeiter.stundenlohn or 0.0):
+        fehlend.append("Stundenlohn")
     if mitarbeiter.quellensteuer and mitarbeiter.quellensteuer_satz is None:
         fehlend.append("Quellensteuersatz")
     if jahresbrutto >= BVG_EINTRITTSSCHWELLE and mitarbeiter.bvg_an_monat is None:
@@ -175,18 +189,38 @@ def berechnen(
     zulagen: float = 0.0,
     dreizehnter: bool = False,
     brutto_ytd: float = 0.0,
+    stunden: float = 0.0,
 ) -> Lohnlauf:
     """One month's payslip.
 
     ``brutto_ytd`` is the gross already paid to this employee in ``jahr`` before
     this run; it is what makes the ALV ceiling cumulative. ``dreizehnter`` asks
     for the 13th salary to be paid out with this month, pro rata temporis.
+    ``stunden`` is only read when the employee is paid by the hour (B-100).
+
+    Everything after the Grundlohn is identical for both kinds of employee. That
+    is the point of the split: an hourly wage changes *how the gross is arrived
+    at* and nothing about AHV, ALV, the UVG premiums, the ALV ceiling or the
+    Familienzulagen.
     """
     anteil = monatsanteil(mitarbeiter, jahr, monat)
-    grundlohn = _chf(mitarbeiter.monatslohn * anteil)
+    stundensatz = _chf(mitarbeiter.stundenlohn or 0.0) if mitarbeiter.im_stundenlohn else 0.0
+    if mitarbeiter.im_stundenlohn:
+        # The hours already carry how much of the month was worked, so `anteil`
+        # must not be applied on top — that would halve a half-month twice.
+        stunden = max(0.0, float(stunden or 0.0))
+        grundlohn = _chf(stunden * stundensatz)
+    else:
+        stunden = 0.0
+        grundlohn = _chf(mitarbeiter.monatslohn * anteil)
     dreizehnter_betrag = (
+        # B-100: no 13th salary in the hourly case. A 13th for hourly work is paid
+        # as a percentage supplement on each payslip (commonly 8.33 %), which is a
+        # different agreement with a different base — and inventing one here would
+        # put a number on a payslip that no contract produced. An employer who owes
+        # it enters it as a Zulage, where it is visible and deliberate.
         _chf(mitarbeiter.monatslohn * jahresanteil(mitarbeiter, jahr))
-        if dreizehnter and mitarbeiter.dreizehnter
+        if dreizehnter and mitarbeiter.dreizehnter and not mitarbeiter.im_stundenlohn
         else 0.0
     )
     zulagen = _chf(zulagen)
@@ -203,7 +237,16 @@ def berechnen(
     ahv_lohn = _chf(grundlohn + dreizehnter_betrag + zulagen)
     brutto = _chf(ahv_lohn + kinderzulagen)
 
-    jahresbrutto = _chf(brutto_ytd + ahv_lohn + mitarbeiter.monatslohn * (MONATE_PRO_JAHR - monat))
+    # Only used to decide whether BVG is expected at all. For a monthly salary the
+    # remaining months are known; for hourly work they are not, so the year is
+    # projected from the average actually paid so far. It is an estimate either
+    # way, and it decides a *question* ("should there be a BVG amount on file?"),
+    # never a contribution.
+    if mitarbeiter.im_stundenlohn:
+        bisher = _chf(brutto_ytd + ahv_lohn)
+        jahresbrutto = _chf(bisher / monat * MONATE_PRO_JAHR) if monat else bisher
+    else:
+        jahresbrutto = _chf(brutto_ytd + ahv_lohn + mitarbeiter.monatslohn * (MONATE_PRO_JAHR - monat))
     fehlend = fehlende_konfiguration(mitarbeiter, settings, jahresbrutto=jahresbrutto)
     if fehlend:
         raise LohnKonfigurationFehlt(fehlend)
@@ -276,6 +319,8 @@ def berechnen(
         jahr=jahr,
         monat=monat,
         anteil=anteil,
+        stunden=stunden,
+        stundenlohn=stundensatz,
         grundlohn=grundlohn,
         dreizehnter=dreizehnter_betrag,
         zulagen=zulagen,

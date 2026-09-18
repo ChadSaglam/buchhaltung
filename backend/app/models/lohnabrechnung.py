@@ -48,6 +48,10 @@ class Lohnabrechnung(Base):
 
     # Earnings.
     grundlohn: Mapped[float] = mapped_column(Chf, default=0)
+    # B-100: how the Grundlohn was arrived at. Both 0 for a monthly employee.
+    # Hours are a count, not money, so `stunden` is a plain Float.
+    stunden: Mapped[float] = mapped_column(Float, default=0)
+    stundenlohn: Mapped[float] = mapped_column(Chf, default=0)
     dreizehnter: Mapped[float] = mapped_column(Chf, default=0)
     zulagen: Mapped[float] = mapped_column(Chf, default=0)  # AHV-pflichtig (Gratifikation, Bonus)
     kinderzulagen: Mapped[float] = mapped_column(Chf, default=0)  # B-96: AHV-frei

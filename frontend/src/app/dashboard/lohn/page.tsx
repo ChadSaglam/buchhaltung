@@ -71,6 +71,9 @@ export default function LohnPage() {
             zulagen={l.zulagen}
             setZulagen={l.setZulagen}
             dreizehnter={l.dreizehnter}
+            stunden={l.stunden}
+            setStunden={l.setStunden}
+            stuendlich={l.stuendlich}
             setDreizehnter={l.setDreizehnter}
             lauf={l.lauf}
             laufFehler={l.laufFehler}

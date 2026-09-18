@@ -51,7 +51,9 @@ def mitarbeiter(**over) -> Mitarbeiter:
     values = {
         "vorname": "Anna",
         "name": "Muster",
+        "lohnart": "monat",
         "monatslohn": 6_000.0,
+        "stundenlohn": 0.0,
         "pensum": 100.0,
         "dreizehnter": False,
         "kinder": 0,
@@ -414,3 +416,111 @@ def test_no_kinderzulagen_changes_nothing():
     lauf = berechnen(mitarbeiter=mitarbeiter(), settings=settings(), jahr=2026, monat=3)
     assert lauf.kinderzulagen == 0.0
     assert lauf.ahv_lohn == lauf.brutto == 6_000.0
+
+
+# --- B-100: paid by the hour ------------------------------------------------
+#
+# The design in one line: an hourly wage changes *how the gross is arrived at*
+# and nothing else. Everything after the Grundlohn — AHV, ALV, the ALV ceiling,
+# the UVG premiums, the Familienzulagen, the employer side — is the same code
+# and must stay the same numbers.
+
+
+def stuendlich(**over) -> Mitarbeiter:
+    values = {"lohnart": "stunde", "stundenlohn": 32.50, "monatslohn": 0.0}
+    values.update(over)
+    return mitarbeiter(**values)
+
+
+def test_the_gross_is_hours_times_rate():
+    lauf = berechnen(mitarbeiter=stuendlich(), settings=settings(), jahr=2026, monat=3, stunden=120.0)
+    assert lauf.grundlohn == 3_900.0  # 120 × 32.50
+    assert lauf.stunden == 120.0
+    assert lauf.stundenlohn == 32.50
+    assert lauf.brutto == 3_900.0
+
+
+def test_the_same_deductions_apply_as_for_a_monthly_salary():
+    """The whole point of the split: only the Grundlohn line differs."""
+    stunde = berechnen(mitarbeiter=stuendlich(stundenlohn=50.0), settings=settings(), jahr=2026, monat=3, stunden=120.0)
+    monat = berechnen(mitarbeiter=mitarbeiter(monatslohn=6_000.0), settings=settings(), jahr=2026, monat=3)
+
+    assert stunde.brutto == monat.brutto == 6_000.0
+    assert stunde.ahv_lohn == monat.ahv_lohn
+    assert [(a.label, a.betrag) for a in stunde.abzuege] == [(a.label, a.betrag) for a in monat.abzuege]
+    assert stunde.netto == monat.netto
+    assert stunde.ag_total == monat.ag_total
+
+
+def test_a_part_month_is_not_counted_twice():
+    """Joining mid-month already shows up in the hours; `anteil` must not cut them again."""
+    person = stuendlich(eintritt=date(2026, 3, 16))
+    lauf = berechnen(mitarbeiter=person, settings=settings(), jahr=2026, monat=3, stunden=60.0)
+    assert lauf.anteil < 1.0  # the month really is partial
+    assert lauf.grundlohn == 1_950.0  # 60 × 32.50, not half of that
+
+
+def test_kinderzulagen_are_still_pro_rated_by_the_month():
+    """They are a monthly entitlement, not an hourly one — B-96's rule is untouched."""
+    person = stuendlich(kinderzulagen_monat=400.0, eintritt=date(2026, 3, 16))
+    lauf = berechnen(mitarbeiter=person, settings=settings(), jahr=2026, monat=3, stunden=60.0)
+    assert lauf.kinderzulagen == 200.0  # half a month
+    assert lauf.ahv_lohn == 1_950.0  # and still outside every rate's base
+    assert lauf.brutto == 2_150.0
+
+
+def test_no_hours_is_a_valid_month():
+    """Nobody worked. That is a payslip of zero, not an error."""
+    lauf = berechnen(
+        mitarbeiter=stuendlich(bvg_an_monat=None, bvg_ag_monat=None),
+        settings=settings(),
+        jahr=2026,
+        monat=1,
+        stunden=0.0,
+    )
+    assert lauf.grundlohn == 0.0
+    assert lauf.brutto == 0.0
+    assert lauf.netto == 0.0
+
+
+def test_negative_hours_cannot_reduce_a_salary():
+    lauf = berechnen(
+        mitarbeiter=stuendlich(bvg_an_monat=None, bvg_ag_monat=None),
+        settings=settings(),
+        jahr=2026,
+        monat=1,
+        stunden=-40.0,
+    )
+    assert lauf.grundlohn == 0.0
+
+
+def test_a_missing_hourly_rate_is_refused_not_treated_as_zero():
+    """Same rule as a missing UVG premium — a payslip of 0.00 looks like a real one."""
+    with pytest.raises(LohnKonfigurationFehlt) as exc:
+        berechnen(mitarbeiter=stuendlich(stundenlohn=0.0), settings=settings(), jahr=2026, monat=3, stunden=120.0)
+    assert "Stundenlohn" in exc.value.fehlend
+
+
+def test_the_thirteenth_is_not_invented_for_hourly_work():
+    """A 13th for hourly work is a percentage supplement on each payslip, which is a
+    different agreement with a different base. Paying a monthly salary that does not
+    exist would be worse than paying nothing."""
+    person = stuendlich(dreizehnter=True, monatslohn=6_000.0)
+    lauf = berechnen(mitarbeiter=person, settings=settings(), jahr=2026, monat=12, stunden=120.0, dreizehnter=True)
+    assert lauf.dreizehnter == 0.0
+    assert lauf.brutto == 3_900.0
+
+
+def test_hours_do_not_touch_the_monthly_employee():
+    """A stray `stunden` on a monthly payslip must change nothing."""
+    ohne = berechnen(mitarbeiter=mitarbeiter(), settings=settings(), jahr=2026, monat=3)
+    mit = berechnen(mitarbeiter=mitarbeiter(), settings=settings(), jahr=2026, monat=3, stunden=999.0)
+    assert (mit.brutto, mit.netto, mit.stunden, mit.stundenlohn) == (ohne.brutto, ohne.netto, 0.0, 0.0)
+
+
+def test_the_alv_ceiling_still_accumulates_across_hourly_months():
+    """The cap is annual and reads `brutto_ytd`; nothing about it is monthly."""
+    person = stuendlich(stundenlohn=1_000.0)
+    lauf = berechnen(mitarbeiter=person, settings=settings(), jahr=2026, monat=12, stunden=20.0, brutto_ytd=140_000.0)
+    alv = abzug(lauf, "ALV")
+    assert alv.basis == 8_200.0  # 148'200 − 140'000, not the full 20'000

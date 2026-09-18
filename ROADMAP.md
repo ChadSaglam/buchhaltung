@@ -311,6 +311,39 @@ was found by 1179 tests. New findings from the rest of the run get appended here
       year's text with a "still true?" prompt, and the signature block left empty. A draft the owner
       corrects is a different product from a pack that omits the document. — `L` / `L`
 
+- [x] **B-100** ✅ 2026-09-18 — **an employee is paid by the month or by the hour.**
+      Asked for by the owner on 2026-09-18: *"calislar icin maasbodrosu saatlik ve veya
+      sabit maasli olacak sekilde ayarlanabilmeli"*. Payroll knew one shape of employee —
+      a fixed monthly gross pro-rated by calendar days — and a person paid by the hour has
+      no monthly gross to pro-rate.
+      `mitarbeiter.lohnart` (`monat` | `stunde`) + `stundenlohn`, `lohnabrechnungen.stunden`
+      + `stundenlohn` (migration `f7a8b9c0d1e2`). Every existing row becomes `monat`, which
+      is exactly what it was.
+      **The design in one line: an hourly wage changes how the gross is arrived at and
+      nothing else.** AHV, ALV, the cumulative ALV ceiling, the UVG premiums, the
+      Familienzulagen and the whole employer side run the same code on the same base;
+      `test_lohn.py` asserts it by computing the same CHF 6'000 both ways and comparing
+      every deduction line.
+      Three judgements worth keeping:
+      * **The Monatsanteil is not applied to hours.** Joining on the 16th already shows up
+        in the hours entered; cutting them again would halve a half-month twice.
+      * **No 13th salary is invented for hourly work.** A 13th there is a percentage
+        supplement on each payslip (commonly 8.33 %) — a different agreement with a
+        different base. The field is replaced by the hours field, and the screen says that
+        an agreed 13th belongs in the Zulage, where it is visible and deliberate.
+      * **A missing Stundenlohn is refused, not treated as zero** — the same rule as a
+        missing UVG premium, and for the same reason: a payslip of 0.00 looks like a real one.
+      The BVG threshold needs a yearly gross, and for irregular hours there is none to know:
+      the year is projected from the average actually paid so far. It decides only *whether a
+      BVG amount should be on file*, never a contribution. Whether that matches how a
+      Pensionskasse actually estimates a Jahreslohn for irregular work is a question for the
+      Treuhänder — added to `docs/FRAGEN-AN-DEN-TREUHAENDER.md`.
+      **Found on the way:** `MITARBEITER_FELDER` never had `kinderzulagen_monat`, so B-96's
+      field validated, saved nothing and said nothing. Fixed, and `test_lohn_api.py` now
+      asserts the whitelist and `MitarbeiterBase` agree — the same two-places-one-truth
+      family again, caught this time because the suite finally runs.
+      Tests: `test_lohn.py` (+10), `test_lohn_api.py` (+3), `lohn.test.ts` (+3).
+
 - [ ] **B-101** *(from B-88)* Report an accuracy figure that describes the path receipts
       actually take. The one on the page is a cross-validation over booking texts and is
       now labelled as such — but a user scanning receipts still has no number for the

@@ -460,3 +460,72 @@ async def test_bvg_pruefung_only_sees_its_own_tenant(client, db_session, actor):
     body = (await client.get("/api/lohn/bvg-pruefung?jahr=2026", headers=auth_headers(fremd_user))).json()
 
     assert body["hinweise"] == []
+
+
+# --- the whitelist and the schema are the same truth twice --------------------
+
+
+def test_every_field_the_schema_accepts_is_a_field_the_service_writes():
+    """B-96 shipped `kinderzulagen_monat` in the schema and in the form, and the
+    service's whitelist did not have it — so the field validated, saved nothing and
+    said nothing. Found on 2026-09-18 while adding B-100.
+
+    Two lists that must agree are exactly the defect family this ROADMAP keeps
+    naming (B-83, B-85, B-86, B-87, B-90, B-92). Keeping them apart is only
+    defensible with this test in front of them.
+    """
+    from app.schemas.lohn import MitarbeiterBase
+    from app.services.lohn_service import MITARBEITER_FELDER
+
+    fehlt = set(MitarbeiterBase.model_fields) - MITARBEITER_FELDER
+    assert fehlt == set(), f"MITARBEITER_FELDER kennt diese Felder nicht: {sorted(fehlt)}"
+
+
+# --- B-100: an hourly employee end to end ------------------------------------
+
+
+async def test_an_hourly_employee_is_paid_for_the_hours_entered(client, actor):
+    _t, _u, headers = actor
+    await client.put("/api/lohn/settings", json=VOLLSTAENDIG, headers=headers)
+    person = (
+        await client.post(
+            "/api/lohn/mitarbeiter",
+            json={"vorname": "Ruedi", "name": "Stunde", "lohnart": "stunde", "stundenlohn": 32.50},
+            headers=headers,
+        )
+    ).json()
+    assert person["lohnart"] == "stunde"
+    assert person["stundenlohn"] == 32.50
+
+    res = await client.post(
+        "/api/lohn/vorschau",
+        json={"mitarbeiter_id": person["id"], "jahr": 2026, "monat": 3, "stunden": 120},
+        headers=headers,
+    )
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert body["stunden"] == 120.0
+    assert body["stundenlohn"] == 32.50
+    assert body["grundlohn"] == 3_900.0
+    assert body["brutto"] == 3_900.0
+
+
+async def test_an_hourly_employee_without_a_rate_is_refused_with_the_actionable_code(client, actor):
+    _t, _u, headers = actor
+    await client.put("/api/lohn/settings", json=VOLLSTAENDIG, headers=headers)
+    person = (
+        await client.post(
+            "/api/lohn/mitarbeiter",
+            json={"vorname": "Ohne", "name": "Satz", "lohnart": "stunde", "stundenlohn": 0},
+            headers=headers,
+        )
+    ).json()
+
+    res = await client.post(
+        "/api/lohn/vorschau",
+        json={"mitarbeiter_id": person["id"], "jahr": 2026, "monat": 3, "stunden": 120},
+        headers=headers,
+    )
+    assert res.status_code == 400
+    assert res.json()["error"]["code"] == "lohn_konfiguration_fehlt"
+    assert "Stundenlohn" in res.json()["error"]["message"]

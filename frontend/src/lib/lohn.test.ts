@@ -165,3 +165,30 @@ describe("satzPlausibilitaet", () => {
     expect(satzPlausibilitaet("ktg_satz_an", "99")).toBe("");
   });
 });
+
+// --- B-100: Monats- oder Stundenlohn -----------------------------------------
+
+describe("nettoSatz und anteilSatz kennen beide Lohnarten", () => {
+  const lauf = (over: Partial<Lohnlauf>): Lohnlauf =>
+    ({
+      mitarbeiter_id: 1, mitarbeiter: "Ruedi Stunde", jahr: 2026, monat: 3, periode: "2026-03",
+      anteil: 1, stunden: 0, stundenlohn: 0, grundlohn: 3900, dreizehnter: 0, zulagen: 0,
+      kinderzulagen: 0, ahv_lohn: 3900, brutto: 3900, abzuege: [], abzuege_total: 400, netto: 3500,
+      arbeitgeber: [], ag_total: 0, ...over,
+    }) as Lohnlauf;
+
+  it("the net sentence is the same shape for an hourly payslip", () => {
+    const satz = nettoSatz(lauf({ stunden: 120, stundenlohn: 32.5 }));
+    expect(satz).toContain("brutto");
+    expect(satz).toContain("netto");
+  });
+
+  it("a partial month is still announced for an hourly employee", () => {
+    // The hours already carry it, but the payslip should still say the month was partial.
+    expect(anteilSatz(lauf({ anteil: 0.5, stunden: 60, stundenlohn: 32.5 }))).toContain("Teilmonat");
+  });
+
+  it("a full month says nothing", () => {
+    expect(anteilSatz(lauf({ anteil: 1, stunden: 120, stundenlohn: 32.5 }))).toBe("");
+  });
+});

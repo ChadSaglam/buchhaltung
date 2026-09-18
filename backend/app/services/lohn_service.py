@@ -49,6 +49,12 @@ MAX_MITARBEITER = 500
 
 #: Fields a client may set on an employee. Everything else (tenant, timestamps)
 #: belongs to the server.
+#:
+#: This list and ``schemas.lohn.MitarbeiterBase`` are the same truth twice, and it
+#: has already gone wrong once: B-96 added ``kinderzulagen_monat`` to the schema
+#: and the form, and the API dropped it here without a word. The employee saved
+#: fine and the Zulage never arrived. ``test_lohn_api.py`` now asserts the two
+#: agree, which is the only reason it is safe to keep them apart.
 MITARBEITER_FELDER = frozenset(
     {
         "vorname",
@@ -57,10 +63,13 @@ MITARBEITER_FELDER = frozenset(
         "geburtsdatum",
         "eintritt",
         "austritt",
+        "lohnart",
         "pensum",
         "monatslohn",
+        "stundenlohn",
         "dreizehnter",
         "kinder",
+        "kinderzulagen_monat",
         "kanton",
         "quellensteuer",
         "quellensteuer_satz",
@@ -208,7 +217,14 @@ class LohnService:
         return float(sum(rows.scalars().all() or [0.0]))
 
     async def vorschau(
-        self, mitarbeiter_id: int, jahr: int, monat: int, *, zulagen: float = 0.0, dreizehnter: bool = False
+        self,
+        mitarbeiter_id: int,
+        jahr: int,
+        monat: int,
+        *,
+        zulagen: float = 0.0,
+        dreizehnter: bool = False,
+        stunden: float = 0.0,
     ) -> tuple[Mitarbeiter, Lohnlauf]:
         """What this month would pay — no row written, nothing booked."""
         person = await self.mitarbeiter(mitarbeiter_id)
@@ -223,6 +239,7 @@ class LohnService:
                 zulagen=zulagen,
                 dreizehnter=dreizehnter,
                 brutto_ytd=ytd,
+                stunden=stunden,
             )
         except LohnKonfigurationFehlt as exc:
             # A dedicated code, not a bare 400: the frontend has to send the user
@@ -231,10 +248,19 @@ class LohnService:
         return person, lauf
 
     async def abrechnen(
-        self, mitarbeiter_id: int, jahr: int, monat: int, *, zulagen: float = 0.0, dreizehnter: bool = False
+        self,
+        mitarbeiter_id: int,
+        jahr: int,
+        monat: int,
+        *,
+        zulagen: float = 0.0,
+        dreizehnter: bool = False,
+        stunden: float = 0.0,
     ) -> tuple[Lohnabrechnung, list[Booking], Mitarbeiter, Lohnlauf]:
         """Issue the payslip and book it. Idempotent by the unique constraint."""
-        person, lauf = await self.vorschau(mitarbeiter_id, jahr, monat, zulagen=zulagen, dreizehnter=dreizehnter)
+        person, lauf = await self.vorschau(
+            mitarbeiter_id, jahr, monat, zulagen=zulagen, dreizehnter=dreizehnter, stunden=stunden
+        )
         settings = await self.settings()
 
         row = Lohnabrechnung(
@@ -245,6 +271,10 @@ class LohnService:
             status=STATUS_ABGERECHNET,
             abgerechnet_am=datetime.now(UTC),
             grundlohn=lauf.grundlohn,
+            # B-100: what the Grundlohn was computed from, stored so a settled month
+            # is never re-derived from a Stundenlohn that has since been raised.
+            stunden=lauf.stunden,
+            stundenlohn=lauf.stundenlohn,
             dreizehnter=lauf.dreizehnter,
             zulagen=lauf.zulagen,
             kinderzulagen=lauf.kinderzulagen,

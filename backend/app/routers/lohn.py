@@ -74,6 +74,8 @@ def _lauf_out(
         monat=lauf.monat,
         periode=lauf.periode,
         anteil=lauf.anteil,
+        stunden=lauf.stunden,
+        stundenlohn=lauf.stundenlohn,
         grundlohn=lauf.grundlohn,
         dreizehnter=lauf.dreizehnter,
         zulagen=lauf.zulagen,
@@ -245,7 +247,12 @@ async def vorschau(
     """What this month would pay. Nothing is written and nothing is booked."""
     service = LohnService(db, user)
     person, lauf = await service.vorschau(
-        body.mitarbeiter_id, body.jahr, body.monat, zulagen=body.zulagen, dreizehnter=body.dreizehnter
+        body.mitarbeiter_id,
+        body.jahr,
+        body.monat,
+        zulagen=body.zulagen,
+        dreizehnter=body.dreizehnter,
+        stunden=body.stunden,
     )
     out = _lauf_out(person, lauf)
     await db.commit()
@@ -261,7 +268,12 @@ async def abrechnen(
     """Issue the payslip and book it. The period can only be issued once."""
     service = LohnService(db, user)
     row, bookings, person, lauf = await service.abrechnen(
-        body.mitarbeiter_id, body.jahr, body.monat, zulagen=body.zulagen, dreizehnter=body.dreizehnter
+        body.mitarbeiter_id,
+        body.jahr,
+        body.monat,
+        zulagen=body.zulagen,
+        dreizehnter=body.dreizehnter,
+        stunden=body.stunden,
     )
     await AuditLogService(user.tenant_id, db).record(
         action="lohn.abrechnung",

@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 from datetime import date, datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
 MAX_ZULAGEN = 1_000_000.0
 MAX_MONATSLOHN = 1_000_000.0
 MAX_SATZ = 100.0
+# B-100: bounds, not opinions — they exist so a typo cannot reach the ledger.
+# 24 × 31 = 744 is every hour there is in a month; nobody is paid for more.
+MAX_STUNDENLOHN = 10_000.0
+MAX_STUNDEN_MONAT = 744.0
 
 
 class LohnSettingsOut(BaseModel):
@@ -78,8 +83,14 @@ class MitarbeiterBase(BaseModel):
     geburtsdatum: date | None = None
     eintritt: date | None = None
     austritt: date | None = None
+    #: B-100: "monat" or "stunde". The two are exclusive — the unused pair of
+    #: fields is kept on the record rather than cleared, so switching back is free.
+    lohnart: Literal["monat", "stunde"] = "monat"
     pensum: float = Field(default=100.0, ge=0, le=100)
     monatslohn: float = Field(default=0.0, ge=0, le=MAX_MONATSLOHN)
+    #: B-100: gross per hour. Compulsory when lohnart is "stunde"; the engine
+    #: refuses the payslip rather than treating a missing rate as zero.
+    stundenlohn: float = Field(default=0.0, ge=0, le=MAX_STUNDENLOHN)
     dreizehnter: bool = False
     kinder: int = Field(default=0, ge=0, le=20)
     kanton: str = Field(default="", max_length=2)
@@ -126,6 +137,10 @@ class LohnlaufOut(BaseModel):
     periode: str
     #: 1.0 for a whole month; less when the employee joined or left mid-month.
     anteil: float
+    #: B-100: hours entered for this run, and the rate they were paid at.
+    #: Both 0 for a monthly employee.
+    stunden: float = 0.0
+    stundenlohn: float = 0.0
     grundlohn: float
     dreizehnter: float
     zulagen: float
@@ -150,6 +165,8 @@ class LohnlaufRequest(BaseModel):
     monat: int = Field(ge=1, le=12)
     zulagen: float = Field(default=0.0, ge=0, le=MAX_ZULAGEN)
     dreizehnter: bool = False
+    #: B-100: hours worked in this period. Ignored for a monthly employee.
+    stunden: float = Field(default=0.0, ge=0, le=MAX_STUNDEN_MONAT)
 
 
 class AbrechnungListItem(BaseModel):

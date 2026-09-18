@@ -88,6 +88,21 @@ können:
 | 23 | Beteiligungen und eigene Stimmanteile — weiterhin keine? |
 | 24 | Wer unterschreibt, mit welcher Funktion? |
 
+### Stundenlohn (neu seit 18.09.2026)
+
+Das Programm kann jetzt auch Mitarbeitende im Stundenlohn abrechnen. Zwei Punkte
+können wir nicht aus der Gesetzeslage ableiten, weil sie von der Kasse und vom
+Vertrag abhängen:
+
+| # | Was | Warum |
+|---|---|---|
+| 25 | Wie schätzt die **Pensionskasse den Jahreslohn** bei unregelmässigen Stunden? | Er entscheidet, ob jemand BVG-pflichtig ist. Wir hochrechnen zurzeit den Durchschnitt der bisher bezahlten Monate aufs Jahr — das ist eine Annahme, keine Regel |
+| 26 | Wird bei Stundenlöhnern ein **13. Monatslohn** als Zuschlag pro Abrechnung vergütet, und mit welchem Prozentsatz? | Üblich sind 8.33 %, aber das steht im Arbeitsvertrag. Wir rechnen ihn bewusst **nicht** automatisch — er muss als Zulage erfasst werden, sonst erfindet das Programm eine Vereinbarung |
+
+Bei **Ferienentschädigung** (oft 8.33 % bzw. 10.64 %) gilt dasselbe: falls sie
+ausbezahlt statt bezogen wird, gehört sie heute in die Zulage. Ob das für diesen
+Betrieb zutrifft, sagt der Arbeitsvertrag.
+
 ---
 
 ## Nebenbei aufgefallen, nicht dringend

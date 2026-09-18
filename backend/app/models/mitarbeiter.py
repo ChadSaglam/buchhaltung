@@ -29,6 +29,13 @@ from app.models.types import Chf
 
 PENSUM_VOLL = 100.0
 
+# B-100: how this person is paid. Two shapes, and they are exclusive on purpose —
+# a person on a fixed monthly salary *plus* an hourly rate is two employments, and
+# Swiss payroll treats them as two Lohnausweise, not one payslip with two bases.
+LOHNART_MONAT = "monat"
+LOHNART_STUNDE = "stunde"
+LOHNARTEN = (LOHNART_MONAT, LOHNART_STUNDE)
+
 
 class Mitarbeiter(Base):
     __tablename__ = "mitarbeiter"
@@ -45,8 +52,14 @@ class Mitarbeiter(Base):
     eintritt: Mapped[date | None] = mapped_column(Date, nullable=True)
     austritt: Mapped[date | None] = mapped_column(Date, nullable=True)  # None = still employed
 
+    # B-100: "monat" or "stunde". Everything below reads differently depending on it:
+    # ``pensum`` and ``monatslohn`` describe a monthly employee, ``stundenlohn`` and
+    # the hours entered per run describe an hourly one. The unused pair is ignored
+    # rather than cleared, so switching back does not lose what was on file.
+    lohnart: Mapped[str] = mapped_column(String(10), default=LOHNART_MONAT)
     pensum: Mapped[float] = mapped_column(Float, default=PENSUM_VOLL)
     monatslohn: Mapped[float] = mapped_column(Chf, default=0)  # gross for a full month at this Pensum
+    stundenlohn: Mapped[float] = mapped_column(Chf, default=0)  # gross per hour, when lohnart == "stunde"
     dreizehnter: Mapped[bool] = mapped_column(Boolean, default=False)
     kinder: Mapped[int] = mapped_column(Integer, default=0)
     # B-96: Familienzulagen are paid with the salary and are NOT part of the
@@ -71,6 +84,10 @@ class Mitarbeiter(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+    @property
+    def im_stundenlohn(self) -> bool:
+        return self.lohnart == LOHNART_STUNDE
 
     @property
     def anzeige_name(self) -> str:

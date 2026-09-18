@@ -14,7 +14,9 @@ const LEER = {
   name: "",
   ahv_nummer: "",
   eintritt: "",
+  lohnart: "monat" as "monat" | "stunde",
   monatslohn: "",
+  stundenlohn: "",
   bvg_an_monat: "",
   bvg_ag_monat: "",
   kinderzulagen_monat: "",
@@ -42,6 +44,8 @@ export function MitarbeiterListe({
   const setFeld = (feld: keyof typeof LEER, value: string) =>
     setEntwurf((current) => ({ ...current, [feld]: value }));
 
+  const stuendlich = entwurf.lohnart === "stunde";
+
   const anlegen = async () => {
     setSaving(true);
     try {
@@ -50,7 +54,11 @@ export function MitarbeiterListe({
         name: entwurf.name,
         ahv_nummer: entwurf.ahv_nummer,
         eintritt: entwurf.eintritt || null,
-        monatslohn: betragWert(entwurf.monatslohn) ?? 0,
+        lohnart: entwurf.lohnart,
+        // B-100: the two are exclusive, so only the one in use is sent. Leaving a
+        // stale Monatslohn on an hourly employee would show a salary nobody is paid.
+        monatslohn: stuendlich ? 0 : (betragWert(entwurf.monatslohn) ?? 0),
+        stundenlohn: stuendlich ? (betragWert(entwurf.stundenlohn) ?? 0) : 0,
         bvg_an_monat: betragWert(entwurf.bvg_an_monat),
         bvg_ag_monat: betragWert(entwurf.bvg_ag_monat),
         kinderzulagen_monat: betragWert(entwurf.kinderzulagen_monat) ?? 0,
@@ -96,9 +104,35 @@ export function MitarbeiterListe({
           <SettingsField label="Eintritt">
             <SettingsInput label="Eintrittsdatum" type="date" value={entwurf.eintritt} onChange={(v) => setFeld("eintritt", v)} />
           </SettingsField>
-          <SettingsField label="Monatslohn (CHF)" description="Brutto für einen ganzen Monat">
-            <SettingsInput label="Monatslohn" value={entwurf.monatslohn} onChange={(v) => setFeld("monatslohn", v)} placeholder="6000" />
+          {/* B-100: how this person is paid decides which field below means anything. */}
+          <SettingsField label="Bezahlt nach" description="Fester Monatslohn oder Stundenlohn. Alles Weitere — AHV, ALV, UVG, Zulagen — ist in beiden Fällen gleich.">
+            <div className="flex gap-4">
+              {(["monat", "stunde"] as const).map((art) => (
+                <label key={art} className="flex items-center gap-2 text-sm text-foreground">
+                  <input
+                    type="radio"
+                    name="lohnart"
+                    value={art}
+                    checked={entwurf.lohnart === art}
+                    onChange={() => setFeld("lohnart", art)}
+                  />
+                  {art === "monat" ? "Monat" : "Stunde"}
+                </label>
+              ))}
+            </div>
           </SettingsField>
+          {stuendlich ? (
+            <SettingsField
+              label="Stundenlohn (CHF)"
+              description="Brutto pro Stunde. Die Stunden selbst werden pro Abrechnung erfasst — ein Teilmonat steckt schon in den Stunden und wird nicht zusätzlich gekürzt."
+            >
+              <SettingsInput label="Stundenlohn" value={entwurf.stundenlohn} onChange={(v) => setFeld("stundenlohn", v)} placeholder="32.50" />
+            </SettingsField>
+          ) : (
+            <SettingsField label="Monatslohn (CHF)" description="Brutto für einen ganzen Monat">
+              <SettingsInput label="Monatslohn" value={entwurf.monatslohn} onChange={(v) => setFeld("monatslohn", v)} placeholder="6000" />
+            </SettingsField>
+          )}
           <SettingsField
             label="BVG pro Monat (CHF)"
             description="Aus der Abrechnung der Pensionskasse — Arbeitnehmer / Arbeitgeber"
@@ -121,7 +155,11 @@ export function MitarbeiterListe({
             <SettingsInput label="Quellensteuersatz" value={entwurf.quellensteuer_satz} onChange={(v) => setFeld("quellensteuer_satz", v)} />
           </SettingsField>
           <div className="mt-4 flex justify-end">
-            <Button onClick={anlegen} loading={saving} disabled={saving || !entwurf.name.trim()}>
+            <Button
+              onClick={anlegen}
+              loading={saving}
+              disabled={saving || !entwurf.name.trim() || (stuendlich && !betragWert(entwurf.stundenlohn))}
+            >
               Anlegen
             </Button>
           </div>
@@ -132,7 +170,7 @@ export function MitarbeiterListe({
         <EmptyState
           as="h3"
           title="Noch niemand angelegt"
-          description="Lohn braucht mindestens eine Person mit Monatslohn."
+          description="Lohn braucht mindestens eine Person — im Monats- oder im Stundenlohn."
         />
       ) : (
         <ul className="divide-y divide-border">
@@ -146,7 +184,9 @@ export function MitarbeiterListe({
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-sm tabular-nums text-foreground">{formatCHF(person.monatslohn)}</span>
+                <span className="text-sm tabular-nums text-foreground">
+                  {person.lohnart === "stunde" ? `${formatCHF(person.stundenlohn)} / h` : formatCHF(person.monatslohn)}
+                </span>
                 {person.austritt && <Badge tone="neutral">ausgetreten</Badge>}
                 {person.quellensteuer && <Badge tone="info">Quellensteuer</Badge>}
               </div>

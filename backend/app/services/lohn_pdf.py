@@ -130,7 +130,15 @@ def abrechnung_pdf(
     )
     columns = _spalten()
 
-    lohn: list[Row] = [Row(["Grundlohn", "", "", fmt_swiss(row.grundlohn)])]
+    # B-100: an hourly payslip has to show the arithmetic it was paid on. "Grundlohn
+    # 1'734.00" with nothing beside it is unreadable to the person who worked the
+    # hours — the Satz column carries the rate and the Basis column the hours.
+    if row.stundenlohn:
+        lohn: list[Row] = [
+            Row(["Stundenlohn", fmt_swiss(row.stundenlohn), f"{row.stunden:.2f} h", fmt_swiss(row.grundlohn)])
+        ]
+    else:
+        lohn = [Row(["Grundlohn", "", "", fmt_swiss(row.grundlohn)])]
     if row.dreizehnter:
         lohn.append(Row(["13. Monatslohn", "", "", fmt_swiss(row.dreizehnter)]))
     if row.zulagen:

@@ -29,6 +29,10 @@ interface Props {
   setZulagen: (v: string) => void;
   dreizehnter: boolean;
   setDreizehnter: (v: boolean) => void;
+  /** B-100: hours for this period, only meaningful when `stuendlich`. */
+  stunden: string;
+  setStunden: (v: string) => void;
+  stuendlich: boolean;
   lauf: Lohnlauf | null;
   laufFehler: string;
   busy: boolean;
@@ -107,9 +111,22 @@ export function AbrechnungPanel(p: Props) {
         <SettingsInput label="Zulagen" value={p.zulagen} onChange={p.setZulagen} placeholder="0" />
       </SettingsField>
 
-      <SettingsField label="13. Monatslohn" description="Wird anteilig nach Anstellungsdauer berechnet">
-        <SettingsToggle label="Mit diesem Monat auszahlen" checked={p.dreizehnter} onChange={p.setDreizehnter} />
-      </SettingsField>
+      {/* B-100: the hours replace the 13th field, because neither applies to the
+          other kind of employee. A 13th for hourly work is a percentage supplement
+          on each payslip — a different agreement with a different base — so the
+          engine refuses to invent one, and this says so instead of hiding it. */}
+      {p.stuendlich ? (
+        <SettingsField
+          label="Stunden in diesem Monat"
+          description="Ein Teilmonat steckt schon in den Stunden und wird nicht zusätzlich gekürzt. Ein 13. Monatslohn wird im Stundenlohn nicht automatisch gerechnet — falls vereinbart, gehört er als Zulage hierher."
+        >
+          <SettingsInput label="Stunden" value={p.stunden} onChange={p.setStunden} placeholder="z. B. 120" />
+        </SettingsField>
+      ) : (
+        <SettingsField label="13. Monatslohn" description="Wird anteilig nach Anstellungsdauer berechnet">
+          <SettingsToggle label="Mit diesem Monat auszahlen" checked={p.dreizehnter} onChange={p.setDreizehnter} />
+        </SettingsField>
+      )}
 
       <div className="mt-4 flex flex-wrap gap-2">
         <Button
@@ -167,7 +184,15 @@ function Lohnzettel({ lauf }: { lauf: Lohnlauf }) {
       </div>
       {teilmonat && <p className="mb-3 text-xs text-muted-foreground">{teilmonat}</p>}
 
-      <Zeile label="Grundlohn" betrag={lauf.grundlohn} />
+      {lauf.stundenlohn > 0 ? (
+        <Zeile
+          label="Stundenlohn"
+          zusatz={`${lauf.stunden.toFixed(2)} h × ${formatCHF(lauf.stundenlohn)}`}
+          betrag={lauf.grundlohn}
+        />
+      ) : (
+        <Zeile label="Grundlohn" betrag={lauf.grundlohn} />
+      )}
       {lauf.dreizehnter > 0 && <Zeile label="13. Monatslohn" betrag={lauf.dreizehnter} />}
       {lauf.zulagen > 0 && <Zeile label="Zulagen" betrag={lauf.zulagen} />}
       {lauf.kinderzulagen > 0 && <Zeile label="Kinderzulagen" betrag={lauf.kinderzulagen} />}

@@ -42,6 +42,9 @@ export function useLohn() {
   const [gewaehlt, setGewaehlt] = useState<number | null>(null);
   const [zulagen, setZulagen] = useState("");
   const [dreizehnter, setDreizehnter] = useState(false);
+  // B-100: hours for this period. Only read when the selected person is paid by
+  // the hour; the backend ignores it otherwise.
+  const [stunden, setStunden] = useState("");
 
   const [lauf, setLauf] = useState<Lohnlauf | null>(null);
   const [laufFehler, setLaufFehler] = useState("");
@@ -73,8 +76,9 @@ export function useLohn() {
       monat,
       zulagen: betragWert(zulagen) ?? 0,
       dreizehnter,
+      stunden: betragWert(stunden) ?? 0,
     }),
-    [gewaehlt, jahr, monat, zulagen, dreizehnter],
+    [gewaehlt, jahr, monat, zulagen, dreizehnter, stunden],
   );
 
   const vorschau = useCallback(async () => {
@@ -203,6 +207,13 @@ export function useLohn() {
       setDreizehnter(value);
       setLauf(null);
     },
+    stunden,
+    setStunden: (value: string) => {
+      setStunden(value);
+      setLauf(null);
+    },
+    /** B-100: whether the selected person is paid by the hour. */
+    stuendlich: person?.lohnart === "stunde",
     lauf,
     laufFehler,
     busy,
