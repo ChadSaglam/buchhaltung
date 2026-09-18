@@ -26,7 +26,7 @@ export default function InsightsPage() {
     <div className="space-y-6">
       <PageHeader
         icon={Sparkles}
-        title="Insights & Suche"
+        title="Buchungen & Suche"
         subtitle="Buchungen in natürlicher Sprache durchsuchen, Monatsauswertung und Auffälligkeiten"
         action={
           <Button variant="ghost" size="sm" icon={<RefreshCw className="h-4 w-4" />} onClick={load} disabled={loading}>

@@ -18,7 +18,7 @@ const MAP: Record<string, QuickAction[]> = {
   "/dashboard": [
     { label: "Kontoauszug", href: "/dashboard/bank", icon: FileText },
     { label: "Scanner", href: "/dashboard/belege/scanner", icon: ScanLine },
-    { label: "Insights", href: "/dashboard/bank/buchungen", icon: Sparkles },
+    { label: "Buchungen", href: "/dashboard/bank/buchungen", icon: Sparkles },
   ],
   "/dashboard/bank": [
     { label: "Scanner öffnen", href: "/dashboard/belege/scanner", icon: ScanLine },
