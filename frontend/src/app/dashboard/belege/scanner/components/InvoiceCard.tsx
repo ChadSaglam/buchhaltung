@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { MWST_CODE_OPTIONS, MWST_PCT_OPTIONS, type ExtractedInvoice } from "../types";
 import { sourceIcon, formatCHF } from "../helpers";
+import { mwstRichtungErklaerung, mwstRichtungLabel, mwstSatzLabel } from "@/lib/mwst-richtung";
 
 interface InvoiceCardProps {
   invoice?: ExtractedInvoice;
@@ -397,7 +398,12 @@ export function InvoiceCard({ invoice, index, onUpdate, onAddToBookings, added }
                     ))}
                   </select>
                 ) : (
-                  <p className="text-sm text-foreground">{safeInvoice.mwst_pct ? `${safeInvoice.mwst_pct}%` : "–"}</p>
+                  // B-93: show the rate, name the direction — the minus is a convention.
+                  <p className="text-sm text-foreground" title={mwstRichtungErklaerung(safeInvoice.mwst_pct)}>
+                    {safeInvoice.mwst_pct
+                      ? `${mwstSatzLabel(safeInvoice.mwst_pct)} ${mwstRichtungLabel(safeInvoice.mwst_pct)}`.trim()
+                      : "–"}
+                  </p>
                 )}
               </Field>
             </div>

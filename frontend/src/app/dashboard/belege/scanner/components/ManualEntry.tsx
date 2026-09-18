@@ -7,6 +7,7 @@ import api from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import type { BuchungRow } from "../types";
 import { calcMwst } from "../helpers";
+import { mwstRichtungErklaerung, mwstRichtungLabel, mwstSatzLabel } from "@/lib/mwst-richtung";
 
 interface ManualEntryProps {
   onAddRow: (row: BuchungRow) => void;
@@ -102,7 +103,9 @@ export function ManualEntry({ onAddRow, nextNr }: ManualEntryProps) {
           <div className="flex items-center gap-4 text-sm">
             <span className="font-mono text-foreground"><strong>Soll:</strong> {result.kt_soll}</span>
             <span className="font-mono text-foreground"><strong>Haben:</strong> {result.kt_haben}</span>
-            <span className="text-foreground"><strong>MwSt:</strong> {result.mwst_code} {result.mwst_pct}%</span>
+            <span className="text-foreground" title={mwstRichtungErklaerung(result.mwst_pct)}>
+              <strong>MwSt:</strong> {result.mwst_code} {mwstSatzLabel(result.mwst_pct)} {mwstRichtungLabel(result.mwst_pct)}
+            </span>
             <span className="text-muted-foreground">({(result.confidence * 100).toFixed(0)}% · {result.source})</span>
           </div>
           <Button

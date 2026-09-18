@@ -38,6 +38,26 @@ export function filterMemory(entries: MemoryEntry[], filter: string) {
   );
 }
 
+/**
+ * B-88: what the Genauigkeit figure actually measures — one sentence, one place.
+ *
+ * It is a cross-validation over the tenant's own *booking* descriptions: short,
+ * clean, bank-shaped strings like `Agrola, TS`. What the scanner hands the
+ * classifier is OCR off a till receipt — `LANDI THULA TopShop Matzingen BLEIFREI
+ * 95`. Different length, different vocabulary, different distribution. Measured
+ * on the first real run (762 of the owner's 2024 bookings): `Agrola, TS` →
+ * Gedächtnis, 6210, 100 %. The real receipt line → the ML's own top-5 put the
+ * *wrong* account first at 22 %; the keyword rule rescued it at 72 %.
+ *
+ * The pipeline works as designed. The problem was that the number the page leads
+ * with belongs to a layer that was not consulted, and the page did not say so.
+ */
+export const GENAUIGKEIT_BASIS = "Cross-Validation auf Buchungstexten";
+export const GENAUIGKEIT_ERKLAERUNG =
+  "Gemessen an Buchungstexten, wie sie im Kontoauszug stehen (z. B. «Agrola, TS»). " +
+  "Was der Scanner von einem Kassenbon liest, sieht anders aus — dort tragen " +
+  "Gedächtnis und Regeln den grössten Teil. Diese Zahl sagt nichts über Belege.";
+
 export function isOverfit(trainAccuracy: number, acc: number) {
   return trainAccuracy > 0 && acc > 0 && trainAccuracy - acc > 0.15;
 }

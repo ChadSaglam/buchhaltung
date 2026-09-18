@@ -4,7 +4,15 @@ import { useEffect, useState } from "react";
 import { Check, Save } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { SettingsField, SettingsInput, SettingsToggle } from "../../settings/components/SettingsPrimitives";
-import { FREIWILLIGE_SAETZE, PFLICHTSAETZE, freigabeSatz, satzWert, type LohnSettings } from "@/lib/lohn";
+import {
+  AMTLICHE_QUELLEN,
+  FREIWILLIGE_SAETZE,
+  PFLICHTSAETZE,
+  freigabeSatz,
+  satzPlausibilitaet,
+  satzWert,
+  type LohnSettings,
+} from "@/lib/lohn";
 
 const ALLE = [...PFLICHTSAETZE.map((s) => s.feld), ...FREIWILLIGE_SAETZE.map((s) => s.feld)] as const;
 type Feld = (typeof ALLE)[number];
@@ -74,21 +82,52 @@ export function RatenForm({
       </div>
 
       {settings?.quelle && (
-        <p className="mb-2 rounded-lg border border-border bg-surface p-3 text-xs leading-snug text-muted-foreground">
-          {settings.quelle}
-        </p>
+        <div className="mb-2 rounded-lg border border-border bg-surface p-3 text-xs leading-snug text-muted-foreground">
+          <p>{settings.quelle}</p>
+          {/* B-98: link the official pages, and only those — a dead or wrong link
+              inside a payroll product is worse than no link. */}
+          <p className="mt-1 flex flex-wrap gap-x-3">
+            {AMTLICHE_QUELLEN.map((q) => (
+              <a
+                key={q.href}
+                href={q.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-2 hover:text-foreground"
+              >
+                {q.label}
+              </a>
+            ))}
+          </p>
+        </div>
       )}
 
-      {PFLICHTSAETZE.map((satz) => (
-        <SettingsField key={satz.feld} label={`${satz.label} (%)`} description={satz.hinweis}>
-          <SettingsInput
-            label={`${satz.label} in Prozent`}
-            value={entwurf[satz.feld] ?? ""}
-            onChange={(v) => setFeld(satz.feld, v)}
-            placeholder="z. B. 1.6"
-          />
-        </SettingsField>
-      ))}
+      {/* B-98 Stufe 1: name the document each figure is printed on, and catch a
+          misplaced decimal point before it reaches a payslip. */}
+      {PFLICHTSAETZE.map((satz) => {
+        const warnung = satzPlausibilitaet(satz.feld, entwurf[satz.feld] ?? "");
+        return (
+          <SettingsField
+            key={satz.feld}
+            label={`${satz.label} (%)`}
+            description={`${satz.hinweis} · Steht auf: ${satz.dokument}`}
+          >
+            <div>
+              <SettingsInput
+                label={`${satz.label} in Prozent`}
+                value={entwurf[satz.feld] ?? ""}
+                onChange={(v) => setFeld(satz.feld, v)}
+                placeholder="z. B. 1.6"
+              />
+              {warnung && (
+                <p role="status" className="mt-1 text-xs text-warning">
+                  {warnung}
+                </p>
+              )}
+            </div>
+          </SettingsField>
+        );
+      })}
 
       <h3 className="mt-6 text-sm font-medium text-foreground">Freiwillige Versicherungen</h3>
       <p className="mb-1 text-xs text-muted-foreground">

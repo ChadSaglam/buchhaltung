@@ -149,20 +149,17 @@ was found by 1179 tests. New findings from the rest of the run get appended here
       `seed_tenant` vs a real chart on 2200/2205 (B-85), the import's count vs the KPI card (B-86),
       and this. Worth a sweep of its own once the tour is done.
 
-- [ ] **B-88** The 86.7 % on the Modell page does not describe the path receipts take, and the page
-      does not say so. It is a cross-validation over Banana descriptions — short, clean, bank-shaped
-      strings like `Agrola, TS`. What the scanner hands the classifier is OCR off a till receipt:
-      `LANDI THULA TopShop Matzingen BLEIFREI 95`. Different length, different vocabulary, different
-      distribution.
-      Measured on the first real run, on a model trained from 762 of the owner's own 2024 bookings:
-      `Agrola, TS` → Gedächtnis, 6210, 100 % (ML agrees at 89 %). The real receipt line → the ML's
-      own top-5 reads **5820 Spesen 22 %, 6210 14 %, 6500 14 %** — it puts the *wrong* account first.
-      The keyword rule (Stufe 3) rescued it and returned the right answer at 72 %.
-      So the layered pipeline works exactly as designed, and that is the point: **the number the page
-      leads with belongs to a layer that was not consulted.** A user reads 86.7 % and trusts the
-      scanner by that much. Options, cheapest first: label the figure for what it measures; report a
-      second figure over receipt-shaped text; or train on the descriptions the scanner actually
-      produces. Do not just raise the number. — `S` / `M`
+- [x] **B-88** ✅ 2026-09-18 — Stufe 1 shipped: the figure now says what it measures.
+      `GENAUIGKEIT_BASIS` / `GENAUIGKEIT_ERKLAERUNG` live in one place
+      (`modell/helpers.ts`) and are read by both the stat tile and the accuracy card —
+      the sub-label is «Cross-Validation auf Buchungstexten», and under the bar:
+      *"Gemessen an Buchungstexten, wie sie im Kontoauszug stehen (z. B. «Agrola, TS»).
+      Was der Scanner von einem Kassenbon liest, sieht anders aus — dort tragen
+      Gedächtnis und Regeln den grössten Teil. Diese Zahl sagt nichts über Belege."*
+      The number itself is untouched; it was never wrong, only unlabelled.
+      **Still open (the `M` half):** report a second figure measured over
+      receipt-shaped text, or train on the descriptions the scanner actually
+      produces. Filed as B-101.
 
 - [x] **B-89** ✅ 2026-09-18 — shipped. `documents.paid_at_source` (migration
       `e6f7a8b9c0d1`). `status` keeps both of its meanings and this column separates
@@ -215,11 +212,15 @@ was found by 1179 tests. New findings from the rest of the run get appended here
       states for the VAT return. Tests: `test_classifier.py` (blank + the four real statement
       texts + a matching keyword still wins), `bank/helpers.test.ts` (`ohneVorschlag`).
 
-- [ ] **B-93** *(downgraded to L, 2026-09-18)* The minus on `V81 / -8.10` is a deliberate
-      convention, not a bug: `classifier.py:128` — *"a negative rate (Umsatzsteuer) flips the
-      sign"* — negative means VAT owed, positive means VAT reclaimable, and the VAT return
-      computes correctly. What remains is that an internal sign convention reaches the user's
-      screen with no explanation. Show `8.10` with a direction label, or tooltip the sign. — `L` / `S`
+- [x] **B-93** ✅ 2026-09-18 — shipped. `lib/mwst-richtung.ts`: the rate is printed
+      without its sign and the direction is named instead — `8.10 % geschuldet`
+      (Umsatzsteuer, we owe it) or `8.10 % Vorsteuer` (we paid it and reclaim it),
+      with the full sentence on hover. The convention itself is unchanged —
+      `classifier.py:128` still flips the sign and the VAT return still computes from
+      it — only the internal marker stops reaching the screen unexplained. One module,
+      read by the Bank table, the scanner card and the Beleg, because this is the
+      "two places, one truth" family (B-83/B-85/B-86/B-87/B-90/B-92) and three copies
+      of a sign convention is how that family starts. Tests: `mwst-richtung.test.ts` (5).
 
 - [ ] **B-94** Check the Pensionskasse base against the Koordinationsabzug, and say which plan shape
       is assumed. On the real June 2026 payslip brought to the first run, the pension contribution is
@@ -270,26 +271,23 @@ was found by 1179 tests. New findings from the rest of the run get appended here
       above ~1 % is almost certainly a contribution-based rate in the wrong field), or offer the base
       as a choice beside the number. — `S` / `M`
 
-- [ ] **B-98** Help the user find the four rates instead of telling them to go look. The page is
-      right that UVG BU, FAK and the Verwaltungskostenbeitrag **cannot** be defaulted — BU is a
-      per-company risk class, FAK is cantonal *and* per-Kasse, and the admin fee is per-Kasse — and
-      it says why, well: *"eine geschätzte Prämie sieht wie eine richtige aus"*. But "steht im
-      Vertrag mit Ihrer Versicherung oder wird vom Kanton bestimmt" is where the help stops, and a
-      first-time user does not know which letter that is.
-      Two levels, cheapest first. **Per field, name the document**: UVG BU is on the annual
-      Prämienrechnung from the accident insurer; FAK and the Verwaltungskostenbeitrag are both on
-      the Ausgleichskasse's Beitragsverfügung, usually on the same line block as the AHV rate. Add a
-      plausibility range per field so a decimal-point slip is caught.
-      **Then the one worth building: read them off the document.** The product already OCRs a
-      thermal till receipt correctly (stage 4 of the first run). A Beitragsverfügung and a
-      Prämienrechnung are cleaner inputs than that. "Drop your two letters here" turns the setup
-      from a filing-cabinet errand into the thing this product is already good at — and it is the
-      product's own thesis applied to its own onboarding.
-      **Link only to official sources, and keep the pattern the page already uses** for AHV/ALV:
-      ahv-iv.ch Merkblatt 2.01 and 2.08, cited with the date the figures were checked (verified
-      correct on 2026-09-17: AHV/IV/EO 10.6 %, ALV 2.2 % to CHF 148'200). Commercial template sites
-      are not candidates: they can change or disappear, they carry no authority, and a dead or wrong
-      link inside a payroll product is worse than no link. — `M` / `M`
+- [~] **B-98** Stufe 1 ✅ 2026-09-18 — each field names its document. UVG BU and NBU:
+      *"Jahres-Prämienrechnung Ihres Unfallversicherers — BU und NBU stehen dort als
+      zwei getrennte Prozentsätze"*, with a note that BU hangs on the risk class. FAK
+      and Verwaltungskosten: *"Beitragsverfügung Ihrer Ausgleichskasse, meist im
+      selben Zeilenblock wie der AHV-Satz"* — and for the admin fee the reminder that
+      the Verfügung also says *wovon* the percentage is taken, which is B-97's whole
+      question. `satzPlausibilitaet` warns when a figure falls outside a wide sanity
+      band (NBU 0.4–5, BU 0.05–8, FAK 0.1–5, VK 0.1–5) with the words *"ein Komma an
+      der falschen Stelle sieht genau so aus"*. It warns and blocks nothing: the band
+      is not a published rate and the person holding the letter is right, not us. The
+      two official sources are linked next to the federal rates — ahv-iv.ch Merkblatt
+      2.01 and 2.08, nothing commercial.
+      **Still open (the one worth building):** read the two rates off the documents.
+      The product already OCRs a thermal till receipt; a Beitragsverfügung and a
+      Prämienrechnung are cleaner inputs than that. "Drop your two letters here" turns
+      the setup from a filing-cabinet errand into the thing this product is good at.
+      — `M` / `M`
 
 - [ ] **B-99** **The pack has no Anhang, and for a GmbH the Anhang is not optional.** The Treuhänder
       pack (B-17) ships `00-LIESMICH.txt`, `10-Uebersicht.pdf`, `20-Buchungen.txt`, `30-Belege/`,
@@ -312,6 +310,14 @@ was found by 1179 tests. New findings from the rest of the run get appended here
       Ship a **draft** Anhang: derived sections filled from the ledger, narrative sections as last
       year's text with a "still true?" prompt, and the signature block left empty. A draft the owner
       corrects is a different product from a pack that omits the document. — `L` / `L`
+
+- [ ] **B-101** *(from B-88)* Report an accuracy figure that describes the path receipts
+      actually take. The one on the page is a cross-validation over booking texts and is
+      now labelled as such — but a user scanning receipts still has no number for the
+      layer they are using. Two ways: measure a second figure over receipt-shaped text
+      (the scanner's own `classification_input` is already stored per document, so the
+      corrections log can supply the ground truth), or train on those descriptions.
+      Do not just raise the number. — `M` / `M`
 
 - [ ] **B-85** `seed_tenant` puts Geschuldete MWST on **2200**; real Swiss charts use **2205**.
       Importing a real Kontenplan with *Ergänzen* therefore leaves the tenant holding two accounts,

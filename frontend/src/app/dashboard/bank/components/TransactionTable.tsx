@@ -2,6 +2,7 @@ import { Check, Sparkles } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { formatAmount } from "@/lib/format";
+import { mwstRichtungErklaerung, mwstRichtungLabel, mwstSatzLabel } from "@/lib/mwst-richtung";
 import { confidenceTone, ohneVorschlag } from "../helpers";
 import type { TxRow } from "../types";
 
@@ -68,7 +69,13 @@ export function TransactionTable({ rows, onUpdate, onAccept }: Props) {
                   <td className="px-3 py-2 font-mono text-right tabular-nums text-foreground">{formatAmount(r["Betrag CHF"] || 0)}</td>
                   <td className="px-3 py-2 whitespace-nowrap">
                     {field(i, r, "MwStUSt-Code", "w-12 text-foreground", "MwSt-Code")}
-                    {r["MwSt-%"] && <span className="ml-1 text-xs text-muted-foreground tabular-nums">{r["MwSt-%"]}</span>}
+                    {/* B-93: `-8.10` is a direction, not a rate below zero. */}
+                    {r["MwSt-%"] && (
+                      <span className="ml-1 text-xs text-muted-foreground" title={mwstRichtungErklaerung(r["MwSt-%"])}>
+                        <span className="tabular-nums">{mwstSatzLabel(r["MwSt-%"])}</span>{" "}
+                        <span className="opacity-70">{mwstRichtungLabel(r["MwSt-%"])}</span>
+                      </span>
+                    )}
                   </td>
                   <td className="px-3 py-2">
                     <span title={offen ? r.begruendung : r.source ? `Quelle: ${r.source}` : undefined} className="inline-flex">

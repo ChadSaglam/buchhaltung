@@ -2,7 +2,7 @@ import { Clock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
-import { accuracyBarClass, accuracyTextClass, formatDate, isOverfit } from "../helpers";
+import { GENAUIGKEIT_ERKLAERUNG, accuracyBarClass, accuracyTextClass, formatDate, isOverfit } from "../helpers";
 import type { ModelInfo } from "../types";
 
 export function AccuracyCard({ info, acc }: { info: ModelInfo; acc: number }) {
@@ -26,6 +26,9 @@ export function AccuracyCard({ info, acc }: { info: ModelInfo; acc: number }) {
             style={{ width: `${Math.min(acc * 100, 100)}%` }}
           />
         </div>
+        {/* B-88: the figure belongs to a layer the scanner does not go through. Say so
+            where it is read, not only in a tooltip. */}
+        <p className="mt-3 text-xs text-muted-foreground">{GENAUIGKEIT_ERKLAERUNG}</p>
         <div className="flex justify-between mt-3 text-xs text-muted-foreground">
           <span className="tabular-nums">{info.total_samples} Buchungen · {info.classes} Klassen</span>
           <span className="flex items-center gap-1">

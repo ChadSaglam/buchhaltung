@@ -1,5 +1,5 @@
 import { Brain, Database, Eye, Cpu, TrendingUp } from "lucide-react";
-import { accuracyTextClass } from "../helpers";
+import { GENAUIGKEIT_BASIS, GENAUIGKEIT_ERKLAERUNG, accuracyTextClass } from "../helpers";
 import type { ModelInfo, VisionStatus } from "../types";
 import { visionAktiv } from "../helpers";
 
@@ -18,7 +18,8 @@ export function ModelStatGrid({ info, vision, acc }: ModelStatGridProps) {
         icon={<Cpu className="w-5 h-5 text-brand-600 dark:text-brand-300" />}
         label="Genauigkeit"
         value={info?.has_model ? `${(acc * 100).toFixed(1)}%` : "—"}
-        sub={info?.has_model ? "Cross-Validation" : "Nicht trainiert"}
+        sub={info?.has_model ? GENAUIGKEIT_BASIS : "Nicht trainiert"}
+        title={info?.has_model ? GENAUIGKEIT_ERKLAERUNG : undefined}
         valueClass={info?.has_model ? accuracyTextClass(acc) : "text-muted-foreground"}
       />
       <StatCard

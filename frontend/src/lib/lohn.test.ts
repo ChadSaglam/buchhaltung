@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  AMTLICHE_QUELLEN,
+  PFLICHTSAETZE,
   aktive,
   anteilSatz,
   anzeigeName,
@@ -13,6 +15,7 @@ import {
   nettoSatz,
   periodeLabel,
   satzLabel,
+  satzPlausibilitaet,
   satzWert,
   type Lohnlauf,
   type LohnSettings,
@@ -120,5 +123,45 @@ describe("Freigabe", () => {
   it("says it is cleared once signed off", () => {
     const s = { freigegeben: true, wasserzeichen: "" } as LohnSettings;
     expect(freigabeSatz(s)).toContain("ohne Wasserzeichen");
+  });
+});
+
+// --- B-98 Stufe 1: name the document, catch the decimal point ----------------
+
+describe("PFLICHTSAETZE — jedes Feld nennt sein Dokument", () => {
+  it("every compulsory rate says which letter it is printed on", () => {
+    for (const satz of PFLICHTSAETZE) {
+      expect(satz.dokument.length).toBeGreaterThan(20);
+      expect(satz.plausibel[0]).toBeLessThan(satz.plausibel[1]);
+    }
+  });
+
+  it("only official sources are linked", () => {
+    for (const q of AMTLICHE_QUELLEN) expect(q.href).toMatch(/^https:\/\/www\.ahv-iv\.ch\//);
+  });
+});
+
+describe("satzPlausibilitaet", () => {
+  it("says nothing about a normal rate", () => {
+    expect(satzPlausibilitaet("uvg_nbu_satz", "1.6")).toBe("");
+    expect(satzPlausibilitaet("fak_satz", "1.2")).toBe("");
+  });
+
+  it("the 0.5 % NBU from the owner's own June payslip is fine", () => {
+    expect(satzPlausibilitaet("uvg_nbu_satz", "0.5")).toBe("");
+  });
+
+  it("flags a misplaced decimal point without blocking it", () => {
+    expect(satzPlausibilitaet("uvg_nbu_satz", "16")).toContain("Ungewöhnlich");
+    expect(satzPlausibilitaet("fak_satz", "0.01")).toContain("Komma");
+  });
+
+  it("an empty or cleared field is not a warning", () => {
+    expect(satzPlausibilitaet("uvg_bu_satz", "")).toBe("");
+    expect(satzPlausibilitaet("uvg_bu_satz", "0")).toBe("");
+  });
+
+  it("voluntary rates have no band — absent is an answer there", () => {
+    expect(satzPlausibilitaet("ktg_satz_an", "99")).toBe("");
   });
 });
