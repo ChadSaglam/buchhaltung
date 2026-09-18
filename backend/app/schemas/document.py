@@ -37,6 +37,10 @@ class DocumentOut(BaseModel):
     mwst_code: str
     mwst_pct: str
     classification_confidence: float
+    #: B-89 — the money already left at the till (card/cash). ``status`` stays
+    #: ``offen`` until the Abgleich matches it; this is what keeps it out of
+    #: "Was schulden wir".
+    paid_at_source: bool = False
     contact_email: str
     mahnstufe: int
     mahnung_sent_at: datetime | None
@@ -59,6 +63,9 @@ class DocumentUpdate(BaseModel):
     due_date: date | None = None
     status: DocumentStatus | None = None
     direction: DocumentDirection | None = None
+    #: B-89 — "Bereits bezahlt (Karte/Bar)". The checkbox is the authority; the
+    #: scanner only pre-ticks it.
+    paid_at_source: bool | None = None
     contact_email: str | None = Field(default=None, max_length=255)
     kt_soll: str | None = Field(default=None, max_length=20)
     kt_haben: str | None = Field(default=None, max_length=20)

@@ -176,8 +176,14 @@ class LiquiditaetService:
         return result.scalar_one_or_none()
 
     async def _open_documents(self) -> list[Document]:
+        # B-89: a receipt paid by card at the till is not a future outflow — the
+        # money is already out. It stays ``offen`` only until the Abgleich matches it.
         result = await self.db.execute(
-            select(Document).where(Document.tenant_id == self.tenant_id, Document.status == STATUS_OFFEN)
+            select(Document).where(
+                Document.tenant_id == self.tenant_id,
+                Document.status == STATUS_OFFEN,
+                Document.paid_at_source.is_(False),
+            )
         )
         return [d for d in result.scalars().all() if d.amount]
 

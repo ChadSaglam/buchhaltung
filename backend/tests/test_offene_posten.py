@@ -58,9 +58,11 @@ def doc(
     mahnstufe=0,
     email="",
     doc_id=1,
+    paid_at_source=False,
 ) -> Document:
     return Document(
         id=doc_id,
+        paid_at_source=paid_at_source,
         tenant_id=1,
         status=status,
         direction=direction,
@@ -383,3 +385,42 @@ async def test_another_tenant_sees_nothing(client, db_session, actor):
     ).status_code == 404
     assert (await client.post(f"/api/offene-posten/{document.id}/mahnung", headers=other_headers)).status_code == 404
     assert (await client.get("/api/offene-posten/")).status_code == 401
+
+
+# --- B-89: a till receipt paid by card is not an open payable -------------------
+
+
+async def test_a_receipt_paid_at_the_till_is_not_something_we_owe(db_session, actor):
+    """The Landi/Agrola fuel receipt from the first real run, 2026-09-17.
+
+    It was read correctly in every field and then reported as OFFEN CHF 58.48 under
+    "Was schulden wir". `Erhalten: MASTERCARD 58.48` — the money left the account at
+    the till. It stays `offen` because the Abgleich still has to find its bank line;
+    it is not a debt while it waits.
+    """
+    tenant, user, _ = actor
+    await add(db_session, tenant, direction=DIRECTION_EINGANG, amount=200.0, due=date(2026, 9, 1), no="K-echt")
+    await add(
+        db_session,
+        tenant,
+        direction=DIRECTION_EINGANG,
+        amount=58.48,
+        due=None,
+        no="LANDI",
+        paid_at_source=True,
+    )
+
+    _debitoren, kreditoren = await OffenePostenService(db_session, user).overview(TODAY)
+    assert kreditoren.count == 1
+    assert kreditoren.total == 200.0
+    assert [i.document.invoice_no for i in kreditoren.items] == ["K-echt"]
+
+
+async def test_the_receipt_is_still_a_document_the_abgleich_must_match(db_session, actor):
+    """B-89 hides it from one list, not from the books — `status` is untouched."""
+    tenant, _user, _ = actor
+    doc_row = await add(
+        db_session, tenant, direction=DIRECTION_EINGANG, amount=58.48, due=None, no="LANDI", paid_at_source=True
+    )
+    assert doc_row.status == STATUS_OFFEN
+    assert doc_row.paid_at_source is True

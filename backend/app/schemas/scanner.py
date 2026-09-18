@@ -92,6 +92,10 @@ class ExtractedInvoice(BaseModel):
     classification_confidence: float | None = None
     classification_source: str | None = None
     classification_input: str | None = None
+    # B-89: the receipt text says the money already left at the till. A suggestion
+    # for the checkbox on the Beleg, never the last word — see
+    # ``services/bezahlt_an_der_kasse.py``.
+    bezahlt_an_der_kasse: bool = False
     # Set by extraction when a value is suspicious (e.g. amount > 50'000); the UI shows why.
     needs_review: bool = False
     review_reason: str | None = None

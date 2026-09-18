@@ -360,8 +360,19 @@ class OffenePostenService:
         return doc
 
     async def open_documents(self) -> list[Document]:
+        """Documents that are actually owed — B-89.
+
+        ``status == 'offen'`` means *not yet matched to a bank line*, which is
+        true of a fuel receipt paid by card at the till. This list answers a
+        different question ("wer schuldet uns / was schulden wir"), so it also
+        requires that the money has not already left the account.
+        """
         rows = await self.db.execute(
-            select(Document).where(Document.tenant_id == self.tenant_id, Document.status == STATUS_OFFEN)
+            select(Document).where(
+                Document.tenant_id == self.tenant_id,
+                Document.status == STATUS_OFFEN,
+                Document.paid_at_source.is_(False),
+            )
         )
         return list(rows.scalars().all())
 

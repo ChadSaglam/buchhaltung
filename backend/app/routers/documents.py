@@ -161,9 +161,11 @@ async def update_document(
         setattr(doc, field, value)
     if changes and doc.status == STATUS_FEHLER and "status" not in changes:
         doc.status, doc.error = STATUS_OFFEN, ""  # a manual correction makes a failed row usable
-    if "status" in changes:
-        # Only the status: offen ↔ bezahlt is an assertion about money, the rest
-        # is correcting what was read off the page and the row itself is the record.
+    if "status" in changes or "paid_at_source" in changes:
+        # Status and paid_at_source are assertions about money — offen ↔ bezahlt, and
+        # B-89's "the money already left at the till", which decides whether this row
+        # shows up under "Was schulden wir". The rest is correcting what was read off
+        # the page, and there the row itself is the record.
         await audit(
             db,
             user,
@@ -171,6 +173,7 @@ async def update_document(
             target_type="document",
             target_id=document_id,
             status=doc.status,
+            paid_at_source=doc.paid_at_source,
             betrag=float(doc.amount or 0.0),
         )
     await db.commit()

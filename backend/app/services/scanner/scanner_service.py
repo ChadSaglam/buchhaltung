@@ -20,6 +20,7 @@ from app.schemas.scanner import (
     ScannerExtractResponse,
     ScannerStatusResponse,
 )
+from app.services.bezahlt_an_der_kasse import bezahlt_an_der_kasse
 from app.services.classifier import TenantClassifier, calc_mwst, vat_code_for
 from app.services.ollama_vision import parse_invoice_text
 from app.services.plan_limits import PlanLimits
@@ -183,6 +184,10 @@ class ScannerService:
         data: dict[str, Any] | None = None
         ocr_provider: str | None = None
         ocr_worked = False
+        # B-89: the raw OCR text, kept only so the "bereits bezahlt" marker can be
+        # looked for. The vision branch returns structured fields and no text, so
+        # there the check falls back to vendor + description below.
+        belegtext = ""
         vision_model: str | None = None
         custom_available = ocr.is_available()
 
@@ -197,6 +202,7 @@ class ScannerService:
             attempts.extend(item.model_dump() for item in ocr_result.attempts)
             providers.extend(ocr_result.providers)
             if ocr_result.data and ocr_result.data.get("ocr_text"):
+                belegtext = str(ocr_result.data["ocr_text"])
                 parsed = parse_invoice_text(ocr_result.data["ocr_text"])
                 if parsed:
                     data = parsed
@@ -269,6 +275,15 @@ class ScannerService:
                 }
             )
 
+        # B-89: a receipt that paid itself at the till is not a payable. The extractor
+        # reads no Fälligkeitsdatum (only the QR-bill path has one, and a QR bill is a
+        # payment *request* — ``DocumentService`` never ticks this for those), so the
+        # narrowness of the marker carries the decision here. The owner can tick or
+        # untick the box on the Beleg either way.
+        data["bezahlt_an_der_kasse"] = bezahlt_an_der_kasse(
+            belegtext or f"{data.get('vendor', '')} {data.get('description', '')}",
+            hat_faelligkeit=False,
+        )
         data["source_key"] = source_key
         data["vision_model"] = vision_model or ""
         data["ocr_provider"] = ocr_provider or ""

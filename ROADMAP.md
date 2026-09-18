@@ -164,24 +164,25 @@ was found by 1179 tests. New findings from the rest of the run get appended here
       second figure over receipt-shaped text; or train on the descriptions the scanner actually
       produces. Do not just raise the number. — `S` / `M`
 
-- [ ] **B-89** A till receipt paid by card is not an open payable, and the product files it as one.
-      First real run, 2026-09-17: a Landi/Agrola fuel receipt was read correctly in every field
-      (vendor, 58.48, 07.11.2025, 6210/1020, I81 — from a phone photo of thermal paper, past the EMV
-      hashes and the barcode). It then landed as **status `offen`**, and the Belege page reported
-      **"OFFEN CHF 58.48 · 1 Rechnung"**.
-      The receipt says `Erhalten: MASTERCARD 58.48` and `DEBIT MASTERCARD contactless`. The money
-      left the account at the till on 7 November. There is no creditor and nothing is owed.
-      The root of it is that one `status` carries two different meanings and the UI shows the wrong
-      one: on the Belege list `offen` reads as *not yet reconciled against a bank line*, which is
-      true and harmless; on **Offene Posten** and the Heute card (B-65) the same rows are presented
-      as *"Was schulden wir"*, which for this row is false. The two cards sit side by side —
-      `OFFEN` next to `ÜBERFÄLLIG · Fälligkeitsdatum überschritten` — so the meaning on screen is
-      unambiguously the money-owed one. Scan a month of fuel receipts and Heute invents a debt.
-      A card receipt is detectable: `Erhalten:`/`MASTERCARD`/`contactless`/`Total-EFT` and the
-      absence of any due date (the extractor already leaves `Fällig` empty here, correctly). Such a
-      Beleg should go straight to *awaiting reconciliation* without ever being an open item.
-      Decide the shape before coding: a third status, or a `paid_at_source` flag that Offene Posten
-      filters on. — `M` / `M`
+- [x] **B-89** ✅ 2026-09-18 — shipped. `documents.paid_at_source` (migration
+      `e6f7a8b9c0d1`). `status` keeps both of its meanings and this column separates
+      them: `offen` still means *not yet matched to a bank line*, which is true of a
+      card receipt and is exactly what the Abgleich needs, while `paid_at_source` says
+      the money is already gone. The three readers that meant *owed* now filter on it —
+      Offene Posten (`open_documents`), the 90-day liquidity forecast, and the year-end
+      payables check. The Abgleich, the export batch and the Belege counts are untouched,
+      on purpose.
+      On the Beleg the owner gets a card icon to tick and untick; the row then reads
+      «Bezahlt an der Kasse» instead of «Überfällig», and `isOverdue` returns false —
+      money that left at the till cannot be late. The change is audited
+      (`document.status` carries `paid_at_source`) because it is an assertion about money.
+      The scanner pre-ticks it from the receipt text (`services/bezahlt_an_der_kasse.py`),
+      deliberately narrow: `Erhalten: MASTERCARD`, `DEBIT MASTERCARD`, `contactless`,
+      `Total-EFT`, `Barzahlung` — and *not* a bare "wir akzeptieren Mastercard" in a
+      footer, with any Fälligkeitsdatum vetoing the whole thing. A miss costs one click;
+      a false positive would hide a real debt, so the checkbox, not the OCR, is the
+      authority. Tests: `test_bezahlt_an_der_kasse.py` (6), `test_offene_posten.py` (+2
+      with the real 58.48), `belege/helpers.test.ts` (+3).
 
 - [x] **B-90** ✅ 2026-09-18 — shipped.
       Original: "Insights" is still on screen after the IA migration retired the word. `IA step 5`

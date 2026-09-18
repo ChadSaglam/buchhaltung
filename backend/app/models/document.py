@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, Float, ForeignKey, Index, Integer, String, Text, func
+from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Index, Integer, String, Text, func, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
@@ -74,6 +74,14 @@ class Document(Base):
     mwst_code: Mapped[str] = mapped_column(String(10), default="")
     mwst_pct: Mapped[str] = mapped_column(String(10), default="")
     classification_confidence: Mapped[float] = mapped_column(Float, default=0.0)
+
+    # B-89: the money already left the account when the document was created — a
+    # till receipt paid by card or cash. ``status`` stays ``offen`` because the row
+    # still has to be matched against a bank line in the Abgleich; this flag is what
+    # keeps it out of "Was schulden wir" (Offene Posten, Heute, the liquidity
+    # forecast, the year-end payables check). One status carried two meanings and the
+    # owner's fuel receipts were being counted as debt.
+    paid_at_source: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
 
     # Offene Posten (B-65): who to remind, and how often it has happened.
     contact_email: Mapped[str] = mapped_column(String(255), default="")

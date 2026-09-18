@@ -336,7 +336,12 @@ class JahresabschlussService:
 
     def _checks(self, report: JahrReport, im_jahr: list[Booking], documents: list[Document], last: date) -> list[Check]:
         ohne_konto = [b.id for b in im_jahr if not (b.kt_soll or "").strip() or not (b.kt_haben or "").strip()]
-        offene = [d for d in documents if d.status == STATUS_OFFEN and d.invoice_date and d.invoice_date <= last]
+        # B-89: paid at the till, so nothing is owed at the balance-sheet date.
+        offene = [
+            d
+            for d in documents
+            if d.status == STATUS_OFFEN and not d.paid_at_source and d.invoice_date and d.invoice_date <= last
+        ]
         nicht_exportiert = [b.id for b in im_jahr if b.export_batch_id is None]
         doppelte = duplicate_ids(im_jahr)
         mwst_streit = [b.id for b in im_jahr if vat_disagrees(b)]

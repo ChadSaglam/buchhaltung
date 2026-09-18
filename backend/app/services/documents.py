@@ -84,6 +84,7 @@ class DocumentService:
             qr_message="",
             extraction_source="",
             extraction_confidence=0.0,
+            paid_at_source=False,
             kt_soll="",
             kt_haben="",
             mwst_code="",
@@ -139,6 +140,9 @@ class DocumentService:
         doc.amount = float(amount) if amount not in (None, "", 0, 0.0) else None
         doc.invoice_no = str(data.get("invoice_number") or "")[:100]
         doc.invoice_date = parse_date(str(data.get("date") or ""))
+        # B-89: pre-tick "bereits bezahlt" when the receipt says so. Only ever set
+        # here — a QR bill (``_apply_qr``) is a request for payment, never a receipt.
+        doc.paid_at_source = bool(data.get("bezahlt_an_der_kasse"))
         doc.extraction_source = "ocr" if data.get("ocr_worked") else "vision"
         doc.extraction_confidence = 0.6 if doc.vendor and doc.amount else 0.3
         if data.get("needs_review"):
