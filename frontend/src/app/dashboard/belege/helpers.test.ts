@@ -42,3 +42,22 @@ describe("Rechnungen helpers (phase 1)", () => {
     expect(sorted.map((d) => d.id)).toEqual([3, 4, 2, 5, 6, 1]);
   });
 });
+
+// --- B-89: a till receipt paid by card is not an open payable -----------------
+
+describe("isOverdue — bereits an der Kasse bezahlt", () => {
+  const laengstFaellig = { status: "offen", due_date: "2020-01-01" } as Partial<DocumentOut>;
+
+  it("an unpaid invoice past its due date is overdue", () => {
+    expect(isOverdue(doc(laengstFaellig))).toBe(true);
+  });
+
+  it("the Landi receipt is not — the money left at the till on 7 November", () => {
+    expect(isOverdue(doc({ ...laengstFaellig, paid_at_source: true }))).toBe(false);
+  });
+
+  it("paid_at_source wins even while status is still offen for the Abgleich", () => {
+    // `offen` here means "not yet matched to a bank line", which stays true.
+    expect(isOverdue(doc({ status: "offen", due_date: "2020-01-01", paid_at_source: true }))).toBe(false);
+  });
+});

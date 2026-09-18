@@ -74,6 +74,7 @@ export default function RechnungenPage() {
             <DocumentTable
               items={r.items}
               onStatus={r.setStatus}
+              onPaidAtSource={r.setPaidAtSource}
               onSenden={(doc) => versand.oeffnen(doc.id)}
               sendenLoadingId={versand.loadingId}
             />

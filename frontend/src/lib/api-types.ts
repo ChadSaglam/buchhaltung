@@ -2346,6 +2346,11 @@ export interface components {
          *     Grenzbeträge ist das nicht dasselbe wie `jahr`.
          */
         BvgPruefungOut: {
+            /**
+             * Geprueft
+             * @default 0
+             */
+            geprueft: number;
             /** Grenzbetraege Aktuell */
             grenzbetraege_aktuell: boolean;
             /** Grenzbetraege Jahr */
@@ -2546,6 +2551,11 @@ export interface components {
             mwst_code: string;
             /** Mwst Pct */
             mwst_pct: string;
+            /**
+             * Paid At Source
+             * @default false
+             */
+            paid_at_source: boolean;
             /** Qr Iban */
             qr_iban: string;
             /** Qr Message */
@@ -2603,6 +2613,8 @@ export interface components {
             mwst_code?: string | null;
             /** Mwst Pct */
             mwst_pct?: string | null;
+            /** Paid At Source */
+            paid_at_source?: boolean | null;
             /** Status */
             status?: ("offen" | "bezahlt" | "exportiert" | "fehler") | null;
             /** Vendor */
@@ -2750,6 +2762,11 @@ export interface components {
         };
         /** ExtractedInvoice */
         ExtractedInvoice: {
+            /**
+             * Bezahlt An Der Kasse
+             * @default false
+             */
+            bezahlt_an_der_kasse: boolean;
             /** Classification Confidence */
             classification_confidence?: number | null;
             /** Classification Input */
@@ -3396,6 +3413,8 @@ export interface components {
             abzuege_total: number;
             /** Ag Total */
             ag_total: number;
+            /** Ahv Lohn */
+            ahv_lohn: number;
             /** Anteil */
             anteil: number;
             /**
@@ -3411,6 +3430,11 @@ export interface components {
             grundlohn: number;
             /** Jahr */
             jahr: number;
+            /**
+             * Kinderzulagen
+             * @default 0
+             */
+            kinderzulagen: number;
             /** Mitarbeiter */
             mitarbeiter: string;
             /** Mitarbeiter Id */
@@ -3573,6 +3597,11 @@ export interface components {
              */
             kinder: number;
             /**
+             * Kinderzulagen Monat
+             * @default 0
+             */
+            kinderzulagen_monat: number;
+            /**
              * Monatslohn
              * @default 0
              */
@@ -3655,6 +3684,11 @@ export interface components {
              */
             kinder: number;
             /**
+             * Kinderzulagen Monat
+             * @default 0
+             */
+            kinderzulagen_monat: number;
+            /**
              * Monatslohn
              * @default 0
              */
@@ -3729,6 +3763,11 @@ export interface components {
              * @default 0
              */
             kinder: number;
+            /**
+             * Kinderzulagen Monat
+             * @default 0
+             */
+            kinderzulagen_monat: number;
             /**
              * Monatslohn
              * @default 0

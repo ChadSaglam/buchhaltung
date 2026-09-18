@@ -1,6 +1,6 @@
 "use client";
 
-import { ShieldCheck, ShieldAlert } from "lucide-react";
+import { ShieldCheck, ShieldAlert, Shield } from "lucide-react";
 import type { BvgPruefungOut } from "@/lib/api-schema";
 
 /**
@@ -13,8 +13,12 @@ import type { BvgPruefungOut } from "@/lib/api-schema";
 export function BvgPruefung({ pruefung }: { pruefung: BvgPruefungOut | undefined }) {
   if (!pruefung) return null;
 
-  const sauber = pruefung.hinweise.length === 0;
-  const Icon = sauber ? ShieldCheck : ShieldAlert;
+  // B-95: a check over nobody is not a passed check. Green here on an empty
+  // tenant was the first thing a new user saw on this page, and it was the
+  // same shape as an RLS check passing on an empty database.
+  const leer = (pruefung.geprueft ?? 0) === 0;
+  const sauber = !leer && pruefung.hinweise.length === 0;
+  const Icon = leer ? Shield : sauber ? ShieldCheck : ShieldAlert;
 
   return (
     <section
@@ -23,7 +27,7 @@ export function BvgPruefung({ pruefung }: { pruefung: BvgPruefungOut | undefined
     >
       <div className="flex items-start gap-3">
         <Icon
-          className={`mt-0.5 h-5 w-5 shrink-0 ${sauber ? "text-success" : "text-warning"}`}
+          className={`mt-0.5 h-5 w-5 shrink-0 ${leer ? "text-muted-foreground" : sauber ? "text-success" : "text-warning"}`}
           aria-hidden="true"
         />
         <div className="min-w-0">
@@ -36,9 +40,14 @@ export function BvgPruefung({ pruefung }: { pruefung: BvgPruefungOut | undefined
             nur, wo sie dem Gesetz widersprechen.
           </p>
 
-          {sauber ? (
+          {leer ? (
+            <p className="mt-3 text-sm text-muted-foreground">
+              Noch nichts zu prüfen — es ist niemand angelegt.
+            </p>
+          ) : sauber ? (
             <p className="mt-3 text-sm text-foreground">
-              Kein Widerspruch zum Obligatorium gefunden.
+              Kein Widerspruch zum Obligatorium gefunden — {pruefung.geprueft}{" "}
+              {pruefung.geprueft === 1 ? "Person" : "Personen"} geprüft.
             </p>
           ) : (
             <ul className="mt-3 space-y-2">

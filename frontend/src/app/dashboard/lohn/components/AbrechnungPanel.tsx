@@ -103,7 +103,7 @@ export function AbrechnungPanel(p: Props) {
         </div>
       </SettingsField>
 
-      <SettingsField label="Zulagen (CHF)" description="Einmalige Zulage für diesen Monat">
+      <SettingsField label="Zulage, AHV-pflichtig (CHF)" description="Einmalig für diesen Monat — Gratifikation, Bonus. Kinderzulagen gehören nicht hierher: sie stehen beim Mitarbeiter und sind AHV-frei.">
         <SettingsInput label="Zulagen" value={p.zulagen} onChange={p.setZulagen} placeholder="0" />
       </SettingsField>
 
@@ -170,6 +170,7 @@ function Lohnzettel({ lauf }: { lauf: Lohnlauf }) {
       <Zeile label="Grundlohn" betrag={lauf.grundlohn} />
       {lauf.dreizehnter > 0 && <Zeile label="13. Monatslohn" betrag={lauf.dreizehnter} />}
       {lauf.zulagen > 0 && <Zeile label="Zulagen" betrag={lauf.zulagen} />}
+      {lauf.kinderzulagen > 0 && <Zeile label="Kinderzulagen" betrag={lauf.kinderzulagen} />}
       <Zeile label="Bruttolohn" betrag={lauf.brutto} stark />
 
       <p className="mt-4 mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">Abzüge</p>

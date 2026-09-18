@@ -79,6 +79,30 @@ export function useRechnungen() {
     [list, summary],
   );
 
+  /**
+   * B-89: "die war schon bezahlt". Same optimistic pattern as the status change,
+   * because it is the same kind of claim — it decides whether this row is money
+   * we still owe.
+   */
+  const setPaidAtSource = useCallback(
+    async (doc: DocumentOut, paid: boolean) => {
+      const before = list.data;
+      if (!before) return;
+      await list.mutate(
+        { ...before, items: before.items.map((d) => (d.id === doc.id ? { ...d, paid_at_source: paid } : d)) },
+        { revalidate: false },
+      );
+      try {
+        await api.patch(`/api/documents/${doc.id}`, { paid_at_source: paid });
+        await summary.mutate();
+      } catch (e) {
+        await list.mutate(before, { revalidate: false });
+        toast.error(errorMessage(e));
+      }
+    },
+    [list, summary],
+  );
+
   return {
     items,
     summary: summary.data,
@@ -91,5 +115,6 @@ export function useRechnungen() {
     uploading,
     progress,
     setStatus,
+    setPaidAtSource,
   };
 }

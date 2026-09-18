@@ -32,6 +32,9 @@ export function sourceLabel(source: string): string {
 }
 
 export function isOverdue(doc: DocumentOut, today = new Date()): boolean {
+  // B-89: money that left at the till cannot be late. `status` stays "offen"
+  // until the Abgleich matches the bank line, which is not the same claim.
+  if (doc.paid_at_source) return false;
   if (doc.status !== "offen" || !doc.due_date) return false;
   return new Date(doc.due_date + "T00:00:00") < new Date(today.toDateString());
 }

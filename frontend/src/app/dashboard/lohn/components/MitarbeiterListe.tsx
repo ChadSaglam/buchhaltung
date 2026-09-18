@@ -17,6 +17,7 @@ const LEER = {
   monatslohn: "",
   bvg_an_monat: "",
   bvg_ag_monat: "",
+  kinderzulagen_monat: "",
   quellensteuer_satz: "",
 };
 
@@ -52,6 +53,7 @@ export function MitarbeiterListe({
         monatslohn: betragWert(entwurf.monatslohn) ?? 0,
         bvg_an_monat: betragWert(entwurf.bvg_an_monat),
         bvg_ag_monat: betragWert(entwurf.bvg_ag_monat),
+        kinderzulagen_monat: betragWert(entwurf.kinderzulagen_monat) ?? 0,
         quellensteuer: Boolean(satzWert(entwurf.quellensteuer_satz)),
         quellensteuer_satz: satzWert(entwurf.quellensteuer_satz),
       });
@@ -105,6 +107,12 @@ export function MitarbeiterListe({
               <SettingsInput label="BVG Arbeitnehmer" value={entwurf.bvg_an_monat} onChange={(v) => setFeld("bvg_an_monat", v)} placeholder="AN" />
               <SettingsInput label="BVG Arbeitgeber" value={entwurf.bvg_ag_monat} onChange={(v) => setFeld("bvg_ag_monat", v)} placeholder="AG" />
             </div>
+          </SettingsField>
+          <SettingsField
+            label="Kinderzulagen pro Monat (CHF)"
+            description="Aus der Verfügung der Ausgleichskasse. Werden mit dem Lohn ausbezahlt und sind nicht AHV-pflichtig — keine Prozentzeile rechnet darauf."
+          >
+            <SettingsInput label="Kinderzulagen" value={entwurf.kinderzulagen_monat} onChange={(v) => setFeld("kinderzulagen_monat", v)} placeholder="0" />
           </SettingsField>
           <SettingsField
             label="Quellensteuer (%)"

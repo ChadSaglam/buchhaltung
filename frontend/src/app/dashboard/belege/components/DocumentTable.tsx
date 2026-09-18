@@ -1,4 +1,4 @@
-import { CheckCircle2, ExternalLink, Mail, MailCheck, QrCode, RotateCcw } from "lucide-react";
+import { CheckCircle2, CreditCard, ExternalLink, Mail, MailCheck, QrCode, RotateCcw } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -13,6 +13,8 @@ import type { DocumentOut, DocumentStatus } from "../types";
 interface Props {
   items: DocumentOut[];
   onStatus: (doc: DocumentOut, status: DocumentStatus) => void;
+  /** B-89: "war schon bezahlt" — keeps the row out of "Was schulden wir". */
+  onPaidAtSource?: (doc: DocumentOut, paid: boolean) => void;
   /** Open the mail preview for one of our own invoices (B-79). */
   onSenden?: (doc: DocumentOut) => void;
   sendenLoadingId?: number | null;
@@ -37,7 +39,7 @@ async function openFile(doc: DocumentOut) {
   }
 }
 
-export function DocumentTable({ items, onStatus, onSenden, sendenLoadingId }: Props) {
+export function DocumentTable({ items, onStatus, onPaidAtSource, onSenden, sendenLoadingId }: Props) {
   return (
     <Card>
       <div className="overflow-x-auto">
@@ -81,7 +83,9 @@ export function DocumentTable({ items, onStatus, onSenden, sendenLoadingId }: Pr
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex flex-wrap items-center gap-1">
-                      <Badge tone={STATUS_TONE[status] ?? "neutral"} dot>{overdue ? "Überfällig" : STATUS_LABEL[status] ?? d.status}</Badge>
+                      <Badge tone={d.paid_at_source && status === "offen" ? "neutral" : STATUS_TONE[status] ?? "neutral"} dot>
+                        {d.paid_at_source && status === "offen" ? "Bezahlt an der Kasse" : overdue ? "Überfällig" : STATUS_LABEL[status] ?? d.status}
+                      </Badge>
                       {d.sent_at && (
                         <span title={gesendetLabel(d.sent_at)} className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                           <MailCheck className="h-3.5 w-3.5 text-success" aria-hidden="true" />
@@ -92,6 +96,27 @@ export function DocumentTable({ items, onStatus, onSenden, sendenLoadingId }: Pr
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap">
                     <div className="flex items-center justify-end gap-1">
+                      {status === "offen" && onPaidAtSource && (
+                        <button
+                          type="button"
+                          onClick={() => onPaidAtSource(d, !d.paid_at_source)}
+                          aria-pressed={Boolean(d.paid_at_source)}
+                          title={
+                            d.paid_at_source
+                              ? "Bereits an der Kasse bezahlt (Karte/Bar) — steht nicht unter «Was schulden wir». Klicken, um das zurückzunehmen."
+                              : "War beim Kauf schon bezahlt (Karte/Bar)? Dann ist es keine offene Schuld."
+                          }
+                          aria-label={`${d.vendor || d.filename}: bereits an der Kasse bezahlt ${d.paid_at_source ? "aufheben" : "markieren"}`}
+                          className={cn(
+                            "rounded-md p-1.5 transition-colors",
+                            d.paid_at_source
+                              ? "text-success hover:bg-accent"
+                              : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                          )}
+                        >
+                          <CreditCard className="h-4 w-4" aria-hidden="true" />
+                        </button>
+                      )}
                       {status === "offen" && (
                         <Button size="xs" variant="success" onClick={() => onStatus(d, "bezahlt")} icon={<CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />} aria-label={`${d.vendor || d.filename} als bezahlt markieren`}>
                           Bezahlt
