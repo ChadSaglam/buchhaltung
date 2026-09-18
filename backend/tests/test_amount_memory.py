@@ -10,6 +10,7 @@ import pytest
 
 from app.services.classifier import (
     AMOUNT_MAX_CONFIDENCE,
+    KEIN_VORSCHLAG,
     RULE_CONFIDENCE,
     ClassificationResult,
     amount_candidate,
@@ -89,7 +90,9 @@ async def test_amount_memory_is_tenant_scoped(db_session):
     clf = await _clf(db_session, tenant_a.id)
 
     r = await clf.classify("E-BANKING-AUFTRAG", False, 42.0)
-    assert r.source == "Regeln"
+    # B-92: an E-BANKING-AUFTRAG names no counterparty, and this tenant has no
+    # memory of its own — so the answer is blank, not 6500.
+    assert r.source == KEIN_VORSCHLAG
     assert r.kt_soll != "1234"
 
 

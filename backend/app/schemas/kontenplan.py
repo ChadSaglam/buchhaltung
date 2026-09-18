@@ -58,6 +58,9 @@ class KontenplanImportZeile(BaseModel):
     grund: str = ""
     #: Zeilennummer in der Datei, damit der Nutzer sie dort wiederfindet.
     quelle: int = 0
+    #: B-85 — Nur bei "neu": bestehendes Konto mit derselben Bezeichnung unter
+    #: anderer Nummer (2200 vs. 2205). Leer heisst: kein Verdacht.
+    doppelt_zu: str = ""
 
 
 class KontenplanImportVorschau(BaseModel):
@@ -70,6 +73,8 @@ class KontenplanImportVorschau(BaseModel):
 
     zeilen: list[KontenplanImportZeile]
     entfaellt: list[str]
+    #: B-85 — wie viele neue Konten ein bestehendes unter anderer Nummer wiederholen.
+    doppelt: int = 0
     spalte_konto: str
     spalte_bezeichnung: str
     zaehler: dict[str, int]

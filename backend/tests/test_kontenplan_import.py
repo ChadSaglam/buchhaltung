@@ -25,6 +25,7 @@ from app.services.kontenplan_import import (
     KontenplanDateiFehler,
     anwenden,
     lesen,
+    normalisierte_bezeichnung,
 )
 from tests.factories import auth_headers, create_tenant, create_user
 
@@ -34,6 +35,62 @@ pytestmark = pytest.mark.asyncio
 def csv_bytes(zeilen: list[tuple[str, str]], kopf: tuple[str, str] = ("Konto", "Beschreibung")) -> bytes:
     lines = [f"{kopf[0]},{kopf[1]}"] + [f"{a},{b}" for a, b in zeilen]
     return "\n".join(lines).encode("utf-8")
+
+
+# --------------------------------------------------------------------------- #
+# B-85: the same account under two numbers
+# --------------------------------------------------------------------------- #
+
+
+async def test_the_real_2200_2205_collision_is_named():
+    """`seed_tenant` puts Geschuldete MWST on 2200; real Swiss charts use 2205.
+
+    Importing a real Kontenplan with *Ergänzen* leaves the tenant holding both,
+    with byte-identical descriptions, and nothing in the product prefers one. The
+    VAT return reads accounts and the classifier learns accounts, so picking by
+    name is picking at random.
+    """
+    bestand = {"2200": "Geschuldete MWST", "1020": "Bank"}
+    v = lesen("konten.csv", csv_bytes([("2205", "Geschuldete MWST"), ("1020", "Bank")]), bestand)
+
+    doppelt = v.doppelte()
+    assert [(z.konto, z.doppelt_zu) for z in doppelt] == [("2205", "2200")]
+
+
+async def test_spelling_and_punctuation_do_not_hide_the_collision():
+    v = lesen("konten.csv", csv_bytes([("2205", "Geschuldete MwSt.")]), {"2200": "GESCHULDETE MWST"})
+    assert v.doppelte()[0].doppelt_zu == "2200"
+
+
+async def test_no_warning_when_the_file_also_brings_the_old_number():
+    """Then the two rows are one account being renumbered, not a pair left side by side."""
+    bestand = {"2200": "Geschuldete MWST"}
+    v = lesen("konten.csv", csv_bytes([("2200", "Geschuldete MWST"), ("2205", "Geschuldete MWST")]), bestand)
+    assert v.doppelte() == []
+
+
+async def test_different_descriptions_are_different_accounts():
+    v = lesen("konten.csv", csv_bytes([("3200", "Warenertrag")]), {"4200": "Warenaufwand"})
+    assert v.doppelte() == []
+
+
+async def test_a_changed_or_unchanged_row_is_never_a_duplicate():
+    """Only a *new* number can sit next to an existing one; the others are the same konto."""
+    v = lesen("konten.csv", csv_bytes([("1020", "Bank")]), {"1020": "Bankkonto", "1021": "Bank"})
+    assert all(not z.doppelt_zu for z in v.zeilen)
+
+
+async def test_the_warning_changes_nothing_about_what_is_written():
+    """B-85 informs; which number to keep is the tenant's decision, not ours."""
+    bestand = {"2200": "Geschuldete MWST"}
+    v = lesen("konten.csv", csv_bytes([("2205", "Geschuldete MWST")]), bestand)
+    assert anwenden(bestand, v, ERGAENZEN) == {"2200": "Geschuldete MWST", "2205": "Geschuldete MWST"}
+
+
+def test_normalisierte_bezeichnung_folds_case_and_punctuation_only():
+    assert normalisierte_bezeichnung("Geschuldete MwSt.") == normalisierte_bezeichnung("GESCHULDETE  MWST")
+    assert normalisierte_bezeichnung("Warenertrag") != normalisierte_bezeichnung("Warenaufwand")
+    assert normalisierte_bezeichnung("   ") == ""
 
 
 # --------------------------------------------------------------------------- #

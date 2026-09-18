@@ -47,7 +47,13 @@ async def test_qr_bill_wins_and_scanner_is_not_called(client, actor):
     assert (doc["qr_reference"], doc["qr_iban"]) == (QRR, "CH4431999123000889012")
     assert doc["invoice_no"] == "2026-0042"
     assert doc["extraction_source"] == "qr"
-    assert doc["kt_soll"]  # classified (rules at least)
+    # B-92: "Cembra Money Bank AG" matches no keyword and this tenant has no model
+    # yet, so the classifier proposes nothing rather than a 6500 that would have
+    # been just as wrong (Cembra is 6260 in the owner's own ledger). The Beleg is
+    # created either way — the account is a field the user fills or the memory
+    # learns on the first correction.
+    assert doc["kt_soll"] == ""
+    assert doc["classification_confidence"] == 0.0
 
 
 @pytest.mark.asyncio

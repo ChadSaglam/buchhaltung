@@ -317,7 +317,8 @@ async def test_memory_of_other_tenant_is_invisible(db_session):
     clf = await _clf(db_session, tenant_a.id)
 
     result = await clf.classify("Geheimlieferant", False, 10)
-    assert result.source == "Regeln"
+    # B-92: with nothing of our own to go on, the answer is now blank rather than 6500.
+    assert result.source == KEIN_VORSCHLAG
     assert result.kt_soll != "1234"
 
 
@@ -385,8 +386,10 @@ async def test_ml_below_threshold_falls_through_to_rules(db_session):
 
     clf._model = FakeModel(["4000", "6570"], [0.44, 0.40])  # max 0.44 < 0.45 -> rules
     result = await clf.classify("Hetzner", False, 10)
-    assert result.source == "Regeln"
-    assert result.kt_soll == "6500"
+    # "Hetzner" matches no keyword either, so B-92 leaves the account empty.
+    assert result.source == KEIN_VORSCHLAG
+    assert result.kt_soll == ""
+    assert result.begruendung == KEIN_VORSCHLAG_GRUND
 
 
 @pytest.mark.asyncio
@@ -405,7 +408,7 @@ async def test_model_of_other_tenant_is_not_loaded(db_session):
     clf = await _clf(db_session, tenant_a.id)
 
     assert await clf._load_model() is None
-    assert (await clf.classify("irgendwas", False, 10)).source == "Regeln"
+    assert (await clf.classify("irgendwas", False, 10)).source == KEIN_VORSCHLAG
 
 
 @pytest.mark.asyncio
@@ -419,7 +422,7 @@ async def test_unsigned_model_blob_is_never_unpickled(db_session, caplog):
     with caplog.at_level("WARNING"):
         assert await clf._load_model() is None
     assert "not trusted" in caplog.text
-    assert (await clf.classify("irgendwas", False, 10)).source == "Regeln"
+    assert (await clf.classify("irgendwas", False, 10)).source == KEIN_VORSCHLAG
 
 
 # ── training (real sklearn, tiny dataset) ────────────────────────────────────

@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import io
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 import pandas as pd
 
@@ -76,11 +76,25 @@ class KontenplanDateiFehler(ValueError):
     """Die Datei lässt sich nicht als Kontenplan lesen."""
 
 
+def normalisierte_bezeichnung(text: str) -> str:
+    """Vergleichsform einer Kontobezeichnung — B-85.
+
+    `Geschuldete MWST`, `Geschuldete MwSt.` und `geschuldete  mwst` sind dieselbe
+    Bezeichnung. Gross-/Kleinschreibung, Satzzeichen und Mehrfachleerzeichen
+    fallen weg; der Rest bleibt, damit `Warenertrag` und `Warenaufwand` nicht
+    plötzlich dasselbe Konto sind.
+    """
+    return re.sub(r"[^a-z0-9äöüàéèç]+", "", (text or "").casefold())
+
+
 @dataclass(frozen=True)
 class Zeile:
     konto: str
     bezeichnung: str
     status: str
+    #: B-85 — Nur bei `neu`: ein Konto, das der Mandant schon hat, unter einer
+    #: anderen Nummer, mit derselben Bezeichnung. Leer heisst: kein Verdacht.
+    doppelt_zu: str = ""
     #: Nur bei `geaendert`: was heute im Mandanten steht.
     bisher: str = ""
     #: Nur bei `ungueltig`: warum.
@@ -104,6 +118,10 @@ class Vorschau:
             status: sum(1 for z in self.zeilen if z.status == status)
             for status in (NEU, GEAENDERT, UNVERAENDERT, UNGUELTIG)
         }
+
+    def doppelte(self) -> list[Zeile]:
+        """B-85 — die neuen Konten, die ein bestehendes unter anderer Nummer wiederholen."""
+        return [z for z in self.zeilen if z.doppelt_zu]
 
     def uebernehmbar(self) -> dict[str, str]:
         """Was ein Schreibschritt tatsächlich setzen würde."""
@@ -206,7 +224,38 @@ def lesen(dateiname: str, inhalt: bytes, bestand: dict[str, str]) -> Vorschau:
         raise KontenplanDateiFehler("In der Datei steht keine einzige Kontozeile.")
 
     vorschau.entfaellt = sorted(k for k in bestand if k not in gesehen)
+    vorschau.zeilen = _doppelte_markieren(vorschau.zeilen, bestand, gesehen)
     return vorschau
+
+
+def _doppelte_markieren(zeilen: list[Zeile], bestand: dict[str, str], gesehen: dict[str, int]) -> list[Zeile]:
+    """B-85: ein neues Konto, das ein bestehendes unter anderer Nummer wiederholt.
+
+    `seed_tenant` legt Geschuldete MWST auf **2200**; echte Schweizer Kontenpläne
+    verwenden **2205**. Wer seinen richtigen Plan mit *Ergänzen* importiert, hat
+    danach beide — mit byte-gleicher Bezeichnung, und nichts im Produkt zieht
+    eines davon vor. Die MWST-Abrechnung liest Konten, der Klassifizierer lernt
+    Konten, und wer nach Namen auswählt, wählt zufällig.
+
+    Gemeldet wird nur der Fall, der wirklich nebeneinander stehen bleibt: die
+    Datei nennt das bestehende Konto **nicht** (sonst wird es überschrieben oder
+    bestätigt, und es gibt kein Paar). Es ist eine Warnung, kein Eingriff —
+    `anwenden` bleibt unverändert, denn welche Nummer der Mandant behalten will,
+    weiss nur der Mandant.
+    """
+    ueberlebende: dict[str, str] = {}
+    for konto, bezeichnung in bestand.items():
+        if konto in gesehen:
+            continue
+        schluessel = normalisierte_bezeichnung(bezeichnung)
+        if schluessel and schluessel not in ueberlebende:
+            ueberlebende[schluessel] = konto
+
+    markiert: list[Zeile] = []
+    for z in zeilen:
+        treffer = ueberlebende.get(normalisierte_bezeichnung(z.bezeichnung), "") if z.status == NEU else ""
+        markiert.append(replace(z, doppelt_zu=treffer) if treffer else z)
+    return markiert
 
 
 def anwenden(bestand: dict[str, str], vorschau: Vorschau, modus: str) -> dict[str, str]:

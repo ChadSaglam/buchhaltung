@@ -73,7 +73,13 @@ export function DocumentTable({ items, onStatus, onPaidAtSource, onSenden, sende
                         <span className="text-brand-600 dark:text-brand-300">{d.kt_soll}</span> / <span className="text-success">{d.kt_haben}</span>
                         {d.mwst_code && <span className="ml-1 text-muted-foreground">{d.mwst_code}</span>}
                       </span>
-                    ) : "–"}
+                    ) : (
+                      // B-92: the classifier declined rather than guessing. Say so — a
+                      // dash reads as "nothing to do", and this row needs a person.
+                      <span className="text-warning" title="Der Klassifizierer hat kein Konto vorgeschlagen. Bitte selbst wählen — vor dem Export wird es sonst blockiert.">
+                        Konto fehlt
+                      </span>
+                    )}
                   </td>
                   <td className="px-3 py-2">
                     <span title={sourceLabel(d.extraction_source)} className="inline-flex items-center gap-1 text-xs text-muted-foreground">

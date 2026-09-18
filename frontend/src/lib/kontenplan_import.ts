@@ -59,6 +59,34 @@ export function istWirkungslos(v: KontenplanImportVorschau, modus: ImportModus):
   return v.zaehler.neu === 0 && v.zaehler.geaendert === 0;
 }
 
+/**
+ * B-85: dieselbe Bezeichnung, zwei Nummern.
+ *
+ * `seed_tenant` legt Geschuldete MWST auf **2200**, echte Schweizer Kontenpläne
+ * verwenden **2205**. Wer seinen richtigen Plan mit *Ergänzen* importiert, hat
+ * danach beide — byte-gleich benannt, und nichts im Produkt zieht eines davon
+ * vor. Die MWST-Abrechnung liest Konten, der Klassifizierer lernt Konten, und
+ * wer nach Namen auswählt, wählt zufällig.
+ *
+ * Der Assistent sagt es und tut nichts: welche Nummer bleiben soll, weiss nur
+ * der Mandant. Im Modus *Ersetzen* verschwindet das alte Konto ohnehin, also
+ * ist die Warnung dort gegenstandslos.
+ */
+export function doppelteZeilen(v: KontenplanImportVorschau): KontenplanImportZeile[] {
+  return v.zeilen.filter((z) => Boolean(z.doppelt_zu));
+}
+
+export function doppelteSatz(v: KontenplanImportVorschau, modus: ImportModus): string {
+  if (modus === "ersetzen") return "";
+  const zeilen = doppelteZeilen(v);
+  if (zeilen.length === 0) return "";
+  if (zeilen.length === 1) {
+    const z = zeilen[0];
+    return `${z.konto} «${z.bezeichnung}» heisst gleich wie Ihr bestehendes Konto ${z.doppelt_zu}. Nach dem Ergänzen stehen beide im Plan — entscheiden Sie, welche Nummer Sie behalten wollen.`;
+  }
+  return `${zeilen.length} Konten aus der Datei heissen gleich wie bestehende Konten unter anderer Nummer. Nach dem Ergänzen stehen jeweils beide im Plan.`;
+}
+
 /** Ungültige Zeilen zuerst: das ist das, was der Nutzer in seiner Datei reparieren muss. */
 export function sortiert(zeilen: KontenplanImportZeile[]): KontenplanImportZeile[] {
   const rang: Record<string, number> = { ungueltig: 0, geaendert: 1, neu: 2, unveraendert: 3 };

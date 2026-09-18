@@ -319,16 +319,35 @@ was found by 1179 tests. New findings from the rest of the run get appended here
       corrections log can supply the ground truth), or train on those descriptions.
       Do not just raise the number. — `M` / `M`
 
-- [ ] **B-85** `seed_tenant` puts Geschuldete MWST on **2200**; real Swiss charts use **2205**.
-      Importing a real Kontenplan with *Ergänzen* therefore leaves the tenant holding two accounts,
-      `2200` and `2205`, with **byte-identical descriptions** — and nothing in the product prefers
-      one. The VAT return (B-67) reads accounts, the classifier learns accounts, and a user picking
-      by name is picking at random.
-      Neither number is wrong in the abstract, so this is a decision, not a typo: either seed 2205,
-      or have the import wizard notice that an incoming account duplicates an existing one by
-      description and offer to merge. The wizard already reports `neu / geändert / unverändert /
-      nicht gelesen` per row — "duplicates an existing account" is a fifth verdict it does not have.
-      — `S` / `M`
+- [ ] **B-102** *(from B-85 and B-92)* Two small holes the last batch opened on purpose.
+      **(a)** The Kontenplan wizard now *names* a duplicate account pair (2200/2205) and
+      does nothing about it. The action — move every booking, every Memory row and every
+      KontoDefault from one number to the other, in one transaction, with an audit line —
+      is a migration inside the tenant's ledger and deserves its own design.
+      **(b)** Since B-92 a Beleg can reach the Abgleich with **no account at all**. The
+      export gate already refuses it (`export_batch.py:124` names the booking), and the
+      Belege row now says «Konto fehlt» in amber instead of a quiet dash — but
+      `abgleich.py:261` will still write a booking with an empty `kt_soll` if the user
+      confirms the match first. Refuse there, with the reason, rather than at export.
+      — `M` / `S`
+
+- [x] **B-85** ✅ 2026-09-18 — shipped as the wizard's fifth finding, not a seed change.
+      `normalisierte_bezeichnung` folds case, punctuation and double blanks (so
+      `Geschuldete MwSt.` and `GESCHULDETE MWST` are one name) but nothing else —
+      `Warenertrag` and `Warenaufwand` stay two accounts. A **new** row is marked
+      `doppelt_zu` when an existing account carries the same name under another number
+      *and the file does not mention that number*: only then do the two end up side by
+      side. In *Ersetzen* the old one disappears anyway, so the warning is not shown there.
+      `anwenden` is byte-for-byte unchanged. The wizard says which two numbers collide and
+      stops — which number the owner keeps is a decision about their own books, and a
+      wizard that silently merged 2200 into 2205 would be rewriting a Kontenplan on a
+      string comparison. Neither number is wrong in the abstract; that was the whole point
+      of the entry. Tests: `test_kontenplan_import.py` (+7, incl. the real 2200/2205),
+      `kontenplan_import.test.ts` (+4).
+      **Not done, deliberately:** the merge action itself (rewrite bookings and memory from
+      one number to the other). That is a data migration inside a tenant's ledger and wants
+      its own entry — filed as B-102.
+
 
 
 ### "Kein Treuhänder nötig" — the product track (owner, 2026-09-14; order = impact)

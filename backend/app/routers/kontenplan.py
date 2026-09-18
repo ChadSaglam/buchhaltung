@@ -82,10 +82,12 @@ def _als_vorschau(v: kontenplan_import.Vorschau) -> KontenplanImportVorschau:
                 bisher=z.bisher,
                 grund=z.grund,
                 quelle=z.quelle,
+                doppelt_zu=z.doppelt_zu,
             )
             for z in v.zeilen
         ],
         entfaellt=v.entfaellt,
+        doppelt=len(v.doppelte()),
         spalte_konto=v.spalte_konto,
         spalte_bezeichnung=v.spalte_bezeichnung,
         zaehler=v.zaehler(),

@@ -3098,6 +3098,11 @@ export interface components {
          *     "ersetzen".
          */
         KontenplanImportVorschau: {
+            /**
+             * Doppelt
+             * @default 0
+             */
+            doppelt: number;
             /** Entfaellt */
             entfaellt: string[];
             /** Spalte Bezeichnung */
@@ -3123,6 +3128,11 @@ export interface components {
              * @default
              */
             bisher: string;
+            /**
+             * Doppelt Zu
+             * @default
+             */
+            doppelt_zu: string;
             /**
              * Grund
              * @default

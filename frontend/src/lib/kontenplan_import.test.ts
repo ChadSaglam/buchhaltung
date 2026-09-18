@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { KontenplanImportVorschau, KontenplanImportZeile } from "@/lib/api-schema";
 import {
   danach,
+  doppelteSatz,
+  doppelteZeilen,
   folgenSatz,
   istWirkungslos,
   sortiert,
@@ -119,5 +121,42 @@ describe("sortiert", () => {
     ] as KontenplanImportZeile[];
     sortiert(zeilen);
     expect(zeilen[0].konto).toBe("6500");
+  });
+});
+
+// --- B-85: dieselbe Bezeichnung, zwei Nummern --------------------------------
+
+describe("doppelteSatz", () => {
+  const zeile = (over: Partial<KontenplanImportZeile>): KontenplanImportZeile =>
+    ({ konto: "2205", bezeichnung: "Geschuldete MWST", status: "neu", bisher: "", grund: "", quelle: 1, doppelt_zu: "", ...over }) as KontenplanImportZeile;
+
+  const vorschau = (zeilen: KontenplanImportZeile[]): KontenplanImportVorschau =>
+    ({
+      zeilen,
+      entfaellt: [],
+      spalte_konto: "Konto",
+      spalte_bezeichnung: "Beschreibung",
+      doppelt: zeilen.filter((z) => z.doppelt_zu).length,
+      zaehler: { neu: zeilen.length, geaendert: 0, unveraendert: 0, ungueltig: 0 },
+    }) as KontenplanImportVorschau;
+
+  it("names both numbers so the owner can choose", () => {
+    const satz = doppelteSatz(vorschau([zeile({ doppelt_zu: "2200" })]), "ergaenzen");
+    expect(satz).toContain("2205");
+    expect(satz).toContain("2200");
+  });
+
+  it("says nothing when no row collides", () => {
+    expect(doppelteSatz(vorschau([zeile({})]), "ergaenzen")).toBe("");
+  });
+
+  it("says nothing in Ersetzen — the old account is gone anyway", () => {
+    expect(doppelteSatz(vorschau([zeile({ doppelt_zu: "2200" })]), "ersetzen")).toBe("");
+  });
+
+  it("counts instead of listing when there are several", () => {
+    const v = vorschau([zeile({ doppelt_zu: "2200" }), zeile({ konto: "3201", doppelt_zu: "3200" })]);
+    expect(doppelteSatz(v, "ergaenzen")).toContain("2 Konten");
+    expect(doppelteZeilen(v)).toHaveLength(2);
   });
 });

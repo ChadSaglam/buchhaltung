@@ -9,6 +9,8 @@ import { errorMessage } from "@/lib/errors";
 import {
   STATUS_LABEL,
   STATUS_TON,
+  doppelteSatz,
+  doppelteZeilen,
   danach,
   folgenSatz,
   istWirkungslos,
@@ -140,7 +142,17 @@ export function ImportAssistent({ bestand, onFertig }: { bestand: number; onFert
                 {vorschau.zaehler[s]} {STATUS_LABEL[s]}
               </Badge>
             ))}
+            {doppelteZeilen(vorschau).length > 0 && (
+              <Badge tone="warning">{doppelteZeilen(vorschau).length} doppelt benannt</Badge>
+            )}
           </div>
+
+          {/* B-85: 2200 und 2205 heissen beide «Geschuldete MWST». Sagen, nicht handeln. */}
+          {doppelteSatz(vorschau, modus) && (
+            <p className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-xs leading-snug text-foreground">
+              {doppelteSatz(vorschau, modus)}
+            </p>
+          )}
 
           <div className="max-h-72 overflow-auto rounded-lg border border-border">
             <table className="w-full text-sm">
@@ -165,6 +177,9 @@ export function ImportAssistent({ bestand, onFertig }: { bestand: number; onFert
                     <td className="px-3 py-2">
                       <Badge tone={STATUS_TON[z.status]}>{STATUS_LABEL[z.status]}</Badge>
                       {z.grund && <span className="ml-2 text-xs text-muted-foreground">{z.grund}</span>}
+                      {z.doppelt_zu && modus === "ergaenzen" && (
+                        <span className="ml-2 text-xs text-warning">heisst gleich wie {z.doppelt_zu}</span>
+                      )}
                     </td>
                   </tr>
                 ))}
