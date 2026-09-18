@@ -183,7 +183,8 @@ was found by 1179 tests. New findings from the rest of the run get appended here
       Decide the shape before coding: a third status, or a `paid_at_source` flag that Offene Posten
       filters on. — `M` / `M`
 
-- [ ] **B-90** "Insights" is still on screen after the IA migration retired the word. `IA step 5`
+- [x] **B-90** ✅ 2026-09-18 — shipped.
+      Original: "Insights" is still on screen after the IA migration retired the word. `IA step 5`
       renamed the tab to **Buchungen** and its roadmap entry says *"insights was never a word this
       product says"* — but `bank/buchungen/page.tsx` still titles itself **"Insights & Suche"** and
       `lib/quick-actions.tsx` still offers a quick action labelled **Insights**. So the sidebar, the
@@ -191,7 +192,8 @@ was found by 1179 tests. New findings from the rest of the run get appended here
       Insights, for the same page. Same family as B-83/B-85/B-86/B-87: two places, one truth.
       — `S` / `S`
 
-- [ ] **B-91** «Alle AI-Vorschläge übernehmen» takes the uncertain ones too, and the screen says so
+- [x] **B-91** ✅ 2026-09-18 — shipped. One threshold (`SICHER_AB`), one question (`istSicher`); the button says how many it will apply.
+      Original: «Alle AI-Vorschläge übernehmen» takes the uncertain ones too, and the screen says so
       one centimetre away. First real run, 2026-09-17, on the owner's real UBS April statement:
       the header reads **«28 Transaktionen · 21 unsicher»** and immediately beside it offers a single
       button that applies all 28. One click puts 14 wrong bookings in the ledger.
@@ -218,11 +220,11 @@ was found by 1179 tests. New findings from the rest of the run get appended here
       Sarah Mäder Miete Lager → 6000 at 92 %, Die Post → 6513 at 67 %, Swiss Life → 5720 at 61 %.
       — `M` / `M`
 
-- [ ] **B-93** Check the sign on the MwSt rate for Gutschrift lines. On the same statement, revenue
-      lines show `V81 / **-8.10**` while expense lines show `I81 / 8.10`. If that minus is the rate
-      rather than the amount, every credit line carries a negative rate into the VAT return. Verify
-      against B-67's Ziffer 302/312/342 before deciding whether it is a display convention or a bug.
-      — `S` / `S`
+- [ ] **B-93** *(downgraded to L, 2026-09-18)* The minus on `V81 / -8.10` is a deliberate
+      convention, not a bug: `classifier.py:128` — *"a negative rate (Umsatzsteuer) flips the
+      sign"* — negative means VAT owed, positive means VAT reclaimable, and the VAT return
+      computes correctly. What remains is that an internal sign convention reaches the user's
+      screen with no explanation. Show `8.10` with a direction label, or tooltip the sign. — `L` / `S`
 
 - [ ] **B-94** Check the Pensionskasse base against the Koordinationsabzug, and say which plan shape
       is assumed. On the real June 2026 payslip brought to the first run, the pension contribution is
@@ -236,7 +238,8 @@ was found by 1179 tests. New findings from the rest of the run get appended here
       should name a mismatch here as a finding rather than a rounding difference.
       Owner flagged this as one to look at properly. — `M` / `M`
 
-- [ ] **B-95** The BVG card reports "Kein Widerspruch zum Obligatorium gefunden" on a tenant with
+- [x] **B-95** ✅ 2026-09-18 — shipped. `geprueft` on the response; the card reads it.
+      Original: The BVG card reports "Kein Widerspruch zum Obligatorium gefunden" on a tenant with
       **zero employees**. It is green because there is nothing to check, which is the same failure
       mode `docs/RUNBOOK-RLS-CUTOVER.md` section 4 warns about for RLS on an empty database: a check
       that passes for the wrong reason. A green badge over an empty set invites trust it has not
@@ -244,7 +247,8 @@ was found by 1179 tests. New findings from the rest of the run get appended here
       An empty check should read as *nothing to check yet*, not as *no problem found*. Sweep the
       other status badges for the same shape while in there. — `S` / `S`
 
-- [ ] **B-96** **Kinderzulagen go into the AHV base, and they must not.** `services/lohn.py:191`:
+- [x] **B-96** ✅ 2026-09-18 — shipped. `ahv_lohn` and `brutto` are two numbers now; the owner's June payslip is reproduced to the Rappen in `test_lohn.py`.
+      Original: **Kinderzulagen go into the AHV base, and they must not.** `services/lohn.py:191`:
       `brutto = grundlohn + dreizehnter + zulagen`, and every deduction is then taken on `brutto`.
       Familien-/Kinderzulagen are not AHV-pflichtig — they are not Erwerbseinkommen — so AHV, IV, EO,
       ALV, NBU, KTG and the employer side are all overstated whenever a Zulage is a child allowance.
