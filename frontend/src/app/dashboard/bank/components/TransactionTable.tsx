@@ -2,7 +2,7 @@ import { Check, Sparkles } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { formatAmount } from "@/lib/format";
-import { confidenceTone } from "../helpers";
+import { confidenceTone, ohneVorschlag } from "../helpers";
 import type { TxRow } from "../types";
 
 const COLS = ["Nr", "Datum", "Beschreibung", "KtSoll", "KtHaben", "Betrag CHF", "MwSt", "AI", "Vorschlag"];
@@ -37,6 +37,9 @@ export function TransactionTable({ rows, onUpdate, onAccept }: Props) {
           <tbody>
             {rows.map((r, i) => {
               const conf = confidenceTone(r.confidence);
+              // B-92: the classifier declined to name an account. The row is open on
+              // purpose — no red 0 %, no "Übernehmen" that would apply nothing.
+              const offen = ohneVorschlag(r);
               return (
                 <tr key={r.Nr} className="border-b border-border last:border-0 hover:bg-accent transition-colors">
                   <td className="px-3 py-2 text-muted-foreground w-12 tabular-nums">{r.Nr}</td>
@@ -55,7 +58,12 @@ export function TransactionTable({ rows, onUpdate, onAccept }: Props) {
                       </button>
                     )}
                   </td>
-                  <td className="px-3 py-2">{field(i, r, "KtSoll", "w-16 font-mono text-brand-600 dark:text-brand-300", "KtSoll")}</td>
+                  <td className="px-3 py-2">
+                    {field(i, r, "KtSoll", "w-16 font-mono text-brand-600 dark:text-brand-300", "KtSoll")}
+                    {offen && r.begruendung && (
+                      <span className="mt-0.5 block max-w-[14rem] text-xs text-muted-foreground">{r.begruendung}</span>
+                    )}
+                  </td>
                   <td className="px-3 py-2">{field(i, r, "KtHaben", "w-16 font-mono text-success", "KtHaben")}</td>
                   <td className="px-3 py-2 font-mono text-right tabular-nums text-foreground">{formatAmount(r["Betrag CHF"] || 0)}</td>
                   <td className="px-3 py-2 whitespace-nowrap">
@@ -63,8 +71,8 @@ export function TransactionTable({ rows, onUpdate, onAccept }: Props) {
                     {r["MwSt-%"] && <span className="ml-1 text-xs text-muted-foreground tabular-nums">{r["MwSt-%"]}</span>}
                   </td>
                   <td className="px-3 py-2">
-                    <span title={r.source ? `Quelle: ${r.source}` : undefined} className="inline-flex">
-                      <Badge tone={conf.tone}>{conf.label}</Badge>
+                    <span title={offen ? r.begruendung : r.source ? `Quelle: ${r.source}` : undefined} className="inline-flex">
+                      <Badge tone={offen ? "neutral" : conf.tone}>{offen ? "offen" : conf.label}</Badge>
                     </span>
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap">
@@ -72,6 +80,8 @@ export function TransactionTable({ rows, onUpdate, onAccept }: Props) {
                       <span className="inline-flex items-center gap-1 text-xs font-medium text-success">
                         <Check className="h-3.5 w-3.5" aria-hidden="true" /> Übernommen
                       </span>
+                    ) : offen ? (
+                      <span className="text-xs text-muted-foreground">Konto selbst wählen</span>
                     ) : (
                       <button
                         type="button"

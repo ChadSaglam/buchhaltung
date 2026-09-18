@@ -59,6 +59,7 @@ async def batch_classify(
                 "source": result.source,
                 "confidence": result.confidence,
                 "beschreibung_vorschlag": result.beschreibung_vorschlag,
+                "begruendung": result.begruendung,
             }
         )
 

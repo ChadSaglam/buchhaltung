@@ -4,8 +4,9 @@ Layer order in TenantClassifier.classify():
   1. credit note shortcut (is_credit)            confidence 1.0, "Regeln"
   2. exact memory hit (tenant-scoped)             confidence 1.0, "Gedächtnis"
   3. most confident of: amount memory ("Betrag", tests/test_amount_memory.py),
-     ML model if proba >= 0.45 ("ML"), keyword rules / default 6500 at 0.35 ("Regeln");
-     ties go amount → rules → ML.
+     ML model if proba >= 0.45 ("ML"), keyword rules ("Regeln"); ties go
+     amount → rules → ML. When no keyword matches and nothing else answers, the
+     result is empty at 0.0 with a reason ("Kein Vorschlag") — B-92.
 """
 
 from __future__ import annotations
@@ -24,7 +25,8 @@ from app.services.classifier import (
     AUTO_RETRAIN_THRESHOLD,
     CLASSIFICATION_RULES,
     CONFIDENCE_THRESHOLD,
-    DEFAULT_RULE_CONFIDENCE,
+    KEIN_VORSCHLAG,
+    KEIN_VORSCHLAG_GRUND,
     RULE_CONFIDENCE,
     ClassificationResult,
     TenantClassifier,
@@ -207,11 +209,32 @@ def test_rules_first_matching_rule_wins():
     assert result.kt_soll == "6570"
 
 
-def test_rules_fallback_is_6500_with_low_confidence():
+def test_rules_fallback_proposes_nothing_and_says_why():
+    """B-92: no keyword matched -> no account, not 6500.
+
+    The account it used to name carries ~1 % of a real tenant's bookings and was
+    being proposed on half a statement. A pre-filled account gets accepted; a
+    blank one gets looked at.
+    """
     result = _rules_only()._classify_rules("xqzv völlig unbekannt", 50.0)
-    assert (result.kt_soll, result.kt_haben) == ("6500", "1020")
-    assert result.confidence == DEFAULT_RULE_CONFIDENCE
+    assert (result.kt_soll, result.kt_haben) == ("", "")
+    assert result.confidence == 0.0
+    assert result.source == KEIN_VORSCHLAG
+    assert result.begruendung == KEIN_VORSCHLAG_GRUND
     assert result.mwst_amount == ""
+
+
+def test_rules_fallback_covers_the_lines_that_named_no_counterparty():
+    """The real 2026-09-17 statement: 14 of 28 lines came back 6500. These are them."""
+    for text in ("E-BANKING-SAMMELAUFTRAG", "ZAHLUNG DEBITKARTE", "ZAHLUNG QR-RECHNUNG", "LASTSCHRIFT"):
+        result = _rules_only()._classify_rules(text, 770.60)
+        assert result.kt_soll == "", text
+
+
+def test_a_matching_keyword_still_wins_over_the_blank():
+    """The blank is the floor, not a new ceiling — B-92 must not silence Stufe 3."""
+    result = _rules_only()._classify_rules("Swisscom Rechnung", 59.0)
+    assert result.kt_soll == "6500" and result.confidence >= 0.72
 
 
 def test_rules_compute_vat_from_rule_rate():
@@ -552,7 +575,9 @@ async def test_end_to_end_unknown_text_lands_in_review_queue(db_session):
 
     result = await clf.classify("xqzv völlig unbekannt", False, 12.0)
     item = await ReviewQueueService(tenant.id, db_session).enqueue_if_low_confidence("xqzv", 12.0, result)
-    assert item is not None and item.confidence == DEFAULT_RULE_CONFIDENCE
+    # B-92: it still queues — it queues *emptier* than before, which is the point.
+    assert item is not None and item.confidence == 0.0
+    assert item.predicted_soll == ""
 
 
 # --- B-48: VAT rate -> code is an exact map, not ">= 7 means 8.1" ---------------------------

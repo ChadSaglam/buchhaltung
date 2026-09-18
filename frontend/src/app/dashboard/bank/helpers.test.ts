@@ -1,7 +1,7 @@
 import type { TxRow } from "./types";
 import { describe, expect, it } from "vitest";
 
-import { SICHER_AB, confidenceTone, correctionsFor, istSicher, toRow } from "./helpers";
+import { SICHER_AB, confidenceTone, correctionsFor, istSicher, ohneVorschlag, toRow } from "./helpers";
 
 const classified = (beschreibung: string, kt_soll: string, kt_haben = "1020") =>
   toRow({ beschreibung, kt_soll, kt_haben, betrag: 10, mwst_code: "I81", mwst_pct: "8.1" }, 0);
@@ -57,5 +57,32 @@ describe("istSicher", () => {
   it("the badge and the button agree on the same line", () => {
     expect(confidenceTone(SICHER_AB).tone).toBe("success");
     expect(confidenceTone(SICHER_AB - 0.01).tone).not.toBe("success");
+  });
+});
+
+// --- B-92: a proposal the classifier does not believe is blank, not wrong -----
+
+describe("ohneVorschlag", () => {
+  it("an empty account is not a proposal — it is a row the Abgleich will resolve", () => {
+    expect(ohneVorschlag({ suggSoll: "" })).toBe(true);
+    expect(ohneVorschlag({ suggSoll: undefined })).toBe(true);
+    expect(ohneVorschlag({ suggSoll: "6260" })).toBe(false);
+  });
+
+  it("the blank rows are never counted as sicher", () => {
+    const leer = { confidence: 0, suggSoll: "" } as Pick<TxRow, "confidence" | "suggSoll">;
+    expect(istSicher(leer)).toBe(false);
+    expect(ohneVorschlag(leer)).toBe(true);
+  });
+
+  it("toRow carries the reason the backend gave, and nothing when there is none", () => {
+    const leer = toRow(
+      { beschreibung: "E-BANKING-SAMMELAUFTRAG", kt_soll: "", betrag: 770.6, confidence: 0, source: "Kein Vorschlag", begruendung: "Kein Gegenpart im Text — wird im Abgleich aufgelöst." },
+      0
+    );
+    expect(leer.KtSoll).toBe("");
+    expect(leer.begruendung).toContain("Abgleich");
+    expect(ohneVorschlag(leer)).toBe(true);
+    expect(toRow({ beschreibung: "Swisscom", kt_soll: "6500", betrag: 59 }, 0).begruendung).toBeUndefined();
   });
 });

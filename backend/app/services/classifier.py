@@ -29,7 +29,14 @@ logger = logging.getLogger(__name__)
 CONFIDENCE_THRESHOLD = 0.45
 AUTO_RETRAIN_THRESHOLD = 20
 RULE_CONFIDENCE = 0.72
-DEFAULT_RULE_CONFIDENCE = 0.35
+# B-92: a bank line whose text names no counterparty ("E-BANKING-SAMMELAUFTRAG",
+# "ZAHLUNG DEBITKARTE") used to come back as 6500 at 0.35 — an account that carries
+# about 1 % of a real tenant's bookings, proposed on half the statement. A pre-filled
+# account gets accepted; a blank one gets looked at. Same principle the VAT return
+# (B-67) already states: figures no booking supports stand visibly at 0.00 rather
+# than being guessed.
+KEIN_VORSCHLAG = "Kein Vorschlag"
+KEIN_VORSCHLAG_GRUND = "Kein Gegenpart im Text — wird im Abgleich aufgelöst."
 # Amount memory (Betrag-Gedächtnis): a bank line without a counterparty
 # ("E-BANKING-AUFTRAG 770.60") is still recognisable by its amount when the
 # tenant booked that exact amount before, consistently to one account.
@@ -262,8 +269,10 @@ CLASSIFICATION_RULES: list[tuple[list[str], str, str, str, str]] = [
         "I81",
         "8.10",
     ),
-    (["zahlung qr-rechnung", "zahlung qr"], "6500", "1020", "", ""),
-    (["lastschrift"], "6500", "1020", "", ""),
+    # B-92: "ZAHLUNG QR-RECHNUNG" and "LASTSCHRIFT" name no counterparty either —
+    # they say *how* the money moved, not to whom. They used to answer 6500 at 0.72,
+    # which is the same defect with more confidence behind it. Removed on purpose;
+    # these lines fall through to the blank proposal and are resolved in the Abgleich.
     (["clearing", "gutschrift"], "1020", "3000", "V81", "-8.10"),
     (["zahlung erhalten", "einzahlung kunde"], "1020", "1100", "", ""),
 ]
@@ -281,6 +290,8 @@ class ClassificationResult:
     # Description the tenant used for the same amount before (amount memory);
     # empty when there is nothing better than the bank text.
     beschreibung_vorschlag: str = ""
+    # B-92: why there is no account here. Set only when ``kt_soll`` is empty.
+    begruendung: str = ""
 
 
 AmountRow = tuple[str, str, str, str, str]  # beschreibung, kt_soll, kt_haben, mwst_code, mwst_pct
@@ -631,14 +642,18 @@ class TenantClassifier:
                     confidence=confidence,
                     source="Regeln",
                 )
+        # B-92: no keyword matched. Propose nothing rather than a specific wrong
+        # account — and say why, so the line reads as "open on purpose" instead of
+        # "the product had no opinion".
         return ClassificationResult(
-            kt_soll="6500",
-            kt_haben="1020",
+            kt_soll="",
+            kt_haben="",
             mwst_code="",
             mwst_pct="",
             mwst_amount="",
-            confidence=DEFAULT_RULE_CONFIDENCE,
-            source="Regeln",
+            confidence=0.0,
+            source=KEIN_VORSCHLAG,
+            begruendung=KEIN_VORSCHLAG_GRUND,
         )
 
     async def save_to_memory(

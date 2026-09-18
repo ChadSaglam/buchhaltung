@@ -14,6 +14,8 @@ export interface TxRow {
   suggHaben?: string;
   /** Description the tenant used for this amount before (Betrag-Gedächtnis); one click replaces the bank text. */
   vorschlag?: string;
+  /** B-92: why this row carries no account. Set only when `KtSoll` came back empty. */
+  begruendung?: string;
   accepted?: boolean;
 }
 

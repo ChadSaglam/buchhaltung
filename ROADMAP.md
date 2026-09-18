@@ -201,24 +201,18 @@ was found by 1179 tests. New findings from the rest of the run get appended here
       «7 sichere übernehmen» — leaving the rest to the Abgleich, which is the stage built for them.
       — `S` / `S`
 
-- [ ] **B-92** A proposal the classifier does not believe should be blank, not a specific wrong
-      account. Same run: of 28 bank lines, **14 were proposed as `6500`**, most at 35 % confidence —
-      every `E-BANKING-SAMMELAUFTRAG` and `ZAHLUNG DEBITKARTE`, the lines whose text names no
-      counterparty at all. `6500` appears in **8 of the owner's 762 real 2024 bookings** (~1 %). The
-      model is putting a 1 % account on 50 % of the statement because it has no signal and still has
-      to answer.
-      That the lines are unresolvable is known and fine — B-63 says so, and the Abgleich (B-73) is
-      where they get resolved against invoices. What is not fine is filling the field anyway: a
-      pre-filled account gets accepted, a blank one gets looked at.
-      **The product already holds the opposite principle in writing.** B-67, on the VAT return:
-      *"Ziffern, die kein Buchungssatz hergibt … stehen sichtbar auf 0.00 statt geraten zu werden."*
-      Figures no booking supports are shown as zero rather than guessed. Kontierung should obey the
-      same rule — below the threshold, propose nothing and say why ("kein Gegenpart im Text — wird
-      im Abgleich aufgelöst").
-      Measured contrast from the same screen, for the threshold discussion: where the bank text does
-      name a counterparty the model is strong — Cembra → 6260 at 92 %, Santander → 6260 at 92 %,
-      Sarah Mäder Miete Lager → 6000 at 92 %, Die Post → 6513 at 67 %, Swiss Life → 5720 at 61 %.
-      — `M` / `M`
+- [x] **B-92** ✅ 2026-09-18 — shipped. Below the line the classifier proposes **nothing** and says
+      why: `KEIN_VORSCHLAG_GRUND = "Kein Gegenpart im Text — wird im Abgleich aufgelöst."` The rules
+      fallback that answered `6500` at 0.35 is gone, and so are the two keyword rules that produced
+      the same wrong account with *more* confidence behind it (`zahlung qr-rechnung`, `lastschrift`
+      — both describe how the money moved, not to whom). `ClassificationResult` carries
+      `begruendung`; `/classify`, `/classify/predict` and `/classify/batch` return it. On the Bank
+      page such a row shows a neutral «offen» badge instead of a red 0 %, the reason under the
+      account field, and «Konto selbst wählen» instead of an Übernehmen button that would apply
+      nothing. The header counts three groups now — sicher / unsicher / ohne Vorschlag — because
+      a row with no proposal is not a proposal one is unsure about. Same principle B-67 already
+      states for the VAT return. Tests: `test_classifier.py` (blank + the four real statement
+      texts + a matching keyword still wins), `bank/helpers.test.ts` (`ohneVorschlag`).
 
 - [ ] **B-93** *(downgraded to L, 2026-09-18)* The minus on `V81 / -8.10` is a deliberate
       convention, not a bug: `classifier.py:128` — *"a negative rate (Umsatzsteuer) flips the

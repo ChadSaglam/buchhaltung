@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { ErrorState } from "@/components/shared/ErrorState";
 import { t } from "@/lib/i18n";
-import { istSicher } from "./helpers";
+import { istSicher, ohneVorschlag } from "./helpers";
 import { useKontoauszug } from "./hooks/useKontoauszug";
 import { PdfDropZone } from "./components/PdfDropZone";
 import { TransactionTable } from "./components/TransactionTable";
@@ -24,7 +24,10 @@ const enter = { initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 }, ex
 export default function KontoauszugPage() {
   const k = useKontoauszug();
   const sichere = k.rows.filter(istSicher).length;
-  const lowConfidenceCount = k.rows.length - sichere;
+  // B-92: three groups, not two. A row the classifier declined to answer is not an
+  // "unsicherer Vorschlag" — there is no proposal on it to be unsure about.
+  const offene = k.rows.filter(ohneVorschlag).length;
+  const unsichere = k.rows.length - sichere - offene;
   const busy = k.phase !== "idle";
 
   return (
@@ -66,14 +69,23 @@ export default function KontoauszugPage() {
           <motion.div key="results" {...enter} className="space-y-4">
             <div className="flex flex-wrap gap-2 items-center">
               <span className="text-sm text-muted-foreground">{k.rows.length} Transaktionen</span>
-              {lowConfidenceCount > 0 && <Badge tone="warning">{lowConfidenceCount} unsicher</Badge>}
+              {unsichere > 0 && <Badge tone="warning">{unsichere} unsicher</Badge>}
+              {offene > 0 && (
+                <Badge tone="neutral" title="Der Text nennt keinen Gegenpart. Diese Zeilen löst der Abgleich gegen Belege auf.">
+                  {offene} ohne Vorschlag
+                </Badge>
+              )}
               <Button
                 variant="secondary"
                 size="sm"
                 icon={<Sparkles className="h-3.5 w-3.5" aria-hidden="true" />}
                 onClick={k.acceptAll}
                 disabled={sichere === 0}
-                title={lowConfidenceCount > 0 ? `${lowConfidenceCount} unsichere bleiben offen — die löst der Abgleich gegen Belege auf.` : undefined}
+                title={
+                  unsichere + offene > 0
+                    ? `${unsichere + offene} Zeilen bleiben offen — die löst der Abgleich gegen Belege auf.`
+                    : undefined
+                }
               >
                 {sichere} sichere Vorschläge übernehmen
               </Button>
