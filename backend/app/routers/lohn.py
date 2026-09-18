@@ -231,6 +231,7 @@ async def bvg_pruefung(
         jahr=jahr,
         grenzbetraege_jahr=grenzen.jahr,
         grenzbetraege_aktuell=aktuell,
+        geprueft=len(leute),
         hinweise=[BvgHinweisOut(code=h.code, text=h.text, mitarbeiter_id=h.mitarbeiter_id) for h in hinweise],
     )
 

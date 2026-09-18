@@ -204,4 +204,7 @@ class BvgPruefungOut(BaseModel):
     jahr: int
     grenzbetraege_jahr: int
     grenzbetraege_aktuell: bool
+    #: B-95: how many people were actually checked. Zero hinweise over zero
+    #: people is not a clean bill of health — it is nothing to check yet.
+    geprueft: int = 0
     hinweise: list[BvgHinweisOut]

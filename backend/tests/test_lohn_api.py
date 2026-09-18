@@ -386,6 +386,18 @@ async def test_bvg_pruefung_is_quiet_for_a_compliant_plan(client, actor):
     assert body["grenzbetraege_jahr"] == 2026
     assert body["grenzbetraege_aktuell"] is True
     assert body["hinweise"] == []
+    assert body["geprueft"] == 1  # B-95: quiet *because* one person passed, not because nobody was there
+
+
+async def test_bvg_pruefung_says_when_there_was_nobody_to_check(client, actor):
+    """B-95: no hinweise over no employees is not a clean bill of health. The
+    card used to go green on an empty tenant — the same failure as an RLS check
+    passing on an empty database — so the response now carries the count and
+    the card reads it."""
+    _tenant, _user, headers = actor
+    body = (await client.get("/api/lohn/bvg-pruefung?jahr=2026", headers=headers)).json()
+    assert body["hinweise"] == []
+    assert body["geprueft"] == 0
 
 
 async def test_bvg_pruefung_reports_a_contribution_below_the_obligation(client, actor):
