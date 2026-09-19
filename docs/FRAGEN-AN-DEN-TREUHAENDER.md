@@ -99,6 +99,13 @@ Vertrag abhängen:
 | 25 | Wie schätzt die **Pensionskasse den Jahreslohn** bei unregelmässigen Stunden? | Er entscheidet, ob jemand BVG-pflichtig ist. Wir hochrechnen zurzeit den Durchschnitt der bisher bezahlten Monate aufs Jahr — das ist eine Annahme, keine Regel |
 | 26 | Wird bei Stundenlöhnern ein **13. Monatslohn** als Zuschlag pro Abrechnung vergütet, und mit welchem Prozentsatz? | Üblich sind 8.33 %, aber das steht im Arbeitsvertrag. Wir rechnen ihn bewusst **nicht** automatisch — er muss als Zulage erfasst werden, sonst erfindet das Programm eine Vereinbarung |
 
+### MWST auf eigenen Rechnungen (neu seit 19.09.2026)
+
+| # | Was | Warum |
+|---|---|---|
+| 27 | Ist die RDS Isolierungen GmbH **MWST-pflichtig / eingetragen**, und wie lautet die UID? | Die erste selbst geschriebene Rechnung weist `MWST 8.1 %` aus, im Firmenprofil steht keine MWST-Nummer. Beides zusammen geht nicht: entweder die Nummer gehört auf jede Rechnung, oder ohne Eintragung darf kein Steuersatz ausgewiesen werden. Das Programm rät hier bewusst nicht — es soll die Regel umsetzen, die für diesen Betrieb gilt |
+| 28 | Falls nicht MWST-pflichtig: soll der Satz im Firmenprofil auf **0** stehen, oder das Feld ganz ausgeblendet werden? | Entscheidet, ob die Rechnungsvorlage überhaupt eine MWST-Zeile zeigt |
+
 Bei **Ferienentschädigung** (oft 8.33 % bzw. 10.64 %) gilt dasselbe: falls sie
 ausbezahlt statt bezogen wird, gehört sie heute in die Zulage. Ob das für diesen
 Betrieb zutrifft, sagt der Arbeitsvertrag.

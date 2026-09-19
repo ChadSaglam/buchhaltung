@@ -344,6 +344,65 @@ was found by 1179 tests. New findings from the rest of the run get appended here
       family again, caught this time because the suite finally runs.
       Tests: `test_lohn.py` (+10), `test_lohn_api.py` (+3), `lohn.test.ts` (+3).
 
+- [ ] **B-103** **Die Adresse im Zahlteil war falsch, und der Zahlteil war echt.** Erster Lauf
+      der Rechnungsstellung, 2026-09-19. Das Firmenprofil hat zwei Eingabefelder unter **einer**
+      Überschrift «Strasse und Nr.»: ein breites und ein schmales. Der Eigentümer schrieb
+      `Bungertenstrasse 57` ins breite (Strasse *mit* Nummer, wie man eine Adresse schreibt) und
+      `485A` ins schmale. `swiss_qr` setzt sie als `StrtNmOrAdrLine1` und `BldgNbOrAdrLine2`
+      zusammen, also stand auf Empfangsschein und Zahlteil von Rechnung 2026-0001:
+      **`Bungertenstrasse 57 485A, 8307 Illnau-Effretikon`** — eine Adresse, die es nicht gibt.
+      Die Zahlung käme trotzdem an (IBAN und QRR tragen sie), aber das PDF geht an einen Kunden.
+      Drei Dinge, keines davon gross: das breite Feld heisst **«Strasse»**, das schmale **«Nr.»**,
+      beide mit eigenem Label statt einer gemeinsamen Überschrift; ein Platzhalter je Feld
+      (`Bungertenstrasse` · `57`); und eine Warnung, wenn im Strassenfeld hinten eine Zahl steht,
+      während das Nummernfeld auch gefüllt ist. Die Warnung ist der eigentliche Fang — Labels
+      allein wiederholen nur, was die Überschrift schon sagte. — `S` / `M`
+
+- [ ] **B-104** **Eine Rechnung mit MWST, von einer Firma ohne MWST-Nummer.** Gleicher Lauf:
+      `MWST-Nummer` im Firmenprofil leer, und Rechnung 2026-0001 weist `MWST 8.1 %` und
+      **CHF 226.80** aus. `RechnungService.profile_ready` prüft Firmenname, IBAN und PLZ/Ort — die
+      MWST-Nummer nicht, obwohl `company_profile.mwst_pct` standardmässig `8.1` ist und damit
+      jede Rechnung Steuer ausweist. Die zwei Felder gehören zusammen und tun es nicht: entweder
+      die Nummer ist Pflicht, sobald ein Satz gesetzt ist, oder ohne Nummer wird kein Satz
+      ausgewiesen. Welche Richtung richtig ist, ist eine Frage an den Treuhänder (Frage 27) —
+      hier wird nichts geraten. Die Nummer steht heute nur in der Kontaktzeile
+      (`rechnung.py:419`), wo sie leer einfach verschwindet. — `S` / `M`
+
+- [ ] **B-105** Formulare sagen nicht, was Pflicht ist, und Fehler sehen nicht nach Fehlern aus.
+      Vom Eigentümer am 2026-09-19 gefordert, quer durch die Anwendung: Pflichtfelder mit `*`
+      markieren, ein fehlerhaftes Feld rot umranden statt nur eine Meldung obendrüber zu setzen,
+      und die Meldung **an das Feld** hängen, das sie meint. Heute trägt das Firmenprofil eine
+      einzige Zeile («Noch nicht bereit. Es fehlt: IBAN.») über einem Formular mit zwölf Feldern —
+      richtig, aber der Nutzer muss suchen. Gehört in `SettingsPrimitives`, damit Lohn, Firma und
+      Mitarbeiter es gemeinsam erben und nicht dreimal gelöst wird. Farbe allein genügt nicht
+      (B-58: WCAG-AA) — `aria-invalid` und `aria-describedby` gehören dazu. — `M` / `M`
+
+- [ ] **B-106** *(aus B-103)* Adresse beim Tippen vervollständigen und gegen ein echtes Verzeichnis
+      prüfen. Zwei brauchbare Quellen, beide ohne Vertrag:
+      **Swiss Post Address Assistant** (`POST /autocomplete4`, `GET /buildingverification4`,
+      `https://webservices.post.ch:17023/IN_SYNSYN_EXT/REST/v1/`) — die Post ist die Autorität für
+      Schweizer *Post*adressen, und genau das steht im Zahlteil; die Post schreibt für diese beiden
+      Dienste ausdrücklich «no contract necessary».
+      **swisstopo** (`https://api3.geo.admin.ch/rest/services/ech/SearchServer?type=locations&origins=address`)
+      — ohne Schlüssel, ohne Registrierung, aus dem amtlichen Gebäudeadressverzeichnis; eher
+      Geocoding als Adressprüfung, aber als Fallback brauchbar.
+      Vorschlag: Post für das Formular, swisstopo als Ausweichpfad, und **beide optional** — fällt
+      der Dienst aus, bleibt die Handeingabe. Ein Adressfeld, das ohne Internet nicht mehr
+      funktioniert, wäre ein Rückschritt. Erst B-103 (Labels und Warnung), dann das hier: die
+      Vervollständigung darf die Feldtrennung nicht ersetzen, sondern nur bequemer machen. — `M` / `L`
+
+- [ ] **B-107** `make dev` und der Docker-Stack sprechen mit **zwei verschiedenen Datenbanken**, und
+      nichts sagt es laut. `.env` zeigt auf `…/buchhaltung`, `docker-compose.yml` auf
+      `chadev_buchhaltung`. Am 2026-09-19 kostete das eine halbe Stunde: Login nach `make dev`
+      schlug mit 401 fehl, weil der Mandant aus dem Tour-Lauf in der anderen Datenbank liegt, und
+      `make migrate` hatte die Migrationen in die leere geschrieben.
+      Dazu die zweite Hälfte: `make dev` verbindet als `chadev`, und das ist ein **Superuser**.
+      `FORCE ROW LEVEL SECURITY` bindet den Tabelleneigentümer, einen Superuser bindet gar nichts —
+      die Anwendung sagt es beim Start selbst (`[rls] … enforces nothing`), aber die Zeile geht im
+      Log unter. Wer lokal testet, testet also **ohne** RLS; B-82 lebte genau in dieser Lücke.
+      `scripts/dev.sh` soll beides als Block ausgeben, bevor der Server startet: welche Datenbank,
+      welche Rolle, und ob RLS greift. — `S` / `M`
+
 - [ ] **B-101** *(from B-88)* Report an accuracy figure that describes the path receipts
       actually take. The one on the page is a cross-validation over booking texts and is
       now labelled as such — but a user scanning receipts still has no number for the
