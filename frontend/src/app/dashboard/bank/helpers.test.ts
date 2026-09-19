@@ -52,7 +52,13 @@ describe("istSicher", () => {
   it("the threshold itself is sicher", () => expect(istSicher(zeile(SICHER_AB))).toBe(true));
   it("35 % is not — the Sammelaufträge from the first run", () => expect(istSicher(zeile(0.35))).toBe(false));
   it("72 % is not either, though it looks confident", () => expect(istSicher(zeile(0.72))).toBe(false));
-  it("no proposal is never sicher, whatever the number says", () => expect(istSicher(zeile(0.99, undefined))).toBe(false));
+  // Not `zeile(0.99, undefined)`: a default parameter fires on an explicit
+  // `undefined`, so that call silently kept the "6260" and asserted the opposite
+  // of what it reads like. Written 2026-09-18, first actually run 2026-09-19.
+  it("no proposal is never sicher, whatever the number says", () =>
+    expect(istSicher({ confidence: 0.99, suggSoll: undefined })).toBe(false));
+  it("and neither is an empty one — B-92 sends those now", () =>
+    expect(istSicher({ confidence: 0.99, suggSoll: "" })).toBe(false));
   it("missing confidence reads as zero, not as certain", () => expect(istSicher(zeile(undefined))).toBe(false));
   it("the badge and the button agree on the same line", () => {
     expect(confidenceTone(SICHER_AB).tone).toBe("success");
