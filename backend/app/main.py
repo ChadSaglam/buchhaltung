@@ -10,6 +10,7 @@ from app.core.errors import RequestContextMiddleware, install_error_handlers
 from app.core.logging_config import configure_logging
 from app.core.rate_limit import enforce_default_limit, limiter
 from app.core.rls import verify_rls_role
+from app.core.security_headers import SecurityHeadersMiddleware
 from app.core.sentry import configure_sentry
 from app.core.uploads import MaxBodySizeMiddleware
 from app.models.base import Base
@@ -59,6 +60,10 @@ application = FastAPI(
 # B-54: an oversized upload is refused on its Content-Length, before the router
 # and before any body is read — inside CORS, so the browser reports a 413 and
 # the user reads "file too large" instead of "network error".
+# B-108: four response headers, innermost so every response carries them —
+# including the ones the two middlewares below build for errors.
+application.add_middleware(SecurityHeadersMiddleware)
+
 application.add_middleware(MaxBodySizeMiddleware)
 
 # RequestContextMiddleware catches an unhandled exception and *builds* the 500

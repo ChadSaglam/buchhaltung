@@ -120,6 +120,8 @@ async def test_writing_an_invoice_is_recorded(client, db_session, actor):
             "plz": "8001",
             "ort": "Zürich",
             "iban": "CH4431999123000889012",
+            # B-104: the profile shows MWST 8.1 % by default, so the number is required.
+            "mwst_nr": "CHE-123.456.789 MWST",
         },
         headers=headers,
     )

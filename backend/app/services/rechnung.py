@@ -86,6 +86,19 @@ def _swiss_date(day: date | None) -> str:
     return day.strftime("%d.%m.%Y") if day else "—"
 
 
+def _weist_mwst_aus(profile: CompanyProfile) -> bool:
+    """Does this profile put a VAT rate on its invoices? — B-104.
+
+    ``mwst_pct`` is a string because that is what the Kontenplan and the
+    classifier use ("8.10", "-8.10", ""). Anything that parses to a non-zero
+    number means the invoice carries VAT; empty, "0" and nonsense mean it does not.
+    """
+    try:
+        return float(str(profile.mwst_pct or "").replace(",", ".").strip() or 0.0) != 0.0
+    except ValueError:
+        return False
+
+
 class RechnungService:
     def __init__(self, db: AsyncSession, user: User) -> None:
         self.db = db
@@ -132,6 +145,12 @@ class RechnungService:
             missing.append("IBAN")
         if not (profile.plz or "").strip() or not (profile.ort or "").strip():
             missing.append("Adresse (PLZ und Ort)")
+        # B-104: the first invoice written on 2026-09-19 showed «MWST 8.1 %» and
+        # CHF 226.80 from a profile whose MWST-Nummer was empty. The rate and the
+        # number are one statement — "we charge VAT" — and the product said half
+        # of it. Whoever shows a rate has to show the number it belongs to.
+        if _weist_mwst_aus(profile) and not (profile.mwst_nr or "").strip():
+            missing.append("MWST-Nummer (die Rechnung weist MWST aus)")
         return missing
 
     # ── Rechnungsnummer ──────────────────────────────────────────────────────

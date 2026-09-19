@@ -344,38 +344,41 @@ was found by 1179 tests. New findings from the rest of the run get appended here
       family again, caught this time because the suite finally runs.
       Tests: `test_lohn.py` (+10), `test_lohn_api.py` (+3), `lohn.test.ts` (+3).
 
-- [ ] **B-103** **Die Adresse im Zahlteil war falsch, und der Zahlteil war echt.** Erster Lauf
-      der Rechnungsstellung, 2026-09-19. Das Firmenprofil hat zwei Eingabefelder unter **einer**
-      Überschrift «Strasse und Nr.»: ein breites und ein schmales. Der Eigentümer schrieb
-      `Bungertenstrasse 57` ins breite (Strasse *mit* Nummer, wie man eine Adresse schreibt) und
-      `485A` ins schmale. `swiss_qr` setzt sie als `StrtNmOrAdrLine1` und `BldgNbOrAdrLine2`
-      zusammen, also stand auf Empfangsschein und Zahlteil von Rechnung 2026-0001:
-      **`Bungertenstrasse 57 485A, 8307 Illnau-Effretikon`** — eine Adresse, die es nicht gibt.
-      Die Zahlung käme trotzdem an (IBAN und QRR tragen sie), aber das PDF geht an einen Kunden.
-      Drei Dinge, keines davon gross: das breite Feld heisst **«Strasse»**, das schmale **«Nr.»**,
-      beide mit eigenem Label statt einer gemeinsamen Überschrift; ein Platzhalter je Feld
-      (`Bungertenstrasse` · `57`); und eine Warnung, wenn im Strassenfeld hinten eine Zahl steht,
-      während das Nummernfeld auch gefüllt ist. Die Warnung ist der eigentliche Fang — Labels
-      allein wiederholen nur, was die Überschrift schon sagte. — `S` / `M`
+- [x] **B-103** ✅ 2026-09-19 — shipped. Two fields, two labels, two placeholders
+      («Strasse» + «Nr.», `Bungertenstrasse` + `Nr.`), and — the part that actually
+      catches it — `adressWarnung` in `belege/firma/adresse.ts`: when the street field
+      already ends in a house number **and** the Nr. field is filled, the form says what
+      the Zahlteil would read («Bungertenstrasse 57 485A») and turns both inputs red.
+      It warns on exactly that combination and nothing else: a number in the street field
+      alone is how a one-field address looks, reaches `StrtNmOrAdrLine1` unchanged and is
+      correct. Tests: `adresse.test.ts` (7), with the real Rechnung 2026-0001 as the first
+      case.
 
-- [ ] **B-104** **Eine Rechnung mit MWST, von einer Firma ohne MWST-Nummer.** Gleicher Lauf:
-      `MWST-Nummer` im Firmenprofil leer, und Rechnung 2026-0001 weist `MWST 8.1 %` und
-      **CHF 226.80** aus. `RechnungService.profile_ready` prüft Firmenname, IBAN und PLZ/Ort — die
-      MWST-Nummer nicht, obwohl `company_profile.mwst_pct` standardmässig `8.1` ist und damit
-      jede Rechnung Steuer ausweist. Die zwei Felder gehören zusammen und tun es nicht: entweder
-      die Nummer ist Pflicht, sobald ein Satz gesetzt ist, oder ohne Nummer wird kein Satz
-      ausgewiesen. Welche Richtung richtig ist, ist eine Frage an den Treuhänder (Frage 27) —
-      hier wird nichts geraten. Die Nummer steht heute nur in der Kontaktzeile
-      (`rechnung.py:419`), wo sie leer einfach verschwindet. — `S` / `M`
+- [x] **B-104** ✅ 2026-09-19 — shipped. `profile_ready` asks for the MWST-Nummer exactly
+      when the profile puts a rate on its invoices (`_weist_mwst_aus`: `mwst_pct` parses to
+      something other than zero). A tenant that is not registered leaves the rate empty and
+      is never asked — the same shape as the voluntary Lohn rates, where absent is an answer
+      and not a gap. On the form the field's star and its message appear and disappear with
+      the rate, and the message names the other way out: *«oder der Satz unter «Buchung» muss
+      leer sein»*.
+      Two existing tests failed on this and both were right to: the default test profile and
+      the audit test wrote invoices showing MWST 8.1 % with no number. Fixtures fixed rather
+      than the rule relaxed, and `test_profile_starts_empty_and_says_what_is_missing` now
+      walks the whole way — empty → IBAN missing → still not ready, MWST-Nummer missing →
+      ready. Tests: `test_rechnung.py` (+3 pure, 1 extended).
 
-- [ ] **B-105** Formulare sagen nicht, was Pflicht ist, und Fehler sehen nicht nach Fehlern aus.
-      Vom Eigentümer am 2026-09-19 gefordert, quer durch die Anwendung: Pflichtfelder mit `*`
-      markieren, ein fehlerhaftes Feld rot umranden statt nur eine Meldung obendrüber zu setzen,
-      und die Meldung **an das Feld** hängen, das sie meint. Heute trägt das Firmenprofil eine
-      einzige Zeile («Noch nicht bereit. Es fehlt: IBAN.») über einem Formular mit zwölf Feldern —
-      richtig, aber der Nutzer muss suchen. Gehört in `SettingsPrimitives`, damit Lohn, Firma und
-      Mitarbeiter es gemeinsam erben und nicht dreimal gelöst wird. Farbe allein genügt nicht
-      (B-58: WCAG-AA) — `aria-invalid` und `aria-describedby` gehören dazu. — `M` / `M`
+- [x] **B-105** ✅ 2026-09-19 — shipped for the shared primitives and the Firmenprofil.
+      `SettingsField` takes `required`, `error` and `htmlFor`; the star is text with an
+      `sr-only` «(Pflichtfeld)», the message sits under the field it is about with
+      `role="alert"`, and `SettingsInput` takes `invalid` → red border plus `aria-invalid`
+      and `aria-describedby`. Colour is never the only signal (B-58, WCAG-AA).
+      The Firmenprofil uses it first: Firmenname, Strasse, PLZ/Ort, IBAN and — conditionally —
+      MWST-Nummer each carry their own star and their own sentence, instead of one line above
+      twelve fields that the user had to match up by hand. The banner stays: it answers
+      "can I write an invoice at all", which is a different question from "what is wrong with
+      this field".
+      **Still open:** Lohn (`RatenForm`, `MitarbeiterListe`) and the Einstellungen pages inherit
+      the primitives but do not pass `required`/`error` yet. — `S` / `S`
 
 - [ ] **B-106** *(aus B-103)* Adresse beim Tippen vervollständigen und gegen ein echtes Verzeichnis
       prüfen. Zwei brauchbare Quellen, beide ohne Vertrag:
@@ -402,6 +405,37 @@ was found by 1179 tests. New findings from the rest of the run get appended here
       Log unter. Wer lokal testet, testet also **ohne** RLS; B-82 lebte genau in dieser Lücke.
       `scripts/dev.sh` soll beides als Block ausgeben, bevor der Server startet: welche Datenbank,
       welche Rolle, und ob RLS greift. — `S` / `M`
+
+- [x] **B-108** ✅ 2026-09-19 — **the two findings of a 44-item scan that were real.**
+      A SAST run on 2026-09-19 produced 44 findings, all of them accepted in one batch with a
+      single reason («initial review — all known issues»). Checked one by one, 42 were false:
+      `auth.jwt-decode-no-verify` ×3 on code that verifies the signature and, in `sso.py`,
+      also `audience`, `issuer` and `require_exp/iat/sub` — the scanner tripped over the very
+      `options` block that makes it stricter; `auth.secure-hashing` ×7 on bcrypt with
+      `gensalt()`; `secrets.generic` ×7 in `backend/tests/` and `playwright.config.ts`;
+      `sqli.fstring-execute` on `enable_rls.py`, where the table names come from a constant
+      list in `core/rls.py`; `xss.inner-html` on a fixed anti-FOUC script; `logging.sensitive-data`
+      ×8 on files that contain no `console.` at all.
+      The two that stood: **no security headers anywhere**, and `csrf.absent` — which is wrong
+      as stated (Bearer token from `localStorage`, no cookie, so no browser signs a cross-site
+      request) but points at the same risk from the other side. A token in `localStorage` is
+      readable by any script that runs, and without a CSP nothing stops one.
+      `core/security_headers.py` sets CSP, `X-Content-Type-Options`, `X-Frame-Options` and
+      `Referrer-Policy` on every response, innermost so the error handlers' own responses carry
+      them too; HSTS only over HTTPS, because pinning `localhost` for a year is a bad afternoon.
+      `next.config.ts` does the same for the frontend, with a looser `script-src` that Next needs
+      to boot. Tests: `test_security_headers.py` (5).
+      **Noted, not done:** moving the token to an httpOnly cookie. That is the real fix for
+      `localStorage`, and it is the change that would make CSRF protection actually necessary —
+      a different piece of work, filed as B-109.
+
+- [ ] **B-109** *(from B-108)* The session token lives in `localStorage` and travels as a Bearer
+      header. That is why CSRF does not apply today, and also why one XSS is enough to take a
+      session. An httpOnly, SameSite=Strict cookie plus a CSRF token is the other shape; it
+      touches `auth-store.ts`, `api.ts`, every `Depends(get_current_user)` path and the SSO
+      hand-off, so it is not a refactor to slip into a Tuesday. Tighten the frontend CSP's
+      `script-src` with a nonce at the same time — that is what turns the CSP from a fence into
+      a wall. — `L` / `M`
 
 - [ ] **B-101** *(from B-88)* Report an accuracy figure that describes the path receipts
       actually take. The one on the page is a cross-validation over booking texts and is

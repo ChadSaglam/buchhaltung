@@ -24,6 +24,44 @@ const nextConfig: NextConfig = {
   // belong to, so their old addresses have to keep working. Temporary (307),
   // not permanent — a 308 is cached by the browser forever and would outlive
   // the release these redirects are meant to cover.
+  // B-108: the frontend's own headers. The API sets its four separately
+  // (`core/security_headers.py`) — two servers, two responses, and a browser
+  // reads whichever one it is talking to.
+  //
+  // The CSP here is looser than the API's on purpose: Next ships inline
+  // bootstrap scripts and (in development) eval'd HMR chunks, so `script-src`
+  // has to allow them or the app does not boot. What matters for the risk this
+  // was opened for — a token in localStorage — is `frame-ancestors` and
+  // `base-uri`, which are absolute either way. Tightening `script-src` with a
+  // nonce is worth doing and is not a header change; it is a rendering change.
+  async headers() {
+    const csp = [
+      "default-src 'self'",
+      // 'unsafe-eval' only in development: Turbopack's HMR needs it, the
+      // standalone build does not.
+      `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob:",
+      "font-src 'self' data:",
+      // The API is a different origin (:8000), so it has to be named.
+      `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000 http://127.0.0.1:8000"}`,
+      "object-src 'none'",
+      "frame-ancestors 'none'",
+      "base-uri 'none'",
+      "form-action 'self'",
+    ].join("; ");
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "Content-Security-Policy", value: csp },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+        ],
+      },
+    ];
+  },
   async redirects() {
     return [
       { source: "/dashboard/rechnungen", destination: "/dashboard/belege", permanent: false },

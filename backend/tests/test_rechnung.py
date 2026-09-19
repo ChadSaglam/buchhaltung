@@ -45,6 +45,10 @@ async def _profile(db_session, tenant, **overrides) -> CompanyProfile:
         hausnummer="1",
         plz="8001",
         ort="Zürich",
+        # B-104: the default profile writes invoices with MWST, so it needs the
+        # number that goes with the rate. A test tenant without one is a tenant
+        # that cannot legally issue the invoice these tests are about.
+        mwst_nr="CHE-123.456.789 MWST",
         **{"iban": QR_IBAN, **overrides},
     )
     db_session.add(profile)
@@ -153,9 +157,18 @@ async def test_profile_starts_empty_and_says_what_is_missing(client, db_session,
         json={"name": "Chadev GmbH", "iban": "CH44 3199 9123 0008 8901 2", "plz": "8001", "ort": "Zürich"},
     )
     assert saved.status_code == 200
-    assert saved.json()["bereit"] is True
     assert saved.json()["qr_iban"] is True
     assert saved.json()["referenz_typ"] == "QRR"
+    # B-104: name, IBAN and address are no longer enough. `mwst_code`/`mwst_pct`
+    # default to V81/8.10, so this profile would print «MWST 8.1 %» on every
+    # invoice — and the number that belongs to that claim is still missing.
+    assert saved.json()["bereit"] is False
+    assert any("MWST-Nummer" in m for m in saved.json()["fehlt"])
+
+    mit_nummer = await client.put("/api/rechnungen/firma", headers=headers, json={"mwst_nr": "CHE-123.456.789 MWST"})
+    assert mit_nummer.status_code == 200
+    assert mit_nummer.json()["bereit"] is True
+    assert mit_nummer.json()["fehlt"] == []
     assert saved.json()["iban_formatiert"] == "CH44 3199 9123 0008 8901 2"
 
 
@@ -314,3 +327,42 @@ async def test_a_viewer_may_read_but_not_write(client, db_session, actor):
     assert (await client.get("/api/rechnungen/firma", headers=viewer_headers)).status_code == 200
     assert (await client.post("/api/rechnungen/", headers=viewer_headers, json=RECHNUNG)).status_code == 403
     assert (await client.put("/api/rechnungen/firma", headers=viewer_headers, json={"name": "X"})).status_code == 403
+
+
+# --- B-104: a rate and a number are one statement ------------------------------
+
+
+def test_a_profile_that_shows_vat_needs_the_number():
+    """Rechnung 2026-0001, first real run: «MWST 8.1 %» and CHF 226.80 from a
+    profile whose MWST-Nummer was empty. The product said half of a statement."""
+    from app.models.company_profile import CompanyProfile
+    from app.services.rechnung import RechnungService
+
+    ready = RechnungService.profile_ready
+    profil = CompanyProfile(name="RDS Isolierungen GmbH", iban=QR_IBAN, plz="8307", ort="Illnau-Effretikon")
+
+    profil.mwst_pct, profil.mwst_nr = "8.10", ""
+    assert any("MWST-Nummer" in m for m in ready(None, profil))
+
+    profil.mwst_nr = "CHE-123.456.789 MWST"
+    assert ready(None, profil) == []
+
+
+def test_no_rate_means_the_number_is_not_demanded():
+    """Not registered for VAT is an answer, not a gap — the same rule the Lohn
+    settings already use for UVGZ and KTG."""
+    from app.models.company_profile import CompanyProfile
+    from app.services.rechnung import RechnungService
+
+    profil = CompanyProfile(name="Kleinfirma", iban=QR_IBAN, plz="8000", ort="Zürich", mwst_nr="")
+    for leer in ("", "0", "0.00", "   "):
+        profil.mwst_pct = leer
+        assert RechnungService.profile_ready(None, profil) == [], leer
+
+
+def test_a_broken_rate_is_not_read_as_vat():
+    from app.models.company_profile import CompanyProfile
+    from app.services.rechnung import RechnungService
+
+    profil = CompanyProfile(name="X", iban=QR_IBAN, plz="8000", ort="Zürich", mwst_nr="", mwst_pct="acht Prozent")
+    assert RechnungService.profile_ready(None, profil) == []
