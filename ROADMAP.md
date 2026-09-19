@@ -2,10 +2,10 @@
 
 > One running list. Never duplicated — items move between sections, they don't get re-added.
 > Legend: severity `C`ritical / `H`igh / `M`edium / `L`ow · effort `S` (<1h) / `M` (half day) / `L` (multi-day)
-> IDs: `B-xx` = work item (next free: **B-63**) · `P-xx` = parked (next free: **P-05**)
+> IDs: `B-xx` = work item (next free: **B-100**) · `P-xx` = parked (next free: **P-05**)
 > Cross-product items (SSO, contracts, design tokens) live in `chadev-platform/ROADMAP.md`, not here.
-> Updated: 2026-09-12 — reprioritised after the deep review (`docs/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
-> Companion docs: `docs/ADR-002-rls.md` (B-24) · `docs/DEPLOY-CHECKLIST-B36-B37.md` · `docs/BRAINSTORM-2026-09-12.md`.
+> Updated: 2026-09-17 — **the stack runs on the owner's own Mac** (arm64, all five services healthy, 30 migrations applied, RLS 24/24/24 live) and the branch is **pushed**. Python is **3.14** everywhere (CI, both image stages, the scripts, the lock); ruff's `target-version` stays at `py313` and `pyproject.toml` says why. 2026-09-16 (fifth run) — **B-81** the runtime lockfile, and **the stack runs**: five healthy services and the whole compose-smoke job, verbatim, plus B-24 verified against the live database. **Lohn-Vergleich** (the tool that lifts the payslip watermark) and **B-80** the frontend image, built and served before it was believed. Fourth run — the NEXT block emptied: **B-61** health that can fail, **B-57** worker hardening, **B-56** parser hygiene (the `3924` was real), **B-62** (already done — the line was stale), **B-60** CI parity (both databases, a compose smoke job, and a real password out of `scripts/setup.sh`). Earlier that day (third run): **B-27** the query audit (five statements that grew with the tenant), **B-23** plan limits enforced from `usage_events`, **B-72 option C** as far as the law reaches (BVG minimum as a check), **B-20 finished** (the Kontenplan import wizard). Earlier that day (second run): **B-72** payroll (option B with option C's shape), **B-79** invoice e-mail, **B-74** part A, **B-24** row-level security (`app_rw` is `NOSUPERUSER NOBYPASSRLS`), **B-25** backup + restore drill, **B-54**/**B-55**, **B-17** the Treuhänder pack in one zip, **B-20** (sample invoice + checklist; the wizard is still open), **B-51 finished** (the last five money columns), **B-22** the audit log, **B-28** indexes chosen by `EXPLAIN`. Earlier that day (night run): **B-51** money columns are Numeric(12,2), **B-59** `response_model` on the seven endpoints that returned bare dicts (and the hand-written frontend interfaces are gone), **B-58** the UX/a11y batch (one formatter, WCAG-AA accents, `usePopover`, heading order, confirms on destructive actions), **B-71** 90-day liquidity + tax provision on Heute, and **step 5 of the IA migration** (sidebar = four surfaces + Mehr; every old route still resolves). Earlier on 2026-09-16: B-70 Jahresabschluss and B-77 (PDF renderer = fpdf2); B-69 e-mail intake; B-52 idempotency by constraint; B-53 export safety. 2026-09-15 — B-68 write invoices (Swiss QR, debtor booking, reference return); B-67 VAT return (form 200); B-66 month-end check; B-65 open items / reminders; B-76 Banana batch (phase 4) done — and the open extension question answered: an extension may not call HTTP, so the file hand-off is final (new: B-78, read-only REST spike); B-73 Abgleich done, `make check` green. 2026-09-14 — NEXT cleared: B-44, B-46, B-16, B-34, B-49, B-14, B-15 done; B-63 amount memory. 2026-09-13 — phase 0 of `docs/archiv/BRAINSTORM-2026-09-13.md` done (B-39, B-45, B-48, B-40, B-47, B-50). 2026-09-12: reprioritised after the deep review (`docs/archiv/REVIEW-2026-09-12.md`). B-39…B-62 come from it.
+> Companion docs: `docs/ADR-002-rls.md` (B-24) · `docs/BACKUP.md` (B-25) · `docs/B-72-LOHN-SPEC.md` (B-72) · `docs/IA-2026-09-14.md` · `docs/DEPLOY-CHECKLIST-B36-B37.md` · `docs/archiv/BRAINSTORM-2026-09-12.md`.
 
 ---
 
@@ -13,11 +13,11 @@
 
 | Owner's words | What it means in this repo | Tracks that deliver it |
 |---|---|---|
-| **more professional** | Money that rounds right in every export, correct VAT codes, audit trail, Treuhänder hand-off that is accepted first time | B-01 ✅, B-04 ✅, B-05 ✅, B-09 ✅, B-47, B-48, B-51, B-53, B-17, B-22 |
-| **more dynamic** | Scan → classify → book without a reload; live review queue; optimistic booking edits; the learning loop visibly closes | B-45, B-14, B-15, B-16 |
-| **easier to improve** | No god-files, one type source, tests that catch regressions, jobs outside the API process, prod == compose | B-02 ✅, B-03 ✅, B-08 ✅, B-10 ✅, B-11 ✅, B-13 ✅, B-33 ✅, B-39, B-41, B-49, B-59, B-60 |
-| **together** (platform) | One login across billing + buchhaltung, paid invoices book themselves, roles mean something | B-36 ✅, B-37 ✅, B-40, B-52, B-38 🅿️ |
-| **more user-friendly** | Loading/empty/error states everywhere, keyboard-first review, a11y, onboarding, no fake saves | B-18 ✅, B-19 ✅, B-44, B-46, B-50, B-58, B-20 |
+| **more professional** | Money that rounds right in every export, correct VAT codes, audit trail, Treuhänder hand-off that is accepted first time | B-01 ✅, B-04 ✅, B-05 ✅, B-09 ✅, B-47 ✅, B-48 ✅, B-67 ✅, B-68 ✅, B-70 ✅, B-77 ✅, B-51 ✅, B-53 ✅, B-17 ✅, B-22 ✅ |
+| **more dynamic** | Scan → classify → book without a reload; live review queue; optimistic booking edits; the learning loop visibly closes | B-45 ✅, B-14 ✅, B-15 ✅, B-16 ✅ |
+| **easier to improve** | No god-files, one type source, tests that catch regressions, jobs outside the API process, prod == compose | B-02 ✅, B-03 ✅, B-08 ✅, B-10 ✅, B-11 ✅, B-13 ✅, B-33 ✅, B-39 ✅, B-41 ✅, B-49 ✅, B-59 ✅, B-60 ✅ |
+| **together** (platform) | One login across billing + buchhaltung, paid invoices book themselves, roles mean something | B-36 ✅, B-37 ✅, B-40 ✅, B-52 ✅, B-38 🅿️ |
+| **more user-friendly** | Loading/empty/error states everywhere, keyboard-first review, a11y, onboarding, no fake saves | B-18 ✅, B-19 ✅, B-44 ✅, B-46 ✅, B-50 ✅, B-69 ✅, B-58 ✅, B-20 ✅ |
 
 Rule: every PR names the B-ID it closes and which north-star column it serves.
 Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a wrong VAT code costs money on every receipt; optimistic UI saves 300 ms.
@@ -26,118 +26,515 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 
 ## 🔥 NOW — production blockers, in this order (one at a time)
 
-- [ ] **B-39** `training_data` table has **no migration** and `TrainingRow` is not exported from `app.models`
-      (invisible to Alembic and to the CI drift check). With `ENVIRONMENT=production` (`create_all` off) Banana import,
-      every training job and `/api/classify/top-classes` 500. Fix: export the model, add `create_table` +
-      `ix_training_data_tenant_id` migration, make the drift job import `app.services`, add a "every `Base.metadata`
-      table exists after `upgrade head`" test. — `C` / `S`
-- [ ] **B-40** Wire the role ladder: `require_editor` on every mutating route, `require_admin` on Kontenplan replace,
-      model/memory/corrections delete, scanner config, `import?replace=true`. `core/deps.py:55-75` exists, zero callers —
-      an SSO `viewer` can wipe a tenant today. Add a route-table test: every non-GET route carries a role dependency. — `H` / `M`
-- [ ] **B-41** Production compose: `ENVIRONMENT=production` on api + worker, `${SECRET_KEY:?}`, drop `--reload` from the
-      image CMD, worker bypasses the migrate ENTRYPOINT (or one-shot `migrate` service + `pg_advisory_xact_lock` in `env.py`),
-      no published ports for db/redis/ollama, `backend/.dockerignore` (`venv .env* tests *.db`), `USER app`, multi-stage. — `H` / `S`
-- [ ] **B-42** SSRF: `ollama_base_url` (and latent `ocr_command`) become read-only from `settings` — drop them from the
-      update schemas; never echo upstream bodies or exception text (`ai_assistant.py:208-209,252`). — `H` / `S`
-- [ ] **B-43** Email export hardening: `EmailStr` single recipient, `html.escape` every cell, `heavy_limit` + `require_editor`
-      on `/api/export/email*`, default SSL context (no `CERT_NONE`), SMTP settings from `Settings` not `os.environ`. — `H` / `S`
 
 ---
 
-## ⏭ NEXT — make the two promises true (correctness first, then the NOW-items of 09-11)
+## ⏭ NEXT — pull from LATER, in this order
 
-### Correctness (professional)
-- [ ] **B-45** Kontoauszug save posts `original_soll: r.KtSoll` (the *edited* value) — no `Correction` is ever logged, the
-      learning loop is dead on that path. Send `r.suggSoll`/`suggHaben`, only for changed rows, `Promise.allSettled` +
-      summary toast (or a `/classify/correct/batch` endpoint). — `H` / `S`
-- [ ] **B-48** Scanner VAT: exact map `{8.1:I81, 2.6:I26, 3.8:I38, 7.7:I77, 2.5:I25, 3.7:I37}` instead of `≥7→8.1`, `≥2→2.6/I25`;
-      keep the detected rate; `_validate_and_fix` must not zero amounts > 50 000 — set `needs_review`. — `H` / `M`
-- [ ] **B-47** Input bounds: `betrag`/`mwst_amount` `Field(allow_inf_nan=False, ge=-1e9, le=1e9)` on every money schema;
-      `limit: int = Query(500, ge=1, le=1000)` on every list route (`audit.py:29` is the pattern); `round_chf` rejects non-finite. — `H` / `S`
-- [ ] **B-49** Off the event loop: sklearn `fit`+CV (`/train`, `import?auto_train`, in-API worker), the sync Ollama chain in
-      `ScannerService` (use the existing `*_async` variants, one status probe per request), `smtplib`, `pdfplumber` →
-      `asyncio.to_thread`; compose sets `RUN_WORKER_IN_API=false`. — `H` / `M`
+_The whole block is cleared, and as of 2026-09-17 the stack runs on the owner's own machine — arm64 Docker
+Desktop, his real `pgdata` volume, all five services healthy, all 30 migrations applied, RLS live at 24 tables
+enabled / forced / one policy each. The list now matches the code **and** the code matches something that starts.
+What it still does not match is a deployment or a single real user._
 
-### User-friendly (the 09-11 NOW items, with what the review found)
-- [ ] **B-44** Logout clears SWR cache + notifications store; `useApi` keyed by user id (tenant B sees tenant A's KPIs today). — `H` / `S`
-- [ ] **B-46** Settings: 4 of 6 tabs "save" with a 600 ms sleep and show "Gespeichert". Wire profile/company or hide them;
-      remove the password tab until `/api/auth/password` exists. — `H` / `S`
-- [ ] **B-50** `errorMessage(err)` at the 7 `.response.data.detail` sites (login, register, BuchungTable, useBananaImport,
-      useModellActions ×3) — the backend never sends `detail`; `corrections_count` → `correction_count` on the dashboard.
-      **Folds B-21** (the 5 `err: any` are the same sites). — `M` / `S`
-- [ ] **B-14** Review queue: optimistic accept/reject with rollback; keyboard `j/k/a/r`. Sketch in `docs/REVIEW-2026-09-12.md` §5.
-      **First** move the global bare-`a` assistant hotkey (`ShortcutsModal.tsx:53`) to `Shift+A`. — `M` / `M`
-- [ ] **B-16** Dashboard KPIs auto-refresh via `useApi(path, { refreshInterval })`. **First** put `SystemChecklist`,
-      `GettingStarted` and the bell poll on the same SWR keys (dashboard load fires `/classify/info` ×4, `/bookings/stats` ×4,
-      `/vision-status` ×3 today). — `L` / `S`
-- [ ] **B-15** Scan progress streamed (NDJSON already used by AI chat) instead of spinner. — `M` / `M`
-- [ ] **B-34** `classifier_models.model_sha256` column + check in `model_blob.unpack()`; "Modell neu trainieren" hint on
-      unsigned blob. Also: derive the blob HMAC key from `SECRET_KEY` (`HMAC(SECRET_KEY, b"model-blob-v1")`) and refuse
-      `pack/unpack` with an `INSECURE_SECRETS` key in every environment. — `L` / `S`
+**Nothing here is the next thing to do.** What is left in this file is smaller than what is left outside it:
+
+1. **Rotate the secrets.** The chat-pasted ones and the Postgres password that was in `scripts/setup.sh`
+   until 2026-09-16. It is out of HEAD and **still in the history** — and the branch is pushed now, so it is on
+   the remote too. Deleting it is not rotating it, and making the repository private is not rotating it either.
+   This is the oldest open item and the only one that gets worse while it waits.
+2. **Use it once, end to end.** The stack is up and every table is empty. Nobody has registered a tenant,
+   uploaded a receipt, imported a statement and run an Abgleich against the real compose stack — every check so
+   far has been a test suite, and a test suite only asks the questions somebody thought to write down. Onboarding
+   → Beleg → Bank → Abgleich → Export, once, as a user rather than as the author.
+3. **One real payroll month**, against the previous provider. Until then the watermark stays and Lohn cannot be
+   given to anyone. It is no longer *by hand*: `make lohn-vergleich` writes a template, the numbers from the old
+   payslip go in, and `python scripts/lohn-vergleich.py <datei>` prints the line-by-line difference with the input
+   that would explain each one. `docs/LOHN-VERGLEICH.md`.
+4. **One real Treuhand pack to a real Treuhänder**, and one real VAT quarter compared against what was filed.
+5. **Set the plan numbers** in `backend/app/core/plans.py`. The mechanism is B-23; the numbers are a business
+   decision and today they are placeholders.
+
+Then, and only then, the code that is left:
+
+- **B-72 → option C**, the three gaps that are bought or certified: Quellensteuer tariff tables, Formular 11,
+  Swissdec ELM. `docs/B-72-LOHN-SPEC.md`.
+- **B-74 part B** — standing orders as Abgleich proposals. **Decide before coding:**
+  `docs/ADR-003-standing-orders-in-abgleich.md` asks three questions; the recommendation is option C.
+- **B-75** bank pull (needs a contract per tenant, spike first) and **B-78** the read-only Banana REST spike.
+- The **B-24 watch**: `docs/RUNBOOK-RLS-CUTOVER.md`. The cutover itself is behind us — on a database created
+  from scratch the migration lands `ENABLE` + `FORCE` + one policy in one step, and 2026-09-17 read back
+  **24 / 24 / 24** on the owner's own stack with the API connected as `app_rw`. What is left is section 4, and it
+  needs **data**: RLS fails silently, as an empty list rather than an error, so the check that matters is counting
+  rows as the owner and as `app_rw` with the context set and finding the same number. On an empty database that
+  check passes for the wrong reason. Section 5 still applies the day something goes wrong: the obvious rollback
+  (point `DATABASE_URL` back at the owner) does **not** work, because production refuses to boot as a superuser
+  and the compose image makes `POSTGRES_USER` one — the fallback role has to exist before it is needed.
+
+<details><summary>What item 1 of the old block settled (Banana, 2026-09-15) — keep, do not re-litigate</summary>
+
+A Banana *extension* may **not** call HTTP. Official wording: "For security reasons, Banana Accounting extensions
+can't connect to external URLs API" (`banana.ch/doc/en/node/4065`), and extensions are "NOT ALLOWED to directly
+write or read file, web resource, change computer setting or execute programs" (`node/10067`). There is no
+`Banana.Http` namespace in the API reference (`node/4714`).
+→ **the file hand-off is the product, not a stopgap** — there is no level-2 push to build later; stop reserving
+design space for it. The HTTP that does exist runs the other way and does not close the loop: the integrated web
+server (Advanced plan only, `localhost:8081`, `X-Banana-Access-Token`) is **read-only** — "the web server can't be
+used to write to the accounting file, and Banana Accounting+ can't connect to external URLs" (`node/4867`) — and
+the V2 *Send Data* API (`POST /v2/doc?show&acstkn=…`, `node/10157`) only creates a **new** file from an embedded
+base64 AC2 + Document Change, which the user must then *Save As* over the original ("the method does not verify
+that the data is correct"). The read side is the only part worth a spike → **B-78**.
+
+</details>
+
+_2026-09-14: the previous NEXT block (B-49, B-44, B-46, B-14, B-16, B-15, B-34) is done — see ✅ Done._
 
 ---
 
 ## 📋 LATER — by track
 
-### Professional
-- [ ] **B-17** Treuhänder export pack: Banana TSV + PDF summary + receipts zip + audit extract, one click — the hero flow
+### First-run findings — the e2e run of 2026-09-17 (`docs/E2E-ERSTLAUF.md`)
+
+Everything here was found by one person using the product for real, in one sitting. None of it
+was found by 1179 tests. New findings from the rest of the run get appended here.
+
+- [ ] **B-84** The seeded Kontenplan gives umbrella names to accounts the Swiss KMU chart splits.
+      `6200` ships as **"Fahrzeugaufwand"** — but in a real chart 6200 is *Reparaturen und Service*
+      specifically, with `6210` Betriebsstoffe, `6220` Fahrzeugversicherung, `6230` Verkehrsabgaben,
+      `6260` Fahrzeugleasing and `6270` Privatanteile beside it. A user who reads our label books
+      fuel, insurance and road tax into 6200 and only finds out at the year-end close.
+      **The split is not cosmetic — it carries the VAT.** Measured against a real 2024 ledger
+      (135 vehicle bookings by a Treuhänder): 6210 is 82/91 `I81` (8.1 %), while **6220 is 5/5 and
+      6230 is 6/6 with no VAT code at all** — insurance premiums are exempt and road tax is a
+      sovereign levy. Collapsed into one account, that account is half taxed and half not, so the
+      classifier cannot learn a rate for it and B-67's "Aufwand ohne Vorsteuer" hint fires forever
+      on every legitimate insurance payment.
+      Fix: ship the vehicle block split, and audit the rest of `seed_tenant` for the same mistake —
+      `6500 Verwaltungsaufwand` (real: Büromaterial und Drucksachen, with 6503/6510/6513/6530 beside
+      it), `5700 AHV, IV, EO` (real: *Inhaber*) and `8900 Direkte Steuern` (real: Kantons- und
+      Gemeindesteuern) came back as `geändert` from the same import, which is the same smell.
+      — `M` / `M`
+
+- [x] **B-86** ✅ 2026-09-17 — the Banana import reported **exactly twice** the memory entries it
+      wrote. `memory_entries` was `len(memory_objects) + len(seen_keys)`, but `seen_keys` already
+      holds every distinct key the import touched and `memory_objects` is the subset of those that
+      were new — so on a fresh tenant every entry counted twice. The Modell page showed
+      "GEDÄCHTNIS 182" and "364 Gedächtnis" for the same import, three centimetres apart.
+      Not cosmetic: the same number is written to the audit row, and B-17 hands that table to the
+      Treuhänder as `50-Protokoll.csv`. A hand-off that states a quantity nobody ever wrote is worse
+      than one that states nothing. `tests/test_import_counts.py` now asserts the reported figure
+      against `SELECT count(*)` — on a first import and on a re-import, where an update must not
+      read as a new entry.
+
+- [x] **B-87** ✅ 2026-09-17 — **the Vision card could not report anything but "Nicht verbunden".**
+      `modell/types.ts` carried a hand-written `VisionStatus` promising `available`, `model_name`,
+      `model_count` and `is_cloud`. `/api/scanner/vision-status` sends **none of those four**: it
+      sends `ok`, `error`, `models`, `vision_models`, `best_vision`, `scanner_mode` and
+      `custom_ocr_available`. So `vision.available` was `undefined` on every request — the card and
+      the "Teilweise aktiv — ML bereit, Vision fehlt" banner were reporting `undefined`, not a
+      state, for every user since the page was written. Meanwhile **Heute**, reading the same
+      endpoint through a *second* hand-written interface that happened to name real fields, showed
+      Vision green with `custom-ocr`. Two screens, one endpoint, opposite answers.
+      This is precisely the failure B-59 existed to end, surviving on the one endpoint B-59 did not
+      touch — and the comment above the second copy, "still untyped upstream", is what protected it:
+      the endpoint has had `response_model=ScannerStatusResponse` since B-59, and the generated type
+      was sitting unused in `api-schema.ts` the whole time. Both copies are gone; both pages now use
+      the generated type.
+      One decision in the fix: **the built-in OCR counts as vision.** `custom_ocr_available` alone
+      is enough for `visionAktiv()`, because a scanner that reads invoices through its own OCR is
+      not "not connected" — that was the state on screen when this was found. 4 tests in
+      `modell/helpers.test.ts`, one of which feeds it the old four fictional fields and asserts they
+      change nothing.
+      **The pattern is now the story of this run.** Four of today's findings are the same shape —
+      two places that each look correct and disagree: compose vs `config.py` on CORS (B-83),
+      `seed_tenant` vs a real chart on 2200/2205 (B-85), the import's count vs the KPI card (B-86),
+      and this. Worth a sweep of its own once the tour is done.
+
+- [x] **B-88** ✅ 2026-09-18 — Stufe 1 shipped: the figure now says what it measures.
+      `GENAUIGKEIT_BASIS` / `GENAUIGKEIT_ERKLAERUNG` live in one place
+      (`modell/helpers.ts`) and are read by both the stat tile and the accuracy card —
+      the sub-label is «Cross-Validation auf Buchungstexten», and under the bar:
+      *"Gemessen an Buchungstexten, wie sie im Kontoauszug stehen (z. B. «Agrola, TS»).
+      Was der Scanner von einem Kassenbon liest, sieht anders aus — dort tragen
+      Gedächtnis und Regeln den grössten Teil. Diese Zahl sagt nichts über Belege."*
+      The number itself is untouched; it was never wrong, only unlabelled.
+      **Still open (the `M` half):** report a second figure measured over
+      receipt-shaped text, or train on the descriptions the scanner actually
+      produces. Filed as B-101.
+
+- [x] **B-89** ✅ 2026-09-18 — shipped. `documents.paid_at_source` (migration
+      `e6f7a8b9c0d1`). `status` keeps both of its meanings and this column separates
+      them: `offen` still means *not yet matched to a bank line*, which is true of a
+      card receipt and is exactly what the Abgleich needs, while `paid_at_source` says
+      the money is already gone. The three readers that meant *owed* now filter on it —
+      Offene Posten (`open_documents`), the 90-day liquidity forecast, and the year-end
+      payables check. The Abgleich, the export batch and the Belege counts are untouched,
+      on purpose.
+      On the Beleg the owner gets a card icon to tick and untick; the row then reads
+      «Bezahlt an der Kasse» instead of «Überfällig», and `isOverdue` returns false —
+      money that left at the till cannot be late. The change is audited
+      (`document.status` carries `paid_at_source`) because it is an assertion about money.
+      The scanner pre-ticks it from the receipt text (`services/bezahlt_an_der_kasse.py`),
+      deliberately narrow: `Erhalten: MASTERCARD`, `DEBIT MASTERCARD`, `contactless`,
+      `Total-EFT`, `Barzahlung` — and *not* a bare "wir akzeptieren Mastercard" in a
+      footer, with any Fälligkeitsdatum vetoing the whole thing. A miss costs one click;
+      a false positive would hide a real debt, so the checkbox, not the OCR, is the
+      authority. Tests: `test_bezahlt_an_der_kasse.py` (6), `test_offene_posten.py` (+2
+      with the real 58.48), `belege/helpers.test.ts` (+3).
+
+- [x] **B-90** ✅ 2026-09-18 — shipped.
+      Original: "Insights" is still on screen after the IA migration retired the word. `IA step 5`
+      renamed the tab to **Buchungen** and its roadmap entry says *"insights was never a word this
+      product says"* — but `bank/buchungen/page.tsx` still titles itself **"Insights & Suche"** and
+      `lib/quick-actions.tsx` still offers a quick action labelled **Insights**. So the sidebar, the
+      tab and the breadcrumb say Buchungen while the page heading and the command palette say
+      Insights, for the same page. Same family as B-83/B-85/B-86/B-87: two places, one truth.
+      — `S` / `S`
+
+- [x] **B-91** ✅ 2026-09-18 — shipped. One threshold (`SICHER_AB`), one question (`istSicher`); the button says how many it will apply.
+      Original: «Alle AI-Vorschläge übernehmen» takes the uncertain ones too, and the screen says so
+      one centimetre away. First real run, 2026-09-17, on the owner's real UBS April statement:
+      the header reads **«28 Transaktionen · 21 unsicher»** and immediately beside it offers a single
+      button that applies all 28. One click puts 14 wrong bookings in the ledger.
+      The button must apply only what clears a confidence threshold and must say how many that is —
+      «7 sichere übernehmen» — leaving the rest to the Abgleich, which is the stage built for them.
+      — `S` / `S`
+
+- [x] **B-92** ✅ 2026-09-18 — shipped. Below the line the classifier proposes **nothing** and says
+      why: `KEIN_VORSCHLAG_GRUND = "Kein Gegenpart im Text — wird im Abgleich aufgelöst."` The rules
+      fallback that answered `6500` at 0.35 is gone, and so are the two keyword rules that produced
+      the same wrong account with *more* confidence behind it (`zahlung qr-rechnung`, `lastschrift`
+      — both describe how the money moved, not to whom). `ClassificationResult` carries
+      `begruendung`; `/classify`, `/classify/predict` and `/classify/batch` return it. On the Bank
+      page such a row shows a neutral «offen» badge instead of a red 0 %, the reason under the
+      account field, and «Konto selbst wählen» instead of an Übernehmen button that would apply
+      nothing. The header counts three groups now — sicher / unsicher / ohne Vorschlag — because
+      a row with no proposal is not a proposal one is unsure about. Same principle B-67 already
+      states for the VAT return. Tests: `test_classifier.py` (blank + the four real statement
+      texts + a matching keyword still wins), `bank/helpers.test.ts` (`ohneVorschlag`).
+
+- [x] **B-93** ✅ 2026-09-18 — shipped. `lib/mwst-richtung.ts`: the rate is printed
+      without its sign and the direction is named instead — `8.10 % geschuldet`
+      (Umsatzsteuer, we owe it) or `8.10 % Vorsteuer` (we paid it and reclaim it),
+      with the full sentence on hover. The convention itself is unchanged —
+      `classifier.py:128` still flips the sign and the VAT return still computes from
+      it — only the internal marker stops reaching the screen unexplained. One module,
+      read by the Bank table, the scanner card and the Beleg, because this is the
+      "two places, one truth" family (B-83/B-85/B-86/B-87/B-90/B-92) and three copies
+      of a sign convention is how that family starts. Tests: `mwst-richtung.test.ts` (5).
+
+- [ ] **B-94** Check the Pensionskasse base against the Koordinationsabzug, and say which plan shape
+      is assumed. On the real June 2026 payslip brought to the first run, the pension contribution is
+      **9.9 % of the full monthly salary with no Koordinationsabzug applied**. That is correct for a
+      plan *ohne Koordinationsabzug* — many are — and wrong for a BVG-minimum plan, where the insured
+      salary is the annual wage less the Koordinationsabzug. The two produce materially different
+      numbers and nothing on the payslip says which one is meant.
+      B-72 built `GET /api/lohn/bvg-pruefung` for exactly this and it carries the Grenzbeträge per
+      year, so the check is a read away. Two things to settle: whether the engine should ask for the
+      plan shape (mit/ohne Koordinationsabzug) rather than infer it, and whether the Lohn-Vergleich
+      should name a mismatch here as a finding rather than a rounding difference.
+      Owner flagged this as one to look at properly. — `M` / `M`
+
+- [x] **B-95** ✅ 2026-09-18 — shipped. `geprueft` on the response; the card reads it.
+      Original: The BVG card reports "Kein Widerspruch zum Obligatorium gefunden" on a tenant with
+      **zero employees**. It is green because there is nothing to check, which is the same failure
+      mode `docs/RUNBOOK-RLS-CUTOVER.md` section 4 warns about for RLS on an empty database: a check
+      that passes for the wrong reason. A green badge over an empty set invites trust it has not
+      earned, and the first thing a new user sees on the Lohn page is that badge.
+      An empty check should read as *nothing to check yet*, not as *no problem found*. Sweep the
+      other status badges for the same shape while in there. — `S` / `S`
+
+- [x] **B-96** ✅ 2026-09-18 — shipped. `ahv_lohn` and `brutto` are two numbers now; the owner's June payslip is reproduced to the Rappen in `test_lohn.py`.
+      Original: **Kinderzulagen go into the AHV base, and they must not.** `services/lohn.py:191`:
+      `brutto = grundlohn + dreizehnter + zulagen`, and every deduction is then taken on `brutto`.
+      Familien-/Kinderzulagen are not AHV-pflichtig — they are not Erwerbseinkommen — so AHV, IV, EO,
+      ALV, NBU, KTG and the employer side are all overstated whenever a Zulage is a child allowance.
+      **The owner's own June 2026 payslip does it correctly and ours would not:** Bruttolohn 6'657.95
+      (6'257.95 + 400 Kinderzulagen), every deduction computed on **6'257.95**. Ours would take them
+      on 6'657.95 — 400 × 5.3 % = 21.20 too much AHV alone, before ALV, NBU, KTG and the employer
+      half. Real money, every month, silently.
+      The root is one generic field doing two jobs. A gratification, an overtime bonus or a
+      Spesen-Pauschale **is** AHV-liable; a Kinderzulage is not. One "Zulagen (CHF)" input cannot be
+      both, so it needs to split: an AHV-liable Zulage and an AHV-free Familienzulage, the latter
+      recurring per child rather than typed in every month.
+      This is the first concrete instance of why the "Nicht für die Einreichung" watermark exists,
+      and the exact class of error `make lohn-vergleich` was built to catch — it would have shown up
+      as a net-wage difference on line one. — `M` / `M`
+
+- [ ] **B-97** Say which base the Verwaltungskostenbeitrag is a percentage *of*, and let the user
+      pick. `services/lohn.py:251` computes it as `_prozent(brutto, verwaltungskosten_satz)` — a
+      percentage of the gross wage. Many Ausgleichskassen state it instead as a percentage **of the
+      AHV/IV/EO contributions**, and some state it in ‰ of the Lohnsumme. The three are not
+      interchangeable: a rate quoted as "5 % der Beiträge" entered into a field that means "% of
+      gross" comes out roughly **ten times too large**, and nothing on the screen would say so.
+      The field label today is "Verwaltungskosten (%) — Beitrag der Ausgleichskasse", which does not
+      disambiguate. Either name the base in the label and validate the magnitude (a wage-based rate
+      above ~1 % is almost certainly a contribution-based rate in the wrong field), or offer the base
+      as a choice beside the number. — `S` / `M`
+
+- [~] **B-98** Stufe 1 ✅ 2026-09-18 — each field names its document. UVG BU and NBU:
+      *"Jahres-Prämienrechnung Ihres Unfallversicherers — BU und NBU stehen dort als
+      zwei getrennte Prozentsätze"*, with a note that BU hangs on the risk class. FAK
+      and Verwaltungskosten: *"Beitragsverfügung Ihrer Ausgleichskasse, meist im
+      selben Zeilenblock wie der AHV-Satz"* — and for the admin fee the reminder that
+      the Verfügung also says *wovon* the percentage is taken, which is B-97's whole
+      question. `satzPlausibilitaet` warns when a figure falls outside a wide sanity
+      band (NBU 0.4–5, BU 0.05–8, FAK 0.1–5, VK 0.1–5) with the words *"ein Komma an
+      der falschen Stelle sieht genau so aus"*. It warns and blocks nothing: the band
+      is not a published rate and the person holding the letter is right, not us. The
+      two official sources are linked next to the federal rates — ahv-iv.ch Merkblatt
+      2.01 and 2.08, nothing commercial.
+      **Still open (the one worth building):** read the two rates off the documents.
+      The product already OCRs a thermal till receipt; a Beitragsverfügung and a
+      Prämienrechnung are cleaner inputs than that. "Drop your two letters here" turns
+      the setup from a filing-cabinet errand into the thing this product is good at.
+      — `M` / `M`
+
+- [ ] **B-99** **The pack has no Anhang, and for a GmbH the Anhang is not optional.** The Treuhänder
+      pack (B-17) ships `00-LIESMICH.txt`, `10-Uebersicht.pdf`, `20-Buchungen.txt`, `30-Belege/`,
+      `40-Buchungen.csv` and `50-Protokoll.csv`. The word "Anhang" does not appear anywhere in
+      `backend/app/`. B-70's Jahresabschluss produces a balance sheet, an income statement and
+      depreciation proposals — and stops there.
+      OR Art. 959c requires an Anhang der Jahresrechnung. The owner's real 2024 year-end, prepared by
+      his Treuhänder, is exactly that document: Geschäftstätigkeit · Vollzeitstellen im
+      Jahresdurchschnitt · Grundlagen der Rechnungslegung (OR 957–962) · Bemerkungen zur Bilanz ·
+      Beteiligungen · eigene Stimmanteile · Ereignisse nach dem Bilanzstichtag · signature block.
+      **This is where "kein Treuhänder nötig" actually breaks.** The pack hands the Treuhänder
+      everything except the one document the Treuhänder has to write — so the year still needs them,
+      for the part the product never attempts.
+      Half of it is derivable and half is not, and the split is the design. Derivable from the
+      bookings: the **Kontokorrent movement table** (his Anhang's section 4.1 — opening balance,
+      Einlagen, Bezüge, Verzinsung, closing balance) comes straight out of account `1120`, which
+      carries 42 bookings in his 2024 ledger, and the Verzinsung is a booking like any other. Not
+      derivable: the business description, the headcount band, the subsequent-events statement — but
+      those are prompts with a stable answer year over year, not research.
+      Ship a **draft** Anhang: derived sections filled from the ledger, narrative sections as last
+      year's text with a "still true?" prompt, and the signature block left empty. A draft the owner
+      corrects is a different product from a pack that omits the document. — `L` / `L`
+
+- [x] **B-100** ✅ 2026-09-18 — **an employee is paid by the month or by the hour.**
+      Asked for by the owner on 2026-09-18: *"calislar icin maasbodrosu saatlik ve veya
+      sabit maasli olacak sekilde ayarlanabilmeli"*. Payroll knew one shape of employee —
+      a fixed monthly gross pro-rated by calendar days — and a person paid by the hour has
+      no monthly gross to pro-rate.
+      `mitarbeiter.lohnart` (`monat` | `stunde`) + `stundenlohn`, `lohnabrechnungen.stunden`
+      + `stundenlohn` (migration `f7a8b9c0d1e2`). Every existing row becomes `monat`, which
+      is exactly what it was.
+      **The design in one line: an hourly wage changes how the gross is arrived at and
+      nothing else.** AHV, ALV, the cumulative ALV ceiling, the UVG premiums, the
+      Familienzulagen and the whole employer side run the same code on the same base;
+      `test_lohn.py` asserts it by computing the same CHF 6'000 both ways and comparing
+      every deduction line.
+      Three judgements worth keeping:
+      * **The Monatsanteil is not applied to hours.** Joining on the 16th already shows up
+        in the hours entered; cutting them again would halve a half-month twice.
+      * **No 13th salary is invented for hourly work.** A 13th there is a percentage
+        supplement on each payslip (commonly 8.33 %) — a different agreement with a
+        different base. The field is replaced by the hours field, and the screen says that
+        an agreed 13th belongs in the Zulage, where it is visible and deliberate.
+      * **A missing Stundenlohn is refused, not treated as zero** — the same rule as a
+        missing UVG premium, and for the same reason: a payslip of 0.00 looks like a real one.
+      The BVG threshold needs a yearly gross, and for irregular hours there is none to know:
+      the year is projected from the average actually paid so far. It decides only *whether a
+      BVG amount should be on file*, never a contribution. Whether that matches how a
+      Pensionskasse actually estimates a Jahreslohn for irregular work is a question for the
+      Treuhänder — added to `docs/FRAGEN-AN-DEN-TREUHAENDER.md`.
+      **Found on the way:** `MITARBEITER_FELDER` never had `kinderzulagen_monat`, so B-96's
+      field validated, saved nothing and said nothing. Fixed, and `test_lohn_api.py` now
+      asserts the whitelist and `MitarbeiterBase` agree — the same two-places-one-truth
+      family again, caught this time because the suite finally runs.
+      Tests: `test_lohn.py` (+10), `test_lohn_api.py` (+3), `lohn.test.ts` (+3).
+
+- [x] **B-103** ✅ 2026-09-19 — shipped. Two fields, two labels, two placeholders
+      («Strasse» + «Nr.», `Bungertenstrasse` + `Nr.`), and — the part that actually
+      catches it — `adressWarnung` in `belege/firma/adresse.ts`: when the street field
+      already ends in a house number **and** the Nr. field is filled, the form says what
+      the Zahlteil would read («Bungertenstrasse 57 485A») and turns both inputs red.
+      It warns on exactly that combination and nothing else: a number in the street field
+      alone is how a one-field address looks, reaches `StrtNmOrAdrLine1` unchanged and is
+      correct. Tests: `adresse.test.ts` (7), with the real Rechnung 2026-0001 as the first
+      case.
+
+- [x] **B-104** ✅ 2026-09-19 — shipped. `profile_ready` asks for the MWST-Nummer exactly
+      when the profile puts a rate on its invoices (`_weist_mwst_aus`: `mwst_pct` parses to
+      something other than zero). A tenant that is not registered leaves the rate empty and
+      is never asked — the same shape as the voluntary Lohn rates, where absent is an answer
+      and not a gap. On the form the field's star and its message appear and disappear with
+      the rate, and the message names the other way out: *«oder der Satz unter «Buchung» muss
+      leer sein»*.
+      Two existing tests failed on this and both were right to: the default test profile and
+      the audit test wrote invoices showing MWST 8.1 % with no number. Fixtures fixed rather
+      than the rule relaxed, and `test_profile_starts_empty_and_says_what_is_missing` now
+      walks the whole way — empty → IBAN missing → still not ready, MWST-Nummer missing →
+      ready. Tests: `test_rechnung.py` (+3 pure, 1 extended).
+
+- [x] **B-105** ✅ 2026-09-19 — shipped for the shared primitives and the Firmenprofil.
+      `SettingsField` takes `required`, `error` and `htmlFor`; the star is text with an
+      `sr-only` «(Pflichtfeld)», the message sits under the field it is about with
+      `role="alert"`, and `SettingsInput` takes `invalid` → red border plus `aria-invalid`
+      and `aria-describedby`. Colour is never the only signal (B-58, WCAG-AA).
+      The Firmenprofil uses it first: Firmenname, Strasse, PLZ/Ort, IBAN and — conditionally —
+      MWST-Nummer each carry their own star and their own sentence, instead of one line above
+      twelve fields that the user had to match up by hand. The banner stays: it answers
+      "can I write an invoice at all", which is a different question from "what is wrong with
+      this field".
+      **Still open:** Lohn (`RatenForm`, `MitarbeiterListe`) and the Einstellungen pages inherit
+      the primitives but do not pass `required`/`error` yet. — `S` / `S`
+
+- [ ] **B-106** *(aus B-103)* Adresse beim Tippen vervollständigen und gegen ein echtes Verzeichnis
+      prüfen. Zwei brauchbare Quellen, beide ohne Vertrag:
+      **Swiss Post Address Assistant** (`POST /autocomplete4`, `GET /buildingverification4`,
+      `https://webservices.post.ch:17023/IN_SYNSYN_EXT/REST/v1/`) — die Post ist die Autorität für
+      Schweizer *Post*adressen, und genau das steht im Zahlteil; die Post schreibt für diese beiden
+      Dienste ausdrücklich «no contract necessary».
+      **swisstopo** (`https://api3.geo.admin.ch/rest/services/ech/SearchServer?type=locations&origins=address`)
+      — ohne Schlüssel, ohne Registrierung, aus dem amtlichen Gebäudeadressverzeichnis; eher
+      Geocoding als Adressprüfung, aber als Fallback brauchbar.
+      Vorschlag: Post für das Formular, swisstopo als Ausweichpfad, und **beide optional** — fällt
+      der Dienst aus, bleibt die Handeingabe. Ein Adressfeld, das ohne Internet nicht mehr
+      funktioniert, wäre ein Rückschritt. Erst B-103 (Labels und Warnung), dann das hier: die
+      Vervollständigung darf die Feldtrennung nicht ersetzen, sondern nur bequemer machen. — `M` / `L`
+
+- [ ] **B-107** `make dev` und der Docker-Stack sprechen mit **zwei verschiedenen Datenbanken**, und
+      nichts sagt es laut. `.env` zeigt auf `…/buchhaltung`, `docker-compose.yml` auf
+      `chadev_buchhaltung`. Am 2026-09-19 kostete das eine halbe Stunde: Login nach `make dev`
+      schlug mit 401 fehl, weil der Mandant aus dem Tour-Lauf in der anderen Datenbank liegt, und
+      `make migrate` hatte die Migrationen in die leere geschrieben.
+      Dazu die zweite Hälfte: `make dev` verbindet als `chadev`, und das ist ein **Superuser**.
+      `FORCE ROW LEVEL SECURITY` bindet den Tabelleneigentümer, einen Superuser bindet gar nichts —
+      die Anwendung sagt es beim Start selbst (`[rls] … enforces nothing`), aber die Zeile geht im
+      Log unter. Wer lokal testet, testet also **ohne** RLS; B-82 lebte genau in dieser Lücke.
+      `scripts/dev.sh` soll beides als Block ausgeben, bevor der Server startet: welche Datenbank,
+      welche Rolle, und ob RLS greift. — `S` / `M`
+
+- [x] **B-108** ✅ 2026-09-19 — **the two findings of a 44-item scan that were real.**
+      A SAST run on 2026-09-19 produced 44 findings, all of them accepted in one batch with a
+      single reason («initial review — all known issues»). Checked one by one, 42 were false:
+      `auth.jwt-decode-no-verify` ×3 on code that verifies the signature and, in `sso.py`,
+      also `audience`, `issuer` and `require_exp/iat/sub` — the scanner tripped over the very
+      `options` block that makes it stricter; `auth.secure-hashing` ×7 on bcrypt with
+      `gensalt()`; `secrets.generic` ×7 in `backend/tests/` and `playwright.config.ts`;
+      `sqli.fstring-execute` on `enable_rls.py`, where the table names come from a constant
+      list in `core/rls.py`; `xss.inner-html` on a fixed anti-FOUC script; `logging.sensitive-data`
+      ×8 on files that contain no `console.` at all.
+      The two that stood: **no security headers anywhere**, and `csrf.absent` — which is wrong
+      as stated (Bearer token from `localStorage`, no cookie, so no browser signs a cross-site
+      request) but points at the same risk from the other side. A token in `localStorage` is
+      readable by any script that runs, and without a CSP nothing stops one.
+      `core/security_headers.py` sets CSP, `X-Content-Type-Options`, `X-Frame-Options` and
+      `Referrer-Policy` on every response, innermost so the error handlers' own responses carry
+      them too; HSTS only over HTTPS, because pinning `localhost` for a year is a bad afternoon.
+      `next.config.ts` does the same for the frontend, with a looser `script-src` that Next needs
+      to boot. Tests: `test_security_headers.py` (5).
+      **Noted, not done:** moving the token to an httpOnly cookie. That is the real fix for
+      `localStorage`, and it is the change that would make CSRF protection actually necessary —
+      a different piece of work, filed as B-109.
+
+- [ ] **B-109** *(from B-108)* The session token lives in `localStorage` and travels as a Bearer
+      header. That is why CSRF does not apply today, and also why one XSS is enough to take a
+      session. An httpOnly, SameSite=Strict cookie plus a CSRF token is the other shape; it
+      touches `auth-store.ts`, `api.ts`, every `Depends(get_current_user)` path and the SSO
+      hand-off, so it is not a refactor to slip into a Tuesday. Tighten the frontend CSP's
+      `script-src` with a nonce at the same time — that is what turns the CSP from a fence into
+      a wall. — `L` / `M`
+
+- [ ] **B-101** *(from B-88)* Report an accuracy figure that describes the path receipts
+      actually take. The one on the page is a cross-validation over booking texts and is
+      now labelled as such — but a user scanning receipts still has no number for the
+      layer they are using. Two ways: measure a second figure over receipt-shaped text
+      (the scanner's own `classification_input` is already stored per document, so the
+      corrections log can supply the ground truth), or train on those descriptions.
+      Do not just raise the number. — `M` / `M`
+
+- [ ] **B-102** *(from B-85 and B-92)* Two small holes the last batch opened on purpose.
+      **(a)** The Kontenplan wizard now *names* a duplicate account pair (2200/2205) and
+      does nothing about it. The action — move every booking, every Memory row and every
+      KontoDefault from one number to the other, in one transaction, with an audit line —
+      is a migration inside the tenant's ledger and deserves its own design.
+      **(b)** Since B-92 a Beleg can reach the Abgleich with **no account at all**. The
+      export gate already refuses it (`export_batch.py:124` names the booking), and the
+      Belege row now says «Konto fehlt» in amber instead of a quiet dash — but
+      `abgleich.py:261` will still write a booking with an empty `kt_soll` if the user
+      confirms the match first. Refuse there, with the reason, rather than at export.
+      — `M` / `S`
+
+- [x] **B-85** ✅ 2026-09-18 — shipped as the wizard's fifth finding, not a seed change.
+      `normalisierte_bezeichnung` folds case, punctuation and double blanks (so
+      `Geschuldete MwSt.` and `GESCHULDETE MWST` are one name) but nothing else —
+      `Warenertrag` and `Warenaufwand` stay two accounts. A **new** row is marked
+      `doppelt_zu` when an existing account carries the same name under another number
+      *and the file does not mention that number*: only then do the two end up side by
+      side. In *Ersetzen* the old one disappears anyway, so the warning is not shown there.
+      `anwenden` is byte-for-byte unchanged. The wizard says which two numbers collide and
+      stops — which number the owner keeps is a decision about their own books, and a
+      wizard that silently merged 2200 into 2205 would be rewriting a Kontenplan on a
+      string comparison. Neither number is wrong in the abstract; that was the whole point
+      of the entry. Tests: `test_kontenplan_import.py` (+7, incl. the real 2200/2205),
+      `kontenplan_import.test.ts` (+4).
+      **Not done, deliberately:** the merge action itself (rewrite bookings and memory from
+      one number to the other). That is a data migration inside a tenant's ledger and wants
+      its own entry — filed as B-102.
+
+
+
+### "Kein Treuhänder nötig" — the product track (owner, 2026-09-14; order = impact)
+Target: the Treuhänder signs once a year, nothing in between. Each item is a *flow* inside one of the four surfaces
+(`docs/IA-2026-09-14.md`: Heute · Belege · Bank · Abschluss), not its own page.
+- [x] **B-79** ✅ 2026-09-16 — see Done.
+- [x] **B-74** ✅ 2026-09-16 — see Done (part A; the Abgleich proposal half is still open, see that entry).
+- [ ] **B-75** Kontoauszug ohne Upload: camt.053 pull via bLink/EBICS (UBS, PostFinance, Raiffeisen) or a scheduled
+      mailbox import — the statement arrives by itself, the Abgleich inbox fills on Monday morning. PDF stays the
+      fallback (customers deliver PDFs today). Needs a bank contract per tenant — spike first. — `M` / `L`
+- [ ] **B-78** Read Banana data instead of exporting it (spike; only worth it for a customer on the *Advanced*
+      plan): Banana's integrated web server (`localhost:8081`, RESTful, token) serves tables read-only — so
+      `Buchungen` could be pulled instead of asking the customer to export `Buchungen.xls` (the model's training
+      source, and a reality check against what the customer actually booked). It runs only on the customer's own
+      machine, so this is an agent/CLI question, not a server-to-server call. Writing stays impossible. — `L` / `M`
+- [x] **B-72** ✅ 2026-09-16 — built as option **B with option C's shape** (see Done). The owner chose C; what is
+      still missing for it is data or a certification, not code — Quellensteuer tariff tables, Formular 11,
+      Swissdec ELM. The BVG gap is closed as far as the law allows (2026-09-16, second run).
+      `docs/B-72-LOHN-SPEC.md`.
+- [x] **B-17** ✅ 2026-09-16 — see Done. Original: Banana TSV + PDF summary + receipts zip + audit extract, one click — the hero flow
       (see brainstorm idea A). Validate with two Treuhänder *before* building the PDF. — `M` / `L`
-- [ ] **B-53** Export safety: neutralise `= + - @` cells in xlsx/csv/tsv (formula injection, verified), escape `\t`/`\n` in
-      Banana TSV text fields, `zfill(2)` dates, blank non-finite amounts. — `M` / `S`
-- [ ] **B-51** Money columns `Float` → `Numeric(12,2)` (bookings, review_queue_items) with `round_chf` before insert;
-      stats summed as Decimal (`0.1+0.2+0.3` is `0.6000000000000001` today). Migration + data copy. — `M` / `M`
-- [ ] **B-56** Parser/classifier hygiene: `_parse_swiss_number` handles `'`/`’`/`\u202f` and `1234,50`; date regex anchored
-      (4-digit year → `3924` today); tenant-specific supplier names out of `CLASSIFICATION_RULES` into per-tenant
-      `KontoDefault`/memory; `save_to_memory` skips empty keys. — `M` / `S`
-- [ ] **B-22** Audit log surfaced in UI (model exists: `audit_log.py`). — `M` / `M`
-- [ ] **B-23** Usage limits enforced from `usage_event` (plan free/pro) — needed before billing R-106 Stripe means anything;
-      pair with B-54 quotas. — `M` / `M`
+- [x] **B-56** ✅ 2026-09-16 — see Done. The `3924` in this line was real, and the empty-key case turned out to
+      be wider than "empty": `preprocess` leaves punctuation, so `31.12.` reduces to `..`.
+- [x] **B-22** ✅ 2026-09-16 — see Done. The UI existed; what was missing was anything to show in it.
+- [x] **B-23** ✅ 2026-09-16 — see Done. The numbers live in `backend/app/core/plans.py` and are the owner's to
+      set; what shipped is the mechanism. Seats are deliberately **not** limited — see that entry.
 
 ### Together / data integrity
-- [ ] **B-52** Idempotency by constraint: partial unique index `(tenant_id, source_key) WHERE source='billing'` +
-      `IntegrityError → 200 duplicate` (two concurrent `invoice.paid` → two bookings today); approve/reject as
-      `UPDATE … WHERE status='pending'` on rowcount; idempotency key on bulk `POST /api/bookings/`. — `M` / `S`
-- [ ] **B-57** Worker hardening: `configure_sentry` in `worker.main`, `await gather` on stop, `stop_grace_period: 120s`,
-      reap `running` jobs older than N min back to `pending`, single-class training → 400 not 500, commit the import
-      *before* `auto_train`. — `M` / `S`
+- [x] **B-57** ✅ 2026-09-16 — see Done. All six, and the reaper turned out to matter more than the line
+      suggested: dedup is on a *pending* row, so one stuck `running` job stopped a tenant learning for good.
 
 ### User-friendly
-- [ ] **B-58** UX/a11y batch (ui-ux-pro-max §1–§3): one `formatCHF()` (`de-CH`, right-aligned amounts) replacing 3 formatters +
-      raw `toFixed`; `cursor-pointer` in `Button` base; popovers get `aria-haspopup/expanded` + Esc (`usePopover`);
-      `aria-current` in nav, `aria-label` on the 3 `<nav>`s; `w-[28rem]` picker → `min(28rem, calc(100vw-2rem))`;
-      emoji → Lucide; amber/emerald accents to ≥ 4.5:1; `InvoiceCard` header → `<button aria-expanded>`; Modell sub-tabs
-      on SWR with skeleton/error; confirm + `loading` on restore/replace-import/DangerZone/"Neue Datei". — `M` / `M`
-- [ ] **B-59** `response_model=` on the dict-returning routers (classify/info, bookings/stats, review/, audit/, stats/learning,
-      kontenplan) → `make api-types` → delete the hand-written interfaces (3 shapes for `/classify/info` today). — `M` / `M`
-- [ ] **B-20** Onboarding: first scan guided, sample receipt, Kontenplan import wizard. — `M` / `M`
+- [x] **B-20** ✅ 2026-09-16 — complete: sample receipt, the checklist reordered, and the Kontenplan import
+      wizard (second run, see Done).
 
 ### Security & data
-- [ ] **B-24** Postgres RLS as defence in depth — **ADR-002 drafted** (`docs/ADR-002-rls.md`): RLS + `SET LOCAL` on
-      `after_begin`, migrator/app role split, 12 tables, PG-only proof test. After B-39/40/41. — `H` / `L`
-- [ ] **B-25** Backup/restore: nightly `pg_dump -Fc` + `model_data` (receipts!) sync, `make backup` / `make restore-drill`,
-      retention documented. Nothing exists today. — `H` / `M`
-- [ ] **B-54** Upload bounds: reject on `Content-Length` + streamed cap *before* `file.read()`, cap `ZipInfo.file_size`
-      before `zf.read`, cap list sizes (kontenplan, memory JSON, bulk bookings), per-tenant storage quota via `usage_event`;
-      `pdf/parse` persists before parsing today. — `M` / `M`
-- [ ] **B-55** Auth surface: `RATE_LIMIT_AUTH` 10/min on login/register/sso, min password 12, uvicorn `--forwarded-allow-ips`
-      (keys on the proxy IP today), slowapi `storage_uri=redis` or delete the unused redis service. — `M` / `S`
-- [ ] **B-61** Health: 503 on `degraded`, cheap `SELECT 1` in production (skipped entirely today), `/api/health/detail`
-      gated in prod, health exempt from the default limit. — `L` / `S`
+- [x] **B-24** ✅ 2026-09-16 — see Done. ADR-002 is now *Accepted and implemented*.
+- [x] **B-25** ✅ 2026-09-16 — see Done. `docs/BACKUP.md`.
+- [x] **B-54** ✅ 2026-09-16 — see Done.
+- [x] **B-55** ✅ 2026-09-16 — see Done.
+- [x] **B-61** ✅ 2026-09-16 — see Done. One addition to what this line asked for: liveness and readiness are
+      now separate endpoints, because a liveness probe that asks the database restarts every container at once.
 
 ### DX / CI
-- [ ] **B-60** CI parity: backend matrix `db: [sqlite, postgres]` (up/down migration + subprocess-worker tests never run
-      locally, SQLite suite never in CI; `921d958b8530` + `now()` defaults break on SQLite), `compose-smoke` job
-      (`up --wait`, curl health, `worker --once`), build the frontend image, Settings ↔ `.env.example` test (7 keys missing),
-      pin runtime deps (lockfile) and ruff in `requirements-dev.txt`, remove the DB password from `scripts/setup.sh:21`. — `L` / `M`
-- [ ] **B-62** Frontend image: `ARG`/`ENV NEXT_PUBLIC_API_URL NEXT_PUBLIC_BILLING_URL` before `npm run build` + compose
-      `build.args` (runtime env is ignored — Apps switcher never renders in the compose image), `node:22-alpine`, `npm ci`. — `M` / `S`
+- [x] **B-60** ✅ 2026-09-16 — see Done. Both of the things it left over are closed now: the runtime lockfile
+      is **B-81**, and the compose-smoke job — the one part that shipped without ever being run — has since been
+      run end to end, every step, on a real daemon.
+- [x] **B-62** ✅ 2026-09-16 — see Done. Every item of this line was already true (B-41 did it); the line was
+      stale. A leaner image is its own item now — **B-80**.
+- [x] **B-81** ✅ 2026-09-16 — see Done. One deviation from what this line asked for: the compiled file is
+      `requirements.txt` and the input is `requirements.in`, not the other way round. Dependabot's pip ecosystem
+      finds a pip-compile pair by that convention and by the generated header; a file called `requirements.lock`
+      is one it never opens, and a lock nothing bumps is a lock that rots.
+- [x] **B-80** ✅ 2026-09-16 — see Done. It was built and run (1.23 GB → 235 MB), and building it is what found
+      the two failure modes the line could not have named: `.next/static` living outside the standalone bundle,
+      and `next start` being unsupported with it.
 
 ### Performance
-- [ ] **B-27** Query audit: `import_data.py:341` one memory SELECT per key → preload once; `/stats` 3 statements → one
-      `GROUP BY source`; `/stats/learning` drop 3 redundant counts; `ai_assistant.py:129` full-tenant scan per chat message
-      → SQL bucketing, 12-month cap; cache `_load_model` per process keyed on `updated_at`. — `M` / `M`
-- [ ] **B-28** Indexes: add `bookings(tenant_id, id DESC)` and `(tenant_id, source, id)`, drop redundant `ix_bookings_id`;
-      `review_queue_items(tenant_id, status, confidence)`; `training_jobs(tenant_id, status)`. — `M` / `S`
+- [x] **B-27** ✅ 2026-09-16 — see Done. One correction to what this line proposed: the months in the assistant
+      context cannot be bucketed in SQL, because `bookings.datum` is a free-text string.
+- [x] **B-28** ✅ 2026-09-16 — see Done. Two corrections to what this line proposed, both from measuring.
 
 ---
 
@@ -153,6 +550,656 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 
 ## ✅ Done
 
+- **B-82** ✅ 2026-09-17 — **registration was impossible in the production configuration**, and had been
+  since B-24. `POST /api/auth/register` creates a tenant and then calls `seed_tenant`, which inserts the
+  default Kontenplan — one of the 24 tables RLS covers. Nothing on that path establishes the tenant
+  context, so the policy predicate matched nothing and Postgres refused the INSERT outright:
+  `new row violates row-level security policy for table "kontenplan"`. The only way to create a first
+  account, in the only configuration that is meant to ship.
+  **Why no test caught it:** every test connects as the table owner, for whom policies do not apply —
+  the exact trap `docs/ADR-002-rls.md` documents for reads, arriving on a write. And `make dev` connects
+  as a superuser (it prints a warning saying so on every boot), so a year of local use could not have
+  found it either. `sso.py` has done `set_tenant` + `bind_tenant` since B-36 and even comments on why;
+  `/register`, the older endpoint, was never brought along. Two paths that create a tenant, one of them
+  updated.
+  Fixed by the pattern `deps.py` already uses. Two new tests in `test_rls.py` run on SQLite as well —
+  they assert Python, not Postgres: that the context is established, and that the Kontenplan actually
+  has rows afterwards (1020 specifically, since an Abgleich books against it).
+  **Found by the first real end-to-end run, five minutes in.** 1179 passing tests did not.
+
+- **B-83** ✅ 2026-09-17 — **every unhandled 500 reached the browser as a CORS error.**
+  `RequestContextMiddleware` builds the 500 response itself, and it sat *outside* `CORSMiddleware`, so
+  that response carried no `Access-Control-Allow-Origin`. The console said "blocked by CORS policy", the
+  CORS configuration was correct, and the actual error was unreachable from the client. B-54's own
+  comment three lines above states the principle — "added *before* CORS so that CORS ends up wrapping
+  it" — and the next line broke it for the error path.
+  This is what turned B-82 into two hours instead of five minutes, so it is the more expensive of the
+  two defects even though it is the smaller diff: it makes every future server error lie.
+  CORS is now the outermost middleware; `test_middleware_stack.py` pins all three positions. One cost,
+  deliberate: CORS answers preflights before they reach the logger, so OPTIONS no longer appears in the
+  access log — which also takes a wall of OPTIONS lines out of it.
+  Found here too: `docker-compose.yml` set `CORS_ORIGINS` to `http://localhost:3000` only, while
+  `config.py`'s own default allows `127.0.0.1:3000` as well — a deployment file narrowing the code's
+  safe default. Two guards in `test_deployment_contract.py`. And `errors.ts` mapped axios `ERR_NETWORK`
+  to "Läuft das Backend?", the one explanation that was not true; it now names both possible causes and
+  prints the URL it tried.
+
+- **B-81** ✅ 2026-09-16 — the runtime lockfile, installed before it was believed. `backend/requirements.txt`
+  was 40 lines of `>=`, so two builds a month apart resolved different trees and "it worked yesterday" had no
+  answer. It is now the **compiled** file — 83 pinned packages — and `backend/requirements.in` is the input you
+  edit. `make lock` recompiles. Nothing else had to change: CI, `backend/Dockerfile`, `scripts/setup.sh`,
+  `make setup` and `pip-audit` all already read `requirements.txt`, and all of them now read the pinned tree.
+  **The naming is the opposite of what the roadmap line asked for, on purpose.** Dependabot's pip ecosystem finds
+  a pip-compile pair by the `.in` → `.txt` convention and by the generated header; a file called
+  `requirements.lock` is one it never opens. A lock nothing bumps is a lock that rots until an upgrade is a week
+  of work, so the convention wins over the name.
+  **The thing that would have shipped silently:** pip-compile resolves for the interpreter it runs on. Compiled
+  on 3.11 this file pins `numpy 2.4.6` and `scipy 1.17.1`; on 3.13 — which is what CI and both images run — it
+  pins `numpy 2.5.3` and `scipy 1.18.1`. The first version of this lock was built on 3.11 and looked perfectly
+  correct. `make lock` now refuses to run unless the venv's Python matches `PYTHON_VERSION` in the workflow, and
+  a test holds the lock's own header against that same value.
+  Proof, end to end, and re-run after the 3.14 move below: a clean venv installed from the lock ran the suite at
+  **1179 passed / 20 skipped** on 3.14.7; `docker compose build api worker` installed it
+  (`Collecting aiosqlite==0.22.1`, not a range); the stack came up healthy; and `pip freeze` inside the running
+  API container is **83 packages, zero missing, zero mismatched, zero extra** against the lock. 11 new tests,
+  including the one that matters — a package added to `requirements.in` without running `make lock` fails the
+  suite. One more datapoint from 2026-09-17: `make lock` run on macOS/arm64 produced a **byte-identical** file to
+  the one compiled in a Linux container, so this dependency set is platform-stable. An observation, not a
+  guarantee — a future dependency with platform markers could end that.
+  **Found while proving it, and now settled:** `backend/venv` on the Mac was **Python 3.14** while CI and both
+  image stages were **3.13** — the local suite had been running on a different interpreter than production, and
+  the lock is what made it visible. Resolved upwards: **everything is 3.14** (`PYTHON_VERSION` in both workflows,
+  both `FROM python:` lines, the `venv/bin/python3.14` fallbacks in the three scripts, the README, and the lock,
+  recompiled on 3.14.7 — the same 83 pins, so only the header moved). `make setup` warns when the venv differs,
+  `make lock` refuses, and a test holds `PYTHON_VERSION` against the `FROM python:` lines so they cannot drift
+  apart again.
+  **What stayed at 3.13 on purpose:** ruff's `target-version`. That field is the *language floor*, not the
+  runtime, and at `py314` the formatter rewrites `except (TypeError, ValueError):` into PEP 758's
+  `except TypeError, ValueError:` — ten files of churn, a `SyntaxError` on any older Python, and a line that
+  reads like Python 2 to everyone else. `UP037` also starts demanding unquoted forward references in the
+  SQLAlchemy models, where the quotes are the whole reason the registry can resolve a class that is not imported.
+  `pyproject.toml` says all of that where somebody will read it before bumping it again.
+  Not locked, deliberately: `requirements-dev.txt`. It is the toolchain, ruff is already pinned to the version
+  pre-commit installs, and a second lock would be a second thing to bump for no deployment risk.
+- **The stack runs** ✅ 2026-09-16 — not a roadmap item, and the largest thing that happened today. Every
+  compose piece was written blind: B-41 the production compose, B-24 the role split, B-25 the backup profile,
+  B-61 the probes, B-60 the smoke job. None of it had ever run together, and the one attempt died on `ollama`'s
+  GPU reservation before reaching a container. It has now been brought up end to end:
+  `docker compose up -d --wait db redis api worker web` → **five healthy services**, `GET /api/health` and
+  `/api/health/live` 200, `/login` 200 with its stylesheet served, `python -m app.worker --once` exit 0 — which is
+  every step of the `compose-smoke` job, verbatim, so that job is no longer shipping unrun.
+  **B-24 checked against the running database**, which is the first time it has been anything but a test suite:
+  `app_rw` is `rolsuper = f, rolbypassrls = f`; 24 tables have RLS **enabled**, **forced**, one policy each; the
+  API's connections are `app_rw` and only the migration's is the owner; and an `INSERT` as `app_rw` with no tenant
+  context is refused with `new row violates row-level security policy`. Fail-closed, live.
+  It also confirmed the trap `docs/RUNBOOK-RLS-CUTOVER.md` warns about: `chadev` really is `rolsuper = t`, so
+  pointing `DATABASE_URL` back at the owner is not a rollback — production refuses to boot as a superuser.
+  **Confirmed on the owner's machine, 2026-09-17** — which was the one caveat this entry shipped with, since the
+  run above was x86_64 with a Linux daemon. arm64 Docker Desktop, an existing `pgdata` volume, `docker compose
+  build api worker` clean, `up -d --wait` → five healthy services, **all 30 migrations applied** from baseline to
+  B-28, `/login` 200 with its stylesheet at 87 195 bytes, and RLS read back off the live database as
+  **24 enabled / 24 forced / 24 policies**. Two things cost time and are worth writing down: a local `make dev`
+  still holding **:3000** makes the `up` fail with *"ports are not available"* — nothing to do with compose — and
+  a half-started stack has to be `docker compose down`ed before `up -d --wait` behaves.
+- **B-80** ✅ 2026-09-16 — the frontend image stops shipping its own toolchain. **1.23 GB → 235 MB**, measured by
+  building both. It was single-stage, so the published image carried the whole source tree and every devDependency
+  `npm ci` installed — typescript, eslint, vitest, Playwright, tailwind, 734 MB of `node_modules` — and ran as
+  **root**. Now three stages, and the runtime one copies two directories out of Next's `output: "standalone"`
+  bundle. `/app` in the finished image contains four entries: `.next`, `node_modules`, `package.json`, `server.js`.
+  It runs as `node` (uid 1000) and has a `HEALTHCHECK`; compose has one for `web` now too.
+  This line said **"must be built once before it is believed"**. It was built, with a real daemon, and building it
+  is what found the two things that were not guessable. First: `.next/static` is deliberately *not* inside the
+  standalone bundle — Next expects a CDN to serve it — so an image that copies only `standalone` starts fine,
+  answers 200 on `/login`, and renders without a single stylesheet. The image healthcheck and the CI smoke job
+  therefore fetch the stylesheet the page asks for, not just the page. Second: `next start` **is not supported**
+  with standalone output. Next says so and serves anyway, which is worse than failing — CI was about to run on a
+  warning. `scripts/serve-standalone.sh` now assembles the same two directories the Dockerfile does, and
+  Playwright's CI server runs it, so the e2e suite and the image are the same server.
+  Proof, in the container that used to have no daemon: `docker build` → `docker run` → `docker inspect` reports
+  **healthy after 10 s**, `id` is `uid=1000(node)`, `/login` 200, its CSS chunk 200 at 70 411 bytes,
+  `/dashboard/scanner` → 307, `NEXT_PUBLIC_API_URL` inlined into three chunks at build time, and typescript,
+  eslint, vitest, Playwright and tailwind all absent from `node_modules`. The compose-smoke job now starts `web`
+  and asks it the same two questions. 16 new tests (`test_deployment_contract.py`, `test_ci_contract.py`).
+  Also fixed here, because it cost an hour: `.gitignore` matched `.next/` and `.next-e2e/` by name, so a one-off
+  build directory swept 1265 files into a commit. It is `.next*/` now, in both files.
+- **B-55** ✅ 2026-09-16 — the unauthenticated edge. Sign-in, sign-up and the SSO hand-off get their own per-IP
+  bucket (`RATE_LIMIT_AUTH`, default 10/minute) far below the general limit — they are the only unauthenticated
+  write paths. New passwords are 12–128 characters; **login** keeps `min_length=1` on purpose, because an existing
+  account with a shorter password still has to be able to sign in. The limiter's counters move to Redis when
+  `REDIS_URL` is set (in-process counters are per-worker, so two workers granted twice the quota), falling back to
+  memory with a warning if the client cannot import. `FORWARDED_ALLOW_IPS` defaults to empty — trust no proxy — so
+  the per-IP limit cannot be keyed on a reverse proxy's address by accident. 12 tests. Found in passing: the e2e
+  suite throttled itself, because 32 a11y tests each register from 127.0.0.1; the Playwright webServer now raises
+  the limit for itself and says why in a comment.
+- **B-54** ✅ 2026-09-16 — bounds on everything that gets uploaded. `MaxBodySizeMiddleware` refuses on
+  `Content-Length` **before** routing and before any body is read, added inside CORS so the browser reports a 413
+  rather than a CORS failure. `read_upload()` streams in 1 MB chunks and aborts at the cap instead of trusting the
+  header; zip members are checked against `ZipInfo.file_size` before `zf.read` (a zip bomb is small until you read
+  it) and against a total; list endpoints cap their counts (Kontenplan, memory JSON, bulk bookings). Plus a
+  per-tenant storage quota on the usage-event ledger — every upload is kept on purpose, so without a ceiling one
+  tenant fills the disk with files the product could not even parse. 25 tests.
+- **B-79** ✅ 2026-09-16 — send our own invoice by e-mail. `GET/POST /api/rechnungen/{id}/versand`: the draft is
+  built and shown before anything is sent, the recipient falls back from `contact_email` to the customer address in
+  the invoice's own JSON (there is no customer master yet), and the PDF from B-77 goes along as the attachment.
+  `sent_at` on the document is what the Rechnungen list and the Mahnung ladder read. 400 on a bad address, 503 with
+  no SMTP configured, 502 when the send itself fails — three different problems the user can act on differently.
+  20 backend tests, 8 frontend.
+- **B-74** ✅ 2026-09-16 — Dauerbuchungen, and which one is missing this month. The recognition B-71 built for
+  liquidity moved into `services/dauerbuchungen.py` and grew a status per entry: bezahlt · kommt noch · **fehlt**,
+  with three days' grace on the usual day. "Cembra 770.60 fehlt diesen Monat" is now a row on Heute rather than
+  something you notice at the year-end close. Deliberately part A only: the Abgleich-proposal half is a separate
+  change, because every proposal today pairs a transaction with a *document* and a standing order has none.
+  18 backend tests, 10 frontend. **Part B is now written up rather than guessed at:**
+  `docs/ADR-003-standing-orders-in-abgleich.md` — three options, what each costs, and the three questions only
+  the owner can answer. It is a decision, not a typing task; `Match.document_id` being nullable would quietly
+  disarm `uq_matches_pair` and put a second branch through `confirm()`.
+- **a11y** ✅ 2026-09-16 — `EmptyState` and `ErrorState` rendered an `h3` inside sections whose heading was an `h2`,
+  which axe reported as 14 `moderate heading-order` findings across the app. Both gained an `as` prop defaulting to
+  `h2`. The whole suite is back to zero findings, light and dark.
+- **Lohn-Vergleich** ✅ 2026-09-16 — the tool that lifts the watermark. Every payslip says «Nicht für die
+  Einreichung» until one real month matches the previous provider to the rappen; that check was a manual
+  squint at two sheets of paper. Now: `make lohn-vergleich` writes a template, the old payslip's numbers go in,
+  and the script prints our line, their line, the difference, **and what produced ours** (`6500.00 × 5.3 %`) —
+  then a finding per deviation naming the input that would explain it.
+  Three refusals are the whole design. **It never adjusts our number to theirs**: the point is to find out
+  whether the engine is right, and a harness that fudges has failed before it runs. **It never guesses whether
+  the rate or the base differs** — one number cannot tell them apart (360.40 is 5.3 % of 6'800 *and* 5.545 % of
+  6'500), so both readings are printed, with a nudge toward whichever is the rounder figure. And **an empty
+  comparison does not pass**: the sentence at the end lifts a watermark, so it needs Brutto, Netto and a
+  counterpart for every line we compute — a line the old payslip does not mention is *unchecked*, not zero.
+  A few rappen are reported as rounding (we round per line, other programs round the total), and a position the
+  old payslip has that our engine does not model is a finding, not something to overwrite.
+  Found while building it: a `Zeile` defaulted to the employee side, so every employer-side finding named the
+  employee's input — you would fix `ktg_satz_an`, run it again, and watch the difference stay. The default is
+  gone and a test asserts it cannot come back. 51 tests.
+- **The first `docker compose up`** ✅ 2026-09-16 — it found a bug in ninety seconds, which is the argument for
+  running things rather than reading them. Every image built, every container was created, and then the daemon
+  said *"failed to discover GPU vendor from CDI: no known GPU vendor found"* and the whole `up` aborted.
+  The cause was four lines in the `ollama` service: `reservations.devices: [capabilities: [gpu]]`. That is not a
+  preference — compose refuses to start on any host without an NVIDIA GPU and the container toolkit, which is
+  every Mac and most rented servers, and it takes down the services that had nothing to do with it. Ollama runs
+  perfectly well on CPU. A GPU reservation is a property of *one host*, so it belongs in that host's
+  `docker-compose.override.yml`, not in the file everybody shares.
+  Ollama is also **opt-in now** (`--profile ai`), for the same reason `backup` already was: it is optional by
+  design (B-20 put it last on the checklist, B-61 keeps `/api/health` at 200 without it) and it is several
+  gigabytes of surprise download. The default `up` is the five services the product actually needs.
+  And the push that preceded it was refused by the pre-push hook, correctly: `api-types.ts` had gone stale when
+  B-61 added `/api/health/live`. The hook checked, CI checked — the only thing that did not was `make check`, the
+  command people run *before* pushing. It does now. Both are held by tests.
+- **B-60** ✅ 2026-09-16 — CI now tests what the product runs on. It was the item with evidence behind it, and
+  the evidence was four defects in one week that one side could see and the other could not.
+  **The backend suite runs on both databases.** SQLite has no fixed-width integers, which is why
+  `usage_events.quantity` overflowed int32 at 2.1 GB while the local suite stayed green for weeks; SQLite has no
+  row-level security, so the twelve B-24 tests skip there entirely. Running one leg and calling it "tests pass"
+  is what let both through. `fail-fast: false`, because the point is seeing *which* leg disagrees.
+  **Migrations are reversed and reapplied.** A migration nobody has ever rolled back cannot be rolled back at
+  3 a.m. — and that leg is where `921d958b8530` + a `now()` default breaks.
+  **A compose-smoke job.** Production *is* compose, and until now nothing had ever asserted that the stack
+  starts: build api, worker **and web**, `up --wait` on the B-61 readiness probe, curl both health endpoints, run
+  `python -m app.worker --once`, print the logs on failure, tear down. Its secrets are generated in the step,
+  because a fixed value in a workflow file is a credential in git — which brings us to the next one.
+  **`scripts/setup.sh` carried a real Postgres password**, tracked since `e9d892e`. It is gone from HEAD; **it is
+  still in the history, so that password has to be rotated, not just deleted.**
+  **ruff is pinned to the version pre-commit installs** (`ruff==0.16.4`). `>=0.9` meant the hook, CI and a laptop
+  could each format differently, and the one that disagrees is always the one nobody has locally; a test fails
+  when the two pins drift.
+  Found while making the suite reproducible: **the onboarding sample PDF was not deterministic.** fpdf2 stamps
+  `/CreationDate` with "now", so two renders a second apart differ and `test_the_same_day_gives_the_same_file`
+  was a coin flip. `Meta.erstellt` pins it — for the sample only; a real invoice keeps its real timestamp,
+  because a document claiming to have been created on a day it was not is worse than a noisy diff.
+  17 tests. **One honest caveat: the compose-smoke job has never executed** — no Docker daemon here — so the
+  first push is its first run.
+- **B-62** ✅ 2026-09-16 — **already done, and the roadmap did not know.** Every item this line asked for —
+  `ARG`/`ENV` before `npm run build`, compose `build.args`, `node:22-alpine`, `npm ci` — went in with B-41 and the
+  line has been describing finished work ever since. That is the third stale line found this week, which is the
+  actual lesson: a list nobody holds against the code drifts in both directions.
+  So what shipped is the guard. `tests/test_deployment_contract.py` holds the frontend Dockerfile, compose and the
+  two `.env.example`s against each other — no daemon needed, because a test that needs one is a test that gets
+  skipped. The one worth the file on its own: **no `NEXT_PUBLIC_*` may appear in any service's `environment:`**.
+  Next inlines those at *build* time, so a runtime value does nothing at all — no error, no warning, the feature
+  simply never appears. That is exactly how the Apps switcher went missing from the compose image.
+  It also closes the **Settings ↔ `.env.example`** half of B-60, and the roadmap's count was exact: **7 settings
+  had no documentation anywhere**. Five are now written down — the three Ollama timeouts and, the load-bearing
+  one, `MIGRATION_DATABASE_URL`, which B-24 makes production refuse to boot without. The other three are internal
+  and say so in `NICHT_DOKUMENTIERT`, with a second test that fails when an entry outlives its setting.
+  `PyYAML` moved into `requirements-dev.txt`: it arrives transitively through pre-commit today, and a test that
+  depends on somebody else's dependency breaks on an unrelated upgrade. 13 tests.
+- **B-56** ✅ 2026-09-16 — parser and rule hygiene. Three bugs that share one property: each produces a
+  *plausible* wrong answer, so nothing raises and nothing looks wrong in a list.
+  **The statement date.** `re.compile(r"\d{2}\.\d{2}\.\d{2}").match(...)` was unanchored at the end, so
+  `31.12.2024` matched on its first eight characters and the two-digit-year rule then read `2024` as the year:
+  `1900 + 2024` = **3924**, exactly the number the roadmap line predicted. UBS prints `dd.mm.yy` and other banks
+  print `dd.mm.yyyy`; `parse_statement_date` now takes both, anchored, and rejects a month of 13.
+  **Somebody else's suppliers.** Seven names were in `CLASSIFICATION_RULES`, which every tenant of every
+  deployment shares. The worst was **`"aksoy"` in the payroll rule** — a surname, so any invoice from a supplier of
+  that name was booked to 5000 Lohn for a customer who has never heard of them. Also `iso-trade`, `iso-center`,
+  `dorfgarage`, `feldmann`, `spenglerei` and our own `chadev`. They are gone, `VERBOTENE_KEYWORDS` keeps them out,
+  and the generic trade vocabulary (`benzin`, `werkzeug`, `versicherung`) is untouched — a tenant's own suppliers
+  are already learned per tenant the first time they correct one.
+  **A memory key that identifies nothing.** `save_to_memory` guarded on an empty *description*, not an empty
+  *key* — and `preprocess` strips digits and month names, so `"2024 03"` reduces to `""`. Wider than the line
+  said, too: punctuation survives, so `"31.12."` reduces to `".."`. One such row matches every description that
+  reduces to the same thing and silently classifies a whole class of bank lines. Both the write **and the lookup**
+  now refuse, so a row written before this fix becomes harmless without a migration over every tenant's memory
+  table. 26 tests.
+- **B-57** ✅ 2026-09-16 — the worker runs where nobody is watching. Six things, and the one the line
+  understated is the reaper: a worker that is SIGKILLed (OOM, a node going away) never runs its
+  `CancelledError` handler, so the row stays `running` **for ever** — and because `enqueue_training` deduplicates
+  per tenant, that tenant's retrains then queue behind a job nobody will finish. The classifier silently stops
+  learning and nothing reports it. `reap_stale()` runs before every claim; 15 minutes, generous on purpose,
+  because a false positive costs a duplicate retrain and training is idempotent.
+  **Cancelling is a request, not an event.** `stop_all()` cancelled its tasks and exited without awaiting them, so
+  the handler that hands a half-finished job back never ran. It now waits, with a budget **per shutdown rather
+  than per task** — a container being killed must not be held open task-by-task past its grace period — and
+  compose gives the worker `stop_grace_period: 120s` instead of docker's default 10.
+  **`configure_sentry` in `worker.main`**: the API has had error tracking since B-33 and the worker never did, so
+  since B-08 a crash in the one process nobody watches was invisible — the queue just stopped moving.
+  **A single account is a 400, not a 500.** `fit_pipeline` raises a typed `TrainingDatenFehlen`; scikit-learn's
+  "this solver needs samples of at least 2 classes" used to reach the user as a server error, on what is the most
+  ordinary state a new tenant can be in.
+  **The import commits before it trains.** Training is the long, failing part, and a failure in it used to roll
+  back an import that had already succeeded — the user re-uploaded a 2'000-line file to fix a different feature.
+  19 tests.
+- **B-61** ✅ 2026-09-16 — health that can fail. In production `GET /api/health` answered a flat
+  `{"status": "ok"}` **without touching anything**, so an instance whose database was gone kept taking traffic and
+  no load balancer could tell. It now runs one bounded `SELECT 1` and answers **503** when it cannot — in every
+  environment, production included, where the body still says only status and version.
+  One thing the roadmap line did not ask for and the change needs: **liveness and readiness are different
+  questions**, so they are different endpoints. `GET /api/health/live` touches nothing and always answers — a
+  liveness probe that asks the database restarts every container at the same moment the database hiccups, which is
+  the opposite of what it is for. `/api/health` is the readiness probe and the one compose gates the worker on.
+  Two more decisions. **Only a required dependency makes an instance unhealthy**: Ollama is optional by design
+  (B-20 put it last on the checklist and said so), so `/detail` reports it as broken without going 503 — being
+  pulled out of the load balancer because the AI service is asleep is a worse outage than the one it reports.
+  And **`/detail` is admin-only in production**, because naming the upstream and the exception class is exactly
+  what makes it useful and exactly why it does not belong on the open internet. All three are exempt from the
+  default rate limit: probes poll every few seconds, and every orchestrator reads a 429 as "unhealthy". 17 tests.
+- **B-20 (finished)** ✅ 2026-09-16 — the Kontenplan import wizard, the last third. A new customer's chart of
+  accounts arrives as a file from their Treuhänder or their old program; without this it gets typed in.
+  The reason it is a wizard and not a button is one line of existing code: `PUT /api/kontenplan/` **replaces the
+  whole plan**. Upload a partial list, press save, and everything the file does not mention is gone — noticed at
+  the next booking. So reading and writing are separate requests: `POST /api/kontenplan/import/vorschau` writes
+  nothing and answers per row (neu / geändert / unverändert / nicht gelesen, with the line number in the user's
+  own file), plus the list of accounts that would **disappear**; `POST /api/kontenplan/import` takes an explicit
+  `ergaenzen` / `ersetzen`, defaults to the one that cannot lose data, and the screen makes you tick a box before
+  a destructive one.
+  It refuses to guess: a Banana group row (a description, no account number) is skipped, a `TOTAL` line is
+  reported rather than repaired, and a duplicate names the line it collides with. Column headers are matched
+  across German, English, French and Italian exports.
+  `tests/test_kontenplan_import.py` (29) and `src/lib/kontenplan_import.test.ts` (17).
+- **B-72 option C, the BVG part** ✅ 2026-09-16 — the one gap of the four that is *law* rather than purchased
+  data. The Altersgutschrift on the payslip still comes from the pension fund, and that stays: a real plan is
+  almost never the BVG minimum, and a number re-derived here would contradict the one that gets paid. What the law
+  does give is a **floor** — `services/bvg.py` carries the Grenzbeträge per year (BSV's own table) and the Art. 16
+  Altersgutschriftensätze (25–34 → 7 %, 35–44 → 10 %, 45–54 → 15 %, 55+ → 18 %), and
+  `GET /api/lohn/bvg-pruefung?jahr=` reports where the entered amounts contradict the obligation. It changes no
+  payslip; the payroll engine is untouched.
+  Three decisions in the diff. **Nothing is interpolated**: a year that is not in the table is checked against the
+  nearest one *and says so on screen*, because extrapolating would have been wrong in 2005, when the
+  Eintrittsschwelle stopped being a copy of the Koordinationsabzug. **The Altersjahr is the calendar year minus the
+  year of birth**, so a band changes at New Year, not on a birthday. And **Art. 66 Abs. 1 is checked across the
+  workforce, not per employee** — the law compares the employer's total with the total of *all* employees', so one
+  person paying more than their own employer share is legal and a per-person check would flag it wrongly.
+  `tests/test_bvg.py` (41) + 6 API tests, one of which asserts the payslip is byte-identical before and after.
+- **B-23** ✅ 2026-09-16 — plan limits, enforced. B-54 started counting; this refuses. Three ceilings —
+  Belege/month, Klassifizierungen/month, storage — all read out of `usage_events`, so the number shown to the
+  customer and the number that locks them out cannot drift apart. `GET /api/usage`, a page under *Mehr*, and one
+  row on Heute when a counter goes over 80 %, because a refused upload is a bad way to find out the month is used
+  up.
+  **The numbers are in one file** (`core/plans.py`) and they are a business decision, not a technical one —
+  `ENFORCE_PLAN_LIMITS=false` keeps counting and stops refusing, for the day one of them is set wrong.
+  Three decisions worth the diff. **Seats are not limited**: there are exactly two ways a user is created today —
+  self-registration, which always makes a *new* tenant, and the SSO mirror, which billing has already decided — so
+  a seat limit would be a rule with no way to break it. **A storage quota of 0 still means no quota**, because
+  B-54 documents it as the single-tenant escape hatch and re-introducing a ceiling through the plan table would
+  hit exactly the installation that switched it off. And the batch upload keeps answering 200 with a per-file
+  result, but the result now carries the error **code**, so the UI can tell "wrong file type" from "plan used up"
+  without parsing German.
+  Found on the way, and fixed here: **every receipt without a QR code was being stored twice.** `ingest` stores
+  the file, then hands it to the scanner to read — and the scanner stored it again, under a second key. Two copies
+  on disk, and B-54 charged the tenant for both. `tests/test_plan_limits.py` — 37 tests, including the one that
+  holds the declaration against the code: a limit whose event nobody writes can never fire, and it reviews clean.
+- **B-27** ✅ 2026-09-16 — the query audit. Five places, one shape: a statement that scaled with how much the
+  tenant already had. The Banana import ran one `SELECT` per distinct description — 800 round trips inside one
+  request, and it got slower the longer a tenant had been a customer (**699 ms → 165 ms** re-importing 800 rows
+  against Postgres). `GET /api/bookings/stats` asked three times for numbers one `GROUP BY source` returns.
+  `/api/stats/learning` queried for a booking count it was already holding. `build_context()` read **every**
+  booking of the tenant on **every** chat message. And the classifier unpickled its model from the database on
+  every request, because the only cache was on an object that lived for one request.
+  Two things worth arguing with. The roadmap asked for SQL month-bucketing in the assistant context; that is not
+  safe here — `bookings.datum` is a free-text string (`POST /api/bookings` accepts whatever the client sends, and
+  the writers disagree), so `substr(datum, …)` would bucket half a tenant's rows into the wrong month. The scan is
+  bounded instead. And the model cache **skips any row without a `model_sha256`**: that is the pre-B-34 shape,
+  where the signature check is the only thing between the blob and `pickle.loads`, and it has to run on the bytes
+  every time.
+  Guarded by `tests/test_query_budget.py` — 18 tests that count the statements an endpoint issues. An N+1 never
+  fails a test on its own, which is why all five survived this long.
+- **B-28** ✅ 2026-09-16 — indexes, chosen from `EXPLAIN (ANALYZE, BUFFERS)` against a seeded database rather
+  than from reading the code. Before → after: the bookings list for one tenant, on 800k rows across 200 tenants,
+  438 buffers with 23'053 rows thrown away by a filter → 90 buffers and an Index Cond, and **flat instead of
+  linear in the number of tenants**; the same list filtered by source, 327 → 88; the review queue on 60k rows,
+  1'603 → 521; the worker claiming the oldest pending job, 263 buffers and a 3'926-row sort → an **Index Only
+  Scan, 4 buffers, Heap Fetches 0**.
+  **Two corrections to what the roadmap line proposed.** `training_jobs` needs *two* indexes, not one: the line
+  named `(tenant_id, status)`, which serves `enqueue_training` — but the worker's claim is cross-tenant by design
+  (B-24 exempts the table for that reason) and needs `(status, requested_at, id)`. And `ix_bookings_id` was not
+  the only index duplicating its own primary key: writing the general test instead of the specific one found
+  `ix_kontenplan_id` and `ix_konto_defaults_id` doing the same. All three dropped; re-measured, nothing slower.
+  7 tests, no timing assertions — a stopwatch in a test suite is a flaky test, not a guarantee.
+- **B-22** ✅ 2026-09-16 — the audit log had six actions in it, four added that same week. The UI and the model
+  had existed for months; what was missing was anything worth showing. Since B-17 dumps this table straight into
+  the Treuhänder hand-off as `50-Protokoll.csv`, the pack was shipping an audit extract that was very nearly
+  empty — worse than shipping none, because it looks like an answer. Seventeen actions now: creating bookings,
+  changing the Kontenplan, a bulk import, writing and sending an invoice, a Mahnung, the four Abgleich decisions,
+  both review outcomes, a document's status (only the status — correcting a vendor the OCR misread is not an
+  assertion about money), the export batch with its checksum, and the three Lohn actions. The list lives in
+  `core/audit_actions.py` **with a companion list of what is deliberately not logged**, because a log full of
+  reads is how the useful rows get lost. Three tests hold it: every declared action is emitted somewhere in `app/`,
+  every one is driven through the API by a test, and nothing is emitted that was not declared — plus `audit()`
+  asserting the same at runtime, so a typo fails instead of writing a row nobody will ever query for. 23 tests.
+- **B-51 (finished)** ✅ 2026-09-16 — five money columns were still `Float`: the bank movement, the invoice total
+  that drives Offene Posten and every Mahnung, the two figures on the Treuhänder cover sheet, and the matched
+  amount. Same failure B-51 describes — 0.1 + 0.2 + 0.3 sums to 0.6000000000000001 — just not finished. The
+  migration rounds half-up as it casts (verified on a real Postgres: an existing `0.1+0.2` came out `0.30`).
+  `invoice_positions.einzelpreis` stays `Float` **on purpose** and now says why: 0.125 per unit is a real price,
+  and rounding it on bind would turn 100 × 0.125 = 12.50 into 13.00. A test asserts the whole set at once, so the
+  next money column cannot be added on `Float`.
+- **B-54 (follow-up)** ✅ 2026-09-16 — `usage_events.quantity` counts *bytes* and was `Integer`, so it overflowed
+  at 2.1 GB. SQLite has no fixed-width integers, so only the Postgres CI job could see it — a tenant with a few
+  gigabytes of receipts would have hit it in production, at upload time.
+- **Ein Tausendertrennzeichen** ✅ 2026-09-16 — `fmt_swiss` emitted U+2019 while its own docstring, the frontend
+  and every PDF used U+0027 (fpdf2's core fonts are latin-1, so `latin1()` was quietly rewriting it). The same
+  amount read `1'234.50` on the invoice and `1’234.50` in the e-mail attached to it. Worse: `_parse_swiss_number`
+  stripped only U+2019, so **reading back a statement this product had printed itself returned None**. It now
+  handles both apostrophes, the acute accent, the comma and all three spaces. `latin1(fmt_swiss(x)) == fmt_swiss(x)`
+  is now a test.
+- **B-20** ✅ 2026-09-16 (partly) — the first ten seconds. The checklist opened with "AI-Dienst verbinden":
+  a technical prerequisite that produces nothing a new user can see, asked before they have any reason to care,
+  in direct contradiction of the IA's own rule 3 ("no settings before value"). Reading a receipt is now step one
+  and Ollama is last, marked optional — a Swiss QR bill is decoded exactly, with no model involved at all.
+  Step one also answers the most ordinary first-run problem: **they do not have a Swiss invoice on the laptop they
+  signed up on.** `GET /api/onboarding/beispiel-rechnung.pdf` generates a complete, scannable QR-Rechnung from
+  fictional data, through the same renderer real invoices use — and the test that matters decodes it with the
+  product's own `qr_bill.read_qr_bill`, because a sample the reader cannot parse would teach a new user the
+  fallback path instead of the real one. It is a download, not a seeded row: writing demo documents into a real
+  tenant would mean inventing a way to remove them again. It carries a "Beispiel" watermark (the Zahlteil draws
+  its own white ground, so the QR stays readable) and the SIX documentation's example IBAN. 10 tests.
+  **Still open: the Kontenplan import wizard** — a screen that does not exist yet, and the kind of thing to sketch
+  before building.
+- **B-17** ✅ 2026-09-16 — the Treuhänder hand-off, in one file. `GET /api/export/batches/{id}/pack.zip`:
+  cover sheet as a PDF, the Banana import **byte-identical to the batch**, the receipts numbered to match the
+  bookings (`30-Belege/047-Migros.pdf`), the same rows as a readable CSV, and the audit trail for the period.
+  The useful part is not what is in the zip but what the README says is *not*: the bookings with no receipt,
+  listed by number, because that list is the Treuhänder's actual review task and the only thing they would
+  otherwise derive by hand. A document whose file cannot be read gets its own section — that is the one failure
+  invisible from the booking alone, where the system believes a receipt exists and it does not. Building the pack
+  is a pure read, so a Treuhänder who loses the e-mail gets the same zip again. Filenames go through a whitelist
+  (vendor names come out of OCR, and `../../etc/passwd` is a vendor name as far as the extractor is concerned),
+  the CSV carries plain numbers so a column can be summed and `safe_text` so a description starting with `=` is
+  not a formula, and the pack refuses past 512 MB with the number in the message rather than dying at 94 %.
+  19 tests.
+- **B-24** ✅ 2026-09-16 — Postgres Row-Level Security on the 24 tenant-scoped tables (ADR-002, now *Accepted and
+  implemented*). `SET LOCAL app.tenant_id` re-issued by an `after_begin` listener — the only variant that survives
+  the 27 mid-request commits and does not leak on a pooled connection — plus `bind_tenant()` for the request's first
+  transaction, which `get_current_user` has already opened before it knows the tenant. Context set at four sites
+  (`deps`, `training_worker._run`, `platform_events`, `sso`). **The role split turned out to be the load-bearing
+  part**: as the bootstrap superuser, with every policy in place and `FORCE ROW LEVEL SECURITY` on, tenant 1 could
+  still read and write tenant 2's rows — Postgres exempts a superuser from every policy. Compose now runs the app as
+  `app_rw` (`NOSUPERUSER NOBYPASSRLS`, DML only) with Alembic as the owner, production refuses equal URLs, and
+  `verify_rls_role()` refuses to boot as a role the policies do not apply to. The policy predicate needs a `nullif`:
+  a GUC that was set and then RESET comes back as `''`, and `''::int` raises. The table list lives in `core/rls.py`
+  and a test holds it against the models, so a new tenant-scoped table cannot be forgotten; `users` and
+  `training_jobs` are the two documented exemptions. 20 tests (10 PG-only, proven against a real Postgres).
+- **B-25** ✅ 2026-09-16 — backup and restore, where there was nothing at all. Nightly `pg_dump -Fc` **plus** the
+  `model_data` volume in one compose service on the postgres image (no docker socket, no host cron), behind a
+  profile. Each backup writes a manifest — alembic revision, row counts for eight tables, SHA-256 of both artefacts
+  — and `make restore-drill` restores into a throwaway database and checks all of it. Verified: the good backup
+  passes, a one-byte-appended dump fails on the checksum, a manifest claiming seven tenants when the dump has one
+  fails on the row count. 30-day retention in a separate `backup-prune.sh` (the only part that deletes, and the one
+  with real tests): never removes the newest backup, never touches anything that is not a timestamped directory.
+  `docs/BACKUP.md` documents retention, off-host copies, the real restore, and the three things it does not do.
+  11 tests.
+- **B-72** ✅ 2026-09-16 — Lohn, built as **option B with option C's shape** (`docs/B-72-LOHN-SPEC.md`). Three
+  tables, a pure gross→net engine, payslip and Jahreszusammenzug PDFs, three bookings, and a page under Mehr.
+  AHV/IV/EO and ALV carry defaults because they are federal; UVG, UVGZ, KTG, FAK and the Verwaltungskostenbeitrag
+  are nullable with none, and a missing one raises `lohn_konfiguration_fehlt` naming **every** missing rate at once
+  rather than being treated as zero. UVGZ and KTG are the exception — voluntary, so absent means "not insured" and
+  the line disappears. A payslip stores the rate beside every amount, so a January change never rewrites December,
+  and is issued once (the unique constraint is the guard; the second attempt is a 409). Two places Swiss payroll is
+  not obvious, both pinned by tests: the payroll month is 30 days whatever the calendar says, and the ALV ceiling is
+  cumulative over the year rather than a monthly twelfth. Bookings: 5000/2270 deductions, 5000/1020 net, 5700/2270
+  employer. **Every payslip carries a "Nicht für die Einreichung" watermark until somebody signs off one real month**
+  — its own endpoint, false for every tenant, no migration sets it. The yearly PDF is called Jahreszusammenzug and
+  says on the page that it is not the Lohnausweis. 62 backend tests, 18 frontend.
+- **IA steps 1–4** ✅ 2026-09-16 — the pages moved to where the menu already said they were: `rechnungen/` →
+  `belege/`, `scanner/` → `belege/scanner/`, `kontoauszug/` → `bank/`, `abgleich/` → `bank/abgleich/`, `insights/`
+  → `bank/buchungen/` (the tab has been called Buchungen since step 5; "insights" was never a word this product
+  says). Every old address is a 307 in `next.config.ts` — temporary, because a 308 is cached forever — asserted by
+  six e2e tests at the HTTP level. Heute then became an inbox: one row per thing actually waiting, worst first,
+  each with the one word for what to do about it, with the cards below as the detail. The KPI tiles and the
+  Schnellzugriff grid left the page; neither is a decision, and rule 2 is that decisions come to the user.
+  `lib/heute.ts` is pure and recomputes nothing. 15 tests for the rows, 6 for the redirects.
+- **Mahnung als PDF** ✅ 2026-09-16 — `GET /api/offene-posten/{id}/mahnung.pdf?stufe=N`, served as
+  `Mahnung-2-R-2026-001.pdf`. Of the three documents still on HTML, the Mahnung is the one that leaves the
+  building on paper. Same text as `mahnung_html` (which stays the preview), letterhead address from the
+  Firmenprofil, no page number (one page, one envelope), and the "Entwurf" line stays on the file. 7 tests,
+  one of which reads the text back out of the PDF and asserts it matches `mahnung_text`.
+  **Still on HTML: the MWST sheet (B-67).**
+- **Rechnung als PDF** ✅ 2026-09-16 — `GET /api/rechnungen/{id}/rechnung.pdf`: the letter plus a Zahlteil built to
+  the SIX template (105 mm, 62 mm receipt, 46 mm QR, 5 mm quiet zone), so B-79 has something to attach.
+  `rechnung.html` stays the browser preview. The QR is drawn as **vector rectangles** (horizontal runs merged),
+  never rasterised; `swiss_qr.qr_matrix()`/`cross_geometry()` are now shared with the SVG renderer. The test that
+  matters renders the finished PDF at 6x and decodes the QR back to the exact 31-line payload. *(Correction,
+  2026-09-16: the commit message and the first version of this entry said the decode test "skips unless zxing-cpp is
+  installed" and suggested adding it to `requirements-dev.txt`. It has been in `backend/requirements.txt` since B-64 —
+  `services/qr_bill.py` decodes with it — so that test has been a real CI check all along.)* 11 tests.
+  `pdf_render` gains `Meta.page_numbers` (off here — a page number would land inside the template) and
+  `Meta.company_address`.
+- **IA step 5** ✅ 2026-09-16 — sidebar collapsed from nine entries to the four surfaces of
+  `docs/IA-2026-09-14.md` (Heute · Belege · Bank · Abschluss) plus a "Mehr" group. Every former menu entry is a
+  tab of its surface (`SurfaceTabs`), `lib/navigation.ts` is the registry the sidebar, the mobile bar, the tab row,
+  the breadcrumbs and the palette all read, `/dashboard/belege` and `/dashboard/bank` exist and redirect, Dashboard
+  is called Heute. No page file moved and no URL changed — 23 tests, including a walk asserting all 16 existing
+  routes still resolve. Left for the daylight sitting: the file moves and turning the Heute cards into inbox rows.
+- **B-71** ✅ 2026-09-16 — Liquidität + Steuerrückstellung on *Heute*. `GET /api/liquiditaet/`: bank+cash balance,
+  90 days of expected movements (open debtors in, open creditors out, monthly standing costs out) and the running
+  balance through them — the headline is `tiefster_stand`, because a quarter that ends fine can still have a day
+  with no money. Standing costs are *recognised*, not typed: same `preprocess`d text in ≥3 distinct months, amount
+  stable within 15 %, credit side a cash account (income every month is a customer, not a cost) — this is B-74's
+  input. Tax: profit since 1 January × the owner's rate, minus what is already in 2201, over the quarters left;
+  8900 excluded from the expense side so the estimate does not chase its own tail. No default rate — the effective
+  Swiss rate depends on canton *and* commune, so without one the card shows the published range (11.66 % LU to
+  20.54 % BE, mean 14.43 %; ESTV, Kantonaler Vergleich der Steuerbelastung 2026) and links to the Firmenprofil.
+  New nullable `company_profiles.gewinnsteuer_satz` (migration `b7c8d9e0f1a2`). 28 backend + 13 frontend tests.
+- **B-58** ✅ 2026-09-16 — UX/a11y batch. One formatter (`lib/format.ts` gains `formatAmount`; the scanner's `Intl`
+  copy printed U+2019 instead of an apostrophe, `rechnungen/neu`'s `chf()` was a third — both re-export now, and the
+  five raw `.toFixed(2)` display sites go through it). Contrast: white on emerald was 3.77:1 and on amber 3.19:1;
+  both ramps shift a step darker (5.48:1 / 5.02:1) and `lib/theme-store.test.ts` fails if any accent slips back.
+  New `usePopover()` (aria-haspopup/expanded/controls, Escape closes and restores focus, listeners only while open)
+  on the user menu, the bell and the app switcher. `aria-label` on both `<nav>`s + `aria-current`; the settings
+  sidebar was a third `<nav>` and is now a `tablist`/`tabpanel` pair. `CardTitle` renders `<h2>` (it sat under the
+  page `<h1>` and skipped a level). Modell's Gedächtnis/Top-Konten tabs are SWR readers with skeleton and error
+  instead of a `useEffect` into local state. Confirms + busy locks on restore, replace-import, the danger zone and
+  "Neue Datei". Plus `cursor-pointer` in the Button base, the picker at `min(28rem, 100vw-2rem)`, the InvoiceCard
+  header as a `<button aria-expanded>`, and the 🧠/🤖/📋 source emoji replaced by Lucide icons with real labels.
+- **B-59** ✅ 2026-09-16 — `response_model=` on the seven endpoints that returned a bare `dict`
+  (classify/info, bookings/stats, review/ + approve/reject, audit/, stats/learning, kontenplan/ + defaults), so the
+  OpenAPI document describes them instead of `{}`. Frontend types regenerated and the hand-written interfaces
+  deleted — three had drifted: `ModelInfo` promised `sklearn_version`, `model_size_kb` and `memory_size_kb`, none of
+  which the endpoint has ever sent. The learning histograms keep two shapes (`AccountCount`, `SourceCount`) instead
+  of one with both keys optional. Two nullability bugs fell out of the generated types. 9 contract tests pin both
+  the JSON body and the schema name.
+- **B-51** ✅ 2026-09-16 — money columns `Float` → `Numeric(12,2)`. 0.1+0.2+0.3 summed to 0.6000000000000001 in the
+  database, so every total the API reported was a rounded lie. `app/models/types.py:Chf` is a `TypeDecorator`:
+  Numeric on PostgreSQL, Float on SQLite (no decimal type there), rounding on bind and plain floats on the way out
+  so no service changed. Migration `a6b7c8d9e0f1` converts with `ROUND(col::numeric, 2)`. 6 tests, one of them a raw
+  `SUM(betrag)::text` that must read exactly `"0.60"`.
+- **B-52** ✅ 2026-09-16 — idempotency by constraint, not by `if`: partial unique index
+  `(tenant_id, source_key) WHERE source='billing'`, an `idempotency_keys` table behind an `Idempotency-Key` header on
+  bulk booking creation, `begin_nested()` + `IntegrityError` → replay or 409, and `UPDATE … WHERE status='pending'`
+  + rowcount for review approve/reject. Migration `f5a6b7c8d9e0` de-duplicates first (keeping `MIN(id)`).
+  14 tests, each one the race.
+- **B-53** ✅ 2026-09-16 — export safety: `= + - @` (and `\t`, `\r`, `\n`) neutralised in xlsx/csv/tsv,
+  ISO dates zero-padded, amounts normalised; `=cmd|' /c calc'!A1` is in the tests. 13 tests.
+
+- **B-43** ✅ 2026-09-13 — e-mail export: `EmailStr` single recipient, subject one line ≤ 200 chars, rows ≤ 5000,
+  `heavy_limit` on both `/api/export/email*`, every HTML cell `html.escape`d, default SSL context (no `CERT_NONE`),
+  SMTP settings read from `Settings`, SMTP errors logged not echoed; compose/.env.example agree on port 465.
+- **B-42** ✅ 2026-09-13 — SSRF closed: `ollama_base_url` / `ocr_command` dropped from both update schemas and the
+  update path; `resolve_ollama` uses `settings.OLLAMA_BASE_URL` only; responses report the deployment URL;
+  AI stream/summary never echo upstream bodies or exception text (logged server-side instead). Tests for PUT/PATCH
+  and `resolve_ollama`.
+- **B-41** ✅ 2026-09-13 — production compose: `ENVIRONMENT=production` on api + worker, `${SECRET_KEY:?}` /
+  `${POSTGRES_PASSWORD:?}`, no `--reload`, two-stage image with `USER app`, `backend/.dockerignore`, worker
+  overrides the migrate ENTRYPOINT, db/redis/ollama unpublished, `pg_advisory_xact_lock` in `alembic/env.py`,
+  `NEXT_PUBLIC_API_URL` is a build arg the browser can reach, root `.env.example`. **Not built here** — first
+  `docker compose up --build` on the Mac is the smoke test.
+- **B-50** ✅ 2026-09-13 — one error path in the frontend: the 7 `.response.data.detail` sites use `errorMessage()`;
+  dashboard KPI reads `correction_count`; InvoiceCard effect deps fixed. Folds **B-21** — eslint at 0 warnings.
+- **B-47** ✅ 2026-09-13 — `schemas/common.py:Money` (finite, ±1e9) on bookings, classify, scanner, export rows;
+  `limit=Query(ge=1, le=1000)` on list routes; `round_chf` raises on inf/nan; 422 tests.
+- **B-40** ✅ 2026-09-13 — role ladder wired: `require_editor` on every mutating route, `require_admin` on Kontenplan
+  replace, classify delete/upload, scanner config, `import?replace=true`. `tests/test_rbac_routes.py` walks the route
+  table (a new mutating route without a role check fails CI) + viewer/editor 403 over HTTP.
+- **B-70 + B-77** ✅ 2026-09-16 — Jahresabschluss (*Abschluss › Jahr*) and the **one PDF renderer**.
+  **B-77 decided: fpdf2** — pure Python, no C build, no wheel theatre in the image; reportlab can do more, but what
+  we print is text and tables, and the extra power would have been paid for in installation pain.
+  `services/pdf_render.py` is deliberately dumb (A4, one font, title, tables, total rows, footer with page numbers)
+  and knows no accounting — which is what makes it usable for every document; Mahnung (B-65), MWST (B-67) and the
+  invoice (B-68) can move over when they are next touched.
+  **B-70** computes the balance sheet at 31.12. cumulatively from every booking up to that date, the income
+  statement from the year only, and proposes depreciation. Two things are deliberate in the code: *without an
+  opening balance the balance sheet does not add up* — this system books from the first receipt, nobody typed in
+  opening balances, so the difference is shown and explained instead of being sold as the customer's mistake
+  (a hint, not a blocker); and the **depreciation rates come from ESTV Merkblatt A/1995** (declining balance:
+  furniture 25 %, machines 30 %, office machines/IT/vehicles 40 %, tools 45 %, commercial building 4 %; straight
+  line is half). Where the leaflet says nothing — patents on 1700 — there is *no* proposal, only a note.
+  `/api/abschluss/jahre · /jahr · /jahr.pdf · /jahr.zip`; the ZIP holds the PDF, the Banana file, the checklist and
+  every receipt of the year. No migration. 14 new tests; verified against real Postgres 16 (561).
+- **B-69** ✅ 2026-09-16 — E-mail intake (*Rechnungen › E-Mail-Eingang*): one mailbox for the whole deployment, the
+  tenant sits in the address (`belege+<slug>@<domain>`, from `EMAIL_INTAKE_DOMAIN`). Two transports, one core:
+  `deliver()` takes raw MIME — from the IMAP poll (worker job `email-intake`, registered only when a mailbox is
+  configured, plus a manual *Jetzt abrufen*) or from the webhook `POST /api/email/inbound` (404 without a secret, 401
+  with a wrong one). Attachments (PDF/image) go through the B-64 ingest, everything else is logged instead of
+  swallowed. **Safe by default: an empty allow-list lets nothing through** — the address is guessable, so the first
+  mail from a new sender is recorded as *abgelehnt* with the reason and one click puts them on the list (whole
+  domains as `@lieferant.ch`). `email_messages` is both receipt and dedup (message-id per tenant), `mail_settings`
+  holds the switch and the list. On *Heute*: the card "N neue Belege per E-Mail".
+  Migration `e4f5a6b7c8d9`, 21 backend and 4 frontend tests; verified against real Postgres 16 (547).
+- **B-68** ✅ 2026-09-15 — Write invoices (*Rechnungen › Rechnung schreiben*): customer + line items produce a QR
+  invoice, a debtor booking `1100/3000` on the invoice date (VAT exactly once, with the sales code from the company
+  profile) and an open item in direction *ausgang* — so dunning (B-65) and Offene Posten work without a line of
+  extra code. `services/swiss_qr.py` writes what `services/qr_bill.py` could only read: QRR (27 digits, recursive
+  mod-10) on a QR-IBAN, SCOR (ISO 11649, mod-97) on a normal IBAN, NON without one, plus the SPC payload and the QR
+  square as vector SVG with the Swiss cross (segno, now a runtime dependency). The test that matters: the payload
+  round-trips through our *own* reader — what a banking app scans parses as a QR bill. New `company_profiles` (who we
+  are: address, IBAN, debtor/revenue/bank account, VAT code) and `invoice_positions`; the invoice header stays a
+  `Document`. The payment comes back carrying the reference, the Abgleich recognises it as a `referenz` hit and books
+  `1020/1100` — one test drives exactly that route. The print view is HTML with the payment part (Empfangsschein +
+  Zahlteil, A4); a real PDF arrived later with **B-77**, sending it is **B-79**.
+  Migration `d3e4f5a6b7c8`, 19 backend and 6 frontend tests; verified against real Postgres 16.
+- **B-67** ✅ 2026-09-15 — MWST-Abrechnung (*Abschluss › Quartal*): Formular 200 aus den Buchungen. Ziffern und
+  Reihenfolge nach dem offiziellen ESTV-Formular ab 01.01.2024 (200 · 205 · 220–280 · 289 · 299 · 302/312/342 mit
+  Umsatz *und* Steuer · 382 · 399 · 400 · 405 · 410 · 415 · 420 · 479 · 500/510) — beim Bauen gegen das
+  Musterformular der ESTV geprüft, nicht aus dem Kopf. Die Seitenzuordnung folgt den Banana-Codes (V… = Umsatz →
+  302/312/342, M… = Vorsteuer Material/DL → 400, I… = Vorsteuer Investitionen → 405); fehlt der Code, entscheiden
+  die Konten (3… im Haben = Umsatz, 4… im Soll = Material, 5…/6… und Anlagen 15…/16…/17… = Investitionen —
+  10…/11… sind kein Aufwand und bleiben ohne Seite, was als Hinweis erscheint). Gutschriften (Erlöskonto im Soll
+  oder negativer Umsatz) laufen in Ziffer 235. Ziffern, die kein Buchungssatz hergibt (Bezugsteuer,
+  Einlageentsteuerung, Korrekturen, Kürzungen), stehen sichtbar auf 0.00 statt geraten zu werden.
+  Saldosteuersatz-Methode: Umsatz × Satz (Satz als Parameter, 0–15 %, die SSS-Ziffer hängt vom Satz ab → 322 ff.),
+  ohne Vorsteuer. Plausibilität: drei Blocker (Code ≠ Satz, Code auf der falschen Seite, unbekannter Satz) und drei
+  Hinweise (Aufwand ohne Vorsteuer — der 4000er-Fall aus der Roadmap —, Umsatz ohne Satz, Buchung ohne Seite).
+  `GET /api/abschluss/quartale`, `GET /api/abschluss/mwst[?quartal=JJJJ-Qn&methode=effektiv|saldo&satz=6.5]` mit
+  Tab-getrenntem Kopierblock fürs ePortal und `GET /api/abschluss/mwst.txt` als Blatt für den Treuhänder; echtes PDF
+  → B-77. 19 Backend- und 3 Frontend-Tests; gegen echtes Postgres 16 verifiziert (505 passed).
+- **B-66** ✅ 2026-09-15 — Monatsabschluss-Check (*Abschluss › Monat*): eine Seite, rot oder grün, nichts zu
+  konfigurieren. Die Geldfrage ist die **Bewegung**, nicht der Saldo — was im Monat durch die Bank ging, muss der
+  1020-Bewegung der Buchungen entsprechen (`signed_bank_effect`: Bank im Soll = Zufluss, im Haben = Abfluss).
+  Ein Saldo-Vergleich bräuchte einen Anfangsbestand, den niemand erfasst hat; die Bewegung braucht nichts und findet
+  dieselben Fehler (fehlende Buchung, falsches Konto, doppelt gebucht) — Differenz unter einem Rappen ist Rundung.
+  Drei Blocker (Differenz Bank ↔ 1020, nicht abgeglichene Bankzeilen, MwSt-Code ≠ Satz) und vier Hinweise
+  (mögliche Doppel, Buchung ohne Beleg mit Verweis auf Art. 958f OR, fällige offene Rechnungen, noch nicht nach
+  Banana exportiert); ignorierte Bankzeilen zählen nirgends mit. `GET /api/abschluss/monate` liefert jeden Monat
+  mit Daten (der Picker braucht keine Einstellung), `GET /api/abschluss/monat[?monat=JJJJ-MM]` den Bericht mit
+  KPIs (Buchungen, Einnahmen, Ausgaben, Bank ↔ 1020) — beide read-only, ein falsches Monatsformat ist ein klarer 400.
+  Auf `/dashboard/abschluss` sitzt der Check über dem Export und teilt dessen Prüflisten-Komponente. 15 Backend-
+  und 3 Frontend-Tests; gegen echtes Postgres 16 verifiziert (486 passed).
+- **B-65** ✅ 2026-09-15 — Offene Posten + Mahnung. `documents` bekommt eine Richtung (migration `c2d3e4f5a6b7`):
+  `eingang` = Lieferantenrechnung (Kreditor, wir zahlen), `ausgang` = eigene Rechnung (Debitor, Kunde zahlt) — plus
+  `contact_email`, `mahnstufe`, `mahnung_sent_at` und Index `(tenant_id, direction, status)`. `services/offene_posten.py`
+  ist rein rechnend: fehlt ein Fälligkeitsdatum, gilt Rechnungsdatum + 30 Tage netto; `days_overdue` /
+  `aging_bucket` (nicht fällig · 1–30 · 31–60 · 61–90 · über 90) füllen beide Seiten mit Summen, und `build_items`
+  sortiert das Dringendste nach oben. Die Mahnung eskaliert in drei Stufen (Zahlungserinnerung → 1. Mahnung → Letzte
+  Mahnung, dort erst der Hinweis auf Verzugszins nach Art. 104 OR), immer mit 10 Tagen Frist, immer als **Entwurf**:
+  `GET /api/offene-posten/` (beide Seiten), `GET /{id}/mahnung` (Betreff + Text, nichts gespeichert),
+  `GET /{id}/mahnung.html` (druckfertiger A4-Brief, Browser → PDF) und `POST /{id}/mahnung` (`require_editor`) hält
+  fest, dass sie raus ist, damit die nächste eskaliert. Verschickt wird nichts von hier; nur ein Ausgang ist mahnbar
+  (409 sonst). Auf *Heute*: Karte "Wer schuldet uns / Was schulden wir" mit Summen, Aging-Badges, den dringendsten
+  Zeilen und dem Mahnung-Dialog (Text kopieren · Drucken/PDF · als versendet erfassen, Fokus-Falle + Esc). Ein
+  echter PDF-Renderer bleibt eine Entscheidung für B-77/B-70. 17 Backend- und 6 Frontend-Tests; gegen echtes
+  Postgres 16 verifiziert (471 passed).
+- **B-76** ✅ 2026-09-15 — Phase 4 Banana-Stapel: an export is no longer a download but a *Buchungsperiode with a
+  status*. `export_batches` (migration `b1c2d3e4f5a6`) records every hand-off — count, total, MwSt total, period,
+  filename, sha256 of the rendered file, note — and `bookings.export_batch_id` / `exported_at` stamp what left, so the
+  next export offers only what is new and a re-download of an old batch renders byte-identical content (the checksum
+  proves it). `services/export_batch.py` first runs a red/green pre-flight in plain German: four blockers (missing
+  Soll/Haben, amount 0.00, unreadable date, VAT code that contradicts its rate via `vat_code_for`) and three warnings
+  (possible duplicate postings, open bank lines, overdue documents) — warnings never block, a blocker refuses the
+  export with 409 and names itself. On export the bookings are stamped, documents whose booking left go to
+  `exportiert` (final), and a plain-text Deckblatt (company, period, totals, per-Sollkonto sums, checksum, the exact
+  Banana import path) travels with the file. `GET/POST /api/export/batches` + `/preflight`, `/{id}`, `/{id}/file`,
+  `/{id}/cover` (`require_editor` on the export itself; viewer may look). `bookings_to_df()` moved into
+  `services/export.py` so the router and the batch render the same columns in the same order. `/dashboard/abschluss`
+  is the first surface of the target IA: three KPI cards, the checklist, one primary action with an inline
+  "Ja, exportieren" confirm, and the batch history with Banana-file and Deckblatt download. 15 backend + 11 frontend
+  tests.
+- **B-73** ✅ 2026-09-15 — Phase 3 Abgleich. `bank_transactions` keeps every Kontoauszug line (signed amount, value
+  date, reference, `dedup_key` so a re-upload counts instead of duplicating) and `matches` links document ↔ line n:1
+  with tier/score/reason/part-amount (migration `a1b2c3d4e5f6`). `services/matching.py` is pure: tier 1 QRR/SCOR
+  reference = fact (1.0), tier 2 exact amount inside −5/+40 days lifted by vendor-text similarity, tier 3 Sammelauftrag
+  (2..5 open invoices summing to the line, lower score and "mehrere Kombinationen möglich" when ambiguous); integer
+  Rappen, no document proposed twice, strongest line claims first. `services/abgleich.py` stores proposals and on
+  confirm writes one booking per document on the bank line's date with the document's accounts (VAT half-up), sets the
+  document `bezahlt` and teaches the vendor → account pairing; reject is remembered, `manual` and `ignore` exist.
+  `/dashboard/abgleich`: statement drop zone, KPI cards, proposal cards with the reason sentence, `j/k/a/r`, optimistic
+  decisions, open lines with an invoice picker that shows the difference before booking. Shared `lib/format.ts` +
+  `lib/inbox-keys.ts`. 42 new tests. Real April statement: 28/28 lines parsed, sums equal the PDF's Umsatztotal.
+  Also fixed: the e2e frontend uses `NEXT_DIST_DIR=.next-e2e`, so `make check` no longer collides with `make dev`.
+- **B-64** ✅ 2026-09-14 — Phase 1 of the brainstorm: `documents` table (migration `f0a1b2c3d4e5`) — a Rechnung/Beleg with
+  file, read facts (vendor, amount, currency, no./dates, QR IBAN + QRR/SCOR reference), proposed Kontierung, status
+  offen → bezahlt → exportiert (final) / fehler, booking link. `services/qr_bill.py` decodes the Swiss Payments Code from
+  images and PDF pages (zxing-cpp + pypdfium2, QRR mod-10 checked); `services/documents.py`: store → QR (exact) → else
+  vision/OCR → classify; a bad file is a `fehler` row. `POST /api/documents/` (≤ 50 files) + list/summary/get/patch/file.
+  `/dashboard/rechnungen`: bulk drop zone with progress, KPI cards, status filter, optimistic bezahlt↔offen. 30 tests.
+- **B-15** ✅ 2026-09-14 — `/api/scanner/extract` streams SSE when asked (`step` per stage as it happens, then `result`
+  / `error` with status + message); JSON otherwise. `ScannerService.extract(on_step=…)` + `extract_events()`.
+- **B-14** ✅ 2026-09-14 — review queue: optimistic approve/reject with rollback + toast, `j/k/a/r` (+ arrows) keyboard
+  with a visible selection; assistant hotkey moved to `Shift+A`. Page split into hooks/components/helpers (unit-tested).
+- **B-49** ✅ 2026-09-14 — off the event loop: `fit_pipeline()` (pure) via `asyncio.to_thread` for train / import /
+  worker; scanner status + extract on the providers' async members (one cached Ollama probe); pdfplumber, smtplib and
+  the receipt write in threads. `tests/test_event_loop.py` proves a ticker keeps running during training.
+- **B-34** ✅ 2026-09-14 — model blobs signed with `HMAC(SECRET_KEY, "model-blob-v1")`; insecure/short SECRET_KEY refuses
+  to sign or trust in every environment (train → 503 with the fix); `classifier_models.model_sha256` (migration
+  `e8f9a0b1c2d3`) checked on load; `/classify/info.model_trusted` → "Modell neu trainieren" banner. **Retrain once.**
+- **B-16** ✅ 2026-09-14 — `hooks/useSystemData.ts`: one SWR key per system endpoint, polled every 60 s; dashboard KPIs,
+  SystemChecklist, GettingStarted and the bell share them (4×/3× duplicate requests gone). `buildNotifications()` pure.
+- **B-46** ✅ 2026-09-14 — settings save for real: `PATCH /api/auth/me` (display name, any role) and
+  `PATCH /api/auth/me/tenant` (company name, admin+); fake notifications/password tabs removed; appearance has no save.
+- **B-44** ✅ 2026-09-14 — logout clears every SWR key + the notifications store; `useApi` keys are `[path, userId]`.
+- **B-63** ✅ 2026-09-14 — Betrag-Gedächtnis: `training_data.betrag` (migration `d7e8f9a0b1c2`, Banana import fills it);
+  `amount_candidate()` classifies a bank line by earlier bookings with the same amount (≥ 2 hits, ≥ 60 % agreeing,
+  confidence 0.67 → 0.92), source "Betrag", and carries the tenant's own description ("Cembra Money, Leasing") which the
+  Kontoauszug table offers under the bank text. Candidates amount / rules / ML — most confident wins, so a keyword rule
+  now beats a hesitant model (the 48 % "revenue" for a 4.00 bank fee). Real UBS April statement × 2024 Banana export:
+  8 of 20 counterparty-less E-Banking lines resolved; the rest are Sammelaufträge (n:1 → phase 3 Abgleich).
+- **B-48** ✅ 2026-09-13 — `VAT_CODE_BY_RATE` exact map + `vat_code_for()`; the receipt's rate wins, a classifier code
+  of the same rate (V81/M81) is kept; amounts > 50'000 are flagged `needs_review` (scanner card shows "Prüfen") instead
+  of zeroed.
+- **B-45** ✅ 2026-09-13 — Kontoauszug save logs real corrections: `correctionsFor(rows)` sends suggestion as original,
+  only for changed rows, `Promise.allSettled` + count in the toast. Unit-tested.
+- **B-39** ✅ 2026-09-13 — `TrainingRow` exported; migration `c1d2e3f4a5b6` creates `training_data` (idempotent for
+  dev DBs that already have it); PG test: every `Base.metadata` table exists after `upgrade head`.
 - **B-30** ✅ 2026-09-11 — `scripts/status.sh` → `STATUS.md` (`make status`): app version, backend/vitest/e2e test
   counts, routers + routes, models, Alembic migrations + head (venv `alembic heads`, else derived from the files),
   open B-xx table folded from ROADMAP.md, done count, date + commit. Pure grep/find, shellcheck-clean;
@@ -292,10 +1339,10 @@ Order of columns changed 2026-09-12: *professional* now outranks *dynamic* — a
 |---|---|
 | 0 Recon | ✅ |
 | 0.5 Risk fixes before platform work | ✅ B-00…B-03 (branch `feat/phase0-risks`) |
-| 1 Platform contract | 1.2 ✅ B-31 · 1.4 ✅ B-26 · 1.6 ✅ tokens imported |
-| 2 Security | ✅ B-06, B-07, B-32 · NOW: B-40, B-41, B-42, B-43 · open: B-24 (ADR-002), B-25, B-34, B-54, B-55 |
-| 3 Reliability | ✅ B-04, B-05, B-08, B-11, B-33, B-35 · NOW: B-39 · open: B-47, B-48, B-49, B-51, B-52, B-56, B-57 |
-| 4 Polish | ✅ B-09, B-13 · open: B-22, B-53, B-61 |
-| 5 UX | ✅ B-18, B-19 · NEXT: B-44, B-45, B-46, B-50 (folds B-21), B-14, B-16 · open: B-15, B-17, B-20, B-58, B-59 |
-| 6 Together | ✅ B-36 (SSO + mirroring), B-37 (events) · deploy: `docs/DEPLOY-CHECKLIST-B36-B37.md` · parked: B-38 |
-| 7 DX | ✅ B-12, B-29, B-30 · open: B-60, B-62 |
+| 1 Platform contract | 1.2 ✅ B-31 · 1.4 ✅ B-26 · 1.6 ✅ tokens imported · perf: ✅ B-27, B-28 |
+| 2 Security | ✅ B-06, B-07, B-24, B-25, B-32, B-34, B-40, B-41, B-42, B-43, B-54, B-55 · open: — |
+| 3 Reliability | ✅ B-04, B-05, B-08, B-11, B-33, B-35, B-39, B-47, B-48, B-49, B-63, B-64, B-73, B-76, B-51, B-52, B-56, B-57 · open: — |
+| 4 Polish | ✅ B-09, B-13, B-66, B-67, B-76, B-53, B-22, B-61 · open: — |
+| 5 UX | ✅ B-14, B-15, B-16, B-18, B-19, B-44, B-45, B-46, B-50 (+B-21), B-58, B-59, B-65, B-71, B-72, B-74, B-79, IA 1–5, B-17, B-20 · open: — |
+| 6 Together | ✅ B-36 (SSO + mirroring), B-37 (events), B-23 (plan limits) · deploy: `docs/DEPLOY-CHECKLIST-B36-B37.md` · parked: B-38 |
+| 7 DX | ✅ B-12, B-29, B-30, B-60, B-62, B-80, B-81 · open: — |

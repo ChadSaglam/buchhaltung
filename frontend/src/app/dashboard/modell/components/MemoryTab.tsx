@@ -1,4 +1,6 @@
 import { Brain, Search } from "lucide-react";
+import { ErrorState } from "@/components/shared/ErrorState";
+import { PageSkeleton } from "@/components/shared/PageSkeleton";
 import type { MemoryEntry } from "../types";
 
 interface MemoryTabProps {
@@ -6,9 +8,15 @@ interface MemoryTabProps {
   filteredMemory: MemoryEntry[];
   memoryFilter: string;
   setMemoryFilter: (value: string) => void;
+  loading?: boolean;
+  error?: unknown;
+  onRetry?: () => void;
 }
 
-export function MemoryTab({ memoryEntries, filteredMemory, memoryFilter, setMemoryFilter }: MemoryTabProps) {
+export function MemoryTab({ memoryEntries, filteredMemory, memoryFilter, setMemoryFilter, loading, error, onRetry }: MemoryTabProps) {
+  if (loading) return <PageSkeleton rows={5} />;
+  if (error) return <ErrorState error={error} onRetry={onRetry} variant="inline" />;
+
   return (
     <div>
       <div className="flex items-center gap-3 mb-4">

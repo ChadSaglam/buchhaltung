@@ -10,6 +10,299 @@
  */
 
 export interface paths {
+    "/api/abgleich/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Abgleich Inbox
+         * @description Everything the user needs to decide: proposals, then what is left on either side.
+         */
+        get: operations["abgleich_inbox_api_abgleich__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/abgleich/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refresh */
+        post: operations["refresh_api_abgleich_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/abgleich/statements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import Statement
+         * @description Upload a Kontoauszug: every line becomes a bank transaction, then proposals are refreshed.
+         */
+        post: operations["import_statement_api_abgleich_statements_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/abgleich/{transaction_id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm */
+        post: operations["confirm_api_abgleich__transaction_id__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/abgleich/{transaction_id}/ignore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ignore */
+        post: operations["ignore_api_abgleich__transaction_id__ignore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/abgleich/{transaction_id}/manual": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Manual */
+        post: operations["manual_api_abgleich__transaction_id__manual_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/abgleich/{transaction_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject */
+        post: operations["reject_api_abgleich__transaction_id__reject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/abschluss/jahr": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Jahr
+         * @description Bilanz, Erfolgsrechnung, Abschreibungsvorschlag und Prüfliste eines Jahres.
+         */
+        get: operations["jahr_api_abschluss_jahr_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/abschluss/jahr.pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Jahr Pdf
+         * @description Der Abschluss als PDF — das, was der Treuhänder unterschreibt.
+         */
+        get: operations["jahr_pdf_api_abschluss_jahr_pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/abschluss/jahr.zip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Jahr Paket
+         * @description PDF, Banana-Datei, Prüfliste und alle Belege des Jahres in einem ZIP.
+         */
+        get: operations["jahr_paket_api_abschluss_jahr_zip_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/abschluss/jahre": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Years */
+        get: operations["years_api_abschluss_jahre_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/abschluss/monat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Monat */
+        get: operations["monat_api_abschluss_monat_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/abschluss/monate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Months */
+        get: operations["months_api_abschluss_monate_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/abschluss/mwst": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Mwst
+         * @description Formular 200 aus den Buchungen — ein Entwurf, der vor dem Einreichen geprüft wird.
+         */
+        get: operations["mwst_api_abschluss_mwst_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/abschluss/mwst.txt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Mwst Text
+         * @description Dasselbe als Blatt zum Ausdrucken oder für den Treuhänder.
+         */
+        get: operations["mwst_text_api_abschluss_mwst_txt_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/abschluss/quartale": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Quarters */
+        get: operations["quarters_api_abschluss_quartale_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ai/chat": {
         parameters: {
             query?: never;
@@ -118,7 +411,31 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Update Me
+         * @description Self-service profile (B-46): every signed-in user may rename themselves.
+         */
+        patch: operations["update_me_api_auth_me_patch"];
+        trace?: never;
+    };
+    "/api/auth/me/tenant": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update My Tenant
+         * @description Company name is tenant-wide: admin and up (B-46).
+         */
+        patch: operations["update_my_tenant_api_auth_me_tenant_patch"];
         trace?: never;
     };
     "/api/auth/register": {
@@ -414,6 +731,176 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/dauerbuchungen/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Dauerbuchungen
+         * @description What goes out every month, and which of it has not gone out yet.
+         */
+        get: operations["dauerbuchungen_api_dauerbuchungen__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/documents/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Documents */
+        get: operations["list_documents_api_documents__get"];
+        put?: never;
+        /**
+         * Upload Documents
+         * @description Drag 1..50 invoices in; every file becomes a Document, failures included (status 'fehler').
+         */
+        post: operations["upload_documents_api_documents__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/documents/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Documents Summary */
+        get: operations["documents_summary_api_documents_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/documents/{document_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Document */
+        get: operations["get_document_api_documents__document_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Document */
+        patch: operations["update_document_api_documents__document_id__patch"];
+        trace?: never;
+    };
+    "/api/documents/{document_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Document File */
+        get: operations["document_file_api_documents__document_id__file_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/email/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Email Eingang
+         * @description Address, rules and what the mailbox did lately.
+         */
+        get: operations["email_eingang_api_email__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/email/abrufen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Fetch Now
+         * @description Fetch the mailbox now instead of waiting for the scheduler.
+         */
+        post: operations["fetch_now_api_email_abrufen_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/email/absender": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Allow Sender
+         * @description One click on a rejected message: this sender may deliver from now on.
+         */
+        post: operations["allow_sender_api_email_absender_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/email/einstellungen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Settings */
+        put: operations["update_settings_api_email_einstellungen_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/export/banana": {
         parameters: {
             query?: never;
@@ -426,6 +913,127 @@ export interface paths {
         put?: never;
         /** Export Banana Post */
         post: operations["export_banana_post_api_export_banana_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/export/batches/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Batches */
+        get: operations["list_batches_api_export_batches__get"];
+        put?: never;
+        /**
+         * Create Batch
+         * @description Hand everything reconciled over to Banana — once.
+         */
+        post: operations["create_batch_api_export_batches__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/export/batches/preflight": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Preflight
+         * @description Is everything OK to export? One red/green list, nothing to configure.
+         */
+        get: operations["preflight_api_export_batches_preflight_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/export/batches/{batch_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Batch */
+        get: operations["get_batch_api_export_batches__batch_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/export/batches/{batch_id}/cover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download Cover */
+        get: operations["download_cover_api_export_batches__batch_id__cover_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/export/batches/{batch_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download Batch
+         * @description The same bytes every time — a re-download is not a second hand-off.
+         */
+        get: operations["download_batch_api_export_batches__batch_id__file_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/export/batches/{batch_id}/pack.zip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download Pack
+         * @description The whole hand-off in one file (B-17).
+         *
+         *     Cover sheet, the Banana import byte-identical to the batch, the receipts
+         *     numbered to match the bookings, the same rows as a readable CSV, and the
+         *     audit trail for the period. Building it is a read — nothing is stamped,
+         *     nothing is marked as sent — so a Treuhänder who loses the e-mail gets the
+         *     same zip again.
+         */
+        get: operations["download_pack_api_export_batches__batch_id__pack_zip_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -511,10 +1119,10 @@ export interface paths {
         };
         /**
          * Health
-         * @description Liveness + deployment facts (B-13).
+         * @description Readiness (B-13, B-61). **503 when this instance should not get traffic.**
          *
-         *     Production answers with status and version only; everything else is an
-         *     internal detail that stays inside the perimeter.
+         *     Production still answers with status and version only — everything else is an
+         *     internal detail — but it now *checks*, which it did not before.
          */
         get: operations["health_api_health_get"];
         put?: never;
@@ -532,8 +1140,38 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Health Detail */
+        /**
+         * Health Detail
+         * @description For a human, not for a probe (B-61).
+         *
+         *     It names the upstream and the exception class, which is exactly what makes it
+         *     useful and exactly why it is behind an admin login in production.
+         */
         get: operations["health_detail_api_health_detail_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/health/live": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Live
+         * @description Liveness (B-61). The process answered, therefore it is alive.
+         *
+         *     Deliberately does nothing else. Kubernetes restarts a container whose liveness
+         *     probe fails; if that probe asked the database, one database restart would take
+         *     down every instance at the same moment.
+         */
+        get: operations["live_api_health_live_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -621,6 +1259,381 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/kontenplan/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import Anwenden
+         * @description Den Import ausführen (B-20).
+         *
+         *     Die Datei wird ein zweites Mal gelesen statt die Vorschau zwischenzuspeichern:
+         *     eine Serverkopie zwischen zwei Klicks wäre Zustand, der veralten kann, und
+         *     das Ergebnis meldet ohnehin, was tatsächlich passiert ist.
+         */
+        post: operations["import_anwenden_api_kontenplan_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/kontenplan/import/vorschau": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import Vorschau
+         * @description Was der Import tun würde (B-20). Schreibt nichts.
+         *
+         *     Eigener Schritt, weil ``PUT /api/kontenplan/`` den ganzen Plan ersetzt: wer
+         *     eine Teilliste hochlädt, soll *vorher* sehen, welche Konten dabei
+         *     verschwinden würden.
+         */
+        post: operations["import_vorschau_api_kontenplan_import_vorschau_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/liquiditaet/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Liquiditaet
+         * @description 90-day cash view plus what to set aside for tax.
+         */
+        get: operations["liquiditaet_api_liquiditaet__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lohn/abrechnen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Abrechnen
+         * @description Issue the payslip and book it. The period can only be issued once.
+         */
+        post: operations["abrechnen_api_lohn_abrechnen_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lohn/abrechnungen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Abrechnungen */
+        get: operations["abrechnungen_api_lohn_abrechnungen_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lohn/abrechnungen/{abrechnung_id}/lohnabrechnung.pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Abrechnung Pdf
+         * @description The payslip as a file — each deduction with the rate that produced it.
+         */
+        get: operations["abrechnung_pdf_api_lohn_abrechnungen__abrechnung_id__lohnabrechnung_pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lohn/bvg-pruefung": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Bvg Pruefung
+         * @description Die eingetragenen BVG-Beträge gegen das gesetzliche Minimum (B-72, Option C).
+         *
+         *     Liest nur. Die Altersgutschrift auf der Abrechnung kommt weiterhin von der
+         *     Pensionskasse; hier steht, wo sie dem Obligatorium widerspricht.
+         */
+        get: operations["bvg_pruefung_api_lohn_bvg_pruefung_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lohn/mitarbeiter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mitarbeiter Liste */
+        get: operations["mitarbeiter_liste_api_lohn_mitarbeiter_get"];
+        put?: never;
+        /** Mitarbeiter Anlegen */
+        post: operations["mitarbeiter_anlegen_api_lohn_mitarbeiter_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lohn/mitarbeiter/{mitarbeiter_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mitarbeiter */
+        get: operations["mitarbeiter_api_lohn_mitarbeiter__mitarbeiter_id__get"];
+        /** Mitarbeiter Aendern */
+        put: operations["mitarbeiter_aendern_api_lohn_mitarbeiter__mitarbeiter_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lohn/mitarbeiter/{mitarbeiter_id}/jahr/{jahr}.pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Jahr Pdf
+         * @description Twelve payslips added up — the figures a Lohnausweis is filled in from.
+         */
+        get: operations["jahr_pdf_api_lohn_mitarbeiter__mitarbeiter_id__jahr__jahr__pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lohn/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Settings
+         * @description The tenant's rates, and which compulsory ones are still missing.
+         */
+        get: operations["settings_api_lohn_settings_get"];
+        /** Update Settings */
+        put: operations["update_settings_api_lohn_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lohn/settings/freigabe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Freigabe
+         * @description Sign off the setup, which is what removes the watermark from the payslips.
+         *
+         *     Its own endpoint rather than a field on the rate form: this says a person
+         *     compared one real month against the previous payroll, and that must not be
+         *     possible to assert by accident while editing a percentage.
+         */
+        post: operations["freigabe_api_lohn_settings_freigabe_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lohn/vorschau": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Vorschau
+         * @description What this month would pay. Nothing is written and nothing is booked.
+         */
+        post: operations["vorschau_api_lohn_vorschau_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/offene-posten/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Offene Posten */
+        get: operations["offene_posten_api_offene_posten__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/offene-posten/{document_id}/mahnung": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Mahnung Preview
+         * @description What the next Mahnung would say — a preview, nothing is stored.
+         */
+        get: operations["mahnung_preview_api_offene_posten__document_id__mahnung_get"];
+        put?: never;
+        /**
+         * Record Mahnung
+         * @description The owner sent it — remember the stage so the next one escalates.
+         */
+        post: operations["record_mahnung_api_offene_posten__document_id__mahnung_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/offene-posten/{document_id}/mahnung.html": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Mahnung Page
+         * @description The print-ready letter (Strg/Cmd + P → PDF).
+         */
+        get: operations["mahnung_page_api_offene_posten__document_id__mahnung_html_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/offene-posten/{document_id}/mahnung.pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Mahnung File
+         * @description The letter as a file — a Mahnung goes in an envelope, not through Strg+P.
+         */
+        get: operations["mahnung_file_api_offene_posten__document_id__mahnung_pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/onboarding/beispiel-rechnung.pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Beispiel Rechnung
+         * @description A Swiss QR invoice to try the product with, for somebody who has none.
+         *
+         *     Authenticated, even though it holds no tenant data: B-55 spent real effort
+         *     narrowing the unauthenticated surface, and a first-run helper is not a reason
+         *     to widen it again. It touches no database — the file is generated from
+         *     constants.
+         */
+        get: operations["beispiel_rechnung_api_onboarding_beispiel_rechnung_pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/pdf/parse": {
         parameters: {
             query?: never;
@@ -649,6 +1662,129 @@ export interface paths {
         put?: never;
         /** Receive Event */
         post: operations["receive_event_api_platform_events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/rechnungen/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Rechnungen */
+        get: operations["list_rechnungen_api_rechnungen__get"];
+        put?: never;
+        /**
+         * Create Rechnung
+         * @description Kunde + Positionen → QR-Rechnung, Debitorenbuchung 1100/3000, offener Posten.
+         */
+        post: operations["create_rechnung_api_rechnungen__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/rechnungen/firma": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Firma
+         * @description Our own data. Empty on a fresh tenant — ``fehlt`` says what a QR-Rechnung still needs.
+         */
+        get: operations["firma_api_rechnungen_firma_get"];
+        /** Update Firma */
+        put: operations["update_firma_api_rechnungen_firma_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/rechnungen/{document_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Rechnung */
+        get: operations["get_rechnung_api_rechnungen__document_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/rechnungen/{document_id}/rechnung.html": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Rechnung Page
+         * @description The print-ready invoice with the Zahlteil (Strg/Cmd + P → PDF).
+         */
+        get: operations["rechnung_page_api_rechnungen__document_id__rechnung_html_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/rechnungen/{document_id}/rechnung.pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Rechnung Pdf
+         * @description The invoice as a file, Zahlteil included — the thing you can actually send.
+         */
+        get: operations["rechnung_pdf_api_rechnungen__document_id__rechnung_pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/rechnungen/{document_id}/versand": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Versand Entwurf
+         * @description What the customer would receive. Nothing is sent and nothing is stored (B-79).
+         */
+        get: operations["versand_entwurf_api_rechnungen__document_id__versand_get"];
+        put?: never;
+        /**
+         * Versand Senden
+         * @description Send the invoice with the PDF attached, and remember that it went out.
+         */
+        post: operations["versand_senden_api_rechnungen__document_id__versand_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -796,10 +1932,170 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Usage */
+        get: operations["usage_api_usage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AbgleichItem
+         * @description One decision for the user: this bank line settles these documents, for this reason.
+         */
+        AbgleichItem: {
+            /** Documents */
+            documents: components["schemas"]["MatchedDocument"][];
+            /** Is Split */
+            is_split: boolean;
+            /** Reason */
+            reason: string;
+            /** Score */
+            score: number;
+            /** Tier */
+            tier: string;
+            transaction: components["schemas"]["BankTransactionOut"];
+        };
+        /** AbgleichResponse */
+        AbgleichResponse: {
+            /** Items */
+            items: components["schemas"]["AbgleichItem"][];
+            /** Open Documents */
+            open_documents: components["schemas"]["DocumentOut"][];
+            /** Open Transactions */
+            open_transactions: components["schemas"]["BankTransactionOut"][];
+            summary: components["schemas"]["AbgleichSummary"];
+        };
+        /** AbgleichSummary */
+        AbgleichSummary: {
+            /** Exakt */
+            exakt: number;
+            /** Offene Dokumente */
+            offene_dokumente: number;
+            /** Offene Zeilen */
+            offene_zeilen: number;
+            /** Vorschlaege */
+            vorschlaege: number;
+        };
+        /** AbrechnenResponse */
+        AbrechnenResponse: {
+            abrechnung: components["schemas"]["LohnlaufOut"];
+            /**
+             * Buchungen
+             * @default []
+             */
+            buchungen: components["schemas"]["BuchungOut"][];
+        };
+        /** AbrechnungListItem */
+        AbrechnungListItem: {
+            /** Abgerechnet Am */
+            abgerechnet_am?: string | null;
+            /** Abzuege */
+            abzuege: number;
+            /** Ag Total */
+            ag_total: number;
+            /** Brutto */
+            brutto: number;
+            /** Id */
+            id: number;
+            /** Jahr */
+            jahr: number;
+            /** Mitarbeiter Id */
+            mitarbeiter_id: number;
+            /** Monat */
+            monat: number;
+            /** Netto */
+            netto: number;
+            /** Periode */
+            periode: string;
+        };
+        /** AbrechnungListResponse */
+        AbrechnungListResponse: {
+            /**
+             * Ag Total
+             * @default 0
+             */
+            ag_total: number;
+            /**
+             * Brutto Total
+             * @default 0
+             */
+            brutto_total: number;
+            /**
+             * Eintraege
+             * @default []
+             */
+            eintraege: components["schemas"]["AbrechnungListItem"][];
+            /**
+             * Netto Total
+             * @default 0
+             */
+            netto_total: number;
+        };
+        /** AbrufResponse */
+        AbrufResponse: {
+            /** Geholt */
+            geholt: number;
+            /**
+             * Hinweis
+             * @default
+             */
+            hinweis: string;
+        };
+        /** AbschreibungOut */
+        AbschreibungOut: {
+            /** Betrag */
+            betrag: number;
+            /** Bezeichnung */
+            bezeichnung: string;
+            /** Buchwert */
+            buchwert: number;
+            /** Konto */
+            konto: string;
+            /** Kt Soll */
+            kt_soll: string;
+            /** Quelle */
+            quelle: string;
+            /** Satz */
+            satz: number;
+        };
+        /** AbsenderRequest */
+        AbsenderRequest: {
+            /** Adresse */
+            adresse: string;
+        };
+        /** AbzugOut */
+        AbzugOut: {
+            /** Basis */
+            basis: number;
+            /** Betrag */
+            betrag: number;
+            /** Label */
+            label: string;
+            /** Satz */
+            satz: number;
+        };
+        /** AccountCount */
+        AccountCount: {
+            /** Account */
+            account: string;
+            /** Count */
+            count: number;
+        };
         /** ApproveRequest */
         ApproveRequest: {
             /** Corrected Haben */
@@ -810,6 +2106,57 @@ export interface components {
             corrected_mwst_pct?: string | null;
             /** Corrected Soll */
             corrected_soll?: string | null;
+        };
+        /** AuditEntryOut */
+        AuditEntryOut: {
+            /** Action */
+            action: string;
+            /** Actor User Id */
+            actor_user_id?: number | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Detail */
+            detail?: {
+                [key: string]: unknown;
+            } | null;
+            /** Id */
+            id: number;
+            /** Target Id */
+            target_id?: string | null;
+            /** Target Type */
+            target_type?: string | null;
+        };
+        /** AuditListResponse */
+        AuditListResponse: {
+            /** Count */
+            count: number;
+            /** Items */
+            items: components["schemas"]["AuditEntryOut"][];
+        };
+        /** BankTransactionOut */
+        BankTransactionOut: {
+            /** Amount */
+            amount: number;
+            /** Booking Id */
+            booking_id: number | null;
+            /** Counterparty */
+            counterparty: string;
+            /** Created At */
+            created_at: string | null;
+            /** Currency */
+            currency: string;
+            /** Description */
+            description: string;
+            /** Id */
+            id: number;
+            /** Reference */
+            reference: string;
+            /** Source */
+            source: string;
+            /** Status */
+            status: string;
+            /** Value Date */
+            value_date: string | null;
         };
         /** BatchRequest */
         BatchRequest: {
@@ -828,8 +2175,28 @@ export interface components {
              */
             model: string;
         };
+        /** Body_import_anwenden_api_kontenplan_import_post */
+        Body_import_anwenden_api_kontenplan_import_post: {
+            /** File */
+            file: string;
+            /**
+             * Modus
+             * @default ergaenzen
+             */
+            modus: string;
+        };
         /** Body_import_banana_file_api_import_banana_post */
         Body_import_banana_file_api_import_banana_post: {
+            /** File */
+            file: string;
+        };
+        /** Body_import_statement_api_abgleich_statements_post */
+        Body_import_statement_api_abgleich_statements_post: {
+            /** File */
+            file: string;
+        };
+        /** Body_import_vorschau_api_kontenplan_import_vorschau_post */
+        Body_import_vorschau_api_kontenplan_import_vorschau_post: {
             /** File */
             file: string;
         };
@@ -842,6 +2209,11 @@ export interface components {
         Body_upload_bundle_api_classify_upload_post: {
             /** File */
             file: string;
+        };
+        /** Body_upload_documents_api_documents__post */
+        Body_upload_documents_api_documents__post: {
+            /** Files */
+            files: string[];
         };
         /** BookingCreate */
         BookingCreate: {
@@ -903,6 +2275,30 @@ export interface components {
             /** Source Key */
             source_key?: string | null;
         };
+        /** BookingStatsResponse */
+        BookingStatsResponse: {
+            /** By Source */
+            by_source: {
+                [key: string]: number;
+            };
+            /** Total Amount */
+            total_amount: number;
+            /** Total Count */
+            total_count: number;
+        };
+        /** BuchungOut */
+        BuchungOut: {
+            /** Beschreibung */
+            beschreibung: string;
+            /** Betrag */
+            betrag: number;
+            /** Datum */
+            datum: string;
+            /** Kt Haben */
+            kt_haben: string;
+            /** Kt Soll */
+            kt_soll: string;
+        };
         /** BuchungRowExport */
         BuchungRowExport: {
             /** Artbetrag */
@@ -932,6 +2328,38 @@ export interface components {
             /** Rechnung */
             rechnung: string;
         };
+        /** BvgHinweisOut */
+        BvgHinweisOut: {
+            /** Code */
+            code: string;
+            /** Mitarbeiter Id */
+            mitarbeiter_id?: number | null;
+            /** Text */
+            text: string;
+        };
+        /**
+         * BvgPruefungOut
+         * @description Das gesetzliche BVG-Minimum gegen die eingetragenen Beträge (B-72, Option C).
+         *
+         *     Eine reine Prüfung: sie ändert keine Abrechnung. `grenzbetraege_jahr` sagt,
+         *     welche Jahreszahlen verwendet wurden — bei einem Jahr ohne hinterlegte
+         *     Grenzbeträge ist das nicht dasselbe wie `jahr`.
+         */
+        BvgPruefungOut: {
+            /**
+             * Geprueft
+             * @default 0
+             */
+            geprueft: number;
+            /** Grenzbetraege Aktuell */
+            grenzbetraege_aktuell: boolean;
+            /** Grenzbetraege Jahr */
+            grenzbetraege_jahr: number;
+            /** Hinweise */
+            hinweise: components["schemas"]["BvgHinweisOut"][];
+            /** Jahr */
+            jahr: number;
+        };
         /** ChatMessage */
         ChatMessage: {
             /** Content */
@@ -943,6 +2371,33 @@ export interface components {
         ChatRequest: {
             /** Messages */
             messages: components["schemas"]["ChatMessage"][];
+        };
+        /**
+         * ClassifierInfoResponse
+         * @description What `/api/classify/info` actually returns (B-59).
+         *
+         *     The hand-written frontend interface claimed `sklearn_version`,
+         *     `model_size_kb` and `memory_size_kb`; the endpoint has never sent them.
+         */
+        ClassifierInfoResponse: {
+            /** Classes */
+            classes: number;
+            /** Correction Count */
+            correction_count: number;
+            /** Has Model */
+            has_model: boolean;
+            /** Memory Count */
+            memory_count: number;
+            /** Model Accuracy */
+            model_accuracy: number;
+            /** Model Trusted */
+            model_trusted: boolean;
+            /** Total Samples */
+            total_samples: number;
+            /** Train Accuracy */
+            train_accuracy: number;
+            /** Trained At */
+            trained_at?: string | null;
         };
         /** ClassifyRequest */
         ClassifyRequest: {
@@ -988,6 +2443,238 @@ export interface components {
              */
             original_soll: string;
         };
+        /** CreateBatchRequest */
+        CreateBatchRequest: {
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+        };
+        /** DauerbuchungenResponse */
+        DauerbuchungenResponse: {
+            /**
+             * Eintraege
+             * @default []
+             */
+            eintraege: components["schemas"]["app__schemas__dauerbuchungen__DauerbuchungOut"][];
+            /**
+             * Fehlen
+             * @default []
+             */
+            fehlen: components["schemas"]["app__schemas__dauerbuchungen__DauerbuchungOut"][];
+            /** Monat */
+            monat: string;
+            /**
+             * Monatstotal
+             * @default 0
+             */
+            monatstotal: number;
+            /**
+             * Offen Total
+             * @default 0
+             */
+            offen_total: number;
+            /**
+             * Stichtag
+             * Format: date
+             */
+            stichtag: string;
+        };
+        /** DecisionResponse */
+        DecisionResponse: {
+            /**
+             * Bookings
+             * @default []
+             */
+            bookings: number[];
+            /**
+             * Documents
+             * @default []
+             */
+            documents: number[];
+            /** Status */
+            status: string;
+            /** Transaction Id */
+            transaction_id: number;
+        };
+        /** DocumentListResponse */
+        DocumentListResponse: {
+            /** Count */
+            count: number;
+            /** Items */
+            items: components["schemas"]["DocumentOut"][];
+        };
+        /** DocumentOut */
+        DocumentOut: {
+            /** Amount */
+            amount: number | null;
+            /** Booking Id */
+            booking_id: number | null;
+            /** Classification Confidence */
+            classification_confidence: number;
+            /** Contact Email */
+            contact_email: string;
+            /** Created At */
+            created_at: string | null;
+            /** Currency */
+            currency: string;
+            /** Direction */
+            direction: string;
+            /** Due Date */
+            due_date: string | null;
+            /** Error */
+            error: string;
+            /** Extraction Confidence */
+            extraction_confidence: number;
+            /** Extraction Source */
+            extraction_source: string;
+            /** Filename */
+            filename: string;
+            /** Id */
+            id: number;
+            /** Invoice Date */
+            invoice_date: string | null;
+            /** Invoice No */
+            invoice_no: string;
+            /** Kind */
+            kind: string;
+            /** Kt Haben */
+            kt_haben: string;
+            /** Kt Soll */
+            kt_soll: string;
+            /** Mahnstufe */
+            mahnstufe: number;
+            /** Mahnung Sent At */
+            mahnung_sent_at: string | null;
+            /** Mwst Code */
+            mwst_code: string;
+            /** Mwst Pct */
+            mwst_pct: string;
+            /**
+             * Paid At Source
+             * @default false
+             */
+            paid_at_source: boolean;
+            /** Qr Iban */
+            qr_iban: string;
+            /** Qr Message */
+            qr_message: string;
+            /** Qr Reference */
+            qr_reference: string;
+            /** Sent At */
+            sent_at?: string | null;
+            /** Status */
+            status: string;
+            /** Updated At */
+            updated_at: string | null;
+            /** Vendor */
+            vendor: string;
+        };
+        /** DocumentSummary */
+        DocumentSummary: {
+            /** Bezahlt */
+            bezahlt: number;
+            /** Exportiert */
+            exportiert: number;
+            /** Fehler */
+            fehler: number;
+            /** Offen */
+            offen: number;
+            /** Offen Betrag */
+            offen_betrag: number;
+            /** Ueberfaellig */
+            ueberfaellig: number;
+        };
+        /**
+         * DocumentUpdate
+         * @description Fields the user may correct on an open document.
+         */
+        DocumentUpdate: {
+            /** Amount */
+            amount?: number | null;
+            /** Contact Email */
+            contact_email?: string | null;
+            /** Currency */
+            currency?: string | null;
+            /** Direction */
+            direction?: ("eingang" | "ausgang") | null;
+            /** Due Date */
+            due_date?: string | null;
+            /** Invoice Date */
+            invoice_date?: string | null;
+            /** Invoice No */
+            invoice_no?: string | null;
+            /** Kt Haben */
+            kt_haben?: string | null;
+            /** Kt Soll */
+            kt_soll?: string | null;
+            /** Mwst Code */
+            mwst_code?: string | null;
+            /** Mwst Pct */
+            mwst_pct?: string | null;
+            /** Paid At Source */
+            paid_at_source?: boolean | null;
+            /** Status */
+            status?: ("offen" | "bezahlt" | "exportiert" | "fehler") | null;
+            /** Vendor */
+            vendor?: string | null;
+        };
+        /** DocumentUploadResponse */
+        DocumentUploadResponse: {
+            /** Created */
+            created: number;
+            /** Failed */
+            failed: number;
+            /** Results */
+            results: components["schemas"]["DocumentUploadResult"][];
+        };
+        /** DocumentUploadResult */
+        DocumentUploadResult: {
+            /**
+             * Code
+             * @default
+             */
+            code: string;
+            document?: components["schemas"]["DocumentOut"] | null;
+            /** Error */
+            error?: string | null;
+            /** Filename */
+            filename: string;
+            /** Ok */
+            ok: boolean;
+        };
+        /** EmailEingangResponse */
+        EmailEingangResponse: {
+            /** Abgelehnt */
+            abgelehnt: number;
+            /** Belege 24H */
+            belege_24h: number;
+            einstellungen: components["schemas"]["MailSettingsOut"];
+            /** Nachrichten */
+            nachrichten: components["schemas"]["EmailMessageOut"][];
+        };
+        /** EmailMessageOut */
+        EmailMessageOut: {
+            /** Attachment Count */
+            attachment_count: number;
+            /** Created At */
+            created_at: string | null;
+            /** Document Count */
+            document_count: number;
+            /** From Addr */
+            from_addr: string;
+            /** Id */
+            id: number;
+            /** Reason */
+            reason: string;
+            /** Sent At */
+            sent_at: string | null;
+            /** Status */
+            status: string;
+            /** Subject */
+            subject: string;
+        };
         /** EmailRequest */
         EmailRequest: {
             /** Source */
@@ -997,7 +2684,10 @@ export interface components {
              * @default
              */
             subject: string;
-            /** To Email */
+            /**
+             * To Email
+             * Format: email
+             */
             to_email: string;
         };
         /** EmailWithRowsRequest */
@@ -1009,8 +2699,61 @@ export interface components {
              * @default
              */
             subject: string;
-            /** To Email */
+            /**
+             * To Email
+             * Format: email
+             */
             to_email: string;
+        };
+        /** ExportBatchListResponse */
+        ExportBatchListResponse: {
+            /** Count */
+            count: number;
+            /** Items */
+            items: components["schemas"]["ExportBatchOut"][];
+        };
+        /** ExportBatchOut */
+        ExportBatchOut: {
+            /** Booking Count */
+            booking_count: number;
+            /** Checksum */
+            checksum: string;
+            /** Created At */
+            created_at: string | null;
+            /** Filename */
+            filename: string;
+            /** Format */
+            format: string;
+            /** Id */
+            id: number;
+            /** Note */
+            note: string;
+            /** Period From */
+            period_from: string | null;
+            /** Period To */
+            period_to: string | null;
+            /** Total Betrag */
+            total_betrag: number;
+            /** Total Mwst */
+            total_mwst: number;
+        };
+        /** ExportCheck */
+        ExportCheck: {
+            /**
+             * Booking Ids
+             * @default []
+             */
+            booking_ids: number[];
+            /** Code */
+            code: string;
+            /** Count */
+            count: number;
+            /** Detail */
+            detail: string;
+            /** Label */
+            label: string;
+            /** Severity */
+            severity: string;
         };
         /** ExportRequest */
         ExportRequest: {
@@ -1019,6 +2762,11 @@ export interface components {
         };
         /** ExtractedInvoice */
         ExtractedInvoice: {
+            /**
+             * Bezahlt An Der Kasse
+             * @default false
+             */
+            bezahlt_an_der_kasse: boolean;
             /** Classification Confidence */
             classification_confidence?: number | null;
             /** Classification Input */
@@ -1058,6 +2806,11 @@ export interface components {
             /** Mwst Pct */
             mwst_pct?: string | null;
             /**
+             * Needs Review
+             * @default false
+             */
+            needs_review: boolean;
+            /**
              * Net Amount
              * @default 0
              */
@@ -1069,6 +2822,8 @@ export interface components {
              * @default false
              */
             ocr_worked: boolean;
+            /** Review Reason */
+            review_reason?: string | null;
             /** Scanner Attempts */
             scanner_attempts?: components["schemas"]["ScannerAttempt"][];
             /** Scanner Providers */
@@ -1107,10 +2862,308 @@ export interface components {
             /** Item */
             item: string;
         };
+        /**
+         * FirmaProfilOut
+         * @description Plus what the UI needs to say *why* an invoice cannot be written yet.
+         */
+        FirmaProfilOut: {
+            /**
+             * Bereit
+             * @default false
+             */
+            bereit: boolean;
+            /**
+             * Email
+             * @default
+             */
+            email: string;
+            /** Fehlt */
+            fehlt?: string[];
+            /** Gewinnsteuer Satz */
+            gewinnsteuer_satz?: number | null;
+            /**
+             * Hausnummer
+             * @default
+             */
+            hausnummer: string;
+            /**
+             * Iban
+             * @default
+             */
+            iban: string;
+            /**
+             * Iban Formatiert
+             * @default
+             */
+            iban_formatiert: string;
+            /**
+             * Konto Bank
+             * @default
+             */
+            konto_bank: string;
+            /**
+             * Konto Debitoren
+             * @default
+             */
+            konto_debitoren: string;
+            /**
+             * Konto Ertrag
+             * @default
+             */
+            konto_ertrag: string;
+            /**
+             * Land
+             * @default CH
+             */
+            land: string;
+            /**
+             * Mwst Code
+             * @default
+             */
+            mwst_code: string;
+            /**
+             * Mwst Nr
+             * @default
+             */
+            mwst_nr: string;
+            /**
+             * Mwst Pct
+             * @default
+             */
+            mwst_pct: string;
+            /**
+             * Name
+             * @default
+             */
+            name: string;
+            /**
+             * Ort
+             * @default
+             */
+            ort: string;
+            /**
+             * Plz
+             * @default
+             */
+            plz: string;
+            /**
+             * Qr Iban
+             * @default false
+             */
+            qr_iban: boolean;
+            /**
+             * Referenz Typ
+             * @default
+             */
+            referenz_typ: string;
+            /**
+             * Strasse
+             * @default
+             */
+            strasse: string;
+            /**
+             * Telefon
+             * @default
+             */
+            telefon: string;
+            /**
+             * Zahlungsfrist Tage
+             * @default 30
+             */
+            zahlungsfrist_tage: number;
+        };
+        /** FirmaProfilUpdate */
+        FirmaProfilUpdate: {
+            /** Email */
+            email?: string | null;
+            /** Gewinnsteuer Satz */
+            gewinnsteuer_satz?: number | null;
+            /** Hausnummer */
+            hausnummer?: string | null;
+            /** Iban */
+            iban?: string | null;
+            /** Konto Bank */
+            konto_bank?: string | null;
+            /** Konto Debitoren */
+            konto_debitoren?: string | null;
+            /** Konto Ertrag */
+            konto_ertrag?: string | null;
+            /** Land */
+            land?: string | null;
+            /** Mwst Code */
+            mwst_code?: string | null;
+            /** Mwst Nr */
+            mwst_nr?: string | null;
+            /** Mwst Pct */
+            mwst_pct?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Ort */
+            ort?: string | null;
+            /** Plz */
+            plz?: string | null;
+            /** Strasse */
+            strasse?: string | null;
+            /** Telefon */
+            telefon?: string | null;
+            /** Zahlungsfrist Tage */
+            zahlungsfrist_tage?: number | null;
+        };
+        /**
+         * FreigabeRequest
+         * @description Sign off the setup, or take the sign-off back.
+         *
+         *     A separate endpoint from the rates on purpose: this is a statement that a
+         *     person compared one real month against the previous payroll, and it must not
+         *     be possible to make it by accident while editing a percentage.
+         */
+        FreigabeRequest: {
+            /** Freigegeben */
+            freigegeben: boolean;
+        };
+        /** GruppeOut */
+        GruppeOut: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Positionen */
+            positionen: components["schemas"]["KontoPosition"][];
+            /** Total */
+            total: number;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** JahrReportResponse */
+        JahrReportResponse: {
+            /** Abschreibungen */
+            abschreibungen: components["schemas"]["AbschreibungOut"][];
+            /** Abschreibungen Total */
+            abschreibungen_total: number;
+            aktiven: components["schemas"]["GruppeOut"];
+            /** Aufwand */
+            aufwand: components["schemas"]["GruppeOut"][];
+            /** Aufwand Total */
+            aufwand_total: number;
+            /** Bilanz Differenz */
+            bilanz_differenz: number;
+            /** Blockers */
+            blockers: number;
+            /** Buchungen */
+            buchungen: number;
+            /** Checks */
+            checks: components["schemas"]["ExportCheck"][];
+            /** Ertrag */
+            ertrag: components["schemas"]["GruppeOut"][];
+            /** Ertrag Total */
+            ertrag_total: number;
+            /** Gewinn */
+            gewinn: number;
+            /** Jahr */
+            jahr: number;
+            /** Paket Url */
+            paket_url: string;
+            passiven: components["schemas"]["GruppeOut"];
+            /** Pdf Url */
+            pdf_url: string;
+            /** Ready */
+            ready: boolean;
+            /** Warnings */
+            warnings: number;
+        };
+        /** KontenplanImportErgebnis */
+        KontenplanImportErgebnis: {
+            /** Count */
+            count: number;
+            /** Entfernt */
+            entfernt: number;
+            /** Geaendert */
+            geaendert: number;
+            /** Modus */
+            modus: string;
+            /** Neu */
+            neu: number;
+            /** Status */
+            status: string;
+        };
+        /**
+         * KontenplanImportVorschau
+         * @description Was ein Import tun *würde*. Es wird nichts geschrieben.
+         *
+         *     `entfaellt` ist der Satz, der vor dem Klick zählt: diese Konten hat der
+         *     Mandant und die Datei nennt sie nicht, also verschwinden sie im Modus
+         *     "ersetzen".
+         */
+        KontenplanImportVorschau: {
+            /**
+             * Doppelt
+             * @default 0
+             */
+            doppelt: number;
+            /** Entfaellt */
+            entfaellt: string[];
+            /** Spalte Bezeichnung */
+            spalte_bezeichnung: string;
+            /** Spalte Konto */
+            spalte_konto: string;
+            /** Zaehler */
+            zaehler: {
+                [key: string]: number;
+            };
+            /** Zeilen */
+            zeilen: components["schemas"]["KontenplanImportZeile"][];
+        };
+        /**
+         * KontenplanImportZeile
+         * @description Eine Zeile der hochgeladenen Datei, wie der Assistent sie liest.
+         */
+        KontenplanImportZeile: {
+            /** Bezeichnung */
+            bezeichnung: string;
+            /**
+             * Bisher
+             * @default
+             */
+            bisher: string;
+            /**
+             * Doppelt Zu
+             * @default
+             */
+            doppelt_zu: string;
+            /**
+             * Grund
+             * @default
+             */
+            grund: string;
+            /** Konto */
+            konto: string;
+            /**
+             * Quelle
+             * @default 0
+             */
+            quelle: number;
+            /** Status */
+            status: string;
+        };
+        /**
+         * KontenplanResponse
+         * @description Account number → description, as the Kontenplan editor reads it.
+         */
+        KontenplanResponse: {
+            /** Kontenplan */
+            kontenplan: {
+                [key: string]: string;
+            };
+        };
+        /** KontenplanSaved */
+        KontenplanSaved: {
+            /** Count */
+            count: number;
+            /** Status */
+            status: string;
         };
         /** KontenplanUpdate */
         KontenplanUpdate: {
@@ -1118,6 +3171,136 @@ export interface components {
             kontenplan: {
                 [key: string]: string;
             };
+        };
+        /**
+         * KontoDefaultOut
+         * @description Default counter-account and VAT for one debit account.
+         *
+         *     The keys are the Banana column names the import/export speak, so they stay
+         *     capitalised on the wire.
+         */
+        KontoDefaultOut: {
+            /** Kontohaben */
+            KontoHaben: string;
+            /** Mwstcode */
+            MwStCode: string;
+            /** Mwstustproz */
+            MwStUStProz: string;
+        };
+        /** KontoDefaultsResponse */
+        KontoDefaultsResponse: {
+            /** Defaults */
+            defaults: {
+                [key: string]: components["schemas"]["KontoDefaultOut"];
+            };
+        };
+        /** KontoPosition */
+        KontoPosition: {
+            /** Bezeichnung */
+            bezeichnung: string;
+            /** Konto */
+            konto: string;
+            /** Saldo */
+            saldo: number;
+        };
+        /** KundeIn */
+        KundeIn: {
+            /**
+             * Email
+             * @default
+             */
+            email: string;
+            /**
+             * Hausnummer
+             * @default
+             */
+            hausnummer: string;
+            /**
+             * Land
+             * @default CH
+             */
+            land: string;
+            /** Name */
+            name: string;
+            /**
+             * Ort
+             * @default
+             */
+            ort: string;
+            /**
+             * Plz
+             * @default
+             */
+            plz: string;
+            /**
+             * Strasse
+             * @default
+             */
+            strasse: string;
+        };
+        /** LearningStatsResponse */
+        LearningStatsResponse: {
+            /** Booking Count */
+            booking_count: number;
+            /** Correction Count */
+            correction_count: number;
+            /** Correction Distribution */
+            correction_distribution: components["schemas"]["AccountCount"][];
+            /** Memory Count */
+            memory_count: number;
+            /** Memory Distribution */
+            memory_distribution: components["schemas"]["AccountCount"][];
+            /** Source Distribution */
+            source_distribution: components["schemas"]["SourceCount"][];
+        };
+        /** LiquiditaetResponse */
+        LiquiditaetResponse: {
+            /** Ausgang */
+            ausgang: number;
+            /**
+             * Bis
+             * Format: date
+             */
+            bis: string;
+            /**
+             * Dauerbuchungen
+             * @default []
+             */
+            dauerbuchungen: components["schemas"]["app__schemas__liquiditaet__DauerbuchungOut"][];
+            /** Eingang */
+            eingang: number;
+            /**
+             * Monate
+             * @default []
+             */
+            monate: components["schemas"]["MonatOut"][];
+            /**
+             * Positionen
+             * @default []
+             */
+            positionen: components["schemas"]["app__schemas__liquiditaet__PositionOut"][];
+            /** Prognose */
+            prognose: number;
+            /** Stand Heute */
+            stand_heute: number;
+            steuer?: components["schemas"]["SteuerOut"] | null;
+            /**
+             * Stichtag
+             * Format: date
+             */
+            stichtag: string;
+            /**
+             * Tiefster Am
+             * Format: date
+             */
+            tiefster_am: string;
+            /** Tiefster Stand */
+            tiefster_stand: number;
+            /**
+             * Warnungen
+             * @default []
+             */
+            warnungen: string[];
         };
         /** LoginRequest */
         LoginRequest: {
@@ -1129,6 +3312,678 @@ export interface components {
             /** Password */
             password: string;
         };
+        /** LohnSettingsOut */
+        LohnSettingsOut: {
+            /** Ahv Satz An */
+            ahv_satz_an: number;
+            /** Alv Jahresgrenze */
+            alv_jahresgrenze: number;
+            /** Alv Satz An */
+            alv_satz_an: number;
+            /**
+             * Bereit
+             * @default false
+             */
+            bereit: boolean;
+            /** Fak Satz */
+            fak_satz?: number | null;
+            /**
+             * Fehlt
+             * @default []
+             */
+            fehlt: string[];
+            /**
+             * Freigegeben
+             * @default false
+             */
+            freigegeben: boolean;
+            /** Freigegeben Am */
+            freigegeben_am?: string | null;
+            /** Konto Bank */
+            konto_bank: string;
+            /** Konto Lohnaufwand */
+            konto_lohnaufwand: string;
+            /** Konto Sozialversicherung */
+            konto_sozialversicherung: string;
+            /** Konto Verbindlichkeit */
+            konto_verbindlichkeit: string;
+            /** Ktg Satz Ag */
+            ktg_satz_ag?: number | null;
+            /** Ktg Satz An */
+            ktg_satz_an?: number | null;
+            /**
+             * Quelle
+             * @default
+             */
+            quelle: string;
+            /** Uvg Bu Satz */
+            uvg_bu_satz?: number | null;
+            /** Uvg Nbu Satz */
+            uvg_nbu_satz?: number | null;
+            /** Uvgz Satz Ag */
+            uvgz_satz_ag?: number | null;
+            /** Uvgz Satz An */
+            uvgz_satz_an?: number | null;
+            /** Verwaltungskosten Satz */
+            verwaltungskosten_satz?: number | null;
+            /**
+             * Wasserzeichen
+             * @default
+             */
+            wasserzeichen: string;
+        };
+        /** LohnSettingsUpdate */
+        LohnSettingsUpdate: {
+            /** Ahv Satz An */
+            ahv_satz_an?: number | null;
+            /** Alv Jahresgrenze */
+            alv_jahresgrenze?: number | null;
+            /** Alv Satz An */
+            alv_satz_an?: number | null;
+            /** Fak Satz */
+            fak_satz?: number | null;
+            /** Konto Bank */
+            konto_bank?: string | null;
+            /** Konto Lohnaufwand */
+            konto_lohnaufwand?: string | null;
+            /** Konto Sozialversicherung */
+            konto_sozialversicherung?: string | null;
+            /** Konto Verbindlichkeit */
+            konto_verbindlichkeit?: string | null;
+            /** Ktg Satz Ag */
+            ktg_satz_ag?: number | null;
+            /** Ktg Satz An */
+            ktg_satz_an?: number | null;
+            /** Uvg Bu Satz */
+            uvg_bu_satz?: number | null;
+            /** Uvg Nbu Satz */
+            uvg_nbu_satz?: number | null;
+            /** Uvgz Satz Ag */
+            uvgz_satz_ag?: number | null;
+            /** Uvgz Satz An */
+            uvgz_satz_an?: number | null;
+            /** Verwaltungskosten Satz */
+            verwaltungskosten_satz?: number | null;
+        };
+        /**
+         * LohnlaufOut
+         * @description A payslip, issued or only previewed — the shape is the same either way.
+         */
+        LohnlaufOut: {
+            /** Abgerechnet Am */
+            abgerechnet_am?: string | null;
+            /** Abrechnung Id */
+            abrechnung_id?: number | null;
+            /**
+             * Abzuege
+             * @default []
+             */
+            abzuege: components["schemas"]["AbzugOut"][];
+            /** Abzuege Total */
+            abzuege_total: number;
+            /** Ag Total */
+            ag_total: number;
+            /** Ahv Lohn */
+            ahv_lohn: number;
+            /** Anteil */
+            anteil: number;
+            /**
+             * Arbeitgeber
+             * @default []
+             */
+            arbeitgeber: components["schemas"]["AbzugOut"][];
+            /** Brutto */
+            brutto: number;
+            /** Dreizehnter */
+            dreizehnter: number;
+            /** Grundlohn */
+            grundlohn: number;
+            /** Jahr */
+            jahr: number;
+            /**
+             * Kinderzulagen
+             * @default 0
+             */
+            kinderzulagen: number;
+            /** Mitarbeiter */
+            mitarbeiter: string;
+            /** Mitarbeiter Id */
+            mitarbeiter_id: number;
+            /** Monat */
+            monat: number;
+            /** Netto */
+            netto: number;
+            /** Periode */
+            periode: string;
+            /**
+             * Stunden
+             * @default 0
+             */
+            stunden: number;
+            /**
+             * Stundenlohn
+             * @default 0
+             */
+            stundenlohn: number;
+            /** Zulagen */
+            zulagen: number;
+        };
+        /** LohnlaufRequest */
+        LohnlaufRequest: {
+            /**
+             * Dreizehnter
+             * @default false
+             */
+            dreizehnter: boolean;
+            /** Jahr */
+            jahr: number;
+            /** Mitarbeiter Id */
+            mitarbeiter_id: number;
+            /** Monat */
+            monat: number;
+            /**
+             * Stunden
+             * @default 0
+             */
+            stunden: number;
+            /**
+             * Zulagen
+             * @default 0
+             */
+            zulagen: number;
+        };
+        /** MahnungDraft */
+        MahnungDraft: {
+            /** Document Id */
+            document_id: number;
+            /** Empfaenger */
+            empfaenger: string;
+            /** Empfaenger Email */
+            empfaenger_email: string;
+            /** Html Url */
+            html_url: string;
+            /**
+             * Recorded
+             * @default false
+             */
+            recorded: boolean;
+            /** Stufe */
+            stufe: number;
+            /** Stufe Label */
+            stufe_label: string;
+            /** Subject */
+            subject: string;
+            /** Text */
+            text: string;
+        };
+        /** MahnungRequest */
+        MahnungRequest: {
+            /** Stufe */
+            stufe?: number | null;
+        };
+        /** MailSettingsOut */
+        MailSettingsOut: {
+            /** Absender */
+            absender?: string[];
+            /**
+             * Adresse
+             * @default
+             */
+            adresse: string;
+            /**
+             * Aktiv
+             * @default true
+             */
+            aktiv: boolean;
+            /**
+             * Allow List
+             * @default
+             */
+            allow_list: string;
+            /**
+             * Bereit
+             * @default false
+             */
+            bereit: boolean;
+            /**
+             * Imap
+             * @default false
+             */
+            imap: boolean;
+            /**
+             * Webhook
+             * @default false
+             */
+            webhook: boolean;
+        };
+        /** MailSettingsUpdate */
+        MailSettingsUpdate: {
+            /** Aktiv */
+            aktiv?: boolean | null;
+            /** Allow List */
+            allow_list?: string | null;
+        };
+        /** ManualMatchRequest */
+        ManualMatchRequest: {
+            /** Document Ids */
+            document_ids: number[];
+        };
+        /**
+         * MatchedDocument
+         * @description A document inside a proposal, with the part of the line that settles it.
+         */
+        MatchedDocument: {
+            /** Amount */
+            amount: number;
+            document: components["schemas"]["DocumentOut"];
+            /** Match Id */
+            match_id: number;
+        };
+        /** MitarbeiterCreate */
+        MitarbeiterCreate: {
+            /**
+             * Ahv Nummer
+             * @default
+             */
+            ahv_nummer: string;
+            /** Austritt */
+            austritt?: string | null;
+            /** Bvg Ag Monat */
+            bvg_ag_monat?: number | null;
+            /** Bvg An Monat */
+            bvg_an_monat?: number | null;
+            /**
+             * Dreizehnter
+             * @default false
+             */
+            dreizehnter: boolean;
+            /** Eintritt */
+            eintritt?: string | null;
+            /**
+             * Email
+             * @default
+             */
+            email: string;
+            /** Geburtsdatum */
+            geburtsdatum?: string | null;
+            /**
+             * Iban
+             * @default
+             */
+            iban: string;
+            /**
+             * Kanton
+             * @default
+             */
+            kanton: string;
+            /**
+             * Kinder
+             * @default 0
+             */
+            kinder: number;
+            /**
+             * Kinderzulagen Monat
+             * @default 0
+             */
+            kinderzulagen_monat: number;
+            /**
+             * Lohnart
+             * @default monat
+             * @enum {string}
+             */
+            lohnart: "monat" | "stunde";
+            /**
+             * Monatslohn
+             * @default 0
+             */
+            monatslohn: number;
+            /**
+             * Name
+             * @default
+             */
+            name: string;
+            /**
+             * Pensum
+             * @default 100
+             */
+            pensum: number;
+            /**
+             * Quellensteuer
+             * @default false
+             */
+            quellensteuer: boolean;
+            /** Quellensteuer Satz */
+            quellensteuer_satz?: number | null;
+            /**
+             * Quellensteuer Tarif
+             * @default
+             */
+            quellensteuer_tarif: string;
+            /**
+             * Stundenlohn
+             * @default 0
+             */
+            stundenlohn: number;
+            /**
+             * Vorname
+             * @default
+             */
+            vorname: string;
+        };
+        /** MitarbeiterOut */
+        MitarbeiterOut: {
+            /**
+             * Ahv Nummer
+             * @default
+             */
+            ahv_nummer: string;
+            /**
+             * Anzeige Name
+             * @default
+             */
+            anzeige_name: string;
+            /** Austritt */
+            austritt?: string | null;
+            /** Bvg Ag Monat */
+            bvg_ag_monat?: number | null;
+            /** Bvg An Monat */
+            bvg_an_monat?: number | null;
+            /**
+             * Dreizehnter
+             * @default false
+             */
+            dreizehnter: boolean;
+            /** Eintritt */
+            eintritt?: string | null;
+            /**
+             * Email
+             * @default
+             */
+            email: string;
+            /** Geburtsdatum */
+            geburtsdatum?: string | null;
+            /**
+             * Iban
+             * @default
+             */
+            iban: string;
+            /** Id */
+            id: number;
+            /**
+             * Kanton
+             * @default
+             */
+            kanton: string;
+            /**
+             * Kinder
+             * @default 0
+             */
+            kinder: number;
+            /**
+             * Kinderzulagen Monat
+             * @default 0
+             */
+            kinderzulagen_monat: number;
+            /**
+             * Lohnart
+             * @default monat
+             * @enum {string}
+             */
+            lohnart: "monat" | "stunde";
+            /**
+             * Monatslohn
+             * @default 0
+             */
+            monatslohn: number;
+            /**
+             * Name
+             * @default
+             */
+            name: string;
+            /**
+             * Pensum
+             * @default 100
+             */
+            pensum: number;
+            /**
+             * Quellensteuer
+             * @default false
+             */
+            quellensteuer: boolean;
+            /** Quellensteuer Satz */
+            quellensteuer_satz?: number | null;
+            /**
+             * Quellensteuer Tarif
+             * @default
+             */
+            quellensteuer_tarif: string;
+            /**
+             * Stundenlohn
+             * @default 0
+             */
+            stundenlohn: number;
+            /**
+             * Vorname
+             * @default
+             */
+            vorname: string;
+        };
+        /** MitarbeiterUpdate */
+        MitarbeiterUpdate: {
+            /**
+             * Ahv Nummer
+             * @default
+             */
+            ahv_nummer: string;
+            /** Austritt */
+            austritt?: string | null;
+            /** Bvg Ag Monat */
+            bvg_ag_monat?: number | null;
+            /** Bvg An Monat */
+            bvg_an_monat?: number | null;
+            /**
+             * Dreizehnter
+             * @default false
+             */
+            dreizehnter: boolean;
+            /** Eintritt */
+            eintritt?: string | null;
+            /**
+             * Email
+             * @default
+             */
+            email: string;
+            /** Geburtsdatum */
+            geburtsdatum?: string | null;
+            /**
+             * Iban
+             * @default
+             */
+            iban: string;
+            /**
+             * Kanton
+             * @default
+             */
+            kanton: string;
+            /**
+             * Kinder
+             * @default 0
+             */
+            kinder: number;
+            /**
+             * Kinderzulagen Monat
+             * @default 0
+             */
+            kinderzulagen_monat: number;
+            /**
+             * Lohnart
+             * @default monat
+             * @enum {string}
+             */
+            lohnart: "monat" | "stunde";
+            /**
+             * Monatslohn
+             * @default 0
+             */
+            monatslohn: number;
+            /**
+             * Name
+             * @default
+             */
+            name: string;
+            /**
+             * Pensum
+             * @default 100
+             */
+            pensum: number;
+            /**
+             * Quellensteuer
+             * @default false
+             */
+            quellensteuer: boolean;
+            /** Quellensteuer Satz */
+            quellensteuer_satz?: number | null;
+            /**
+             * Quellensteuer Tarif
+             * @default
+             */
+            quellensteuer_tarif: string;
+            /**
+             * Stundenlohn
+             * @default 0
+             */
+            stundenlohn: number;
+            /**
+             * Vorname
+             * @default
+             */
+            vorname: string;
+        };
+        /** MonatOut */
+        MonatOut: {
+            /** Ausgang */
+            ausgang: number;
+            /** Eingang */
+            eingang: number;
+            /** Label */
+            label: string;
+            /** Saldo Ende */
+            saldo_ende: number;
+            /** Schluessel */
+            schluessel: string;
+        };
+        /** MonthKpisOut */
+        MonthKpisOut: {
+            /** Ausgaben */
+            ausgaben: number;
+            /** Bank Bewegung */
+            bank_bewegung: number;
+            /** Buchungen */
+            buchungen: number;
+            /** Differenz */
+            differenz: number;
+            /** Einnahmen */
+            einnahmen: number;
+            /** Konto 1020 Bewegung */
+            konto_1020_bewegung: number;
+        };
+        /**
+         * MonthListResponse
+         * @description Every month that has data, newest first — the picker needs no configuration.
+         */
+        MonthListResponse: {
+            /** Aktuell */
+            aktuell: string;
+            /** Labels */
+            labels: {
+                [key: string]: string;
+            };
+            /** Monate */
+            monate: string[];
+        };
+        /** MonthReportResponse */
+        MonthReportResponse: {
+            /** Blockers */
+            blockers: number;
+            /** Checks */
+            checks: components["schemas"]["ExportCheck"][];
+            kpis: components["schemas"]["MonthKpisOut"];
+            /** Label */
+            label: string;
+            /** Monat */
+            monat: string;
+            /** Ready */
+            ready: boolean;
+            /** Warnings */
+            warnings: number;
+        };
+        /** MwstReportResponse */
+        MwstReportResponse: {
+            /** Blockers */
+            blockers: number;
+            /** Buchungen */
+            buchungen: number;
+            /** Checks */
+            checks: components["schemas"]["ExportCheck"][];
+            /** Copy Block */
+            copy_block: string;
+            /** Guthaben */
+            guthaben: number;
+            /**
+             * Methode
+             * @enum {string}
+             */
+            methode: "effektiv" | "saldo";
+            /** Quartal */
+            quartal: string;
+            /** Ready */
+            ready: boolean;
+            /** Satz */
+            satz: number | null;
+            /** Zeitraum */
+            zeitraum: string;
+            /** Ziffern */
+            ziffern: components["schemas"]["ZifferOut"][];
+            /** Zu Bezahlen */
+            zu_bezahlen: number;
+        };
+        /** OffenePostenResponse */
+        OffenePostenResponse: {
+            debitoren: components["schemas"]["SideOut"];
+            kreditoren: components["schemas"]["SideOut"];
+        };
+        /** OpenItemOut */
+        OpenItemOut: {
+            /** Bucket */
+            bucket: string;
+            /** Days Overdue */
+            days_overdue: number;
+            document: components["schemas"]["DocumentOut"];
+            /** Due Date */
+            due_date: string | null;
+            /** Mahnbar */
+            mahnbar: boolean;
+        };
+        /** PositionIn */
+        PositionIn: {
+            /** Bezeichnung */
+            bezeichnung: string;
+            /**
+             * Einheit
+             * @default
+             */
+            einheit: string;
+            /**
+             * Einzelpreis
+             * @default 0
+             */
+            einzelpreis: number;
+            /**
+             * Menge
+             * @default 1
+             */
+            menge: number;
+        };
         /** PredictRequest */
         PredictRequest: {
             /** Beschreibung */
@@ -1138,6 +3993,105 @@ export interface components {
              * @default 100
              */
             betrag: number;
+        };
+        /** PreflightResponse */
+        PreflightResponse: {
+            /** Blockers */
+            blockers: number;
+            /** Checks */
+            checks: components["schemas"]["ExportCheck"][];
+            /** Exportable */
+            exportable: number;
+            /** Period From */
+            period_from: string | null;
+            /** Period To */
+            period_to: string | null;
+            /** Ready */
+            ready: boolean;
+            /** Total */
+            total: number;
+        };
+        /**
+         * ProfileUpdate
+         * @description Self-service: what a user may change about themselves (B-46).
+         */
+        ProfileUpdate: {
+            /** Display Name */
+            display_name: string;
+        };
+        /** QuarterListResponse */
+        QuarterListResponse: {
+            /** Aktuell */
+            aktuell: string;
+            /** Labels */
+            labels: {
+                [key: string]: string;
+            };
+            /** Quartale */
+            quartale: string[];
+        };
+        /** RechnungCreate */
+        RechnungCreate: {
+            /**
+             * Bemerkung
+             * @default
+             */
+            bemerkung: string;
+            /** Faellig Am */
+            faellig_am?: string | null;
+            kunde: components["schemas"]["KundeIn"];
+            /** Positionen */
+            positionen: components["schemas"]["PositionIn"][];
+            /** Rechnungsdatum */
+            rechnungsdatum?: string | null;
+        };
+        /** RechnungListItem */
+        RechnungListItem: {
+            /** Amount */
+            amount: number | null;
+            /** Due Date */
+            due_date: string | null;
+            /** Id */
+            id: number;
+            /** Invoice Date */
+            invoice_date: string | null;
+            /** Invoice No */
+            invoice_no: string;
+            /** Qr Reference */
+            qr_reference: string;
+            /** Status */
+            status: string;
+            /** Vendor */
+            vendor: string;
+        };
+        /** RechnungListResponse */
+        RechnungListResponse: {
+            /** Count */
+            count: number;
+            /** Items */
+            items: components["schemas"]["RechnungListItem"][];
+            /** Naechste Nummer */
+            naechste_nummer: string;
+        };
+        /** RechnungOut */
+        RechnungOut: {
+            /** Booking Id */
+            booking_id?: number | null;
+            document: components["schemas"]["DocumentOut"];
+            /** Html Url */
+            html_url: string;
+            /** Mwst */
+            mwst: number;
+            /** Netto */
+            netto: number;
+            /** Positionen */
+            positionen: components["schemas"]["app__schemas__rechnung__PositionOut"][];
+            /** Referenz Formatiert */
+            referenz_formatiert: string;
+            /** Referenz Typ */
+            referenz_typ: string;
+            /** Total */
+            total: number;
         };
         /** RegisterRequest */
         RegisterRequest: {
@@ -1151,13 +4105,55 @@ export interface components {
              * Format: email
              */
             email: string;
-            /** Password */
+            /**
+             * Password
+             * @description Mindestens 12 Zeichen.
+             */
             password: string;
             /**
              * Tenant Name
              * @default Meine Firma
              */
             tenant_name: string;
+        };
+        /** ReviewActionResponse */
+        ReviewActionResponse: {
+            /** Status */
+            status: string;
+        };
+        /** ReviewItemOut */
+        ReviewItemOut: {
+            /** Beschreibung */
+            beschreibung: string;
+            /** Betrag */
+            betrag: number;
+            /** Confidence */
+            confidence: number;
+            /** Created At */
+            created_at?: string | null;
+            /** Id */
+            id: number;
+            /** Predicted Haben */
+            predicted_haben: string;
+            /** Predicted Mwst Code */
+            predicted_mwst_code: string;
+            /** Predicted Mwst Pct */
+            predicted_mwst_pct: string;
+            /** Predicted Soll */
+            predicted_soll: string;
+            /** Source */
+            source: string;
+            /** Status */
+            status: string;
+        };
+        /** ReviewQueueResponse */
+        ReviewQueueResponse: {
+            /** Count */
+            count: number;
+            /** Items */
+            items: components["schemas"]["ReviewItemOut"][];
+            /** Threshold */
+            threshold: number;
         };
         /** ScannerAttempt */
         ScannerAttempt: {
@@ -1265,12 +4261,90 @@ export interface components {
             vision_models?: string[];
         };
         /**
+         * SideOut
+         * @description Debitoren (they owe us) or Kreditoren (we owe) — the same shape twice.
+         */
+        SideOut: {
+            /** Buckets */
+            buckets: {
+                [key: string]: number;
+            };
+            /** Count */
+            count: number;
+            /** Items */
+            items: components["schemas"]["OpenItemOut"][];
+            /** Overdue Count */
+            overdue_count: number;
+            /** Overdue Total */
+            overdue_total: number;
+            /** Total */
+            total: number;
+        };
+        /** SourceCount */
+        SourceCount: {
+            /** Count */
+            count: number;
+            /** Source */
+            source: string;
+        };
+        /**
          * SsoRequest
          * @description `POST /api/auth/sso` — the SSO token billing put into the `/sso#token=` fragment.
          */
         SsoRequest: {
             /** Token */
             token: string;
+        };
+        /** StatementImportResponse */
+        StatementImportResponse: {
+            /** Duplicates */
+            duplicates: number;
+            /** Imported */
+            imported: number;
+            /** Proposals */
+            proposals: number;
+        };
+        /** SteuerOut */
+        SteuerOut: {
+            /** Aufwand */
+            aufwand: number;
+            /** Ertrag */
+            ertrag: number;
+            /** Gewinn */
+            gewinn: number;
+            /**
+             * Hinweis
+             * @default
+             */
+            hinweis: string;
+            /** Jahr */
+            jahr: number;
+            /** Offen */
+            offen?: number | null;
+            /** Pro Quartal */
+            pro_quartal?: number | null;
+            /**
+             * Quelle
+             * @default
+             */
+            quelle: string;
+            /** Rueckstellung Soll */
+            rueckstellung_soll?: number | null;
+            /** Satz */
+            satz?: number | null;
+            /**
+             * Schon Zurueckgestellt
+             * @default 0
+             */
+            schon_zurueckgestellt: number;
+        };
+        /**
+         * TenantUpdate
+         * @description Tenant-wide: the company name (admin and up).
+         */
+        TenantUpdate: {
+            /** Name */
+            name: string;
         };
         /** TokenResponse */
         TokenResponse: {
@@ -1281,6 +4355,36 @@ export interface components {
              * @default bearer
              */
             token_type: string;
+        };
+        /** UsageCounter */
+        UsageCounter: {
+            /** Anteil */
+            anteil: number | null;
+            /** Benutzt */
+            benutzt: number;
+            /** Erreicht */
+            erreicht: boolean;
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Limit */
+            limit: number | null;
+            /** Periode */
+            periode: string;
+            /** Warnung */
+            warnung: boolean;
+        };
+        /** UsageResponse */
+        UsageResponse: {
+            /** Durchgesetzt */
+            durchgesetzt: boolean;
+            /** Monat Seit */
+            monat_seit: string;
+            /** Plan */
+            plan: string;
+            /** Zaehler */
+            zaehler: components["schemas"]["UsageCounter"][];
         };
         /** UserResponse */
         UserResponse: {
@@ -1319,6 +4423,166 @@ export interface components {
             /** Error Type */
             type: string;
         };
+        /**
+         * VersandEntwurfOut
+         * @description What the invoice mail would say, before it is sent (B-79).
+         */
+        VersandEntwurfOut: {
+            /**
+             * Bereit
+             * @default false
+             */
+            bereit: boolean;
+            /** Dateiname */
+            dateiname: string;
+            /** Document Id */
+            document_id: number;
+            /** Empfaenger */
+            empfaenger: string;
+            /** Fehlt */
+            fehlt?: string[];
+            /**
+             * Reply To
+             * @default
+             */
+            reply_to: string;
+            /**
+             * Schon Gesendet Am
+             * @default
+             */
+            schon_gesendet_am: string;
+            /** Subject */
+            subject: string;
+            /** Text */
+            text: string;
+        };
+        /** VersandErgebnis */
+        VersandErgebnis: {
+            /** Dateiname */
+            dateiname: string;
+            /** Document Id */
+            document_id: number;
+            /** Empfaenger */
+            empfaenger: string;
+            /**
+             * Gesendet Am
+             * Format: date-time
+             */
+            gesendet_am: string;
+        };
+        /**
+         * VersandRequest
+         * @description Overrides the owner made in the preview. Every field is optional.
+         */
+        VersandRequest: {
+            /** Empfaenger */
+            empfaenger?: string | null;
+            /** Subject */
+            subject?: string | null;
+            /** Text */
+            text?: string | null;
+        };
+        /** YearListResponse */
+        YearListResponse: {
+            /** Aktuell */
+            aktuell: number;
+            /** Jahre */
+            jahre?: number[];
+        };
+        /** ZifferOut */
+        ZifferOut: {
+            /** Label */
+            label: string;
+            /** Rate */
+            rate: number | null;
+            /** Steuer */
+            steuer: number | null;
+            /** Umsatz */
+            umsatz: number | null;
+            /** Ziffer */
+            ziffer: string;
+        };
+        /** DauerbuchungOut */
+        app__schemas__dauerbuchungen__DauerbuchungOut: {
+            /** Betrag */
+            betrag: number;
+            /** Faellig Am */
+            faellig_am?: string | null;
+            /** Konto */
+            konto: string;
+            /** Label */
+            label: string;
+            /** Letzter Monat */
+            letzter_monat: string;
+            /** Monate */
+            monate: number;
+            /**
+             * Schluessel
+             * @default
+             */
+            schluessel: string;
+            /** Status */
+            status: string;
+            /** Tag */
+            tag: number;
+            /**
+             * Tage Ueberfaellig
+             * @default 0
+             */
+            tage_ueberfaellig: number;
+        };
+        /** DauerbuchungOut */
+        app__schemas__liquiditaet__DauerbuchungOut: {
+            /** Betrag */
+            betrag: number;
+            /** Konto */
+            konto: string;
+            /** Label */
+            label: string;
+            /** Letzter Monat */
+            letzter_monat: string;
+            /** Monate */
+            monate: number;
+        };
+        /** PositionOut */
+        app__schemas__liquiditaet__PositionOut: {
+            /** Betrag */
+            betrag: number;
+            /**
+             * Datum
+             * Format: date
+             */
+            datum: string;
+            /** Document Id */
+            document_id?: number | null;
+            /** Label */
+            label: string;
+            /** Quelle */
+            quelle: string;
+            /**
+             * Ueberfaellig
+             * @default false
+             */
+            ueberfaellig: boolean;
+        };
+        /** PositionOut */
+        app__schemas__rechnung__PositionOut: {
+            /**
+             * Betrag
+             * @default 0
+             */
+            betrag: number;
+            /** Bezeichnung */
+            bezeichnung: string;
+            /** Einheit */
+            einheit: string;
+            /** Einzelpreis */
+            einzelpreis: number;
+            /** Menge */
+            menge: number;
+            /** Position */
+            position: number;
+        };
         /** ScannerConfigResponse */
         app__schemas__scanner__ScannerConfigResponse: {
             /** Auto Classification Enabled */
@@ -1352,7 +4616,11 @@ export interface components {
             /** Vision Provider */
             vision_provider: string;
         };
-        /** ScannerConfigUpdate */
+        /**
+         * ScannerConfigUpdate
+         * @description `ollama_base_url` and `ocr_command` are deliberately absent (B-42): a tenant
+         *     must not point the server at an arbitrary host or hand it a shell command.
+         */
         app__schemas__scanner__ScannerConfigUpdate: {
             /**
              * Auto Classification Enabled
@@ -1368,12 +4636,8 @@ export interface components {
              * @default true
              */
             invoice_matching_enabled: boolean;
-            /** Ocr Command */
-            ocr_command?: string | null;
             /** Ocr Provider */
             ocr_provider: string;
-            /** Ollama Base Url */
-            ollama_base_url: string;
             /**
              * Pdf Ocr Enabled
              * @default true
@@ -1403,7 +4667,10 @@ export interface components {
             /** Vision Provider */
             vision_provider: string;
         };
-        /** ScannerConfigUpdate */
+        /**
+         * ScannerConfigUpdate
+         * @description No `ollama_base_url` / `ocr_command` (B-42): deployment settings, not tenant data.
+         */
         app__schemas__scanner_config__ScannerConfigUpdate: {
             /** Auto Classification Enabled */
             auto_classification_enabled?: boolean | null;
@@ -1415,8 +4682,6 @@ export interface components {
             invoice_matching_enabled?: boolean | null;
             /** Ocr Provider */
             ocr_provider?: string | null;
-            /** Ollama Base Url */
-            ollama_base_url?: string | null;
             /** Pdf Ocr Enabled */
             pdf_ocr_enabled?: boolean | null;
             /** Review Confidence Threshold */
@@ -1433,6 +4698,462 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    abgleich_inbox_api_abgleich__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AbgleichResponse"];
+                };
+            };
+        };
+    };
+    refresh_api_abgleich_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AbgleichSummary"];
+                };
+            };
+        };
+    };
+    import_statement_api_abgleich_statements_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_statement_api_abgleich_statements_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementImportResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_api_abgleich__transaction_id__confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transaction_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ignore_api_abgleich__transaction_id__ignore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transaction_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    manual_api_abgleich__transaction_id__manual_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transaction_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManualMatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reject_api_abgleich__transaction_id__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transaction_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    jahr_api_abschluss_jahr_get: {
+        parameters: {
+            query?: {
+                /** @description Vierstellig, z. B. 2026 */
+                jahr?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JahrReportResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    jahr_pdf_api_abschluss_jahr_pdf_get: {
+        parameters: {
+            query?: {
+                jahr?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    jahr_paket_api_abschluss_jahr_zip_get: {
+        parameters: {
+            query?: {
+                jahr?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    years_api_abschluss_jahre_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["YearListResponse"];
+                };
+            };
+        };
+    };
+    monat_api_abschluss_monat_get: {
+        parameters: {
+            query?: {
+                /** @description JJJJ-MM; leer = neuester Monat mit Daten */
+                monat?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthReportResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    months_api_abschluss_monate_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthListResponse"];
+                };
+            };
+        };
+    };
+    mwst_api_abschluss_mwst_get: {
+        parameters: {
+            query?: {
+                /** @description JJJJ-Qn; leer = neuestes Quartal mit Buchungen */
+                quartal?: string | null;
+                /** @description effektiv | saldo */
+                methode?: string;
+                /** @description Saldosteuersatz in %, nur für methode=saldo */
+                satz?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MwstReportResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mwst_text_api_abschluss_mwst_txt_get: {
+        parameters: {
+            query?: {
+                quartal?: string | null;
+                methode?: string;
+                satz?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    quarters_api_abschluss_quartale_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuarterListResponse"];
+                };
+            };
+        };
+    };
     ai_chat_api_ai_chat_post: {
         parameters: {
             query?: never;
@@ -1523,9 +5244,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["AuditListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -1588,6 +5307,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+        };
+    };
+    update_me_api_auth_me_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_my_tenant_api_auth_me_tenant_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TenantUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -1693,7 +5478,9 @@ export interface operations {
     create_bookings_api_bookings__post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -1738,7 +5525,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["BookingStatsResponse"];
                 };
             };
         };
@@ -1954,9 +5741,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["ClassifierInfoResponse"];
                 };
             };
         };
@@ -2126,6 +5911,314 @@ export interface operations {
             };
         };
     };
+    dauerbuchungen_api_dauerbuchungen__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DauerbuchungenResponse"];
+                };
+            };
+        };
+    };
+    list_documents_api_documents__get: {
+        parameters: {
+            query?: {
+                status?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_documents_api_documents__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_documents_api_documents__post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentUploadResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    documents_summary_api_documents_summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentSummary"];
+                };
+            };
+        };
+    };
+    get_document_api_documents__document_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_document_api_documents__document_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocumentUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    document_file_api_documents__document_id__file_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    email_eingang_api_email__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailEingangResponse"];
+                };
+            };
+        };
+    };
+    fetch_now_api_email_abrufen_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AbrufResponse"];
+                };
+            };
+        };
+    };
+    allow_sender_api_email_absender_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AbsenderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailSettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_settings_api_email_einstellungen_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MailSettingsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailSettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     export_banana_api_export_banana_get: {
         parameters: {
             query?: {
@@ -2169,6 +6262,214 @@ export interface operations {
                 "application/json": components["schemas"]["ExportRequest"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_batches_api_export_batches__get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportBatchListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_batch_api_export_batches__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CreateBatchRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportBatchOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preflight_api_export_batches_preflight_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreflightResponse"];
+                };
+            };
+        };
+    };
+    get_batch_api_export_batches__batch_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batch_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportBatchOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_cover_api_export_batches__batch_id__cover_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batch_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_batch_api_export_batches__batch_id__file_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batch_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_pack_api_export_batches__batch_id__pack_zip_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batch_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -2428,6 +6729,28 @@ export interface operations {
             };
         };
     };
+    live_api_health_live_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+        };
+    };
     import_banana_file_api_import_banana_post: {
         parameters: {
             query?: {
@@ -2515,7 +6838,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["KontenplanResponse"];
                 };
             };
         };
@@ -2539,7 +6862,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["KontenplanSaved"];
                 };
             };
             /** @description Validation Error */
@@ -2554,6 +6877,675 @@ export interface operations {
         };
     };
     get_defaults_api_kontenplan_defaults_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KontoDefaultsResponse"];
+                };
+            };
+        };
+    };
+    import_anwenden_api_kontenplan_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_anwenden_api_kontenplan_import_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KontenplanImportErgebnis"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_vorschau_api_kontenplan_import_vorschau_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_vorschau_api_kontenplan_import_vorschau_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KontenplanImportVorschau"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    liquiditaet_api_liquiditaet__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LiquiditaetResponse"];
+                };
+            };
+        };
+    };
+    abrechnen_api_lohn_abrechnen_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LohnlaufRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AbrechnenResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    abrechnungen_api_lohn_abrechnungen_get: {
+        parameters: {
+            query?: {
+                jahr?: number | null;
+                mitarbeiter_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AbrechnungListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    abrechnung_pdf_api_lohn_abrechnungen__abrechnung_id__lohnabrechnung_pdf_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                abrechnung_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bvg_pruefung_api_lohn_bvg_pruefung_get: {
+        parameters: {
+            query: {
+                jahr: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BvgPruefungOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mitarbeiter_liste_api_lohn_mitarbeiter_get: {
+        parameters: {
+            query?: {
+                /** @description Nur Mitarbeitende ohne Austrittsdatum. */
+                aktiv?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MitarbeiterOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mitarbeiter_anlegen_api_lohn_mitarbeiter_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MitarbeiterCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MitarbeiterOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mitarbeiter_api_lohn_mitarbeiter__mitarbeiter_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mitarbeiter_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MitarbeiterOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mitarbeiter_aendern_api_lohn_mitarbeiter__mitarbeiter_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mitarbeiter_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MitarbeiterUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MitarbeiterOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    jahr_pdf_api_lohn_mitarbeiter__mitarbeiter_id__jahr__jahr__pdf_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mitarbeiter_id: number;
+                jahr: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    settings_api_lohn_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LohnSettingsOut"];
+                };
+            };
+        };
+    };
+    update_settings_api_lohn_settings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LohnSettingsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LohnSettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    freigabe_api_lohn_settings_freigabe_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FreigabeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LohnSettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    vorschau_api_lohn_vorschau_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LohnlaufRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LohnlaufOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    offene_posten_api_offene_posten__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OffenePostenResponse"];
+                };
+            };
+        };
+    };
+    mahnung_preview_api_offene_posten__document_id__mahnung_get: {
+        parameters: {
+            query?: {
+                stufe?: number | null;
+            };
+            header?: never;
+            path: {
+                document_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MahnungDraft"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_mahnung_api_offene_posten__document_id__mahnung_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["MahnungRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MahnungDraft"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mahnung_page_api_offene_posten__document_id__mahnung_html_get: {
+        parameters: {
+            query?: {
+                stufe?: number | null;
+            };
+            header?: never;
+            path: {
+                document_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mahnung_file_api_offene_posten__document_id__mahnung_pdf_get: {
+        parameters: {
+            query?: {
+                stufe?: number | null;
+            };
+            header?: never;
+            path: {
+                document_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    beispiel_rechnung_api_onboarding_beispiel_rechnung_pdf_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -2633,6 +7625,282 @@ export interface operations {
             };
         };
     };
+    list_rechnungen_api_rechnungen__get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RechnungListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_rechnung_api_rechnungen__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RechnungCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RechnungOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    firma_api_rechnungen_firma_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FirmaProfilOut"];
+                };
+            };
+        };
+    };
+    update_firma_api_rechnungen_firma_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FirmaProfilUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FirmaProfilOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_rechnung_api_rechnungen__document_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RechnungOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rechnung_page_api_rechnungen__document_id__rechnung_html_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rechnung_pdf_api_rechnungen__document_id__rechnung_pdf_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    versand_entwurf_api_rechnungen__document_id__versand_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersandEntwurfOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    versand_senden_api_rechnungen__document_id__versand_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VersandRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersandErgebnis"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_pending_api_review__get: {
         parameters: {
             query?: never;
@@ -2648,9 +7916,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["ReviewQueueResponse"];
                 };
             };
         };
@@ -2676,9 +7942,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: string;
-                    };
+                    "application/json": components["schemas"]["ReviewActionResponse"];
                 };
             };
             /** @description Validation Error */
@@ -2709,9 +7973,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: string;
-                    };
+                    "application/json": components["schemas"]["ReviewActionResponse"];
                 };
             };
             /** @description Validation Error */
@@ -2899,7 +8161,27 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["LearningStatsResponse"];
+                };
+            };
+        };
+    };
+    usage_api_usage_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsageResponse"];
                 };
             };
         };

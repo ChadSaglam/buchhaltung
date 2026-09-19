@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
-import { getNavSections, type NavItem } from "@/lib/navigation";
+import { getNavSections, surfaceFor, type NavItem } from "@/lib/navigation";
 import { Logo } from "@/components/ui/Logo";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { cn } from "@/lib/utils";
@@ -22,13 +22,19 @@ function NavLink({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
+  // A surface is active for every page inside it — "Belege" lights up on the
+  // Scanner too, which is the whole point of the four surfaces.
+  const surface = surfaceFor(pathname);
   const active =
-    pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
+    surface?.href === item.href ||
+    pathname === item.href ||
+    (item.href !== "/dashboard" && pathname.startsWith(item.href + "/"));
 
   return (
     <Link
       href={item.href}
       onClick={onNavigate}
+      aria-current={active ? "page" : undefined}
       title={collapsed ? item.label : undefined}
       className={cn(
         "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
@@ -82,10 +88,10 @@ export function SidebarContent({ collapsed, onToggle, onNavigate, showCollapse =
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-4">
+      <nav aria-label="Hauptnavigation" className="flex-1 space-y-6 overflow-y-auto px-3 py-4">
         {Array.from(sections.entries()).map(([section, items]) => (
           <div key={section}>
-            {!collapsed && (
+            {!collapsed && section !== "Surfaces" && (
               <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {section}
               </p>

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any
@@ -46,6 +47,31 @@ class BaseOcrProvider(BaseScannerProvider, ABC):
 
 class BaseVisionProvider(BaseScannerProvider, ABC):
     provider_type = "vision"
+
+    # Async members are what the request path uses (B-49); the sync ones stay for
+    # scripts and tests. Defaults run the sync member in a worker thread.
+    async def is_available_async(self) -> bool:
+        return await asyncio.to_thread(self.is_available)
+
+    async def extract_async(
+        self,
+        scanner_file: ScannerFile,
+        selected_model: str = "",
+        preferred_models: list[str] | None = None,
+    ) -> ProviderExtractionResult:
+        return await asyncio.to_thread(self.extract, scanner_file, selected_model, preferred_models)
+
+    async def get_status_models_async(self) -> list[dict[str, Any]]:
+        return await asyncio.to_thread(self.get_status_models)
+
+    async def get_vision_model_names_async(self) -> list[str]:
+        return await asyncio.to_thread(self.get_vision_model_names)
+
+    async def get_best_model_async(self) -> str | None:
+        return await asyncio.to_thread(self.get_best_model)
+
+    async def get_pipeline_async(self) -> list[ScannerPipelineInfo]:
+        return await asyncio.to_thread(self.get_pipeline)
 
     @abstractmethod
     def extract(

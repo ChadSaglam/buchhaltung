@@ -2,28 +2,24 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
-import { LayoutDashboard, FileText, ScanLine, ListChecks, Brain, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SURFACES, surfaceFor } from "@/lib/navigation";
 
-const items: { href: string; icon: LucideIcon; label: string }[] = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "Home" },
-  { href: "/dashboard/kontoauszug", icon: FileText, label: "Konto" },
-  { href: "/dashboard/scanner", icon: ScanLine, label: "Scan" },
-  { href: "/dashboard/review", icon: ListChecks, label: "Prüfen" },
-  { href: "/dashboard/modell", icon: Brain, label: "Modell" },
-];
+/** The same four surfaces as the sidebar — one bar, one mental model. */
+const items = SURFACES;
 
 export function MobileNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="glass safe-area-inset-bottom fixed bottom-0 left-0 right-0 z-40 flex h-16 items-center justify-around border-t px-2 md:hidden">
+    <nav aria-label="Hauptnavigation (mobil)" className="glass safe-area-inset-bottom fixed bottom-0 left-0 right-0 z-40 flex h-16 items-center justify-around border-t px-2 md:hidden">
       {items.map((item) => {
-        const active = pathname === item.href;
+        const active = surfaceFor(pathname)?.href === item.href;
         return (
           <Link
             key={item.href}
             href={item.href}
+            aria-current={active ? "page" : undefined}
             className="relative flex flex-1 flex-col items-center gap-0.5 py-1.5"
           >
             {active && (

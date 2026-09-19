@@ -2,6 +2,8 @@
 
 from pydantic import BaseModel
 
+from app.schemas.common import Money
+
 
 class BookingCreate(BaseModel):
     datum: str = ""
@@ -10,11 +12,11 @@ class BookingCreate(BaseModel):
     beschreibung: str = ""
     kt_soll: str = ""
     kt_haben: str = ""
-    betrag_chf: float | None = None
+    betrag_chf: Money | None = None
     mwst_code: str = ""
     art_betrag: str = ""
     mwst_pct: str = ""
-    mwst_chf: float | None = None
+    mwst_chf: Money | None = None
     ks3: str = ""
     source: str = "kontoauszug"
 
@@ -25,3 +27,10 @@ class BookingResponse(BookingCreate):
 
     class Config:
         from_attributes = True
+
+
+class BookingStatsResponse(BaseModel):
+    total_count: int
+    total_amount: Money
+    #: Rows per `source` ("kontoauszug", "scanner", "billing", … and "unknown").
+    by_source: dict[str, int]

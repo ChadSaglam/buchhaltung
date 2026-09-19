@@ -7,7 +7,7 @@ BIN := backend/venv/bin
 FRONTEND_PORT ?= 3000
 BACKEND_PORT  ?= 8000
 
-.PHONY: help setup doctor dev-deps e2e-deps hooks dev stop ports test test-backend test-unit test-e2e lint fix typecheck check api-types migrate migration ai-context status clean docker
+.PHONY: help setup lock doctor dev-deps e2e-deps hooks dev stop ports test test-backend test-unit test-e2e lint fix typecheck check api-types migrate migration ai-context status clean docker backup backup-list restore-drill
 
 help: ## Show this help
 	@grep -hE '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -21,10 +21,42 @@ setup: ## Install backend + frontend dependencies
 		echo "→ reusing existing backend/venv ($$($(PY) --version))"; \
 	fi
 	$(PIP) install --upgrade pip
+	@# B-81: requirements.txt is compiled for the Python CI and the images run.
+	@# Installing it into a different minor is usually fine and occasionally is not
+	@# — a pin whose wheel does not exist for your version fails here with a
+	@# compiler error that says nothing about why. Warn, do not refuse: a local
+	@# venv on a newer Python is a choice, not a mistake.
+	@want=$$(grep -E '^[[:space:]]*PYTHON_VERSION:' .github/workflows/ci.yml | head -1 | tr -d '\042 ' | cut -d: -f2); \
+	have=$$($(PY) -c 'import sys;print("%d.%d"%sys.version_info[:2])'); \
+	if [ "$$want" != "$$have" ]; then \
+		echo ""; \
+		echo "  ⚠ backend/venv is Python $$have; CI and the images run $$want."; \
+		echo "    backend/requirements.txt was resolved for $$want, so this installs"; \
+		echo "    versions your Python was not the one chosen for, and \`make lock\`"; \
+		echo "    will refuse. Either recreate the venv with python$$want, or change"; \
+		echo "    PYTHON_VERSION in .github/workflows/ci.yml and backend/Dockerfile."; \
+		echo ""; \
+	fi
 	$(PIP) install -r backend/requirements.txt -r backend/requirements-dev.txt
 	cd frontend && npm install
 	@$(MAKE) --no-print-directory e2e-deps
 	@$(MAKE) --no-print-directory hooks
+
+lock: ## Recompile backend/requirements.txt from backend/requirements.in (B-81)
+	@# pip-compile resolves for the interpreter it runs on, and it is not a small
+	@# difference: compiling this file on 3.11 pins numpy 2.4.6, on 3.13 numpy 2.5.3.
+	@# A lock built on the wrong Python installs a tree the image never runs.
+	@want=$$(grep -E '^[[:space:]]*PYTHON_VERSION:' .github/workflows/ci.yml | head -1 | tr -d '\042 ' | cut -d: -f2); \
+	have=$$($(PY) -c 'import sys;print("%d.%d"%sys.version_info[:2])'); \
+	if [ "$$want" != "$$have" ]; then \
+		echo "backend/venv is Python $$have; CI and the images run $$want."; \
+		echo "Recreate the venv with python$$want, or the lock will pin the wrong tree."; \
+		exit 1; \
+	fi
+	@$(PIP) install -q pip-tools
+	@cd backend && $(CURDIR)/$(PY) -m piptools compile --quiet --no-strip-extras \
+		--output-file=requirements.txt requirements.in
+	@echo "→ backend/requirements.txt: $$(grep -c '^[a-zA-Z]' backend/requirements.txt) pinned packages"
 
 doctor: ## Show which interpreters and tools this repo is actually using
 	@echo "  repo python   : $$($(PY) --version 2>&1)  ($(PY))"
@@ -95,7 +127,12 @@ test-unit: ## Frontend unit tests only (vitest, pure helpers)
 	cd frontend && npm run test
 
 test-e2e: e2e-deps ## Frontend end-to-end tests only
-	cd frontend && npx playwright test
+	# The e2e build writes to .next-e2e (so this runs while `make dev` is up) and Next
+	# rewrites the tracked next-env.d.ts to whatever distDir it last used. Put the
+	# committed .next spelling back, pass or fail, so `git status` stays clean.
+	( cd frontend && npx playwright test ); status=$$?; \
+		$(PY) scripts/restore_next_env.py; \
+		exit $$status
 
 test-backend: dev-deps ## Backend tests only, with coverage
 	$(PY) -m pytest --cov=backend/app --cov-report=term-missing
@@ -113,10 +150,30 @@ fix: dev-deps ## Auto-fix what can be auto-fixed
 typecheck: ## TypeScript strict typecheck
 	cd frontend && npm run typecheck
 
-check: lint typecheck test ## Everything CI runs, locally
+check: lint typecheck api-types-check test ## Everything CI runs, locally
+
+api-types-check: ## Fail if frontend/src/lib/api-types.ts is stale (same check as CI + pre-push)
+	@./scripts/gen-api-types.sh >/dev/null
+	@if [ -n "$$(git status --porcelain -- frontend/src/lib/api-types.ts)" ]; then \
+		echo "frontend/src/lib/api-types.ts is out of date. Run: make api-types"; \
+		git --no-pager diff --stat -- frontend/src/lib/api-types.ts; \
+		exit 1; \
+	fi
+
+lohn-vergleich: ## Vorlage für den Lohn-Vergleich (B-72) — siehe docs/LOHN-VERGLEICH.md
+	@$(PY) scripts/lohn-vergleich.py --vorlage
 
 api-types: ## Regenerate frontend types from the FastAPI OpenAPI schema
 	./scripts/gen-api-types.sh
+
+backup: ## Take one backup now (database + receipts) — see docs/BACKUP.md
+	docker compose --profile backup run --rm --entrypoint /bin/sh backup /scripts/backup.sh once
+
+backup-list: ## List the backups that exist, newest last
+	@ls -1 "$${BACKUP_PATH:-./backups}" 2>/dev/null | grep -E '^[0-9]{8}T[0-9]{6}Z$$' || echo "  (none yet — run: make backup)"
+
+restore-drill: ## Restore the newest backup into a scratch database and verify it
+	docker compose --profile backup run --rm --entrypoint /bin/sh backup /scripts/restore-drill.sh
 
 migrate: ## Apply database migrations
 	cd backend && ../$(PY) -m alembic upgrade head

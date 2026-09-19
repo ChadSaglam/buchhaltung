@@ -3,8 +3,10 @@
 Layer order in TenantClassifier.classify():
   1. credit note shortcut (is_credit)            confidence 1.0, "Regeln"
   2. exact memory hit (tenant-scoped)             confidence 1.0, "Gedächtnis"
-  3. ML model if present and proba >= 0.45        confidence = proba, "ML"
-  4. keyword rules, default 6500/1020 at 0.35     "Regeln"
+  3. most confident of: amount memory ("Betrag", tests/test_amount_memory.py),
+     ML model if proba >= 0.45 ("ML"), keyword rules ("Regeln"); ties go
+     amount → rules → ML. When no keyword matches and nothing else answers, the
+     result is empty at 0.0 with a reason ("Kein Vorschlag") — B-92.
 """
 
 from __future__ import annotations
@@ -23,7 +25,8 @@ from app.services.classifier import (
     AUTO_RETRAIN_THRESHOLD,
     CLASSIFICATION_RULES,
     CONFIDENCE_THRESHOLD,
-    DEFAULT_RULE_CONFIDENCE,
+    KEIN_VORSCHLAG,
+    KEIN_VORSCHLAG_GRUND,
     RULE_CONFIDENCE,
     ClassificationResult,
     TenantClassifier,
@@ -206,11 +209,32 @@ def test_rules_first_matching_rule_wins():
     assert result.kt_soll == "6570"
 
 
-def test_rules_fallback_is_6500_with_low_confidence():
+def test_rules_fallback_proposes_nothing_and_says_why():
+    """B-92: no keyword matched -> no account, not 6500.
+
+    The account it used to name carries ~1 % of a real tenant's bookings and was
+    being proposed on half a statement. A pre-filled account gets accepted; a
+    blank one gets looked at.
+    """
     result = _rules_only()._classify_rules("xqzv völlig unbekannt", 50.0)
-    assert (result.kt_soll, result.kt_haben) == ("6500", "1020")
-    assert result.confidence == DEFAULT_RULE_CONFIDENCE
+    assert (result.kt_soll, result.kt_haben) == ("", "")
+    assert result.confidence == 0.0
+    assert result.source == KEIN_VORSCHLAG
+    assert result.begruendung == KEIN_VORSCHLAG_GRUND
     assert result.mwst_amount == ""
+
+
+def test_rules_fallback_covers_the_lines_that_named_no_counterparty():
+    """The real 2026-09-17 statement: 14 of 28 lines came back 6500. These are them."""
+    for text in ("E-BANKING-SAMMELAUFTRAG", "ZAHLUNG DEBITKARTE", "ZAHLUNG QR-RECHNUNG", "LASTSCHRIFT"):
+        result = _rules_only()._classify_rules(text, 770.60)
+        assert result.kt_soll == "", text
+
+
+def test_a_matching_keyword_still_wins_over_the_blank():
+    """The blank is the floor, not a new ceiling — B-92 must not silence Stufe 3."""
+    result = _rules_only()._classify_rules("Swisscom Rechnung", 59.0)
+    assert result.kt_soll == "6500" and result.confidence >= 0.72
 
 
 def test_rules_compute_vat_from_rule_rate():
@@ -293,7 +317,8 @@ async def test_memory_of_other_tenant_is_invisible(db_session):
     clf = await _clf(db_session, tenant_a.id)
 
     result = await clf.classify("Geheimlieferant", False, 10)
-    assert result.source == "Regeln"
+    # B-92: with nothing of our own to go on, the answer is now blank rather than 6500.
+    assert result.source == KEIN_VORSCHLAG
     assert result.kt_soll != "1234"
 
 
@@ -354,15 +379,17 @@ async def test_ml_receives_preprocessed_text(db_session):
 @pytest.mark.asyncio
 async def test_ml_below_threshold_falls_through_to_rules(db_session):
     tenant = await create_tenant(db_session)
-    model = FakeModel(["4000", "6570"], [0.56, 0.44])  # max 0.56 >= 0.45 -> ML
+    model = FakeModel(["4000", "6570"], [0.56, 0.44])  # max 0.56 >= 0.45 -> ML (no keyword rule for "Hetzner")
     clf = await _clf(db_session, tenant.id)
     clf._model = model
-    assert (await clf.classify("Swisscom", False, 10)).source == "ML"
+    assert (await clf.classify("Hetzner", False, 10)).source == "ML"
 
     clf._model = FakeModel(["4000", "6570"], [0.44, 0.40])  # max 0.44 < 0.45 -> rules
-    result = await clf.classify("Swisscom", False, 10)
-    assert result.source == "Regeln"
-    assert result.kt_soll == "6500"
+    result = await clf.classify("Hetzner", False, 10)
+    # "Hetzner" matches no keyword either, so B-92 leaves the account empty.
+    assert result.source == KEIN_VORSCHLAG
+    assert result.kt_soll == ""
+    assert result.begruendung == KEIN_VORSCHLAG_GRUND
 
 
 @pytest.mark.asyncio
@@ -381,7 +408,7 @@ async def test_model_of_other_tenant_is_not_loaded(db_session):
     clf = await _clf(db_session, tenant_a.id)
 
     assert await clf._load_model() is None
-    assert (await clf.classify("irgendwas", False, 10)).source == "Regeln"
+    assert (await clf.classify("irgendwas", False, 10)).source == KEIN_VORSCHLAG
 
 
 @pytest.mark.asyncio
@@ -394,8 +421,8 @@ async def test_unsigned_model_blob_is_never_unpickled(db_session, caplog):
 
     with caplog.at_level("WARNING"):
         assert await clf._load_model() is None
-    assert "not signed" in caplog.text
-    assert (await clf.classify("irgendwas", False, 10)).source == "Regeln"
+    assert "not trusted" in caplog.text
+    assert (await clf.classify("irgendwas", False, 10)).source == KEIN_VORSCHLAG
 
 
 # ── training (real sklearn, tiny dataset) ────────────────────────────────────
@@ -551,4 +578,27 @@ async def test_end_to_end_unknown_text_lands_in_review_queue(db_session):
 
     result = await clf.classify("xqzv völlig unbekannt", False, 12.0)
     item = await ReviewQueueService(tenant.id, db_session).enqueue_if_low_confidence("xqzv", 12.0, result)
-    assert item is not None and item.confidence == DEFAULT_RULE_CONFIDENCE
+    # B-92: it still queues — it queues *emptier* than before, which is the point.
+    assert item is not None and item.confidence == 0.0
+    assert item.predicted_soll == ""
+
+
+# --- B-48: VAT rate -> code is an exact map, not ">= 7 means 8.1" ---------------------------
+def test_vat_code_for_maps_every_swiss_rate_exactly():
+    from app.services.classifier import vat_code_for
+
+    assert vat_code_for(8.1) == ("8.10", "I81")
+    assert vat_code_for(2.6) == ("2.60", "I26")
+    assert vat_code_for(3.8) == ("3.80", "I38")
+    assert vat_code_for(7.7) == ("7.70", "I77")
+    assert vat_code_for(2.5) == ("2.50", "I25")
+    assert vat_code_for(3.7) == ("3.70", "I37")
+    assert vat_code_for(5.0) is None
+    assert vat_code_for(0) is None
+
+
+def test_vat_code_for_keeps_a_classifier_code_of_the_same_rate_only():
+    from app.services.classifier import vat_code_for
+
+    assert vat_code_for(8.1, "V81") == ("8.10", "V81")  # same rate, different kind: keep
+    assert vat_code_for(2.6, "I81") == ("2.60", "I26")  # rate disagrees: the receipt wins

@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import toast from "react-hot-toast";
 import { api } from "@/lib/api";
+import { errorMessage } from "@/lib/errors";
 import { IMPORT_EXTENSIONS, fileExtension } from "../helpers";
 import type { ImportResult } from "../types";
 
@@ -17,6 +18,14 @@ export function useBananaImport(fetchInfo: () => Promise<void>) {
       toast.error("Nur XLS, XLSX oder CSV Dateien erlaubt");
       return;
     }
+    // B-58: "Bestehende Trainingsdaten ersetzen" deletes every training row.
+    // A checkbox ticked minutes ago is not consent for that.
+    if (replaceData) {
+      const ok = window.confirm(
+        `„${file.name}" importieren und bestehende Trainingsdaten ersetzen?\n\nAlle bisherigen Trainingsbuchungen werden gelöscht. Ohne Häkchen wird stattdessen ergänzt.`,
+      );
+      if (!ok) return;
+    }
     setImporting(true);
     setImportResult(null);
     const formData = new FormData();
@@ -30,8 +39,8 @@ export function useBananaImport(fetchInfo: () => Promise<void>) {
       setImportResult(res.data);
       toast.success(`${res.data.imported} Buchungen importiert & Modell trainiert!`);
       fetchInfo();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.detail || "Import fehlgeschlagen");
+    } catch (err) {
+      toast.error(errorMessage(err));
     } finally {
       setImporting(false);
     }

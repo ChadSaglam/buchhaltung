@@ -35,16 +35,38 @@ export function CardHeader({ className, children }: { className?: string; childr
   return <div className={cn("px-6 pt-6 pb-0", className)}>{children}</div>;
 }
 
-export function CardTitle({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <h3 className={cn("text-base font-semibold leading-tight text-foreground", className)}>{children}</h3>;
+/**
+ * The heading of a card. `<h2>` by default — a card sits directly under the
+ * page `<h1>`, and the `<h3>` this used to render skipped a level (B-58,
+ * axe `heading-order`). Pass `as="h3"` for a card nested inside a section
+ * that already has its own `<h2>`.
+ */
+export function CardTitle({
+  as: Tag = "h2",
+  className,
+  children,
+}: {
+  as?: "h2" | "h3" | "h4";
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return <Tag className={cn("text-base font-semibold leading-tight text-foreground", className)}>{children}</Tag>;
 }
 
 export function CardDescription({ className, children }: { className?: string; children: React.ReactNode }) {
   return <p className={cn("mt-1 text-sm text-muted-foreground", className)}>{children}</p>;
 }
 
-export function CardContent({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <div className={cn("px-6 pb-6 pt-4", className)}>{children}</div>;
+export function CardContent({
+  className,
+  children,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className={cn("px-6 pb-6 pt-4", className)} {...props}>
+      {children}
+    </div>
+  );
 }
 
 export function CardFooter({ className, children }: { className?: string; children: React.ReactNode }) {

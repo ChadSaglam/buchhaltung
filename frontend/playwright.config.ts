@@ -57,6 +57,11 @@ export default defineConfig({
         SECRET_KEY: "e2e-only-secret-not-used-outside-playwright",
         CORS_ORIGINS: `http://127.0.0.1:${E2E_PORT},http://localhost:${E2E_PORT}`,
         SENTRY_DSN: "",
+        // B-55 put a 10/minute per-IP bucket on register/login/sso. Every test
+        // here registers a fresh tenant from 127.0.0.1, so the suite would
+        // throttle itself after the tenth one. The limit is covered by
+        // backend/tests/test_auth_surface.py; this run is about everything else.
+        RATE_LIMIT_AUTH: "10000/minute",
         // Platform SSO (e2e/sso.spec.ts mints the hand-off token with this secret).
         PLATFORM_SHARED_SECRET: E2E_PLATFORM_SECRET,
         BILLING_URL: E2E_BILLING_URL,
@@ -68,13 +73,25 @@ export default defineConfig({
       // prevent client effects (e.g. the AuthGuard redirect) from committing,
       // so a prod build gives a faithful, deterministic run. Locally we keep
       // the dev server for fast iteration.
-      command: process.env.CI ? `npm run start -- -p ${E2E_PORT}` : `npm run dev -- -p ${E2E_PORT}`,
+      // B-80: `next start` is unsupported with output: "standalone", so CI serves
+      // the standalone bundle the image serves — same server, same two copied
+      // directories (scripts/serve-standalone.sh).
+      command: process.env.CI
+        ? `bash ../scripts/serve-standalone.sh ${E2E_PORT}`
+        : `npm run dev -- -p ${E2E_PORT}`,
       url: `http://127.0.0.1:${E2E_PORT}`,
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
       // NEXT_PUBLIC_* is inlined at build time: the CI build step must export
       // the same value (see .github/workflows/ci.yml).
-      env: { NEXT_PUBLIC_API_URL: API_URL, NEXT_PUBLIC_BILLING_URL: E2E_BILLING_URL },
+      env: {
+        NEXT_PUBLIC_API_URL: API_URL,
+        NEXT_PUBLIC_BILLING_URL: E2E_BILLING_URL,
+        // Local only: a separate build directory means a separate dev-server
+        // lock, so `make check` runs while `make dev` keeps serving :3000.
+        // CI builds into .next and serves that, so it must stay unset there.
+        ...(process.env.CI ? {} : { NEXT_DIST_DIR: ".next-e2e" }),
+      },
     },
   ],
 });

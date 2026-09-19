@@ -3,6 +3,7 @@
 import useSWR from "swr";
 import { ScrollText } from "lucide-react";
 import { api } from "@/lib/api";
+import type { AuditListResponse } from "@/lib/api-schema";
 import { t } from "@/lib/i18n";
 import { PageHeader } from "@/components/ui/page_header";
 import { Badge } from "@/components/ui/Badge";
@@ -12,22 +13,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { ErrorState } from "@/components/shared/ErrorState";
 import { PageSkeleton } from "@/components/shared/PageSkeleton";
 
-interface AuditEntry {
-  id: number;
-  action: string;
-  actor_user_id: number | null;
-  target_type: string | null;
-  target_id: string | null;
-  detail: Record<string, unknown> | null;
-  created_at: string | null;
-}
-
-interface AuditResponse {
-  count: number;
-  items: AuditEntry[];
-}
-
-function formatDate(iso: string | null): string {
+function formatDate(iso: string | null | undefined): string {
   if (!iso) return "—";
   return new Date(iso).toLocaleString("de-CH", {
     day: "2-digit",
@@ -39,7 +25,7 @@ function formatDate(iso: string | null): string {
 }
 
 export default function AuditPage() {
-  const { data, error, isLoading, mutate } = useSWR<AuditResponse>("/api/audit/", (url: string) =>
+  const { data, error, isLoading, mutate } = useSWR<AuditListResponse>("/api/audit/", (url: string) =>
     api.get(url).then((r) => r.data)
   );
 

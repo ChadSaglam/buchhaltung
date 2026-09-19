@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import contextlib
-import os
+import html
+import logging
 import smtplib
 import ssl
+from dataclasses import dataclass
 from datetime import datetime
 from email import encoders
 from email.mime.base import MIMEBase
@@ -14,22 +16,104 @@ from email.mime.text import MIMEText
 
 import pandas as pd
 
+from app.core.config import settings
 from app.services.export import df_to_banana_tsv, df_to_csv, df_to_styled_excel, fmt_swiss
+
+logger = logging.getLogger(__name__)
 
 
 def _load_smtp_config() -> dict:
+    # One config source (B-43): config.py, not a second read of os.environ.
     return {
-        "host": os.environ.get("SMTP_HOST", ""),
-        "port": int(os.environ.get("SMTP_PORT", "465")),
-        "user": os.environ.get("SMTP_USER", ""),
-        "password": os.environ.get("SMTP_PASSWORD", ""),
-        "from_email": os.environ.get("FROM_EMAIL", ""),
+        "host": settings.SMTP_HOST,
+        "port": settings.SMTP_PORT,
+        "user": settings.SMTP_USER,
+        "password": settings.SMTP_PASSWORD,
+        "from_email": settings.FROM_EMAIL,
     }
+
+
+def _cell(value) -> str:
+    """Booking text is user input and lands inside HTML: escape every cell (B-43)."""
+    return html.escape("" if value is None else str(value), quote=True)
 
 
 def is_email_configured() -> bool:
     cfg = _load_smtp_config()
     return bool(cfg["host"] and cfg["user"] and cfg["password"])
+
+
+@dataclass
+class Attachment:
+    """One file on a message: what it is called, its bytes, and its media type."""
+
+    filename: str
+    content: bytes
+    media_type: str = "application/octet-stream"
+
+
+def _deliver(msg: MIMEMultipart, cfg: dict, to_email: str) -> tuple[bool, str]:
+    """The one place this app talks SMTP. Every sender goes through here.
+
+    The default SSL context verifies the certificate and the hostname (B-43):
+    a mail server with a broken certificate is a configuration problem, not
+    something to paper over.
+    """
+    try:
+        context = ssl.create_default_context()
+        if cfg["port"] == 465:
+            with smtplib.SMTP_SSL(cfg["host"], cfg["port"], context=context, timeout=30) as server:
+                server.login(cfg["user"], cfg["password"])
+                server.send_message(msg)
+        else:
+            with smtplib.SMTP(cfg["host"], cfg["port"], timeout=30) as server:
+                server.starttls(context=context)
+                server.login(cfg["user"], cfg["password"])
+                server.send_message(msg)
+        return True, f"E-Mail gesendet an {to_email}"
+    except smtplib.SMTPAuthenticationError:
+        return False, "SMTP Anmeldung fehlgeschlagen. Zugangsdaten in .env prüfen."
+    except (smtplib.SMTPException, OSError) as e:
+        # The upstream message can carry the server banner and the credentials
+        # it rejected — log it, never echo it (B-42).
+        logger.warning("[MAIL] send failed: %s", e)
+        return False, "E-Mail konnte nicht gesendet werden. SMTP-Konfiguration prüfen."
+
+
+def send_message(
+    *,
+    to_email: str,
+    subject: str,
+    text: str,
+    attachments: list[Attachment] | None = None,
+    reply_to: str = "",
+) -> tuple[bool, str]:
+    """A plain-text message with files attached (B-79).
+
+    Plain text on purpose: an invoice mail that arrives as a wall of styled
+    HTML looks like marketing, and the document itself is the attachment.
+    """
+    cfg = _load_smtp_config()
+    if not cfg["host"] or not cfg["user"]:
+        return False, "E-Mail nicht konfiguriert."
+
+    msg = MIMEMultipart("mixed")
+    msg["From"] = cfg["from_email"] or cfg["user"]
+    msg["To"] = to_email
+    msg["Subject"] = subject
+    if reply_to:
+        msg["Reply-To"] = reply_to
+    msg.attach(MIMEText(text, "plain", "utf-8"))
+
+    for item in attachments or []:
+        main, _, sub = item.media_type.partition("/")
+        part = MIMEBase(main or "application", sub or "octet-stream")
+        part.set_payload(item.content)
+        encoders.encode_base64(part)
+        part.add_header("Content-Disposition", "attachment", filename=item.filename)
+        msg.attach(part)
+
+    return _deliver(msg, cfg, to_email)
 
 
 def _build_html_body(df: pd.DataFrame, today: str, timestamp: str) -> str:
@@ -58,15 +142,15 @@ def _build_html_body(df: pd.DataFrame, today: str, timestamp: str) -> str:
         try:
             betrag_str = fmt_swiss(float(betrag))
         except (ValueError, TypeError):
-            betrag_str = str(betrag)
+            betrag_str = _cell(betrag)
 
         body_rows += f"""<tr style="background:{bg};">
-            <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;">{row.get("Datum", "")}</td>
-            <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;">{row.get("Beschreibung", "")}</td>
-            <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;font-family:monospace;">{row.get("KtSoll", "")}</td>
-            <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;font-family:monospace;">{row.get("KtHaben", "")}</td>
+            <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;">{_cell(row.get("Datum", ""))}</td>
+            <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;">{_cell(row.get("Beschreibung", ""))}</td>
+            <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;font-family:monospace;">{_cell(row.get("KtSoll", ""))}</td>
+            <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;font-family:monospace;">{_cell(row.get("KtHaben", ""))}</td>
             <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;text-align:right;font-family:monospace;font-weight:600;">{betrag_str}</td>
-            <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;">{row.get("MwStUSt-Code", "")}</td>
+            <td style="padding:10px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;">{_cell(row.get("MwStUSt-Code", ""))}</td>
         </tr>"""
 
     return f"""<!DOCTYPE html>
@@ -234,26 +318,4 @@ def send_bookkeeping_email(
     except Exception:
         pass  # Excel optional — don't fail the email
 
-    # Send
-    try:
-        context = ssl.create_default_context()
-        context.check_hostname = False
-        context.verify_mode = ssl.CERT_NONE
-
-        if cfg["port"] == 465:
-            with smtplib.SMTP_SSL(cfg["host"], cfg["port"], context=context, timeout=30) as server:
-                server.login(cfg["user"], cfg["password"])
-                server.send_message(msg)
-        else:
-            with smtplib.SMTP(cfg["host"], cfg["port"], timeout=30) as server:
-                server.starttls(context=context)
-                server.login(cfg["user"], cfg["password"])
-                server.send_message(msg)
-
-        return True, f"E-Mail gesendet an {to_email}"
-    except smtplib.SMTPAuthenticationError:
-        return False, "SMTP Anmeldung fehlgeschlagen. Zugangsdaten in .env prüfen."
-    except smtplib.SMTPException as e:
-        return False, f"SMTP Fehler: {e}"
-    except Exception as e:
-        return False, f"E-Mail Fehler: {e}"
+    return _deliver(msg, cfg, to_email)

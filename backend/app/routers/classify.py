@@ -11,15 +11,25 @@ from pydantic import BaseModel
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.deps import get_current_user, get_db
+from app.core.deps import get_current_user, get_db, require_admin, require_editor
 from app.core.rate_limit import classify_limit, heavy_limit, limiter
+from app.core.uploads import (
+    MAX_MEMORY_ENTRIES,
+    MAX_MODEL_BUNDLE_BYTES,
+    check_count,
+    check_zip_total,
+    read_upload,
+    zip_member,
+)
 from app.models.classifier_model import ClassifierModel
 from app.models.correction import Correction
 from app.models.kontenplan import Konto, KontoDefault
 from app.models.memory import Memory
 from app.models.user import User
-from app.services.classifier import ClassificationResult, TenantClassifier, preprocess
-from app.services.model_blob import is_trusted
+from app.schemas.classify import ClassifierInfoResponse
+from app.services.classifier import ClassificationResult, TenantClassifier, model_row_is_trusted, preprocess
+from app.services.model_blob import INSECURE_SECRET_DETAIL, InsecureSecretKey, is_trusted, sha256_hex
+from app.services.plan_limits import PlanLimits
 from app.services.review_queue import ReviewQueueService
 from app.services.usage_meter import UsageMeter
 
@@ -79,8 +89,11 @@ async def predict(
     request: Request,
     body: PredictRequest,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_editor),
 ) -> dict[str, Any]:
+    # B-23: ablehnen, bevor das Modell läuft — eine Vorhersage, die verworfen
+    # wird, hat trotzdem gerechnet.
+    await PlanLimits(user.tenant_id, db).ensure("klassifizierungen")
     clf = TenantClassifier(user.tenant_id, db)
     result = await clf.classify(body.beschreibung, False, body.betrag)
 
@@ -120,6 +133,8 @@ async def predict(
         "mwst_code": result.mwst_code,
         "mwst_pct": result.mwst_pct,
         "confidence": result.confidence,
+        "beschreibung_vorschlag": result.beschreibung_vorschlag,
+        "begruendung": result.begruendung,
         "needs_review": review_item is not None,
         "review_id": review_item.id if review_item else None,
         "top_predictions": top_predictions,
@@ -130,7 +145,7 @@ async def predict(
 async def delete_action(
     action: Literal["memory", "corrections", "model"],
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_admin),
 ) -> dict[str, str]:
     if action == "memory":
         await db.execute(delete(Memory).where(Memory.tenant_id == user.tenant_id))
@@ -290,10 +305,10 @@ def _require_trusted_model(blob: bytes) -> None:
 async def upload_bundle(
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_admin),
 ) -> dict[str, Any]:
     tid = user.tenant_id
-    content = await file.read()
+    content = await read_upload(file, max_bytes=MAX_MODEL_BUNDLE_BYTES, label="Modell-Paket")
     filename = (file.filename or "").lower()
 
     if filename.endswith(".pkl"):
@@ -301,8 +316,9 @@ async def upload_bundle(
         row = await _get_model_row(db, tid)
         if row:
             row.model_blob = content
+            row.model_sha256 = sha256_hex(content)
         else:
-            db.add(ClassifierModel(tenant_id=tid, model_blob=content))
+            db.add(ClassifierModel(tenant_id=tid, model_blob=content, model_sha256=sha256_hex(content)))
         await db.commit()
         return {"status": "ok", "restored": ["model"]}
 
@@ -310,6 +326,8 @@ async def upload_bundle(
         data = json.loads(content.decode("utf-8"))
         if not isinstance(data, list):
             raise HTTPException(status_code=400, detail="Ungültiges Memory-JSON-Format.")
+        # A few MB of JSON is a few hundred thousand INSERTs (B-54).
+        check_count(data, max_items=MAX_MEMORY_ENTRIES, label="Gedächtnis-Einträge")
 
         await db.execute(delete(Memory).where(Memory.tenant_id == tid))
         for entry in data:
@@ -329,20 +347,27 @@ async def upload_bundle(
     if filename.endswith(".zip"):
         restored: list[str] = []
         with zipfile.ZipFile(io.BytesIO(content)) as zf:
+            # 40 kB compressed can be 4 GB unpacked, so the archive's own
+            # directory is checked before anything is read out of it (B-54).
+            check_zip_total(zf)
             names = set(zf.namelist())
 
             if "model.pkl" in names:
-                model_blob = zf.read("model.pkl")
+                model_blob = zip_member(zf, "model.pkl", label="Modell")
                 _require_trusted_model(model_blob)
                 row = await _get_model_row(db, tid)
                 if row:
                     row.model_blob = model_blob
+                    row.model_sha256 = sha256_hex(model_blob)
                 else:
-                    db.add(ClassifierModel(tenant_id=tid, model_blob=model_blob))
+                    db.add(ClassifierModel(tenant_id=tid, model_blob=model_blob, model_sha256=sha256_hex(model_blob)))
                 restored.append("model")
 
             if "memory.json" in names:
-                mem_data = json.loads(zf.read("memory.json").decode("utf-8"))
+                mem_data = json.loads(zip_member(zf, "memory.json", label="Gedächtnis").decode("utf-8"))
+                if not isinstance(mem_data, list):
+                    raise HTTPException(status_code=400, detail="Ungültiges Memory-JSON-Format.")
+                check_count(mem_data, max_items=MAX_MEMORY_ENTRIES, label="Gedächtnis-Einträge")
                 await db.execute(delete(Memory).where(Memory.tenant_id == tid))
                 for entry in mem_data:
                     db.add(
@@ -372,8 +397,9 @@ async def classify_transaction(
     request: Request,
     body: ClassifyRequest,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_editor),
 ) -> dict[str, Any]:
+    await PlanLimits(user.tenant_id, db).ensure("klassifizierungen")
     clf = TenantClassifier(user.tenant_id, db)
     result = await clf.classify(body.beschreibung, body.is_credit, body.betrag)
 
@@ -390,6 +416,8 @@ async def classify_transaction(
         "mwst_amount": result.mwst_amount,
         "confidence": result.confidence,
         "source": result.source,
+        "beschreibung_vorschlag": result.beschreibung_vorschlag,
+        "begruendung": result.begruendung,
         "needs_review": review_item is not None,
         "review_id": review_item.id if review_item else None,
     }
@@ -399,7 +427,7 @@ async def classify_transaction(
 async def log_correction(
     body: CorrectRequest,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_editor),
 ) -> dict[str, str]:
     clf = TenantClassifier(user.tenant_id, db)
     original = ClassificationResult(
@@ -426,10 +454,13 @@ async def log_correction(
 async def train_model(
     request: Request,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_editor),
 ) -> dict[str, Any]:
     clf = TenantClassifier(user.tenant_id, db)
-    result = await clf.train_from_db()
+    try:
+        result = await clf.train_from_db()
+    except InsecureSecretKey:
+        raise HTTPException(status_code=503, detail=INSECURE_SECRET_DETAIL) from None
     if not result:
         raise HTTPException(status_code=400, detail="Nicht genug Daten zum Trainieren.")
     if "error" in result:
@@ -438,7 +469,7 @@ async def train_model(
     return result
 
 
-@router.get("/info")
+@router.get("/info", response_model=ClassifierInfoResponse)
 async def classifier_info(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
@@ -454,6 +485,8 @@ async def classifier_info(
     model_row = await _get_model_row(db, user.tenant_id)
 
     has_model = model_row is not None and model_row.model_blob is not None
+    # B-34: a stored model the classifier refuses to load (unsigned, foreign, altered) → "neu trainieren".
+    model_trusted = model_row_is_trusted(model_row)
     model_accuracy = float(model_row.cv_accuracy or 0.0) if model_row else 0.0
     train_accuracy = float(model_row.train_accuracy or 0.0) if model_row else 0.0
     total_samples = int(model_row.total_samples or 0) if model_row else 0
@@ -461,6 +494,7 @@ async def classifier_info(
 
     return {
         "has_model": has_model,
+        "model_trusted": model_trusted,
         "model_accuracy": model_accuracy,
         "train_accuracy": train_accuracy,
         "total_samples": total_samples,

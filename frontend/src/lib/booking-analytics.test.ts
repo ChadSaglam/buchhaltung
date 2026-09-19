@@ -120,7 +120,7 @@ describe("detectAnomalies", () => {
     const anomalies = detectAnomalies(rows);
     expect(anomalies[0].booking.id).toBe(99);
     expect(anomalies[0].severity).toBe("high");
-    expect(anomalies[0].reason).toContain("5000.00");
+    expect(anomalies[0].reason).toContain("CHF 5'000.00"); // B-58: grouped the Swiss way, like every other amount
   });
 
   it("flags a missing account assignment and a duplicate", () => {

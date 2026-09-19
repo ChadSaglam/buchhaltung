@@ -16,15 +16,15 @@ export interface QuickAction {
 
 const MAP: Record<string, QuickAction[]> = {
   "/dashboard": [
-    { label: "Kontoauszug", href: "/dashboard/kontoauszug", icon: FileText },
-    { label: "Scanner", href: "/dashboard/scanner", icon: ScanLine },
-    { label: "Insights", href: "/dashboard/insights", icon: Sparkles },
+    { label: "Kontoauszug", href: "/dashboard/bank", icon: FileText },
+    { label: "Scanner", href: "/dashboard/belege/scanner", icon: ScanLine },
+    { label: "Buchungen", href: "/dashboard/bank/buchungen", icon: Sparkles },
   ],
-  "/dashboard/kontoauszug": [
-    { label: "Scanner öffnen", href: "/dashboard/scanner", icon: ScanLine },
+  "/dashboard/bank": [
+    { label: "Scanner öffnen", href: "/dashboard/belege/scanner", icon: ScanLine },
   ],
-  "/dashboard/scanner": [
-    { label: "Kontoauszug", href: "/dashboard/kontoauszug", icon: FileText },
+  "/dashboard/belege/scanner": [
+    { label: "Kontoauszug", href: "/dashboard/bank", icon: FileText },
   ],
   "/dashboard/kontenplan": [
     { label: "Modell trainieren", href: "/dashboard/modell", icon: Play },
@@ -36,7 +36,7 @@ const MAP: Record<string, QuickAction[]> = {
     { label: "Zum Modell", href: "/dashboard/modell", icon: ListChecks },
   ],
   "/dashboard/lernverlauf": [
-    { label: "Export", href: "/dashboard/kontoauszug", icon: Download },
+    { label: "Export", href: "/dashboard/bank", icon: Download },
   ],
 };
 

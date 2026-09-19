@@ -66,6 +66,16 @@ export async function getMe() {
   return res.data;
 }
 
+export async function updateProfile(data: { display_name: string }) {
+  const res = await api.patch('/api/auth/me', data);
+  return res.data;
+}
+
+export async function updateTenant(data: { name: string }) {
+  const res = await api.patch('/api/auth/me/tenant', data);
+  return res.data;
+}
+
 export async function classify(beschreibung: string, betrag: number, isCredit: boolean) {
   const res = await api.post('/api/classify/', { beschreibung, betrag, is_credit: isCredit });
   return res.data;

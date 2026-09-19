@@ -3,12 +3,24 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        # Inlined into the browser bundle at build time, so it must be the URL the
+        # *browser* reaches the API at — never the compose-internal http://api:8000.
+        NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8000}
+        # App switcher target (contracts/sso.md); empty hides the "Apps" menu.
+        NEXT_PUBLIC_BILLING_URL: ${BILLING_URL:-}
     ports:
       - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://api:8000
-      # App switcher target (contracts/sso.md); empty hides the "Apps" menu.
-      - NEXT_PUBLIC_BILLING_URL=${BILLING_URL:-http://localhost:5050}
+    # B-80: the image serves Next's standalone bundle, so "the container is up"
+    # and "the app answers" are no longer the same statement — a missing
+    # `.next/static` copy boots fine and renders an unstyled page. /login is
+    # public; a probe that needs a session would report its own 401 as an outage.
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/login"]
+      interval: 15s
+      timeout: 5s
+      start_period: 20s
+      retries: 5
     depends_on:
       - api
 
@@ -19,15 +31,35 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://chadev:chadev@db:5432/chadev_buchhaltung
-      - SECRET_KEY=${SECRET_KEY}
+      # Production settings (B-41): config.py refuses to boot with a default secret,
+      # a wildcard CORS origin or AUTO_CREATE_TABLES. Local overrides belong in
+      # docker-compose.override.yml (gitignored), not here.
+      - ENVIRONMENT=production
+      # B-24: the app connects as `app_rw` (NOSUPERUSER NOBYPASSRLS, DML only),
+      # Alembic as the owner. Two users, or Row-Level Security enforces nothing —
+      # see docs/ADR-002-rls.md and docker/db-init/10-app-role.sql.
+      - DATABASE_URL=postgresql+asyncpg://app_rw:${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}@db:5432/chadev_buchhaltung
+      - MIGRATION_DATABASE_URL=postgresql+asyncpg://chadev:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/chadev_buchhaltung
+      - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (>= 32 random chars)}
+      # Both spellings of the same host, because they are NOT the same origin
+      # to a browser. config.py's own default allows both; listing only one
+      # here narrowed it, and a page opened on 127.0.0.1:3000 was blocked by
+      # CORS while every container reported healthy — the first real run
+      # (2026-09-17) lost its first ten minutes to exactly that.
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
       - SMTP_HOST=${SMTP_HOST:-}
-      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_PORT=${SMTP_PORT:-465}
       - SMTP_USER=${SMTP_USER:-}
       - SMTP_PASSWORD=${SMTP_PASSWORD:-}
       - FROM_EMAIL=${FROM_EMAIL:-}
       - OLLAMA_BASE_URL=http://ollama:11434
+      # B-55: shared rate-limit buckets. Without this the limiter counts in
+      # process memory, which is per-worker and therefore per-worker generous.
       - REDIS_URL=redis://redis:6379/0
+      # Empty = trust no proxy's X-Forwarded-For. Set to your reverse proxy's
+      # address once one is in front, or the rate limit keys on its IP.
+      - FORWARDED_ALLOW_IPS=${FORWARDED_ALLOW_IPS:-}
       # Background jobs run in the `worker` service below, not in the API.
       - RUN_WORKER_IN_API=false
       # Platform SSO + events (chadev-platform/contracts/sso.md, events.md).
@@ -42,6 +74,10 @@ services:
     volumes:
       - model_data:/app/data
     healthcheck:
+      # B-61: readiness, not liveness — this gates the worker's start, and a
+      # worker that boots before the database is reachable just crashes.
+      # `/api/health` answers 503 when it cannot reach the database, and
+      # urlopen raises on 503, which is what compose reads as unhealthy.
       test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/api/health', timeout=3)"]
       interval: 10s
       timeout: 5s
@@ -55,10 +91,15 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    command: ["python", "-m", "app.worker"]
+    # Bypass the image ENTRYPOINT: only the API migrates, the worker never races it.
+    entrypoint: ["python", "-m", "app.worker"]
     environment:
-      - DATABASE_URL=postgresql+asyncpg://chadev:chadev@db:5432/chadev_buchhaltung
-      - SECRET_KEY=${SECRET_KEY}
+      - ENVIRONMENT=production
+      # Same split as the API. The worker never migrates (its entrypoint is
+      # overridden above), but it still has to be a role RLS applies to.
+      - DATABASE_URL=postgresql+asyncpg://app_rw:${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}@db:5432/chadev_buchhaltung
+      - MIGRATION_DATABASE_URL=postgresql+asyncpg://chadev:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/chadev_buchhaltung
+      - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (>= 32 random chars)}
       - OLLAMA_BASE_URL=http://ollama:11434
     depends_on:
       db:
@@ -68,17 +109,26 @@ services:
     volumes:
       - model_data:/app/data
     restart: unless-stopped
+    # B-57: docker's default is 10 s between SIGTERM and SIGKILL. A retrain in
+    # flight needs longer than that to unwind and hand its job back to the queue,
+    # and a job killed mid-flight stays `running` until the reaper finds it
+    # (15 minutes later) — during which that tenant does not retrain at all.
+    stop_grace_period: 120s
 
   db:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: chadev
-      POSTGRES_PASSWORD: chadev
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: chadev_buchhaltung
-    ports:
-      - "5432:5432"
+      # Read by db-init/10-app-role.sql, which creates the role the app uses.
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}
+    # No published port: only the compose network reaches the database.
     volumes:
       - pgdata:/var/lib/postgresql/data
+      # Runs once, on an empty data directory. An existing deployment has to run
+      # this by hand — docs/ADR-002-rls.md says how.
+      - ./docker/db-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U chadev -d chadev_buchhaltung"]
       interval: 5s
@@ -87,8 +137,6 @@ services:
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -97,20 +145,77 @@ services:
       timeout: 3s
       retries: 5
 
+  # Opt-in, like `backup` below:
+  #   docker compose --profile ai up -d ollama
+  #
+  # Two reasons it is not in the default `up`, both found the first time anyone
+  # actually ran one:
+  #
+  #   * It demanded a GPU. `reservations.devices: [capabilities: [gpu]]` is not a
+  #     preference — compose refuses to start on any host without an NVIDIA GPU
+  #     and the container toolkit, which is every Mac and most rented servers:
+  #     "failed to discover GPU vendor from CDI: no known GPU vendor found", and
+  #     the whole `up` aborts, including the services that had nothing to do with
+  #     it. Ollama runs on CPU. A GPU reservation is a property of one host, so it
+  #     belongs in that host's `docker-compose.override.yml`, not in the file
+  #     everybody shares.
+  #   * It is optional (B-20, B-61). A Swiss QR bill is decoded exactly with no
+  #     model involved, `/api/health` does not go 503 when Ollama is missing, and
+  #     the image is several gigabytes — a surprise download on a laptop.
   ollama:
     image: ollama/ollama
-    ports:
-      - "11434:11434"
+    profiles: ["ai"]
     volumes:
       - ollama_models:/root/.ollama
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - capabilities: [gpu]
+
+  # Nightly backup (B-25). Opt-in so nobody gets a surprise volume on a laptop:
+  #   docker compose --profile backup up -d backup
+  # It is the postgres image, so it already has pg_dump and reaches `db` over the
+  # compose network — no docker socket, no host cron, nothing to forget. It also
+  # mounts model_data read-only, because a dump without the receipts restores an
+  # app whose documents all 404.
+  #
+  # `make backup` runs one immediately; `make restore-drill` proves the newest
+  # one restores. See docs/BACKUP.md for retention and the restore procedure.
+  backup:
+    image: postgres:16-alpine
+    profiles: ["backup"]
+    environment:
+      PGHOST: db
+      PGUSER: chadev
+      PGDATABASE: chadev_buchhaltung
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      BACKUP_DIR: /backups
+      FILES_DIR: /data/model_data
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-30}
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+    volumes:
+      - model_data:/data/model_data:ro
+      - ./scripts:/scripts:ro
+      - ${BACKUP_PATH:-./backups}:/backups
+    entrypoint: ["/bin/sh", "/scripts/backup.sh", "loop"]
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Optional LLM gateway (OpenAI-compatible, 352+ providers, auto-fallback).
+  # Opt-in: `docker compose --profile gateway up omniroute` → dashboard http://localhost:20128
+  # Point a client at http://omniroute:20128/v1 (inside compose) or http://localhost:20128/v1.
+  omniroute:
+    image: diegosouzapw/omniroute:latest
+    profiles: ["gateway"]
+    ports:
+      - "127.0.0.1:20128:20128"
+    environment:
+      - OMNIROUTE_MEMORY_MB=${OMNIROUTE_MEMORY_MB:-2048}
+    volumes:
+      - omniroute_data:/app/data
+    restart: unless-stopped
 
 volumes:
   pgdata:
   ollama_models:
   model_data:
   redis_data:
+  omniroute_data:

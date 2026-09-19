@@ -42,3 +42,30 @@ export type ExportRequest = Schemas["ExportRequest"];
 export type EmailRequest = Schemas["EmailRequest"];
 export type ApproveRequest = Schemas["ApproveRequest"];
 export type KontenplanUpdate = Schemas["KontenplanUpdate"];
+
+// --- B-59: response shapes, generated instead of hand-written ---------------
+export type ClassifierInfoResponse = Schemas["ClassifierInfoResponse"];
+export type BookingStatsResponse = Schemas["BookingStatsResponse"];
+export type ReviewItemOut = Schemas["ReviewItemOut"];
+export type ReviewQueueResponse = Schemas["ReviewQueueResponse"];
+export type ReviewActionResponse = Schemas["ReviewActionResponse"];
+export type AuditEntryOut = Schemas["AuditEntryOut"];
+export type AuditListResponse = Schemas["AuditListResponse"];
+export type LearningStatsResponse = Schemas["LearningStatsResponse"];
+export type AccountCount = Schemas["AccountCount"];
+export type SourceCount = Schemas["SourceCount"];
+export type KontenplanResponse = Schemas["KontenplanResponse"];
+export type KontoDefaultsResponse = Schemas["KontoDefaultsResponse"];
+
+// --- B-23: Verbrauch gegen Plan-Grenzen -------------------------------------
+export type UsageResponse = Schemas["UsageResponse"];
+export type UsageCounter = Schemas["UsageCounter"];
+
+// --- B-72 option C: das gesetzliche BVG-Minimum als Prüfung ------------------
+export type BvgPruefungOut = Schemas["BvgPruefungOut"];
+export type BvgHinweisOut = Schemas["BvgHinweisOut"];
+
+// --- B-20: der Kontenplan-Import-Assistent ----------------------------------
+export type KontenplanImportVorschau = Schemas["KontenplanImportVorschau"];
+export type KontenplanImportZeile = Schemas["KontenplanImportZeile"];
+export type KontenplanImportErgebnis = Schemas["KontenplanImportErgebnis"];

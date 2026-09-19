@@ -1,15 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  accuracyBarClass,
-  accuracyTextClass,
-  downloadFilename,
-  fileExtension,
-  filterMemory,
-  formatDate,
-  IMPORT_EXTENSIONS,
-  isOverfit,
-} from "./helpers";
+import { IMPORT_EXTENSIONS, accuracyBarClass, accuracyTextClass, downloadFilename, fileExtension, filterMemory, formatDate, isOverfit, visionAktiv } from "./helpers";
 import type { MemoryEntry } from "./types";
 
 describe("accuracy classes", () => {
@@ -90,5 +81,37 @@ describe("isOverfit", () => {
   it("never flags when either accuracy is unknown (0)", () => {
     expect(isOverfit(0, 0.5)).toBe(false);
     expect(isOverfit(0.9, 0)).toBe(false);
+  });
+});
+
+// --- B-87: the Vision card reported `undefined`, not a state ----------------
+//
+// `VisionStatus` used to be a hand-written interface promising `available`,
+// `model_name`, `model_count` and `is_cloud`. The endpoint sends none of them,
+// so `vision.available` was `undefined` on every single request and the card
+// said "Nicht verbunden" forever — while Heute, reading the same endpoint with
+// the right field names, showed it green. Found by the first real run.
+
+describe("visionAktiv", () => {
+  const leer = { ok: true, models: [], vision_models: [], best_vision: null, custom_ocr_available: false };
+
+  it("an Ollama vision model counts", () => {
+    expect(visionAktiv({ ...leer, best_vision: "llama3.2-vision" })).toBe(true);
+  });
+
+  it("the built-in OCR counts on its own — no Ollama needed", () => {
+    // This is the case that was on screen: custom-ocr reading invoices while
+    // the card claimed nothing was connected.
+    expect(visionAktiv({ ...leer, custom_ocr_available: true })).toBe(true);
+  });
+
+  it("neither one means neither one", () => {
+    expect(visionAktiv(leer)).toBe(false);
+  });
+
+  it("does not read fields the endpoint never sends", () => {
+    // The four fields of the old fiction, all set, none of them real.
+    const fiktion = { ...leer, available: true, model_name: "x", model_count: 3, is_cloud: true };
+    expect(visionAktiv(fiktion as never)).toBe(false);
   });
 });

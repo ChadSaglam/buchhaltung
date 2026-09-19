@@ -6,6 +6,7 @@ from collections.abc import AsyncIterator
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import event
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -14,6 +15,11 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.pool import NullPool, StaticPool
 
 os.environ.setdefault("ENV", "test")
+# B-34: model blobs refuse to sign with the default secret; tests need a real-looking one.
+os.environ.setdefault("SECRET_KEY", "test-secret-key-for-pytest-only-0123456789abcdef")
+os.environ.setdefault(
+    "JWT_SECRET", os.environ["SECRET_KEY"]
+)  # JWT_SECRET (also from backend/.env) wins over SECRET_KEY
 
 from app.core.config import settings
 from app.core.database import get_db
@@ -82,3 +88,28 @@ async def client(db_session: AsyncSession) -> AsyncIterator[AsyncClient]:
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
     app.dependency_overrides.clear()
+
+
+class StatementCounter:
+    """Counts the SQL an engine actually sends, by table."""
+
+    def __init__(self) -> None:
+        self.statements: list[str] = []
+
+    def against(self, table: str) -> int:
+        return sum(1 for s in self.statements if table in s.lower())
+
+    def __len__(self) -> int:
+        return len(self.statements)
+
+
+@pytest.fixture
+def counted(engine):
+    counter = StatementCounter()
+
+    def _record(conn, cursor, statement, parameters, context, executemany):
+        counter.statements.append(statement)
+
+    event.listen(engine.sync_engine, "before_cursor_execute", _record)
+    yield counter
+    event.remove(engine.sync_engine, "before_cursor_execute", _record)

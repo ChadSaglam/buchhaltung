@@ -1,0 +1,16 @@
+# Never ship secrets, local state, or dev-only trees in the image (B-41).
+venv/
+.env
+.env.*
+tests/
+*.db
+*.sqlite3
+e2e-data/
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+openapi.json
+data/

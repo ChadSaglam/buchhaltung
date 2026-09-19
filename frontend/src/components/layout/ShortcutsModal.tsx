@@ -17,7 +17,7 @@ const GROUPS: { title: string; items: Shortcut[] }[] = [
     items: [
       { keys: ["⌘", "K"], label: "Befehlspalette / Suche öffnen" },
       { keys: ["?"], label: "Diese Übersicht anzeigen" },
-      { keys: ["A"], label: "AI-Assistent umschalten" },
+      { keys: ["⇧", "A"], label: "AI-Assistent umschalten" },
       { keys: ["Esc"], label: "Dialog / Overlay schliessen" },
     ],
   },
@@ -28,6 +28,14 @@ const GROUPS: { title: string; items: Shortcut[] }[] = [
       { keys: ["↵"], label: "Auswahl ausführen" },
     ],
   },
+  {
+    title: "Überprüfung",
+    items: [
+      { keys: ["J", "K"], label: "Nächster / vorheriger Eintrag" },
+      { keys: ["A"], label: "Eintrag bestätigen" },
+      { keys: ["R"], label: "Eintrag verwerfen" },
+    ],
+  },
 ];
 
 export function ShortcutsModal() {
@@ -36,7 +44,8 @@ export function ShortcutsModal() {
   // Esc closes, Tab stays inside, focus returns to the opener.
   useFocusTrap(shortcutsOpen, () => setShortcutsOpen(false), dialogRef);
 
-  // Global hotkeys: "?" opens shortcuts, "A" toggles assistant — but only when
+  // Global hotkeys: "?" opens shortcuts, "Shift+A" toggles assistant (bare "a" belongs
+  // to the review queue, B-14) — but only when
   // the user isn't typing in a field and the command palette isn't open.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -52,7 +61,7 @@ export function ShortcutsModal() {
       if (e.key === "?") {
         e.preventDefault();
         toggleShortcuts();
-      } else if (e.key.toLowerCase() === "a" && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      } else if (e.key === "A" && e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault();
         toggleAssistant();
       }

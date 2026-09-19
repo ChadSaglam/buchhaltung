@@ -7,15 +7,17 @@ interface DangerZoneProps {
   dangerConfirm: string | null;
   setDangerConfirm: (key: string | null) => void;
   handleDangerAction: (action: DangerAction) => void;
+  /** Which delete is in flight, if any (B-58) — the row locks while it runs. */
+  dangerBusy?: DangerAction | null;
 }
 
-export function DangerZone({ info, dangerConfirm, setDangerConfirm, handleDangerAction }: DangerZoneProps) {
+export function DangerZone({ info, dangerConfirm, setDangerConfirm, handleDangerAction, dangerBusy }: DangerZoneProps) {
   return (
     <div className="rounded-xl border border-destructive/25 bg-card p-6 shadow-sm">
-      <h3 className="font-semibold text-destructive flex items-center gap-2 mb-1">
-        <Shield className="w-4 h-4" />
+      <h2 className="font-semibold text-destructive flex items-center gap-2 mb-1">
+        <Shield className="w-4 h-4" aria-hidden="true" />
         Gefahrenzone
-      </h3>
+      </h2>
       <p className="text-xs text-muted-foreground mb-4">Diese Aktionen können nicht rückgängig gemacht werden — sichern Sie zuerst Ihr Modell.</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -31,13 +33,15 @@ export function DangerZone({ info, dangerConfirm, setDangerConfirm, handleDanger
                   variant="danger"
                   size="sm"
                   className="flex-1"
+                  loading={dangerBusy === key}
                   onClick={() => handleDangerAction(key as DangerAction)}
                 >
-                  Bestätigen
+                  {dangerBusy === key ? "Wird gelöscht…" : "Bestätigen"}
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
+                  disabled={dangerBusy === key}
                   onClick={() => setDangerConfirm(null)}
                 >
                   Abbrechen
@@ -50,7 +54,7 @@ export function DangerZone({ info, dangerConfirm, setDangerConfirm, handleDanger
                 className="w-full"
                 onClick={() => setDangerConfirm(key)}
                 disabled={!count}
-                icon={<Icon className="w-4 h-4" />}
+                icon={<Icon className="w-4 h-4" aria-hidden="true" />}
               >
                 {label}
               </Button>

@@ -1,4 +1,5 @@
 import type { Booking } from "@/lib/api";
+import { formatCHF } from "@/lib/format";
 
 /**
  * Client-side booking analytics used by the natural-language search and the
@@ -187,8 +188,8 @@ export function detectAnomalies(bookings: Booking[]): Anomaly[] {
     for (const b of bookings) {
       const amt = Math.abs(Number(b.betrag) || 0);
       const z = (amt - mean) / sd;
-      if (z >= 3) out.push({ booking: b, severity: "high", reason: `Betrag CHF ${amt.toFixed(2)} liegt weit über dem Durchschnitt (CHF ${mean.toFixed(2)})` });
-      else if (z >= 2) out.push({ booking: b, severity: "medium", reason: `Betrag CHF ${amt.toFixed(2)} ist überdurchschnittlich hoch` });
+      if (z >= 3) out.push({ booking: b, severity: "high", reason: `Betrag ${formatCHF(amt)} liegt weit über dem Durchschnitt (${formatCHF(mean)})` });
+      else if (z >= 2) out.push({ booking: b, severity: "medium", reason: `Betrag ${formatCHF(amt)} ist überdurchschnittlich hoch` });
     }
   }
 

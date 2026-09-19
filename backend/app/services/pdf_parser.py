@@ -15,7 +15,12 @@ def _parse_swiss_number(text: str) -> float | None:
     text = text.strip()
     if not text:
         return None
-    text = text.replace("\u2019", "").replace(",", "").replace(" ", "")
+    # Both apostrophes: statements in the wild use the typographic U+2019, and
+    # anything this product printed itself uses the plain U+0027 (fpdf2's core
+    # fonts are latin-1). Reading back our own PDF used to fail on that alone.
+    # U+00A0 and U+202F are the no-break spaces Swiss statements group with.
+    for mark in ("\u2019", "'", "\u00b4", ",", " ", "\u00a0", "\u202f"):
+        text = text.replace(mark, "")
     try:
         return float(text)
     except ValueError:
@@ -37,6 +42,34 @@ def _reconstruct_text(words: list) -> str:
     return " ".join(w["text"] for w in sorted_words)
 
 
+#: A statement date, and nothing else on the line (B-56).
+#:
+#: This used to be ``re.compile(r"\d{2}\.\d{2}\.\d{2}").match(...)`` — unanchored
+#: at the end, so ``31.12.2024`` matched on its first eight characters and the
+#: two-digit-year rule below then read ``2024`` as the year: ``1900 + 2024``,
+#: and the booking landed in **3924**. UBS prints ``dd.mm.yy``, other banks print
+#: ``dd.mm.yyyy``, and nothing said which one this parser was for.
+DATE_PATTERN = re.compile(r"^(\d{2})\.(\d{2})\.(\d{2}|\d{4})$")
+
+
+def parse_statement_date(text: str) -> str | None:
+    """``dd.mm.yy`` or ``dd.mm.yyyy`` → ``dd.mm.yyyy``. None when it is not a date."""
+    match = DATE_PATTERN.match((text or "").strip())
+    if match is None:
+        return None
+    tag, monat, jahr = match.groups()
+    if len(jahr) == 4:
+        volles_jahr = int(jahr)
+    else:
+        # A statement is a recent document; a two-digit year below 50 is this
+        # century. The cut-off only matters for archives older than the product.
+        zweistellig = int(jahr)
+        volles_jahr = 2000 + zweistellig if zweistellig < 50 else 1900 + zweistellig
+    if not (1 <= int(monat) <= 12 and 1 <= int(tag) <= 31):
+        return None
+    return f"{tag}.{monat}.{volles_jahr}"
+
+
 def extract_transactions_from_pdf(pdf_file: BinaryIO) -> list[dict]:
     """Extract transactions from a UBS Kontoauszug PDF.
 
@@ -44,7 +77,6 @@ def extract_transactions_from_pdf(pdf_file: BinaryIO) -> list[dict]:
     Datum, Beschreibung, Belastung, Gutschrift, Betrag CHF
     """
     transactions: list[dict] = []
-    date_pattern = re.compile(r"\d{2}\.\d{2}\.\d{2}")
 
     with pdfplumber.open(pdf_file) as pdf:
         for page in pdf.pages:
@@ -109,16 +141,14 @@ def extract_transactions_from_pdf(pdf_file: BinaryIO) -> list[dict]:
 
                 datum_text = _reconstruct_text(datum_words)
 
-                if date_pattern.match(datum_text.strip()):
+                gelesen = parse_statement_date(datum_text)
+                if gelesen is not None:
                     # Flush pending details to previous transaction
                     if pending_details and transactions:
                         transactions[-1]["Beschreibung"] += " " + " ".join(pending_details)
                     pending_details = []
 
-                    parts = datum_text.strip().split(".")
-                    year = int(parts[2])
-                    full_year = 2000 + year if year < 50 else 1900 + year
-                    date_str = f"{parts[0]}.{parts[1]}.{full_year}"
+                    date_str = gelesen
 
                     info_text = _reconstruct_text(info_words)
                     info_lower = info_text.lower()
@@ -179,6 +209,8 @@ def extract_transactions_from_pdf(pdf_file: BinaryIO) -> list[dict]:
         r"Sie,.+benachrichtigen\.",
         r"Gr.{1,5}e\.",
         r"hne Unterschrift\.",
+        # "Freundliche Grüsse UBS Switzerland AG" split across lines leaves "Grüße AG" on the last row.
+        r"\b(?:Freundliche\s+)?Gr(?:ü|ue|u)(?:ss|ß)e(?:\s+UBS)?(?:\s+Switzerland)?(?:\s+AG)?\s*$",
     ]
     for tx in transactions:
         desc = tx["Beschreibung"]

@@ -1,6 +1,6 @@
 # ADR-002: Postgres Row-Level Security as defence in depth (B-24)
 
-**Status:** Proposed
+**Status:** Accepted and implemented (2026-09-16)
 **Date:** 2026-09-12
 **Deciders:** Chad (owner)
 **Related:** ADR-001 (platform auth contract, chadev-platform), B-24, B-40 (role ladder), B-41 (prod compose)
@@ -120,19 +120,51 @@ worker role would then be on every request connection, defeating the point. Prem
 
 ## Action items
 
-1. [ ] Land B-39, B-40, B-41 first (prod blockers).
-2. [ ] `core/tenant_context.py` (`ContextVar`) + `after_begin` listener in `core/database.py`, PG-only, warn on `None`.
-3. [ ] Set the context at the four sites: `deps.py:43`, `training_worker.py:89`, `platform_events.py:99`, `sso.py:35`;
-       reset in `finally`/middleware.
-4. [ ] Migration `enable_rls`: for each of `bookings, kontenplan, konto_defaults, memory, corrections, training_data,
-       classifier_models, accuracy_history, review_queue_items, scanner_configs, audit_logs, usage_events`:
-       `ENABLE` + `FORCE ROW LEVEL SECURITY`, `CREATE POLICY tenant_isolation … USING/WITH CHECK
-       (tenant_id = current_setting('app.tenant_id', true)::int)`; guarded by `dialect.name == "postgresql"`; downgrade drops.
-5. [ ] Settings: `MIGRATION_DATABASE_URL` (defaults to `DATABASE_URL` outside production; production refuses equality
-       and refuses a connected role with `rolsuper` or `rolbypassrls`).
-6. [ ] `migrate-and-run.sh` uses `MIGRATION_DATABASE_URL`; compose `db` init creates `app_rw NOSUPERUSER NOBYPASSRLS`
-       with DML grants; `scripts/setup.sh` mirrors it.
-7. [ ] PG-only tests in `test_tenant_isolation.py`: (a) as `app_rw`, bookings for tenants 1 and 2, context=1 →
-       raw `SELECT count(*) FROM bookings` = 1, no context → 0; (b) `INSERT … tenant_id=2` under context 1 raises;
-       (c) `SELECT rolbypassrls FROM pg_roles WHERE rolname = current_user` is false.
-8. [ ] Canary: deploy one replica, watch for empty-list regressions on the 12 tables for 24 h, then flip all.
+1. [x] Land B-39, B-40, B-41 first (prod blockers).
+2. [x] `core/tenant_context.py` (`ContextVar`) + `after_begin` listener in `core/database.py`, PG-only.
+3. [x] Set the context at the four sites: `deps.py` (`get_current_user`), `training_worker._run`,
+       `platform_events.receive_event`, `sso.sso_login`.
+4. [x] Migration `f1a2b3c4d5e6_enable_rls`, over the list in `core/rls.py` (24 tables, not the 12 the
+       2026-09-12 draft named — the schema grew; see below).
+5. [x] Settings: `MIGRATION_DATABASE_URL`; production refuses an empty value, refuses equality with
+       `DATABASE_URL`, and `verify_rls_role()` refuses to boot as `rolsuper` or `rolbypassrls`.
+6. [x] `migrate-and-run.sh` uses `MIGRATION_DATABASE_URL`; `docker/db-init/10-app-role.sql` creates
+       `app_rw NOSUPERUSER NOBYPASSRLS` with DML grants and default privileges.
+7. [x] `tests/test_rls.py` — 10 PG-only tests plus 10 that run everywhere.
+8. [ ] Canary: deploy one replica, watch for empty-list regressions for 24 h, then flip all.
+       Written up as a procedure in `docs/RUNBOOK-RLS-CUTOVER.md` (2026-09-16), with one correction to
+       this line: there are no replicas — production is one compose stack — so the staged lever is
+       `FORCE`, not the number of instances. It also names the trap: production refuses to boot as a
+       superuser, so the obvious rollback (point `DATABASE_URL` back at the owner) does not work unless a
+       fallback role is created **before** the cutover.
+
+## What implementation changed about the plan
+
+**The table list grew from 12 to 24, so it is no longer written down only in the migration.** The 2026-09-12 draft
+named the tables that existed then; `documents`, `invoice_positions`, `company_profiles`, `bank_transactions`,
+`matches`, `export_batches`, `email_messages`, `mail_settings`, `idempotency_keys` and the three Lohn tables have
+arrived since. A list inside one migration is a list nobody reads again, so it lives in `app/core/rls.py` and
+`test_rls.py` holds it against the models: a table that grows a `tenant_id` and is neither covered nor exempt fails
+the suite. That test is the only thing that keeps this true in a year.
+
+**The policy predicate needed a `nullif`.** `current_setting('app.tenant_id', true)` returns NULL when the GUC was
+never set — but a GUC that was set and then `RESET` comes back as the **empty string**, and `''::int` raises
+`invalid input syntax for type integer`. That is a 500 where an empty list belongs, so the predicate is
+`tenant_id = nullif(current_setting('app.tenant_id', true), '')::int`. Found by running it, not by reading it.
+
+**`bind_tenant` had to be added next to the listener.** `get_current_user` reads `users` and `tenants` before it
+knows the tenant, which opens the request's first transaction — so `after_begin` has already fired by the time the
+context exists. Without an explicit `set_config` on that open transaction, the first transaction of every request,
+the one that goes on to do the work, would run unscoped. The listener covers every transaction after it.
+
+**The role split is not optional, and that is now demonstrable.** Applied against a real Postgres while connected as
+the bootstrap superuser, the policies were in place, `FORCE ROW LEVEL SECURITY` was set, and tenant 1 could still
+read tenant 2's bookings and insert rows into tenant 2 — because Postgres exempts a superuser from every policy and
+nothing overrides that. The same database, connected as `NOSUPERUSER NOBYPASSRLS`, returns 1 row and rejects the
+insert. This is the failure mode worth fearing: it looks enabled, it looks correct, and it does nothing. Hence
+`verify_rls_role()` refusing to boot in production, and the test asserting `rolbypassrls OR rolsuper` is false before
+any of the others mean anything.
+
+**Backups connect as the owner on purpose.** A `pg_dump` as `app_rw` with no `app.tenant_id` set would contain zero
+rows from all 24 tables and exit 0. `scripts/backup.sh` uses `POSTGRES_USER`, and the manifest's row counts (B-25)
+would catch it if that ever changed.

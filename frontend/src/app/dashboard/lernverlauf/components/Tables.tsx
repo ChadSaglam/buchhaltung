@@ -15,7 +15,7 @@ const fade = (i: number) => ({
 });
 
 const scanAction = (
-  <ButtonLink variant="outline" href="/dashboard/scanner" icon={<ScanLine className="h-4 w-4" aria-hidden="true" />}>
+  <ButtonLink variant="outline" href="/dashboard/belege/scanner" icon={<ScanLine className="h-4 w-4" aria-hidden="true" />}>
     {t("empty.lernverlauf.action")}
   </ButtonLink>
 );

@@ -13,6 +13,7 @@ from typing import Any
 import httpx
 
 from app.core.config import settings
+from app.services.classifier import VAT_CODE_BY_RATE
 
 logger = logging.getLogger(__name__)
 
@@ -195,13 +196,15 @@ def _validate_and_fix(data: dict) -> dict:
     except (ValueError, TypeError):
         total = 0
     if total > 50000:
-        data["total_amount"] = 0
+        # B-48: never zero a real amount; the user decides. Flag it instead.
+        data["needs_review"] = True
+        data["review_reason"] = "Betrag über CHF 50'000 – bitte prüfen"
     vat = data.get("vat_rate", 0)
     try:
         vat = float(vat)
     except (ValueError, TypeError):
         vat = 0
-    valid_rates = [0, 2.5, 2.6, 3.7, 3.8, 7.7, 8.1]
+    valid_rates = [0, *VAT_CODE_BY_RATE]
     if vat > 0:
         closest = min(valid_rates, key=lambda r: abs(r - vat))
         data["vat_rate"] = closest if abs(vat - closest) < 1.0 else 0

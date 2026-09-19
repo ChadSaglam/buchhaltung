@@ -3,7 +3,7 @@
 import asyncio
 from logging.config import fileConfig
 
-from sqlalchemy import pool
+from sqlalchemy import pool, text
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 # Import the package, not a hand-maintained subset: five models were missing
@@ -20,8 +20,11 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 
+# B-24: migrations run as the table *owner*, the app as a NOBYPASSRLS role.
+# `migration_database_url` falls back to DATABASE_URL outside production, so a
+# dev machine and the test suite carry on with one user.
 def run_migrations_offline() -> None:
-    url = settings.DATABASE_URL
+    url = settings.migration_database_url
     context.configure(url=url, target_metadata=target_metadata, literal_binds=True)
     with context.begin_transaction():
         context.run_migrations()
@@ -30,12 +33,16 @@ def run_migrations_offline() -> None:
 def do_run_migrations(connection):
     context.configure(connection=connection, target_metadata=target_metadata)
     with context.begin_transaction():
+        if connection.dialect.name == "postgresql":
+            # Two API replicas starting at once must not both run `upgrade head`;
+            # the lock is released with the transaction (B-41).
+            connection.execute(text("SELECT pg_advisory_xact_lock(724_411)"))
         context.run_migrations()
 
 
 async def run_async_migrations() -> None:
     cfg = config.get_section(config.config_ini_section, {})
-    cfg["sqlalchemy.url"] = settings.DATABASE_URL
+    cfg["sqlalchemy.url"] = settings.migration_database_url
     connectable = async_engine_from_config(cfg, prefix="sqlalchemy.", poolclass=pool.NullPool)
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)

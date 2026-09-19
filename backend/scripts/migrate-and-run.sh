@@ -1,5 +1,9 @@
 #!/usr/bin/env sh
 # Bring the schema to Alembic head, then hand over to the given command.
+#
+# Alembic connects as MIGRATION_DATABASE_URL (the table owner); the app then runs
+# as DATABASE_URL, which in compose is a NOSUPERUSER NOBYPASSRLS role. Two users
+# on purpose — see docs/ADR-002-rls.md.
 # Used as the Docker ENTRYPOINT and by scripts/dev.sh (`... true` = migrate only).
 # Alembic owns the schema in every non-dev deployment (AGENTS.md rule 3).
 #
@@ -14,7 +18,9 @@ import asyncio, os
 from sqlalchemy import inspect, text
 from sqlalchemy.ext.asyncio import create_async_engine
 
-url = os.environ.get("DATABASE_URL", "")
+# B-24: as the owner, not as the app's NOBYPASSRLS role. The probe below reads
+# the catalogue and may stamp; both are the migrator's job, not the app's.
+url = os.environ.get("MIGRATION_DATABASE_URL") or os.environ.get("DATABASE_URL", "")
 if not url:
     raise SystemExit(0)
 

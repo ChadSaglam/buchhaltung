@@ -2,18 +2,18 @@
 
 **Date:** 2026-09-12 · **Deployer:** Chad · **Migration:** `a400bdc46480` (additive) · **Rollback unit:** the image, not the migration
 
-> Status 2026-09-12: **NOT READY.** Three blockers from the deep review must land first (section 0).
+> Status 2026-09-13: section-0 blockers landed on `feat/phase-0-cleanup` (B-39, B-40, B-41). Re-run sections 1–4 against that branch.
 > Everything else below is verified against the code at `9e0c22b` (file:line in brackets).
 
 ## 0. Blockers — do before the rest of this list
 
-- [ ] **B-39** `training_data` migration exists and `alembic upgrade head` on a fresh PG creates it
+- [x] **B-39** (2026-09-13, `c1d2e3f4a5b6`) `training_data` migration exists and `alembic upgrade head` on a fresh PG creates it
       (`ENVIRONMENT=production` disables `create_all` → import + training would 500 today).
-- [ ] **B-41** Production compose: `ENVIRONMENT=production` on `api` **and** `worker`; `SECRET_KEY=${SECRET_KEY:?}`;
+- [x] **B-41** (2026-09-13) Production compose: `ENVIRONMENT=production` on `api` **and** `worker`; `SECRET_KEY=${SECRET_KEY:?}`;
       no `--reload` (`backend/Dockerfile:20`); worker runs `python -m app.worker` **without** the migrate ENTRYPOINT
       (or a one-shot `migrate` service + `service_completed_successfully`); no `ports:` on db/redis/ollama;
       `backend/.dockerignore` (`venv .env* tests *.db`); `USER app`.
-- [ ] **B-40** role ladder wired (a `viewer` from SSO must not be able to mutate) — SSO makes viewer accounts real for the first time.
+- [x] **B-40** (2026-09-13) role ladder wired (a `viewer` from SSO must not be able to mutate) — SSO makes viewer accounts real for the first time.
 
 ## 1. Pre-deploy
 
@@ -25,10 +25,10 @@
   - [ ] `SECRET_KEY` ≥ 32 chars, not in `INSECURE_SECRETS` [config.py:11,140] (prod refuses to boot otherwise — good).
   - [ ] `CORS_ORIGINS` includes the frontend origin serving `/sso` [config.py, main.py].
   - [ ] `BILLING_URL` [config.py:97] is read by nothing — optional; do not spend time on it.
-  - [ ] `SMTP_PORT`: compose injects 587, config default 465 → decide one (587 = STARTTLS path) [config.py:67, docker-compose.yml].
+  - [x] `SMTP_PORT`: 465 everywhere (B-43, 2026-09-13).
 - [ ] Env, frontend: `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_BILLING_URL` are **build-time** [frontend/src/lib/platform.ts:8-10]. Pass them as `build.args`/`ARG` (B-62) — a runtime `environment:` entry does nothing; the Apps switcher stays hidden and the API URL falls back to `localhost:8000`.
 - [ ] Migration `a400bdc46480` [alembic/versions/a400bdc46480_*.py:29-45] reviewed: creates `sso_nonces(jti PK, expires_at)`; adds `tenants.platform_tenant_id` (nullable, unique), `users.platform_user_id` (nullable), `users.auth_source NOT NULL DEFAULT 'local'`, unique `(tenant_id, platform_user_id)`. **Additive with server defaults → old image keeps working during rollout.** Downgrade exercised in CI (`test_tenant_migration_is_reversible`).
-- [ ] Backup taken **before** migrating: `pg_dump -Fc` of the DB and a copy of the `model_data` volume (receipts + model blobs). There is no scheduled backup yet (B-25) — do it by hand and record where it went.
+- [ ] Backup taken **before** migrating: `make backup`, then `make restore-drill` to prove it comes back (B-25, `docs/BACKUP.md`). Both the database and the `model_data` volume — a dump without the receipts restores an app whose documents all 404.
 - [ ] Rollback plan agreed (section 5). On-call = Chad; billing side informed of the deploy window.
 
 ## 2. Ordering with billing

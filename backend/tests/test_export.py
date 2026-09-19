@@ -64,9 +64,9 @@ def _row(**overrides) -> dict:
     [
         (0, "0.00"),
         (12.5, "12.50"),
-        (1234.56, "1’234.56"),
-        (1234567.89, "1’234’567.89"),
-        (-1234.56, "-1’234.56"),
+        (1234.56, "1'234.56"),
+        (1234567.89, "1'234'567.89"),
+        (-1234.56, "-1'234.56"),
         (-0.5, "-0.50"),
         ("99.9", "99.90"),
         (100, "100.00"),
@@ -87,9 +87,9 @@ def test_fmt_swiss_blank_for_missing(value):
 @pytest.mark.parametrize(
     ("value", "expected"),
     [
-        (1234.999, "1’235.00"),  # carry into the integer part
-        (999.995, "1’000.00"),  # carry across a thousands boundary
-        (1_000_000.995, "1’000’001.00"),  # large amount, carry
+        (1234.999, "1'235.00"),  # carry into the integer part
+        (999.995, "1'000.00"),  # carry across a thousands boundary
+        (1_000_000.995, "1'000'001.00"),  # large amount, carry
         (0.005, "0.01"),  # half-up on a 3-decimal input
         (0.125, "0.13"),  # exact binary half: must not be half-even
         (2.675, "2.68"),  # classic float trap
@@ -357,3 +357,215 @@ async def test_get_export_with_no_bookings_is_404(client, db_session):
     for fmt in ("banana", "csv", "excel"):
         resp = await client.get(f"/api/export/{fmt}", headers=auth_headers(user))
         assert resp.status_code == 404, fmt
+
+
+# --- B-47: money is bounded and finite at the edge -------------------------------------------
+@pytest.mark.parametrize("value", [float("inf"), float("-inf"), float("nan")])
+def test_round_chf_rejects_non_finite(value):
+    with pytest.raises(ValueError):
+        round_chf(value)
+
+
+@pytest.mark.asyncio
+async def test_bookings_reject_absurd_and_non_finite_amounts(client, db_session):
+    tenant = await create_tenant(db_session)
+    user = await create_user(db_session, tenant)
+    headers = auth_headers(user)
+    for betrag in (1e12, "Infinity", "NaN"):
+        resp = await client.post("/api/bookings/", json={"beschreibung": "x", "betrag": betrag}, headers=headers)
+        assert resp.status_code == 422, betrag
+    assert (await client.get("/api/bookings/?limit=0", headers=headers)).status_code == 422
+    assert (await client.get("/api/bookings/?limit=5000", headers=headers)).status_code == 422
+
+
+# --- B-43: e-mail export hardening ------------------------------------------------------------
+def test_email_html_escapes_booking_text():
+    from app.services.email_sender import _build_html_body
+
+    df = pd.DataFrame(
+        [
+            {
+                "Datum": "2025-03-15",
+                "Beschreibung": '<img src=x onerror="alert(1)">',
+                "KtSoll": "6500",
+                "KtHaben": "1020",
+                "Betrag CHF": 12.5,
+                "MwStUSt-Code": "I81",
+            }
+        ]
+    )
+    html_body = _build_html_body(df, "15.03.2025", "20250315_1200")
+    assert "<img src=x" not in html_body
+    assert "&lt;img src=x" in html_body
+
+
+@pytest.mark.asyncio
+async def test_email_rejects_bad_recipient_and_multiline_subject(client, headers):
+    bad = await client.post(
+        "/api/export/email/rows", json={"rows": [_api_row()], "to_email": "a@b.ch, c@d.ch"}, headers=headers
+    )
+    assert bad.status_code == 422
+    bad = await client.post(
+        "/api/export/email/rows", json={"rows": [_api_row()], "to_email": "not-an-email"}, headers=headers
+    )
+    assert bad.status_code == 422
+    from app.routers.export import EmailWithRowsRequest
+
+    req = EmailWithRowsRequest(to_email="a@b.ch", subject="Hallo\r\nBcc: x@y.z", rows=[])
+    assert "\n" not in req.subject and "\r" not in req.subject
+
+
+def test_smtp_config_comes_from_settings(monkeypatch):
+    from app.core.config import settings
+    from app.services import email_sender
+
+    monkeypatch.setattr(settings, "SMTP_HOST", "smtp.example.ch")
+    monkeypatch.setattr(settings, "SMTP_USER", "u")
+    monkeypatch.setattr(settings, "SMTP_PASSWORD", "p")
+    assert email_sender.is_email_configured() is True
+    assert email_sender._load_smtp_config()["host"] == "smtp.example.ch"
+
+
+# ── B-53: these files land in Excel, so they are written defensively ─────────
+
+
+def _one(**overrides) -> pd.DataFrame:
+    """One booking row as a frame — the shortest way to test a single cell."""
+    return _df(_row(**overrides))
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        ("=SUM(A1:A9)", "'=SUM(A1:A9)"),
+        ("+1+1", "'+1+1"),
+        ("-2+3", "'-2+3"),
+        ("@SUM(1)", "'@SUM(1)"),
+        ("\tcmd", "'\tcmd"),
+        ("Migros Zürich", "Migros Zürich"),
+        ("", ""),
+    ],
+)
+def test_neutralise_quotes_only_what_excel_would_run(value, expected):
+    from app.services.export import neutralise
+
+    assert neutralise(value) == expected
+
+
+def test_neutralise_leaves_numbers_alone():
+    from app.services.export import neutralise
+
+    assert neutralise(-5.0) == -5.0
+    assert neutralise(None) is None
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        ("5.9.2026", "2026-09-05"),
+        ("05.09.2026", "2026-09-05"),
+        ("2026-09-05", "2026-09-05"),
+        ("", ""),
+        ("keine Ahnung", "keine Ahnung"),
+    ],
+)
+def test_iso_date_pads_to_two_digits(value, expected):
+    from app.services.export import iso_date
+
+    assert iso_date(value) == expected
+
+
+def test_banana_tsv_pads_single_digit_dates():
+    df = _one(Datum="5.9.2026")
+    row = df_to_banana_tsv(df).split("\n")[1]
+    assert row.split("\t")[0] == "2026-09-05"
+
+
+def test_banana_tsv_keeps_every_row_on_one_line():
+    """A tab or a newline in a description would shift every column after it."""
+    df = _one(Beschreibung="Zeile1\nZeile2\tSpalte")
+    tsv = df_to_banana_tsv(df)
+    assert len(tsv.split("\n")) == 2
+    assert tsv.split("\n")[1].split("\t")[1] == "Zeile1 Zeile2 Spalte"
+
+
+def test_banana_tsv_neutralises_a_formula_description():
+    df = _one(Beschreibung="=cmd|' /c calc'!A1")
+    assert df_to_banana_tsv(df).split("\n")[1].split("\t")[1].startswith("'=")
+
+
+def test_banana_tsv_blanks_a_non_finite_amount():
+    df = _one(**{"Betrag CHF": float("nan")})
+    assert df_to_banana_tsv(df).split("\n")[1].split("\t")[4] == ""
+    df = _one(**{"Betrag CHF": float("inf")})
+    assert df_to_banana_tsv(df).split("\n")[1].split("\t")[4] == ""
+
+
+def test_csv_neutralises_formula_cells():
+    csv = df_to_csv(_one(Beschreibung="=1+1"))
+    assert "'=1+1" in csv
+
+
+def test_excel_never_writes_a_formula_from_user_text():
+    wb = load_workbook(io.BytesIO(df_to_styled_excel(_one(Beschreibung="=SUM(A1:A9)"))))
+    cell = wb.active.cell(row=2, column=5)
+    assert cell.data_type == "s"
+    assert str(cell.value).startswith("'=")
+
+
+def test_excel_blanks_a_non_finite_amount():
+    wb = load_workbook(io.BytesIO(df_to_styled_excel(_one(**{"Betrag CHF": float("nan")}))))
+    value = wb.active.cell(row=2, column=8).value
+    assert value is None or not isinstance(value, float) or value != value
+
+
+# --- the separator the whole product agrees on (2026-09-16) ----------------
+
+
+def test_the_thousands_mark_is_the_plain_apostrophe():
+    """U+0027, not U+2019.
+
+    `fmt_swiss` emitted the typographic apostrophe until 2026-09-16 while its own
+    docstring, the frontend's `formatAmount` and every PDF used the plain one —
+    fpdf2's core fonts are latin-1, so `pdf_render.latin1()` was quietly
+    rewriting it on the way out. The same amount therefore read `1'234.50` on the
+    invoice PDF and `1’234.50` in the e-mail attached to it.
+    """
+    from app.services.export import THOUSANDS, fmt_swiss
+
+    assert THOUSANDS == "'"
+    formatted = fmt_swiss(1_234_567.89)
+    assert formatted == "1'234'567.89"
+    assert "’" not in formatted
+
+
+def test_the_pdf_renderer_no_longer_has_to_rewrite_it():
+    """What `fmt_swiss` produces must survive latin-1 untouched.
+
+    If this ever fails, a PDF and the page beside it are disagreeing again.
+    """
+    from app.services.export import fmt_swiss
+    from app.services.pdf_render import latin1
+
+    amount = fmt_swiss(1_234_567.89)
+    assert latin1(amount) == amount
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "1’234.56",  # typographic — what a bank statement prints
+        "1'234.56",  # plain — what this product prints
+        "1´234.56",  # acute accent, seen in the wild
+        "1 234.56",  # plain space
+        "1 234.56",  # no-break space
+        "1 234.56",  # narrow no-break space
+        "1,234.56",  # comma, from an anglophone export
+        "1234.56",
+    ],
+)
+def test_every_thousands_mark_a_statement_might_use_parses(text: str):
+    """Reading back this product's *own* PDF used to fail on the apostrophe."""
+    from app.services.pdf_parser import _parse_swiss_number
+
+    assert _parse_swiss_number(text) == 1234.56

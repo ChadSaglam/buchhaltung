@@ -41,7 +41,7 @@ const sizes: Record<ButtonSize, string> = {
 };
 
 const BASE =
-  "inline-flex items-center justify-center font-medium select-none transition-[filter,background-color,border-color,color] duration-150 disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+  "inline-flex cursor-pointer items-center justify-center font-medium select-none transition-[filter,background-color,border-color,color] duration-150 disabled:cursor-not-allowed disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
 /** The Button look on a Next `<Link>` — for calls to action that navigate. */
 export function ButtonLink({

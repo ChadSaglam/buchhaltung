@@ -14,6 +14,8 @@ class ClassifierModel(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     tenant_id: Mapped[int] = mapped_column(ForeignKey("tenants.id", ondelete="CASCADE"), unique=True, index=True)
     model_blob: Mapped[bytes] = mapped_column(LargeBinary)
+    # sha256 of model_blob as written (B-34); None for rows from before the column.
+    model_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
     total_samples: Mapped[int] = mapped_column(Integer, default=0)
     num_classes: Mapped[int] = mapped_column(Integer, default=0)
     cv_accuracy: Mapped[float | None] = mapped_column(Float, nullable=True)

@@ -3,8 +3,9 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
+from app.core.database import bind_tenant, get_db
 from app.core.security import decode_access_token
+from app.core.tenant_context import set_tenant
 from app.models.tenant import Tenant
 from app.models.user import User
 
@@ -41,6 +42,13 @@ async def get_current_user(
     if not active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Tenant deaktiviert")
     request.state.tenant_id = user.tenant_id
+    # B-24: from here on the database enforces the same thing every query does.
+    # Both calls are needed — the contextvar for every *later* transaction in
+    # this request, `bind_tenant` for the one the two selects above already
+    # opened. The contextvar is per-task and FastAPI runs each request in its
+    # own, so it neither leaks to nor is clobbered by a concurrent request.
+    set_tenant(user.tenant_id)
+    await bind_tenant(db, user.tenant_id)
     return user
 
 
@@ -68,6 +76,7 @@ def require_role(minimum: str):
             )
         return user
 
+    _check.minimum_role = minimum  # inspected by tests/test_rbac_routes.py
     return _check
 
 

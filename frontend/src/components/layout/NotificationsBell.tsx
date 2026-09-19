@@ -1,9 +1,11 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { Bell, CheckCheck, ListChecks, Bot, Server, BookOpen, type LucideIcon } from "lucide-react";
 import { useNotificationsStore, type NotifKind } from "@/lib/notifications-store";
+import { useAiStatus, useBookingStats, useClassifierInfo, useReviewQueue } from "@/hooks/useSystemData";
+import { usePopover } from "@/hooks/usePopover";
 import { cn } from "@/lib/utils";
 
 const KIND_ICON: Record<NotifKind, LucideIcon> = {
@@ -21,32 +23,29 @@ const KIND_TINT: Record<NotifKind, string> = {
 };
 
 export function NotificationsBell() {
-  const { items, loading, refresh, markRead, markAllRead, unreadCount } = useNotificationsStore();
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const { items, setFromSources, markRead, markAllRead, unreadCount } = useNotificationsStore();
+  const { open, close, containerRef, triggerRef, triggerProps, popoverProps } = usePopover({ role: "dialog" });
   const unread = unreadCount();
 
-  useEffect(() => {
-    refresh();
-    const t = setInterval(refresh, 60_000);
-    return () => clearInterval(t);
-  }, [refresh]);
+  // Same SWR keys as the dashboard cards — one request, one poll (B-16).
+  const review = useReviewQueue();
+  const info = useClassifierInfo();
+  const ai = useAiStatus();
+  const stats = useBookingStats();
+  const loading = review.isLoading || info.isLoading || ai.isLoading || stats.isLoading;
 
   useEffect(() => {
-    const onClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
-  }, []);
+    if (loading) return;
+    setFromSources({ review: review.data, info: info.data, aiStatus: ai.data, stats: stats.data });
+  }, [loading, review.data, info.data, ai.data, stats.data, setFromSources]);
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={containerRef} className="relative">
       <button
-        onClick={() => setOpen((o) => !o)}
-        aria-label="Benachrichtigungen"
-        aria-expanded={open}
-        className="relative flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        ref={triggerRef}
+        {...triggerProps}
+        aria-label={unread > 0 ? `Benachrichtigungen, ${unread} ungelesen` : "Benachrichtigungen"}
+        className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <Bell className="h-[18px] w-[18px]" />
         {unread > 0 && (
@@ -59,6 +58,8 @@ export function NotificationsBell() {
       <AnimatePresence>
         {open && (
           <motion.div
+            {...popoverProps}
+            aria-label="Benachrichtigungen"
             initial={{ opacity: 0, y: -6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
@@ -69,8 +70,9 @@ export function NotificationsBell() {
               <p className="text-sm font-semibold text-foreground">Benachrichtigungen</p>
               {items.length > 0 && (
                 <button
+                  type="button"
                   onClick={markAllRead}
-                  className="flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  className="flex cursor-pointer items-center gap-1 rounded text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <CheckCheck className="h-3.5 w-3.5" /> Alle gelesen
                 </button>
@@ -120,11 +122,11 @@ export function NotificationsBell() {
                     return (
                       <li key={n.id}>
                         {n.href ? (
-                          <Link href={n.href} onClick={() => { markRead(n.id); setOpen(false); }}>
+                          <Link href={n.href} onClick={() => { markRead(n.id); close(); }}>
                             {inner}
                           </Link>
                         ) : (
-                          <button className="w-full text-left" onClick={() => markRead(n.id)}>
+                          <button type="button" className="w-full cursor-pointer text-left" onClick={() => markRead(n.id)}>
                             {inner}
                           </button>
                         )}

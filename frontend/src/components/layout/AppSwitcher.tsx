@@ -1,9 +1,9 @@
 "use client";
-import { useEffect, useId, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ExternalLink, LayoutGrid, Receipt } from "lucide-react";
 import { BILLING_URL } from "@/lib/platform";
 import { t } from "@/lib/i18n";
+import { usePopover } from "@/hooks/usePopover";
 
 /**
  * "Apps" menu (chadev-platform/contracts/sso.md, app switcher). Billing is
@@ -12,39 +12,18 @@ import { t } from "@/lib/i18n";
  * `NEXT_PUBLIC_BILLING_URL` is unset: no entry, no dead link.
  */
 export function AppSwitcher() {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const menuId = useId();
-
-  useEffect(() => {
-    if (!open) return;
-    const onClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("mousedown", onClick);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onClick);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
+  const { open, close, containerRef, triggerRef, triggerProps, popoverProps } = usePopover();
 
   if (!BILLING_URL) return null;
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={containerRef} className="relative">
       <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
+        ref={triggerRef}
+        {...triggerProps}
         aria-label={t("apps.open")}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-controls={menuId}
         title={t("apps.label")}
-        className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <LayoutGrid className="h-[18px] w-[18px]" aria-hidden="true" />
       </button>
@@ -52,8 +31,7 @@ export function AppSwitcher() {
       <AnimatePresence>
         {open && (
           <motion.div
-            id={menuId}
-            role="menu"
+            {...popoverProps}
             aria-label={t("apps.label")}
             initial={{ opacity: 0, y: -6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -64,7 +42,7 @@ export function AppSwitcher() {
             <a
               role="menuitem"
               href={BILLING_URL}
-              onClick={() => setOpen(false)}
+              onClick={() => close()}
               className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">

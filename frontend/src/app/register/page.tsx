@@ -9,6 +9,7 @@ import { LogoMark } from "@/components/ui/Logo";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { register as apiRegister, getMe } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
+import { errorMessage } from "@/lib/errors";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
@@ -31,9 +32,7 @@ export default function RegisterPage() {
       setAuth(access_token, user);
       router.push("/dashboard");
     } catch (err) {
-      const detail =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setError(detail || "Registrierung fehlgeschlagen");
+      setError(errorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -78,7 +77,7 @@ export default function RegisterPage() {
             </div>
             <div className="space-y-1.5">
               <label htmlFor="reg-password" className="text-xs font-medium text-muted-foreground">Passwort</label>
-              <Input id="reg-password" type="password" placeholder="Mindestens 8 Zeichen" icon={<Lock />} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} autoComplete="new-password" />
+              <Input id="reg-password" type="password" placeholder="Mindestens 12 Zeichen" icon={<Lock />} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={12} autoComplete="new-password" />
             </div>
             {error && (
               <motion.p

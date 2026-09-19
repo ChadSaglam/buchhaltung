@@ -20,17 +20,21 @@ from __future__ import annotations
 import datetime as dt
 import hashlib
 import hmac
+import logging
 import time
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.booking import Booking
 from app.models.tenant import Tenant
 from app.services.export import round_chf
+
+logger = logging.getLogger(__name__)
 
 SIGNATURE_PREFIX = "sha256="
 MAX_SKEW_SECONDS = 5 * 60
@@ -137,7 +141,13 @@ async def resolve_tenant(db: AsyncSession, tid: int) -> Tenant:
 
 
 async def apply_invoice_paid(db: AsyncSession, tenant: Tenant, event: InvoicePaidEvent) -> bool:
-    """Create the payment booking; returns False when it already exists (duplicate delivery)."""
+    """Create the payment booking; returns False when it already exists (duplicate delivery).
+
+    The SELECT below is only the fast path. Two deliveries of the same event can
+    pass it at the same time, so the partial unique index on
+    ``(tenant_id, source_key) WHERE source='billing'`` is what actually decides
+    (B-52) — the loser gets an IntegrityError and reports a duplicate.
+    """
     key = source_key_for(event.invoice.id)
     existing = await db.scalar(
         select(Booking.id).where(Booking.tenant_id == tenant.id, Booking.source_key == key).limit(1)
@@ -145,22 +155,26 @@ async def apply_invoice_paid(db: AsyncSession, tenant: Tenant, event: InvoicePai
     if existing is not None:
         return False
     invoice = event.invoice
-    db.add(
-        Booking(
-            tenant_id=tenant.id,
-            datum=invoice.paid_at.strftime("%d.%m.%Y"),
-            beschreibung=f"Zahlung {invoice.number} {invoice.client.name}".strip(),
-            betrag=parse_amount(invoice.total),
-            kt_soll=BANK_ACCOUNT,
-            kt_haben=DEBITOREN_ACCOUNT,
-            mwst_code="",
-            mwst_pct="",
-            mwst_amount=0.0,
-            beleg="",
-            rechnung=invoice.number,
-            source=BOOKING_SOURCE,
-            source_key=key,
-        )
+    booking = Booking(
+        tenant_id=tenant.id,
+        datum=invoice.paid_at.strftime("%d.%m.%Y"),
+        beschreibung=f"Zahlung {invoice.number} {invoice.client.name}".strip(),
+        betrag=parse_amount(invoice.total),
+        kt_soll=BANK_ACCOUNT,
+        kt_haben=DEBITOREN_ACCOUNT,
+        mwst_code="",
+        mwst_pct="",
+        mwst_amount=0.0,
+        beleg="",
+        rechnung=invoice.number,
+        source=BOOKING_SOURCE,
+        source_key=key,
     )
-    await db.flush()
+    try:
+        async with db.begin_nested():  # savepoint: a losing race must not kill the transaction
+            db.add(booking)
+            await db.flush()
+    except IntegrityError:
+        logger.info("[EVENTS] duplicate invoice.paid for %s ignored (unique index)", key)
+        return False
     return True

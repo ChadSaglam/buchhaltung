@@ -4,20 +4,27 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, ForeignKey, String, Text, func
+from sqlalchemy import DateTime, Float, ForeignKey, Index, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
+from app.models.types import Chf
 
 
 class ReviewQueueItem(Base):
     __tablename__ = "review_queue_items"
+    # B-28: the queue is always "this tenant, still pending, least confident
+    # first". Measured on 60k rows: 1'603 buffers and 5'379 rows discarded by a
+    # filter → 521 buffers and none.
+    __table_args__ = (
+        Index("ix_review_queue_tenant_status_confidence", "tenant_id", "status", "confidence", "created_at"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     tenant_id: Mapped[int] = mapped_column(ForeignKey("tenants.id", ondelete="CASCADE"), index=True, nullable=False)
 
     beschreibung: Mapped[str] = mapped_column(Text, nullable=False)
-    betrag: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    betrag: Mapped[float] = mapped_column(Chf, default=0.0, nullable=False)
 
     predicted_soll: Mapped[str] = mapped_column(String(20), default="", nullable=False)
     predicted_haben: Mapped[str] = mapped_column(String(20), default="", nullable=False)

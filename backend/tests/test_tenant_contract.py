@@ -58,11 +58,11 @@ async def test_unique_tenant_slug_adds_suffix_on_collision(db_session):
 async def test_register_sets_contract_columns(client, db_session):
     first = await client.post(
         "/api/auth/register",
-        json={"email": "a@example.com", "password": "Secret123!", "tenant_name": "Müller AG"},
+        json={"email": "a@example.com", "password": "Secret123!pass", "tenant_name": "Müller AG"},
     )
     second = await client.post(
         "/api/auth/register",
-        json={"email": "b@example.com", "password": "Secret123!", "tenant_name": "Müller AG"},
+        json={"email": "b@example.com", "password": "Secret123!pass", "tenant_name": "Müller AG"},
     )
     assert first.status_code == 201 and second.status_code == 201
 
@@ -167,7 +167,7 @@ async def test_register_survives_lost_slug_race(client, db_session, monkeypatch)
     monkeypatch.setattr(auth_router, "unique_tenant_slug", racing_slug)
     resp = await client.post(
         "/api/auth/register",
-        json={"email": "race@example.com", "password": "Secret123!", "tenant_name": "Race AG"},
+        json={"email": "race@example.com", "password": "Secret123!pass", "tenant_name": "Race AG"},
     )
     assert resp.status_code == 201, resp.text
     assert calls["n"] == 2

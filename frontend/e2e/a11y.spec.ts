@@ -68,7 +68,7 @@ async function register(page: Page) {
   await page.getByLabel("Firmenname").fill(`A11y AG ${stamp}`);
   await page.getByLabel("Ihr Name").fill("Axe Tester");
   await page.getByLabel("E-Mail").fill(`a11y-${stamp}@example.ch`);
-  await page.getByLabel("Passwort").fill("Secret123!");
+  await page.getByLabel("Passwort").fill("Secret123!pass");
   await page.getByRole("button", { name: /registrieren/i }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
 }
@@ -105,7 +105,33 @@ test("dialogs trap focus, close on Escape and restore focus", async ({ page }) =
   await expect(opener).toBeFocused();
 });
 
-const ROUTES = ["/dashboard", "/dashboard/scanner", "/dashboard/modell", "/dashboard/settings"];
+/**
+ * Every page a signed-in user can reach. The five added on 2026-09-16 were the
+ * loose thread from B-58: `rechnungen/neu`, `firma` and `email` shipped with
+ * B-68/B-69 and were never audited, and Heute grew the Liquidität card (B-71).
+ * `insights`, `review`, `lernverlauf`, `kontenplan` and `audit` are in for the
+ * same reason — the IA moved them under a surface or under "Mehr", and a page
+ * nobody audits is a page that quietly regresses.
+ */
+const ROUTES = [
+  "/dashboard",
+  "/dashboard/belege",
+  "/dashboard/belege/neu",
+  "/dashboard/belege/firma",
+  "/dashboard/belege/email",
+  "/dashboard/belege/scanner",
+  "/dashboard/bank",
+  "/dashboard/bank/abgleich",
+  "/dashboard/bank/buchungen",
+  "/dashboard/abschluss",
+  "/dashboard/review",
+  "/dashboard/lohn",
+  "/dashboard/kontenplan",
+  "/dashboard/modell",
+  "/dashboard/lernverlauf",
+  "/dashboard/audit",
+  "/dashboard/settings",
+];
 
 for (const theme of ["light", "dark"] as const) {
   for (const route of ROUTES) {

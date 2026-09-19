@@ -2,10 +2,12 @@
 
 from pydantic import BaseModel
 
+from app.schemas.common import Money
+
 
 class ClassifyRequest(BaseModel):
     beschreibung: str
-    betrag: float = 0.0
+    betrag: Money = 0.0
     is_credit: bool = False
 
 
@@ -35,3 +37,22 @@ class TrainResponse(BaseModel):
     cv_accuracy: float | None = None
     train_accuracy: float | None = None
     error: str | None = None
+
+
+class ClassifierInfoResponse(BaseModel):
+    """What `/api/classify/info` actually returns (B-59).
+
+    The hand-written frontend interface claimed `sklearn_version`,
+    `model_size_kb` and `memory_size_kb`; the endpoint has never sent them.
+    """
+
+    has_model: bool
+    #: False when a stored model is unsigned, foreign or altered — the classifier ignores it (B-34).
+    model_trusted: bool
+    model_accuracy: float
+    train_accuracy: float
+    total_samples: int
+    classes: int
+    memory_count: int
+    correction_count: int
+    trained_at: str | None = None

@@ -63,8 +63,8 @@ venv_python() {
     echo "${BACKEND_DIR}/venv/bin/python"
   elif [[ -x "${BACKEND_DIR}/venv/bin/python3" ]]; then
     echo "${BACKEND_DIR}/venv/bin/python3"
-  elif [[ -x "${BACKEND_DIR}/venv/bin/python3.13" ]]; then
-    echo "${BACKEND_DIR}/venv/bin/python3.13"
+  elif [[ -x "${BACKEND_DIR}/venv/bin/python3.14" ]]; then
+    echo "${BACKEND_DIR}/venv/bin/python3.14"
   else
     fail_check "No Python executable found in backend virtual environment"
     return 1
@@ -76,8 +76,8 @@ venv_pip() {
     echo "${BACKEND_DIR}/venv/bin/pip"
   elif [[ -x "${BACKEND_DIR}/venv/bin/pip3" ]]; then
     echo "${BACKEND_DIR}/venv/bin/pip3"
-  elif [[ -x "${BACKEND_DIR}/venv/bin/pip3.13" ]]; then
-    echo "${BACKEND_DIR}/venv/bin/pip3.13"
+  elif [[ -x "${BACKEND_DIR}/venv/bin/pip3.14" ]]; then
+    echo "${BACKEND_DIR}/venv/bin/pip3.14"
   else
     fail_check "No pip executable found in backend virtual environment"
     return 1

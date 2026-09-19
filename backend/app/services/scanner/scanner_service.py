@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import asyncio
+import json
+import logging
+from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any
 
 from fastapi import HTTPException
@@ -16,11 +20,17 @@ from app.schemas.scanner import (
     ScannerExtractResponse,
     ScannerStatusResponse,
 )
-from app.services.classifier import TenantClassifier, calc_mwst
+from app.services.bezahlt_an_der_kasse import bezahlt_an_der_kasse
+from app.services.classifier import TenantClassifier, calc_mwst, vat_code_for
 from app.services.ollama_vision import parse_invoice_text
+from app.services.plan_limits import PlanLimits
 from app.services.receipts import store_receipt
 from app.services.scanner.base import ScannerFile
 from app.services.scanner.registry import ScannerProviderRegistry
+from app.services.storage_quota import StorageQuota
+from app.services.usage_meter import UsageMeter
+
+logger = logging.getLogger(__name__)
 
 MAX_FILE_SIZE = 20 * 1024 * 1024
 CUSTOM_MODEL_NAME = "custom-ocr"
@@ -37,20 +47,23 @@ class ScannerService:
         custom_available = self.registry.custom_ocr_available()
         config = await self.get_or_create_config_model()
 
+        # B-49: every probe below hits the (cached) Ollama status once, on the event loop —
+        # no sync shims spinning up a thread + a second loop per call.
+        vision_ok = await vision.is_available_async()
         best_vision = config.default_ollama_model or await vision.get_best_model_async()
         if custom_available and not config.default_ollama_model:
             best_vision = CUSTOM_MODEL_NAME
 
         return ScannerStatusResponse(
-            ok=vision.is_available() or custom_available,
+            ok=vision_ok or custom_available,
             error=None
-            if (vision.is_available() or custom_available)
+            if (vision_ok or custom_available)
             else "Scanner nicht verfügbar (kein Vision-Modell und keine OCR).",
-            models=self.registry.list_status_models(),
-            vision_models=vision.get_vision_model_names(),
+            models=await self.registry.list_status_models_async(),
+            vision_models=await vision.get_vision_model_names_async(),
             best_vision=best_vision,
             scanner_mode="custom-first" if custom_available else "vision-only",
-            pipeline=vision.get_pipeline(),
+            pipeline=await vision.get_pipeline_async(),
             custom_ocr_available=custom_available,
         )
 
@@ -97,9 +110,7 @@ class ScannerService:
         config.ocr_provider = payload.ocr_provider
         config.vision_provider = payload.vision_provider
         config.fallback_provider = payload.fallback_provider
-        config.ollama_base_url = payload.ollama_base_url
         config.default_ollama_model = payload.default_ollama_model
-        config.ocr_command = payload.ocr_command
         config.pdf_ocr_enabled = payload.pdf_ocr_enabled
         config.invoice_matching_enabled = payload.invoice_matching_enabled
         config.auto_classification_enabled = payload.auto_classification_enabled
@@ -115,10 +126,44 @@ class ScannerService:
         content_type: str,
         content: bytes,
         model: str = "",
+        on_step: Callable[[dict[str, Any]], Awaitable[None]] | None = None,
+        bereits_gespeichert: str | None = None,
     ) -> ScannerExtractResponse:
+        """Extract one document. ``on_step`` receives every pipeline step as it happens (B-15).
+
+        ``bereits_gespeichert`` ist der Schlüssel einer Datei, die der Aufrufer
+        schon abgelegt hat. `DocumentService.ingest` speichert den Beleg selbst
+        (B-09) und ruft dann hier an, wenn kein QR-Code gefunden wurde — ohne
+        diesen Parameter landete **jede Rechnung ohne QR-Code zweimal** im
+        Speicher, unter zwei Schlüsseln, und zählte zweimal gegen die Quote
+        (B-54) und gegen den Beleg-Zähler (B-23).
+        """
+        steps: list[dict[str, Any]] = []
+
+        async def emit(step: dict[str, Any]) -> None:
+            steps.append(step)
+            if on_step is not None:
+                await on_step(step)
+
         self._validate_upload(content_type=content_type, content=content)
-        # Audit copy first (B-09): the document survives even if extraction fails.
-        source_key = store_receipt(self.user.tenant_id, filename=file_name, content_type=content_type, content=content)
+        if bereits_gespeichert:
+            source_key = bereits_gespeichert
+            await emit({"icon": "📤", "label": "Datei wird gespeichert", "status": "done"})
+        else:
+            # Audit copy first (B-09): the document survives even if extraction fails.
+            # Which is exactly why the quota has to answer before it is written (B-54).
+            # B-23: derselbe Beleg-Zähler wie beim Upload über Belege — es ist
+            # derselbe Vorgang, nur eine andere Tür.
+            await PlanLimits(self.user.tenant_id, self.db).ensure("belege")
+            quota = StorageQuota(self.user.tenant_id, self.db)
+            await quota.ensure_room_for(len(content))
+            await emit({"icon": "📤", "label": "Datei wird gespeichert", "status": "active"})
+            source_key = await asyncio.to_thread(
+                store_receipt, self.user.tenant_id, filename=file_name, content_type=content_type, content=content
+            )
+            await quota.record(len(content))
+            await UsageMeter(self.user.tenant_id, self.db).record("beleg")
+            steps[-1]["status"] = "done"
         scanner_file = ScannerFile(
             filename=file_name,
             content_type=content_type,
@@ -133,30 +178,37 @@ class ScannerService:
         if not status.ok:
             raise HTTPException(503, status.error or "Scanner nicht verfügbar.")
 
-        steps: list[dict[str, Any]] = [{"icon": "📤", "label": "Datei wird verarbeitet", "status": "done"}]
         attempts: list[dict[str, Any]] = []
         providers: list[dict[str, str]] = []
 
         data: dict[str, Any] | None = None
         ocr_provider: str | None = None
         ocr_worked = False
+        # B-89: the raw OCR text, kept only so the "bereits bezahlt" marker can be
+        # looked for. The vision branch returns structured fields and no text, so
+        # there the check falls back to vendor + description below.
+        belegtext = ""
         vision_model: str | None = None
         custom_available = ocr.is_available()
 
         effective_model = (model or config.default_ollama_model or "").strip()
 
         if self._use_custom_first(effective_model):
+            await emit({"icon": "🔎", "label": "OCR (Tesseract) läuft", "status": "active", "provider": "ocr"})
             ocr_result = await ocr.extract_async(scanner_file)
-            steps.extend(item.model_dump() for item in ocr_result.steps)
+            steps[-1]["status"] = "done" if ocr_result.data else "failed"
+            for item in ocr_result.steps:
+                await emit(item.model_dump())
             attempts.extend(item.model_dump() for item in ocr_result.attempts)
             providers.extend(ocr_result.providers)
             if ocr_result.data and ocr_result.data.get("ocr_text"):
+                belegtext = str(ocr_result.data["ocr_text"])
                 parsed = parse_invoice_text(ocr_result.data["ocr_text"])
                 if parsed:
                     data = parsed
                     ocr_provider = ocr_result.ocr_provider
                     ocr_worked = True
-                    steps.append(
+                    await emit(
                         {
                             "icon": "📝",
                             "label": "Rechnungsdetails aus OCR-Text extrahiert",
@@ -166,13 +218,24 @@ class ScannerService:
                         }
                     )
 
-        if not data and vision.is_available():
-            vision_result = vision.extract(
+        if not data and await vision.is_available_async():
+            await emit(
+                {
+                    "icon": "🤖",
+                    "label": f"Vision-Modell {effective_model or 'automatisch'} liest die Rechnung",
+                    "status": "active",
+                    "provider": "vision",
+                    "model": effective_model or None,
+                }
+            )
+            vision_result = await vision.extract_async(
                 scanner_file=scanner_file,
                 selected_model=effective_model,
                 preferred_models=["gemma3:12b", "gemma3:4b", "kimi-k2.5:cloud"],
             )
-            steps.extend(item.model_dump() for item in vision_result.steps)
+            steps[-1]["status"] = "done" if vision_result.data else "failed"
+            for item in vision_result.steps:
+                await emit(item.model_dump())
             attempts.extend(item.model_dump() for item in vision_result.attempts)
             providers.extend(vision_result.providers)
 
@@ -188,7 +251,7 @@ class ScannerService:
             raise HTTPException(422, "Keine Rechnung erkannt.")
 
         if config.auto_classification_enabled:
-            steps.append(
+            await emit(
                 {
                     "icon": "🧠",
                     "label": "Kontierung wird berechnet",
@@ -197,10 +260,11 @@ class ScannerService:
                 }
             )
             data = await self._classify_invoice(data)
+            steps[-1]["status"] = "done"
 
             best_conf = data.get("classification_confidence") or 0
             best_source = data.get("classification_source") or ""
-            steps.append(
+            await emit(
                 {
                     "icon": "🎯",
                     "label": f"Kontierung: {data.get('kt_soll', '')}/{data.get('kt_haben', '')} ({best_source}, {best_conf:.0%})",
@@ -211,6 +275,15 @@ class ScannerService:
                 }
             )
 
+        # B-89: a receipt that paid itself at the till is not a payable. The extractor
+        # reads no Fälligkeitsdatum (only the QR-bill path has one, and a QR bill is a
+        # payment *request* — ``DocumentService`` never ticks this for those), so the
+        # narrowness of the marker carries the decision here. The owner can tick or
+        # untick the box on the Beleg either way.
+        data["bezahlt_an_der_kasse"] = bezahlt_an_der_kasse(
+            belegtext or f"{data.get('vendor', '')} {data.get('description', '')}",
+            hat_faelligkeit=False,
+        )
         data["source_key"] = source_key
         data["vision_model"] = vision_model or ""
         data["ocr_provider"] = ocr_provider or ""
@@ -221,6 +294,34 @@ class ScannerService:
         data["scanner_providers"] = providers
 
         return ScannerExtractResponse(data=ExtractedInvoice(**data))
+
+    async def extract_events(self, **kwargs: Any) -> AsyncIterator[str]:
+        """``extract`` as Server-Sent Events: ``step`` frames while it runs, then ``result`` or ``error`` (B-15)."""
+        queue: asyncio.Queue[tuple[str, dict[str, Any]] | None] = asyncio.Queue()
+
+        async def on_step(step: dict[str, Any]) -> None:
+            await queue.put(("step", step))
+
+        async def run() -> None:
+            try:
+                response = await self.extract(on_step=on_step, **kwargs)
+                await queue.put(("result", response.model_dump(mode="json")))
+            except HTTPException as exc:
+                await queue.put(("error", {"status": exc.status_code, "message": str(exc.detail)}))
+            except Exception:
+                logger.exception("[SCANNER] extract failed while streaming")
+                await queue.put(("error", {"status": 500, "message": "Scanner-Fehler."}))
+            finally:
+                await queue.put(None)
+
+        task = asyncio.create_task(run())
+        try:
+            while (item := await queue.get()) is not None:
+                event, payload = item
+                yield f"event: {event}\ndata: {json.dumps(payload, ensure_ascii=False)}\n\n"
+        finally:
+            if not task.done():
+                task.cancel()
 
     def _validate_upload(self, *, content_type: str, content: bytes) -> None:
         if not content_type or not (content_type.startswith("image") or content_type == "application/pdf"):
@@ -264,13 +365,10 @@ class ScannerService:
         if best_result is None:
             raise HTTPException(422, "Klassifizierung fehlgeschlagen.")
 
-        if vat_rate > 0:
-            if vat_rate >= 7.0:
-                best_result.mwst_pct = "8.10"
-                best_result.mwst_code = best_result.mwst_code or "I81"
-            elif vat_rate >= 2.0:
-                best_result.mwst_pct = "2.60"
-                best_result.mwst_code = best_result.mwst_code or "I25"
+        # B-48: the rate on the receipt decides pct and code exactly — no ">= 7 means 8.1".
+        vat = vat_code_for(vat_rate, best_result.mwst_code or "") if vat_rate > 0 else None
+        if vat:
+            best_result.mwst_pct, best_result.mwst_code = vat
             best_result.mwst_amount = calc_mwst(total_amount, best_result.mwst_pct)
 
         result_data = dict(data)

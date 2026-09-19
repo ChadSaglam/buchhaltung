@@ -7,16 +7,30 @@ import {
   Rocket, X, CheckCircle2, Circle, ArrowRight,
   ScanLine, FileText, Bot, ListChecks, type LucideIcon,
 } from "lucide-react";
+import toast from "react-hot-toast";
 import api from "@/lib/api";
+import { errorMessage } from "@/lib/errors";
+import { useBookingStats, useClassifierInfo, useVisionStatus } from "@/hooks/useSystemData";
 import { cn } from "@/lib/utils";
 
 /**
- * Dismissible getting-started checklist for new tenants.
+ * The first run (B-20).
  *
- * Reads real system signals to decide which onboarding steps are done, shows a
- * progress bar, and hides itself automatically once every step is complete.
- * The user can also dismiss it manually; the choice is persisted per browser
- * so it doesn't reappear on every visit.
+ * Reads real system signals to decide which step is done, shows a progress bar,
+ * and hides itself once everything is. Dismissal is per browser.
+ *
+ * The order is the point. `docs/IA-2026-09-14.md` rule 3 is "no settings before
+ * value: first run, drop a file → see a result", and this checklist used to open
+ * with "start Ollama" — a technical prerequisite that produces nothing a new
+ * user can see, asked before they have any reason to care. Reading a receipt is
+ * now step one, and the AI service is last, where it belongs: it makes the
+ * reading better, it is not what makes it work (a Swiss QR bill is decoded
+ * exactly, with no model involved at all).
+ *
+ * Step one also carries the answer to the most ordinary first-run problem —
+ * they do not have a Swiss invoice on the laptop they signed up on. The sample
+ * is a real, scannable QR-Rechnung marked "Beispiel", so the first thing they
+ * see is the exact behaviour, not a demo of it.
  */
 const DISMISS_KEY = "getting-started-dismissed";
 
@@ -30,42 +44,47 @@ interface Step {
 }
 
 export function GettingStarted() {
-  const [visible, setVisible] = useState(false);
-  const [steps, setSteps] = useState<Step[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [dismissed, setDismissed] = useState<boolean | null>(null);
+  const info = useClassifierInfo();
+  const bookings = useBookingStats();
+  const scanner = useVisionStatus();
 
   useEffect(() => {
-    const dismissed = typeof window !== "undefined" && localStorage.getItem(DISMISS_KEY) === "true";
-
-    (async () => {
-      const [info, bookings, scanner] = await Promise.all([
-        api.get("/api/classify/info").then((r) => r.data).catch(() => null),
-        api.get("/api/bookings/stats").then((r) => r.data).catch(() => null),
-        api.get("/api/scanner/vision-status").then((r) => r.data).catch(() => null),
-      ]);
-
-      const hasBookings = (bookings?.total_count ?? 0) > 0;
-      const hasModel = !!info?.has_model;
-      const hasMemory = (info?.memory_count ?? 0) > 0;
-      const ollamaOk = !!scanner?.ok;
-
-      const s: Step[] = [
-        { id: "ollama", label: "AI-Dienst verbinden", desc: "Ollama starten für Scanner & Assistent", href: "/dashboard/scanner", icon: Bot, done: ollamaOk },
-        { id: "import", label: "Erste Buchungen erfassen", desc: "Kontoauszug hochladen oder Beleg scannen", href: "/dashboard/kontoauszug", icon: FileText, done: hasBookings },
-        { id: "scan", label: "Beleg scannen", desc: "Rechnung fotografieren → AI-Kontierung", href: "/dashboard/scanner", icon: ScanLine, done: hasMemory },
-        { id: "train", label: "Modell trainieren", desc: "Automatische Kontierung aktivieren", href: "/dashboard/modell", icon: ListChecks, done: hasModel },
-      ];
-      setSteps(s);
-
-      const allDone = s.every((x) => x.done);
-      setVisible(!dismissed && !allDone);
-      setLoading(false);
-    })();
+    setDismissed(localStorage.getItem(DISMISS_KEY) === "true");
   }, []);
+
+  const loading = dismissed === null || info.isLoading || bookings.isLoading || scanner.isLoading;
+  const hasBookings = (bookings.data?.total_count ?? 0) > 0;
+  const hasModel = !!info.data?.has_model;
+  const hasMemory = (info.data?.memory_count ?? 0) > 0;
+  const ollamaOk = !!scanner.data?.ok;
+
+  const steps: Step[] = [
+    { id: "beleg", label: "Ersten Beleg einlesen", desc: "Rechnung hierher ziehen — der QR-Code wird exakt gelesen", href: "/dashboard/belege", icon: ScanLine, done: hasMemory || hasBookings },
+    { id: "bank", label: "Kontoauszug hochladen", desc: "Damit die Zahlungen zu den Belegen passen", href: "/dashboard/bank", icon: FileText, done: hasBookings },
+    { id: "train", label: "Kontierung lernen lassen", desc: "Aus Ihren Korrekturen, sobald ein paar Belege da sind", href: "/dashboard/modell", icon: ListChecks, done: hasModel },
+    { id: "ollama", label: "AI-Dienst verbinden", desc: "Optional — verbessert das Lesen von Belegen ohne QR-Code", href: "/dashboard/belege/scanner", icon: Bot, done: ollamaOk },
+  ];
+  const visible = !dismissed && !steps.every((x) => x.done);
 
   const dismiss = () => {
     localStorage.setItem(DISMISS_KEY, "true");
-    setVisible(false);
+    setDismissed(true);
+  };
+
+  /** The endpoint needs the bearer token, so a plain <a href> would 401. */
+  const beispielHolen = async () => {
+    try {
+      const res = await api.get("/api/onboarding/beispiel-rechnung.pdf", { responseType: "blob" });
+      const url = URL.createObjectURL(res.data);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "Beispiel-Rechnung.pdf";
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      toast.error(errorMessage(e));
+    }
   };
 
   if (loading || !visible) return null;
@@ -110,6 +129,14 @@ export function GettingStarted() {
             transition={{ duration: 0.6, ease: "easeOut" }}
           />
         </div>
+
+        <p className="mb-3 text-xs text-muted-foreground">
+          Keine Rechnung zur Hand?{" "}
+          <button type="button" onClick={beispielHolen} className="font-medium text-link hover:underline">
+            Beispielrechnung herunterladen
+          </button>{" "}
+          und oben hineinziehen — sie trägt einen Beispiel-Vermerk und ist keine echte Forderung.
+        </p>
 
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {steps.map((step) => (

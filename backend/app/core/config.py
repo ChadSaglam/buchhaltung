@@ -37,6 +37,12 @@ class Settings(BaseSettings):
     # --- Database --------------------------------------------------------
     DATABASE_URL: str = "postgresql+asyncpg://chadev:chadev@localhost:5432/chadev_buchhaltung"
     DATABASE_URL_SYNC: str = "postgresql://chadev:chadev@localhost:5432/chadev_buchhaltung"
+    # B-24 / ADR-002: Alembic connects as the table owner, the app as a role with
+    # NOBYPASSRLS. They must be different users or Row-Level Security is theatre —
+    # Postgres exempts a superuser from every policy and the owner from its own,
+    # and FORCE ROW LEVEL SECURITY only fixes the second of those. Empty falls
+    # back to DATABASE_URL, which is fine everywhere except production.
+    MIGRATION_DATABASE_URL: str = ""
     # In dev/test we bootstrap tables from the models. In production Alembic owns
     # the schema, so this must stay off.
     AUTO_CREATE_TABLES: bool | None = None
@@ -57,6 +63,24 @@ class Settings(BaseSettings):
     RATE_LIMIT_DEFAULT: str = "200/minute"
     RATE_LIMIT_CLASSIFY: str = "60/minute"
     RATE_LIMIT_HEAVY: str = "30/minute"
+    # B-55: sign-in, sign-up and the SSO hand-off are the only unauthenticated
+    # write paths, so they are keyed per IP and kept far below the default.
+    RATE_LIMIT_AUTH: str = "10/minute"
+    # B-54: how much stored evidence one tenant may keep. Every upload is kept
+    # on purpose (B-09), so without a ceiling one tenant fills the disk — with
+    # files the product could not even read. 0 = no quota (single-tenant install).
+    MAX_TENANT_STORAGE_MB: int = 5120
+    # B-23: ob die Plan-Grenzen aus `core/plans.py` tatsächlich ablehnen. Aus
+    # heisst: weiter zählen und anzeigen, aber niemanden aussperren — der
+    # Schalter existiert für den Tag, an dem eine Zahl in der Tabelle falsch
+    # gesetzt ist. Der Speicherplatz fällt dann auf MAX_TENANT_STORAGE_MB
+    # zurück, also auf das Verhalten von B-54.
+    ENFORCE_PLAN_LIMITS: bool = True
+
+    # Where the rate-limit counters live. Empty = in-process memory, which is
+    # correct for one uvicorn process and silently wrong for two: each worker
+    # would then allow the full quota. compose already runs redis.
+    REDIS_URL: str = ""
 
     # --- CORS ------------------------------------------------------------
     # Comma-separated list, e.g. "https://app.example.ch,https://admin.example.ch"
@@ -68,6 +92,24 @@ class Settings(BaseSettings):
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
     FROM_EMAIL: str = ""
+
+    # --- E-Mail-Eingang (B-69) -------------------------------------------
+    # One mailbox for the whole deployment; the tenant is the "+slug" in the
+    # address: belege+muster-gmbh@<domain>. Empty domain = intake is off.
+    EMAIL_INTAKE_DOMAIN: str = ""
+    EMAIL_INTAKE_LOCALPART: str = "belege"
+    # Transport 1 — polling a mailbox over IMAP (works with any provider).
+    IMAP_HOST: str = ""
+    IMAP_PORT: int = 993
+    IMAP_USER: str = ""
+    IMAP_PASSWORD: str = ""
+    IMAP_FOLDER: str = "INBOX"
+    IMAP_BATCH: int = 20
+    # How often the worker looks into the mailbox (seconds).
+    EMAIL_POLL_INTERVAL: float = 300.0
+    # Transport 2 — an inbound webhook (Postmark/Mailgun style), guarded by a
+    # shared secret in the X-Mail-Secret header. Empty = the route is closed.
+    EMAIL_INBOUND_SECRET: str = ""
 
     # --- AI / Ollama -----------------------------------------------------
     OLLAMA_BASE_URL: str = "http://localhost:11434"
@@ -100,7 +142,9 @@ class Settings(BaseSettings):
     # "local" writes under STORAGE_LOCAL_DIR (fine for one replica); "s3" is
     # required as soon as the API runs with more than one replica.
     STORAGE_BACKEND: str = "local"
-    STORAGE_LOCAL_DIR: str = "/app/data"
+    # Default = <backend>/data: /app/data in the image, backend/data on a dev
+    # machine. A hard-coded /app/data made every upload 500 outside Docker.
+    STORAGE_LOCAL_DIR: str = str(Path(__file__).resolve().parents[2] / "data")
     S3_BUCKET: str = ""
     # Leave empty for AWS; set for MinIO / R2 / any S3-compatible endpoint.
     S3_ENDPOINT_URL: str = ""
@@ -145,6 +189,16 @@ class Settings(BaseSettings):
                 problems.append("AUTO_CREATE_TABLES must be false in production (Alembic owns the schema)")
             if self.STORAGE_BACKEND.strip().lower() == "s3" and not self.S3_BUCKET:
                 problems.append("S3_BUCKET must be set when STORAGE_BACKEND=s3")
+            if self.DATABASE_URL.startswith("postgres") and not self.MIGRATION_DATABASE_URL.strip():
+                problems.append(
+                    "MIGRATION_DATABASE_URL must be set (Alembic as the owner, the app as a "
+                    "NOBYPASSRLS role — see docs/ADR-002-rls.md)"
+                )
+            elif self.MIGRATION_DATABASE_URL.strip() == self.DATABASE_URL.strip():
+                problems.append(
+                    "MIGRATION_DATABASE_URL must not equal DATABASE_URL: the app would connect "
+                    "as the table owner and Row-Level Security would silently do nothing"
+                )
             if problems:
                 raise ValueError(
                     "Refusing to start in production with an unsafe configuration:\n  - " + "\n  - ".join(problems)
@@ -152,6 +206,11 @@ class Settings(BaseSettings):
         elif self.SECRET_KEY.strip().lower() in INSECURE_SECRETS:
             logger.warning("[config] Using the default SECRET_KEY — fine for dev, never for production.")
         return self
+
+    @property
+    def migration_database_url(self) -> str:
+        """Where Alembic connects. Falls back to the app's URL outside production."""
+        return self.MIGRATION_DATABASE_URL.strip() or self.DATABASE_URL
 
     @property
     def is_production(self) -> bool:

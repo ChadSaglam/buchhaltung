@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.review_queue import ReviewQueueItem
@@ -69,12 +69,34 @@ class ReviewQueueService:
 
     async def _get_item(self, item_id: int) -> ReviewQueueItem | None:
         result = await self.db.execute(
-            select(ReviewQueueItem).where(
+            select(ReviewQueueItem)
+            .where(
                 ReviewQueueItem.id == item_id,
                 ReviewQueueItem.tenant_id == self.tenant_id,
             )
+            .execution_options(populate_existing=True)
         )
         return result.scalar_one_or_none()
+
+    async def _claim(self, item_id: int, status: str) -> bool:
+        """Take the item out of *pending* in one statement (B-52).
+
+        Reading the status and then writing it leaves a gap; two clicks on the
+        same row used to log the correction twice and train the model twice.
+        The ``WHERE status = 'pending'`` makes the database pick a winner, and
+        ``rowcount`` says whether we are it.
+        """
+        result = await self.db.execute(
+            update(ReviewQueueItem)
+            .where(
+                ReviewQueueItem.id == item_id,
+                ReviewQueueItem.tenant_id == self.tenant_id,
+                ReviewQueueItem.status == "pending",
+            )
+            .values(status=status, resolved_at=datetime.now(UTC))
+            .execution_options(synchronize_session=False)
+        )
+        return (result.rowcount or 0) == 1
 
     async def approve(
         self,
@@ -84,8 +106,10 @@ class ReviewQueueService:
         corrected_mwst_code: str | None = None,
         corrected_mwst_pct: str | None = None,
     ) -> ReviewQueueItem | None:
+        if not await self._claim(item_id, "approved"):
+            return None
         item = await self._get_item(item_id)
-        if not item or item.status != "pending":
+        if item is None:  # pragma: no cover - claimed rows exist by definition
             return None
 
         final_soll = corrected_soll or item.predicted_soll
@@ -110,18 +134,13 @@ class ReviewQueueService:
             corrected_mwst_pct=final_mwst_pct,
         )
 
-        item.status = "approved"
         item.resolved_soll = final_soll
         item.resolved_haben = final_haben
         item.resolved_mwst_code = final_mwst_code
         item.resolved_mwst_pct = final_mwst_pct
-        item.resolved_at = datetime.now(UTC)
         return item
 
     async def reject(self, item_id: int) -> ReviewQueueItem | None:
-        item = await self._get_item(item_id)
-        if not item or item.status != "pending":
+        if not await self._claim(item_id, "rejected"):
             return None
-        item.status = "rejected"
-        item.resolved_at = datetime.now(UTC)
-        return item
+        return await self._get_item(item_id)

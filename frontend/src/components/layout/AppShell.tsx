@@ -6,6 +6,7 @@ import { Sidebar, MobileSidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { CommandPalette } from "@/components/layout/CommandPalette";
+import { SurfaceTabs } from "@/components/layout/SurfaceTabs";
 import { ShortcutsModal } from "@/components/layout/ShortcutsModal";
 import { AssistantPanel } from "@/components/layout/AssistantPanel";
 import { useSidebarStore } from "@/lib/sidebar-store";
@@ -45,6 +46,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         <main id="main" tabIndex={-1} className="flex-1 px-4 pb-24 pt-6 outline-none md:pb-8 lg:px-8">
           <div className="mx-auto w-full max-w-7xl">
+            <SurfaceTabs />
             <AnimatePresence mode="wait">
               <motion.div
                 key={pathname}

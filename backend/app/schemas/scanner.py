@@ -5,6 +5,9 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.core.config import settings
+from app.schemas.common import Money
+
 ScannerStatusLiteral = Literal["active", "done", "failed", "pending"]
 
 
@@ -65,7 +68,7 @@ class ScannerStatusResponse(BaseModel):
 
 class ExtractedLineItem(BaseModel):
     item: str
-    amount: float
+    amount: Money
 
 
 _REQUIRED_STR_FIELDS = {"vendor", "date", "invoice_number", "description"}
@@ -75,9 +78,9 @@ class ExtractedInvoice(BaseModel):
     vendor: str = ""
     date: str = ""
     invoice_number: str = ""
-    total_amount: float | None = 0.0
-    net_amount: float | None = 0.0
-    vat_amount: float | None = 0.0
+    total_amount: Money | None = 0.0
+    net_amount: Money | None = 0.0
+    vat_amount: Money | None = 0.0
     vat_rate: float | None = 0.0
     description: str = ""
     line_items: list[ExtractedLineItem] = Field(default_factory=list)
@@ -85,10 +88,17 @@ class ExtractedInvoice(BaseModel):
     kt_haben: str | None = None
     mwst_code: str | None = None
     mwst_pct: str | None = None
-    mwst_amount: float | None = None
+    mwst_amount: Money | None = None
     classification_confidence: float | None = None
     classification_source: str | None = None
     classification_input: str | None = None
+    # B-89: the receipt text says the money already left at the till. A suggestion
+    # for the checkbox on the Beleg, never the last word — see
+    # ``services/bezahlt_an_der_kasse.py``.
+    bezahlt_an_der_kasse: bool = False
+    # Set by extraction when a value is suspicious (e.g. amount > 50'000); the UI shows why.
+    needs_review: bool = False
+    review_reason: str | None = None
     # Storage key of the persisted upload (`receipts/<tenant>/<uuid>.<ext>`);
     # hand it back as `source_key` when the booking is created.
     source_key: str | None = None
@@ -149,14 +159,22 @@ class ScannerConfigResponse(BaseModel):
 
     model_config = {"from_attributes": True}
 
+    # B-42: the Ollama endpoint is deployment configuration, not tenant data. The
+    # column still exists, but every reader uses `settings` and the API reports that.
+    @field_validator("ollama_base_url", mode="before")
+    @classmethod
+    def _ollama_url_from_settings(cls, _value):
+        return settings.OLLAMA_BASE_URL
+
 
 class ScannerConfigUpdate(BaseModel):
+    """`ollama_base_url` and `ocr_command` are deliberately absent (B-42): a tenant
+    must not point the server at an arbitrary host or hand it a shell command."""
+
     ocr_provider: str
     vision_provider: str
     fallback_provider: str | None = None
-    ollama_base_url: str
     default_ollama_model: str | None = None
-    ocr_command: str | None = None
     pdf_ocr_enabled: bool = True
     invoice_matching_enabled: bool = True
     auto_classification_enabled: bool = True

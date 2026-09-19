@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
-import { getMe, getScannerConfig, updateScannerConfig } from "@/lib/api";
+import { getMe, getScannerConfig, updateProfile, updateScannerConfig, updateTenant } from "@/lib/api";
+import { useAuthStore } from "@/lib/auth-store";
 import { errorMessage } from "@/lib/errors";
 import type { TabId, UserInfo } from "../types";
 
@@ -12,8 +13,6 @@ export function useSettings() {
 
   const [displayName, setDisplayName] = useState("");
   const [companyName, setCompanyName] = useState("");
-  const [emailNotifs, setEmailNotifs] = useState(true);
-  const [exportNotifs, setExportNotifs] = useState(true);
 
   const [threshold, setThreshold] = useState(0.8);
   const [configLoaded, setConfigLoaded] = useState(false);
@@ -42,13 +41,28 @@ export function useSettings() {
 
   useEffect(() => { load(); }, [load]);
 
+  const canEditCompany = user?.role === "admin" || user?.role === "owner";
+  // Appearance applies instantly (theme store) — nothing to save there.
+  const canSave = activeTab !== "appearance";
+
+  // Keep the top bar / user menu in sync with what was just saved.
+  const applyUser = (me: UserInfo) => {
+    setUser(me);
+    setDisplayName(me.display_name);
+    setCompanyName(me.tenant_name);
+    const token = useAuthStore.getState().token ?? localStorage.getItem("token");
+    if (token) useAuthStore.getState().setAuth(token, me);
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
-      if (activeTab === "review" && configLoaded) {
+      if (activeTab === "profile") {
+        applyUser(await updateProfile({ display_name: displayName }));
+      } else if (activeTab === "company") {
+        applyUser(await updateTenant({ name: companyName }));
+      } else if (activeTab === "review" && configLoaded) {
         await updateScannerConfig({ review_confidence_threshold: threshold });
-      } else {
-        await new Promise((r) => setTimeout(r, 600));
       }
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -62,11 +76,9 @@ export function useSettings() {
   return {
     activeTab, setActiveTab,
     user, loading, error, load,
-    saving, saved, handleSave,
+    saving, saved, canSave, handleSave,
     displayName, setDisplayName,
-    companyName, setCompanyName,
-    emailNotifs, setEmailNotifs,
-    exportNotifs, setExportNotifs,
+    companyName, setCompanyName, canEditCompany,
     threshold, setThreshold,
   };
 }

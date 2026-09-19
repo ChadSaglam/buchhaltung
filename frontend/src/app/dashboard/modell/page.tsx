@@ -12,6 +12,7 @@ import { useModellActions } from "./hooks/useModellActions";
 import { useModellInspect } from "./hooks/useModellInspect";
 import { SystemStatusBadge } from "./components/SystemStatusBadge";
 import { ModelStatGrid } from "./components/ModelStatGrid";
+import { visionAktiv } from "./helpers";
 import { AccuracyCard } from "./components/AccuracyCard";
 import { InspectTabs } from "./components/InspectTabs";
 import { BananaImportCard } from "./components/BananaImportCard";
@@ -27,8 +28,10 @@ export default function ModellPage() {
     dangerConfirm,
     setDangerConfirm,
     handleDangerAction,
+    dangerBusy,
     handleDownload,
     handleUploadBundle,
+    restoring,
   } = useModellActions(fetchInfo);
   const inspect = useModellInspect();
 
@@ -69,7 +72,21 @@ export default function ModellPage() {
       />
 
       {/* ── System Status ─────────────────────────────────────────────── */}
-      <SystemStatusBadge hasModel={info.has_model} hasVision={vision.available} />
+      <SystemStatusBadge hasModel={info.has_model} hasVision={visionAktiv(vision)} />
+      {info.has_model && info.model_trusted === false && (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-warning/25 bg-warning/10 px-4 py-3 text-sm text-warning"
+        >
+          <span>
+            Das gespeicherte Modell ist nicht von dieser Installation signiert oder wurde verändert — es wird nicht
+            geladen. Einmal neu trainieren behebt das.
+          </span>
+          <Button size="sm" onClick={handleTrain} disabled={training || !canTrain} loading={training}>
+            Modell neu trainieren
+          </Button>
+        </div>
+      )}
 
       {/* ── Stat Cards ────────────────────────────────────────────────── */}
       <ModelStatGrid info={info} vision={vision} acc={acc} />
@@ -101,7 +118,7 @@ export default function ModellPage() {
       {/* ── Download & Upload ─────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <ExportCard info={info} handleDownload={handleDownload} />
-        <RestoreCard handleUploadBundle={handleUploadBundle} />
+        <RestoreCard handleUploadBundle={handleUploadBundle} restoring={restoring} />
       </div>
 
       {/* ── Pipeline ──────────────────────────────────────────────────── */}
@@ -113,6 +130,7 @@ export default function ModellPage() {
         dangerConfirm={dangerConfirm}
         setDangerConfirm={setDangerConfirm}
         handleDangerAction={handleDangerAction}
+        dangerBusy={dangerBusy}
       />
     </div>
   );

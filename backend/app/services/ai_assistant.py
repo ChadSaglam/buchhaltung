@@ -45,12 +45,12 @@ async def resolve_ollama(tenant_id: int, db: AsyncSession) -> tuple[str, str]:
     looks like a chat model → auto-detected chat model from Ollama's installed
     list (vision models excluded).
     """
+    # The endpoint comes from deployment settings only (B-42): a tenant-stored URL
+    # would let one tenant make the server talk to any host it names.
     base_url = settings.OLLAMA_BASE_URL
     scanner_model: str | None = None
     try:
         cfg = await ScannerConfigService(tenant_id, db).get_or_create()
-        if cfg.ollama_base_url:
-            base_url = cfg.ollama_base_url
         scanner_model = cfg.default_ollama_model
     except Exception as exc:  # pragma: no cover - defensive
         logger.warning("[AI] could not load ScannerConfig: %s", exc)
@@ -98,13 +98,24 @@ def _is_embed_model(name: str) -> bool:
     return any(k in n for k in ("embed", "nomic", "bge", "minilm"))
 
 
+#: How many months of history the assistant is given. Six, not twelve: the
+#: context is JSON-truncated at 8'000 characters anyway (`_build_messages`).
+MONATE_IM_KONTEXT = 6
+#: Upper bound on the rows read to build those months (B-27). At 4'000 rows a
+#: tenant booking 600 movements a month still has every one of the six months
+#: complete; beyond that the oldest month in the window is the one that thins out,
+#: and it is the least interesting.
+KONTEXT_ZEILEN_MAX = 4000
+
+
 async def build_context(tenant_id: int, db: AsyncSession) -> dict[str, Any]:
     """Assemble a compact, token-bounded context from the tenant's data."""
-    # Stats
-    total_count = await db.scalar(select(func.count()).select_from(Booking).where(Booking.tenant_id == tenant_id))
-    total_amount = await db.scalar(
-        select(func.coalesce(func.sum(Booking.betrag), 0.0)).where(Booking.tenant_id == tenant_id)
-    )
+    # Stats — B-27: one statement for both, they scan the same rows.
+    total_count, total_amount = (
+        await db.execute(
+            select(func.count(), func.coalesce(func.sum(Booking.betrag), 0)).where(Booking.tenant_id == tenant_id)
+        )
+    ).one()
 
     # Recent bookings (bounded)
     rows = (
@@ -124,9 +135,25 @@ async def build_context(tenant_id: int, db: AsyncSession) -> dict[str, Any]:
         for b in rows
     ]
 
-    # Monthly aggregation (from the recent slice + a wider sum query)
+    # Monthly aggregation.
+    #
+    # B-27: this read *every* booking of the tenant on every chat message — an
+    # unbounded scan in the hot path of a streaming endpoint. It cannot be
+    # bucketed in SQL: `bookings.datum` is a free-text string (`POST /api/bookings`
+    # takes whatever the client sends, and the writers disagree — "%d.%m.%Y" in
+    # `abgleich.py`, whatever the caller had in `bookings.py`), so `substr(datum, …)`
+    # would silently bucket half a tenant's rows into the wrong month. Bound the
+    # scan instead: newest first, capped. Only six months are shown, and the cap
+    # is far above what six months of a real tenant contains.
     monthly: dict[str, dict[str, float]] = {}
-    all_rows = (await db.execute(select(Booking.datum, Booking.betrag).where(Booking.tenant_id == tenant_id))).all()
+    all_rows = (
+        await db.execute(
+            select(Booking.datum, Booking.betrag)
+            .where(Booking.tenant_id == tenant_id)
+            .order_by(Booking.id.desc())
+            .limit(KONTEXT_ZEILEN_MAX)
+        )
+    ).all()
     for datum, betrag in all_rows:
         key = _month_key(datum)
         if not key:
@@ -141,7 +168,7 @@ async def build_context(tenant_id: int, db: AsyncSession) -> dict[str, Any]:
     monthly_list = [
         {"monat": k, "einnahmen": _chf(v["einnahmen"]), "ausgaben": _chf(v["ausgaben"]), "anzahl": int(v["anzahl"])}
         for k, v in sorted(monthly.items(), reverse=True)
-    ][:6]
+    ][:MONATE_IM_KONTEXT]
 
     # Account plan (Kontenplan) — helps VAT/account questions
     konten = (await db.execute(select(Konto).where(Konto.tenant_id == tenant_id).limit(200))).scalars().all()
@@ -205,8 +232,16 @@ async def stream_chat(tenant_id: int, db: AsyncSession, messages: list[dict]) ->
             client.stream("POST", f"{base_url}/api/chat", json=payload, timeout=settings.OLLAMA_TIMEOUT) as resp,
         ):
             if resp.status_code != 200:
+                # Upstream bodies stay in the server log (B-42), never in the client stream.
                 body = (await resp.aread()).decode("utf-8", "ignore")[:300]
-                yield _sse({"error": f"Ollama HTTP {resp.status_code}", "detail": body, "model": model})
+                logger.warning("[AI] Ollama HTTP %s for model %s: %s", resp.status_code, model, body)
+                yield _sse(
+                    {
+                        "error": f"Ollama HTTP {resp.status_code}",
+                        "detail": "Antwort des Modells fehlgeschlagen.",
+                        "model": model,
+                    }
+                )
                 return
             yield _sse({"start": True, "model": model})
             # Ollama streams newline-delimited JSON. Parse from a byte buffer
@@ -249,12 +284,13 @@ async def stream_chat(tenant_id: int, db: AsyncSession, messages: list[dict]) ->
             else:
                 yield _sse({"error": "empty", "detail": "Leere Antwort vom Modell.", "model": model})
     except httpx.ConnectError as exc:
-        yield _sse({"error": "connect", "detail": f"{base_url}: {exc}", "model": model})
+        logger.warning("[AI] Ollama unreachable at %s: %s", base_url, exc)
+        yield _sse({"error": "connect", "detail": "Ollama ist nicht erreichbar.", "model": model})
     except httpx.TimeoutException:
         yield _sse({"error": "timeout", "model": model})
-    except Exception as exc:  # pragma: no cover - defensive
+    except Exception:  # pragma: no cover - defensive
         logger.exception("[AI] stream_chat failed")
-        yield _sse({"error": "unknown", "detail": str(exc)[:200]})
+        yield _sse({"error": "unknown", "detail": "Unerwarteter Fehler."})
 
 
 async def summarize(tenant_id: int, db: AsyncSession) -> dict:
@@ -285,12 +321,13 @@ async def summarize(tenant_id: int, db: AsyncSession) -> dict:
                 return {"error": "empty", "model": model}
             return {"content": content, "model": model}
     except httpx.ConnectError as exc:
-        return {"error": "connect", "detail": str(exc)[:200], "model": model}
+        logger.warning("[AI] Ollama unreachable at %s: %s", base_url, exc)
+        return {"error": "connect", "detail": "Ollama ist nicht erreichbar.", "model": model}
     except httpx.TimeoutException:
         return {"error": "timeout", "model": model}
-    except Exception as exc:  # pragma: no cover
+    except Exception:  # pragma: no cover
         logger.exception("[AI] summarize failed")
-        return {"error": "unknown", "detail": str(exc)[:200]}
+        return {"error": "unknown", "detail": "Unerwarteter Fehler."}
 
 
 def _sse(obj: dict) -> str:

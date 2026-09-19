@@ -2,18 +2,22 @@
 
 from __future__ import annotations
 
+import asyncio
+
 import pandas as pd
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.deps import get_current_user, get_db
+from app.core.deps import get_current_user, get_db, require_editor
+from app.core.rate_limit import heavy_limit, limiter
 from app.models.booking import Booking
 from app.models.user import User
+from app.schemas.common import Money
 from app.services.email_sender import is_email_configured, send_bookkeeping_email
-from app.services.export import df_to_banana_tsv, df_to_csv, df_to_styled_excel
+from app.services.export import bookings_to_df, df_to_banana_tsv, df_to_csv, df_to_styled_excel
 
 router = APIRouter(prefix="/api/export", tags=["export"])
 
@@ -26,11 +30,11 @@ class BuchungRowExport(BaseModel):
     beschreibung: str
     kt_soll: str
     kt_haben: str
-    betrag: float
+    betrag: Money
     mwstcode: str
     artbetrag: str
     mwstpct: str
-    mwstchf: float | str
+    mwstchf: Money | str
     ks3: str
 
 
@@ -67,28 +71,7 @@ async def _get_bookings_df(db: AsyncSession, tenant_id: int, source: str | None 
         query = query.where(Booking.source == source)
     query = query.order_by(Booking.id)
     result = await db.execute(query)
-    bookings = result.scalars().all()
-
-    rows = []
-    for b in bookings:
-        rows.append(
-            {
-                "Nr": b.id,
-                "Datum": b.datum,
-                "Beleg": b.beleg or "",
-                "Rechnung": b.rechnung or "",
-                "Beschreibung": b.beschreibung or "",
-                "KtSoll": b.kt_soll or "",
-                "KtHaben": b.kt_haben or "",
-                "Betrag CHF": b.betrag or 0,
-                "MwStUSt-Code": b.mwst_code or "",
-                "Art Betrag": "",
-                "MwSt-%": b.mwst_pct or "",
-                "Gebuchte MwStUSt CHF": b.mwst_amount or 0,
-                "KS3": "",
-            }
-        )
-    return pd.DataFrame(rows)
+    return bookings_to_df(result.scalars().all())
 
 
 # ── POST routes (accept frontend state data) ──
@@ -185,43 +168,55 @@ async def export_csv(
     )
 
 
+def _single_line(value: str) -> str:
+    """A subject is one header line — no CR/LF that could smuggle extra headers (B-43)."""
+    return " ".join(value.splitlines()).strip()
+
+
 class EmailRequest(BaseModel):
-    to_email: str
-    subject: str = ""
+    to_email: EmailStr  # exactly one, well-formed recipient (B-43)
+    subject: str = Field("", max_length=200)
     source: str | None = None
+
+    _subject = field_validator("subject")(classmethod(lambda cls, v: _single_line(v)))
 
 
 @router.post("/email")
+@limiter.limit(heavy_limit)
 async def send_email(
+    request: Request,
     body: EmailRequest,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_editor),
 ):
     if not is_email_configured():
         raise HTTPException(400, "E-Mail nicht konfiguriert.")
     df = await _get_bookings_df(db, user.tenant_id, body.source)
     if df.empty:
         raise HTTPException(404, "Keine Buchungen vorhanden.")
-    ok, msg = send_bookkeeping_email(df, body.to_email, body.subject or None)
+    ok, msg = await asyncio.to_thread(send_bookkeeping_email, df, body.to_email, body.subject or None)
     if not ok:
         raise HTTPException(500, msg)
     return {"message": msg}
 
 
 class EmailWithRowsRequest(BaseModel):
-    to_email: str
-    subject: str = ""
-    rows: list[BuchungRowExport]
+    to_email: EmailStr
+    subject: str = Field("", max_length=200)
+    rows: list[BuchungRowExport] = Field(max_length=5000)
+
+    _subject = field_validator("subject")(classmethod(lambda cls, v: _single_line(v)))
 
 
 @router.post("/email/rows")
-async def send_email_with_rows(body: EmailWithRowsRequest, user: User = Depends(get_current_user)):
+@limiter.limit(heavy_limit)
+async def send_email_with_rows(request: Request, body: EmailWithRowsRequest, user: User = Depends(require_editor)):
     if not is_email_configured():
         raise HTTPException(400, "E-Mail nicht konfiguriert. SMTP in .env prüfen.")
     if not body.rows:
         raise HTTPException(404, "Keine Buchungen vorhanden.")
     df = _rows_to_df(body.rows)
-    ok, msg = send_bookkeeping_email(df, body.to_email, body.subject or None)
+    ok, msg = await asyncio.to_thread(send_bookkeeping_email, df, body.to_email, body.subject or None)
     if not ok:
         raise HTTPException(500, msg)
     return {"message": msg}

@@ -3,18 +3,23 @@
 from __future__ import annotations
 
 import io
+import logging
+import math
 import re
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.deps import get_current_user, get_db
+from app.core.deps import ROLE_RANK, get_db, require_editor
+from app.core.uploads import MAX_IMPORT_BYTES, read_upload
 from app.models.memory import Memory
 from app.models.training_data import TrainingRow
 from app.models.user import User
+from app.services.audit_log import audit
 from app.services.classifier import TenantClassifier, make_memory_key
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/import", tags=["import"])
 
 
@@ -151,6 +156,7 @@ def parse_banana_xls(file_bytes: bytes, filename: str) -> list[dict]:
             kt_haben = "1020"
         mwst_code = str(row.get("MwStCode", "")).strip() if pd.notna(row.get("MwStCode")) else ""
         mwst_pct = str(row.get("MwStPct", "")).strip() if pd.notna(row.get("MwStPct")) else ""
+        betrag = _amount(row.get("Betrag"))
         rows.append(
             {
                 "beschreibung": beschreibung[:500],
@@ -158,9 +164,21 @@ def parse_banana_xls(file_bytes: bytes, filename: str) -> list[dict]:
                 "kt_haben": kt_haben[:20],
                 "mwst_code": mwst_code[:10],
                 "mwst_pct": mwst_pct[:10],
+                "betrag": betrag,
             }
         )
     return rows
+
+
+def _amount(value) -> float | None:
+    """Banana amount cell → float, or None when empty/unparseable (never a fake 0)."""
+    if value is None or (isinstance(value, float) and math.isnan(value)):
+        return None
+    try:
+        num = float(str(value).replace("'", "").replace(",", ".").strip())
+    except ValueError:
+        return None
+    return num if math.isfinite(num) else None
 
 
 @router.post("/banana")
@@ -170,7 +188,7 @@ async def import_banana_file(
     also_memory: bool = True,
     auto_train: bool = True,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_editor),
 ):
     """Import a Banana Buchhaltung XLS export as training data.
 
@@ -178,7 +196,11 @@ async def import_banana_file(
     - also_memory: if True, also populate memory table for exact matches
     - auto_train: if True, retrain model after import
     """
-    content = await file.read()
+    # Wiping a tenant's training data is destructive: admin and up (B-40). Check before any work.
+    if replace and ROLE_RANK.get(user.role, -1) < ROLE_RANK["admin"]:
+        raise HTTPException(403, "Requires admin role or higher")
+
+    content = await read_upload(file, max_bytes=MAX_IMPORT_BYTES, label="Banana-Datei")
     rows = parse_banana_xls(content, file.filename or "data.xls")
 
     if not rows:
@@ -194,6 +216,20 @@ async def import_banana_file(
     training_objects = []
     memory_objects = []
 
+    # B-27: look every key up once, not once per row. A 2'000-line Banana export
+    # carries several hundred distinct descriptions, and each one used to be its
+    # own SELECT inside the request — the import got slower the more the tenant
+    # had already learned. Chunked at 500 because SQLite's default parameter
+    # limit is 999.
+    memory_by_key: dict[str, Memory] = {}
+    if also_memory:
+        wanted = sorted({k for k in (make_memory_key(r["beschreibung"]) for r in rows) if k})
+        for start in range(0, len(wanted), 500):
+            found = await db.execute(
+                select(Memory).where(Memory.tenant_id == tid, Memory.lookup_key.in_(wanted[start : start + 500]))
+            )
+            memory_by_key.update({m.lookup_key: m for m in found.scalars().all()})
+
     for r in rows:
         training_objects.append(
             TrainingRow(
@@ -203,6 +239,7 @@ async def import_banana_file(
                 kt_haben=r["kt_haben"],
                 mwst_code=r["mwst_code"],
                 mwst_pct=r["mwst_pct"],
+                betrag=r["betrag"],
             )
         )
 
@@ -211,8 +248,7 @@ async def import_banana_file(
             if key and key not in seen_keys:
                 seen_keys.add(key)
                 # Upsert memory
-                existing = await db.execute(select(Memory).where(Memory.tenant_id == tid, Memory.lookup_key == key))
-                mem = existing.scalar_one_or_none()
+                mem = memory_by_key.get(key)
                 if mem:
                     mem.kt_soll = r["kt_soll"]
                     mem.kt_haben = r["kt_haben"]
@@ -234,14 +270,42 @@ async def import_banana_file(
     db.add_all(memory_objects)
     await db.flush()
 
-    result = {"imported": len(training_objects), "memory_entries": len(memory_objects) + len(seen_keys)}
+    # `seen_keys` already holds every distinct key this import touched — the new
+    # ones AND the ones that were updated in place. `memory_objects` is a subset
+    # of it (the new ones), so adding the two counted every new entry twice: a
+    # fresh tenant reported exactly 2× what it had written. Found on the first
+    # real run (2026-09-17): the page showed "GEDÄCHTNIS 182" and, three
+    # centimetres below, "364 Gedächtnis" for the same import.
+    #
+    # This number is not cosmetic — it goes into the audit row below, and B-17
+    # ships the audit table to the Treuhänder as 50-Protokoll.csv. A hand-off
+    # that states a quantity nobody ever wrote is worse than one that states
+    # nothing.
+    result = {"imported": len(training_objects), "memory_entries": len(seen_keys)}
+
+    await audit(
+        db,
+        user,
+        "import.banana",
+        target_type="import",
+        zeilen=result["imported"],
+        gedaechtnis=result["memory_entries"],
+    )
+    # B-57: **commit the import before training.** Training is the long, failing
+    # part — it loads pandas, fits a model and writes a signed blob — and until
+    # now a failure in it rolled back the import that had already succeeded. The
+    # user re-uploaded a 2'000-line file to fix a problem in a different feature.
+    await db.commit()
 
     if auto_train:
-        clf = TenantClassifier(tid, db)
-        train_result = await clf.train_from_db()
-        result["training"] = train_result
+        try:
+            result["training"] = await TenantClassifier(tid, db).train_from_db()
+            await db.commit()
+        except Exception as exc:  # the rows are safe; say what happened and move on
+            await db.rollback()
+            logger.exception("[IMPORT] tenant=%s: training after import failed", tid)
+            result["training"] = {"error": f"{type(exc).__name__}: {exc}"[:500]}
 
-    await db.commit()
     return result
 
 
@@ -249,7 +313,7 @@ async def import_banana_file(
 async def import_banana_text(
     body: dict,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_editor),
 ):
     """Import from raw paste text (the paste-6.txt tab-separated format)."""
 

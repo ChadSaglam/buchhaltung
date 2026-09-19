@@ -1,4 +1,4 @@
-import { User, Building2, Bell, Palette, Shield, SlidersHorizontal, Sun, Moon, Monitor } from "lucide-react";
+import { User, Building2, Palette, SlidersHorizontal, Sun, Moon, Monitor } from "lucide-react";
 import type { Theme } from "@/lib/theme-store";
 import type { Tab } from "./types";
 
@@ -12,7 +12,7 @@ export const TABS: Tab[] = [
   { id: "profile", label: "Profil", icon: User },
   { id: "company", label: "Unternehmen", icon: Building2 },
   { id: "review", label: "Überprüfung", icon: SlidersHorizontal },
-  { id: "notifications", label: "Benachrichtigungen", icon: Bell },
   { id: "appearance", label: "Darstellung", icon: Palette },
-  { id: "security", label: "Sicherheit", icon: Shield },
 ];
+// B-46: "Benachrichtigungen" and "Sicherheit" are gone until they have a backend —
+// a tab that shows "Gespeichert" after a 600 ms sleep is worse than no tab.

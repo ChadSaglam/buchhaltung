@@ -20,8 +20,9 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.core.database import get_db
+from app.core.database import bind_tenant, get_db
 from app.core.errors import ApiError
+from app.core.tenant_context import set_tenant
 from app.services.platform_events import (
     EventError,
     apply_invoice_paid,
@@ -56,6 +57,11 @@ async def receive_event(request: Request, db: AsyncSession = Depends(get_db)) ->
             raise EventError(400, "invalid_payload", "Der Event-Body ist kein gültiges JSON") from exc
         event = parse_invoice_paid(payload)
         tenant = await resolve_tenant(db, event.tid)
+        # B-24: no user behind this request — the tenant comes from the payload,
+        # and the payload's HMAC is what makes that trustworthy. The booking
+        # written below is a tenant-scoped row, so it needs the context.
+        set_tenant(tenant.id)
+        await bind_tenant(db, tenant.id)
         created = await apply_invoice_paid(db, tenant, event)
     except EventError as exc:
         await db.rollback()

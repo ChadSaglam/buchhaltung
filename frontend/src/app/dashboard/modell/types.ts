@@ -1,23 +1,24 @@
-export interface ModelInfo {
-  has_model: boolean;
-  model_accuracy: number;
-  train_accuracy: number;
-  total_samples: number;
-  classes: number;
-  memory_count: number;
-  correction_count: number;
-  trained_at: string;
-  sklearn_version: string;
-  model_size_kb: number;
-  memory_size_kb: number;
-}
+import type { ClassifierInfoResponse, ScannerStatusResponse } from "@/lib/api-schema";
 
-export interface VisionStatus {
-  available: boolean;
-  model_name: string | null;
-  model_count: number;
-  is_cloud: boolean;
-}
+/**
+ * B-59: generated from the backend schema. The hand-written version claimed
+ * `sklearn_version`, `model_size_kb` and `memory_size_kb` — three fields
+ * `/api/classify/info` has never sent, and nothing rendered.
+ */
+export type ModelInfo = ClassifierInfoResponse;
+
+/**
+ * B-87: this was a hand-written interface claiming `available`, `model_name`,
+ * `model_count` and `is_cloud` — **none of which `/api/scanner/vision-status`
+ * has ever sent**. `vision.available` was therefore `undefined` on every
+ * request, so the Vision card and the status banner could not report anything
+ * but "Nicht verbunden", whatever the scanner was actually doing. Heute, three
+ * clicks away, read the same endpoint correctly and showed it green.
+ *
+ * The endpoint has had `response_model=ScannerStatusResponse` since B-59 and
+ * the generated type was sitting unused in `api-schema.ts` the whole time.
+ */
+export type VisionStatus = ScannerStatusResponse;
 
 export interface ClassifyResult {
   source: string;

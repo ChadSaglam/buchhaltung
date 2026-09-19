@@ -20,7 +20,9 @@ backend/data/memory_*.json
 backend/data/corrections_*.json
 
 # Build
-.next/
+# Every NEXT_DIST_DIR, not only the default one: `make check` uses
+# .next-e2e/, and a one-off verification build leaves its own behind.
+.next*/
 out/
 dist/
 *.egg-info/

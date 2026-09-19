@@ -8,7 +8,8 @@ from app.models.base import Base
 class Konto(Base):
     __tablename__ = "kontenplan"
 
-    id = Column(Integer, primary_key=True, index=True)
+    # The primary key is already a unique index on this column (B-28).
+    id = Column(Integer, primary_key=True)
     tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
     konto_nr = Column(String, nullable=False)
     beschreibung = Column(String, nullable=False, default="")
@@ -30,7 +31,8 @@ Kontenplan = Konto
 class KontoDefault(Base):
     __tablename__ = "konto_defaults"
 
-    id = Column(Integer, primary_key=True, index=True)
+    # The primary key is already a unique index on this column (B-28).
+    id = Column(Integer, primary_key=True)
     tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
     konto_soll = Column(String, nullable=False)
     konto_haben = Column(String, nullable=False, default="1020")

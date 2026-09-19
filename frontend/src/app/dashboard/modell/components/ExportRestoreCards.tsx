@@ -1,7 +1,7 @@
 "use client";
 
 import { useDropzone } from "react-dropzone";
-import { Upload, Download, Package } from "lucide-react";
+import { Upload, Download, Loader2, Package } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
 import type { DownloadType, ModelInfo } from "../types";
@@ -54,7 +54,13 @@ export function ExportCard({ info, handleDownload }: ExportCardProps) {
   );
 }
 
-export function RestoreCard({ handleUploadBundle }: { handleUploadBundle: (file: File) => void }) {
+export function RestoreCard({
+  handleUploadBundle,
+  restoring = false,
+}: {
+  handleUploadBundle: (file: File) => void;
+  restoring?: boolean;
+}) {
   const {
     getRootProps: getRestoreProps,
     getInputProps: getRestoreInputProps,
@@ -66,6 +72,7 @@ export function RestoreCard({ handleUploadBundle }: { handleUploadBundle: (file:
       "application/json": [".json"],
     },
     maxFiles: 1,
+    disabled: restoring,
   });
 
   return (
@@ -80,11 +87,25 @@ export function RestoreCard({ handleUploadBundle }: { handleUploadBundle: (file:
       <CardContent>
         <div
           {...getRestoreProps()}
-          className="border-2 border-dashed rounded-xl p-6 text-center cursor-pointer hover:border-brand-400 hover:bg-brand-500/6 transition-all"
+          aria-busy={restoring}
+          className={
+            restoring
+              ? "border-2 border-dashed rounded-xl p-6 text-center opacity-60 cursor-wait"
+              : "border-2 border-dashed rounded-xl p-6 text-center cursor-pointer hover:border-brand-400 hover:bg-brand-500/6 transition-all"
+          }
         >
           <input {...getRestoreInputProps({ "aria-label": "Modell-Bundle auswählen" })} />
-          <Upload className="w-6 h-6 text-muted-foreground/40 mx-auto mb-1" />
-          <p className="text-xs text-muted-foreground">.zip / .pkl / .json hierher ziehen</p>
+          {restoring ? (
+            <>
+              <Loader2 className="w-6 h-6 text-muted-foreground mx-auto mb-1 animate-spin" aria-hidden="true" />
+              <p className="text-xs text-muted-foreground">Wird wiederhergestellt…</p>
+            </>
+          ) : (
+            <>
+              <Upload className="w-6 h-6 text-muted-foreground/40 mx-auto mb-1" aria-hidden="true" />
+              <p className="text-xs text-muted-foreground">.zip / .pkl / .json hierher ziehen</p>
+            </>
+          )}
         </div>
       </CardContent>
     </Card>
